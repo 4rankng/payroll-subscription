@@ -525,4 +525,3 @@ func (s *PayrateTemporalService) recalculateMutableTimesheets(ctx context.Contex
 	)
 	return nil
 }
-

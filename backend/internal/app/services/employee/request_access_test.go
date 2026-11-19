@@ -48,9 +48,9 @@ func TestRequestEmployeeAccessHappyPathCreatesRow(t *testing.T) {
 
 	// Employee created by partner A (user 9); partner B (user 44) claims it.
 	employeeRepo.EXPECT().GetByID(gomock.Any(), uint(31)).Return(&domain.Employee{ID: 31, Fullname: "Nguyễn Văn A", CreatedBy: 9}, nil)
-	userRepo.EXPECT().GetByID(gomock.Any(), uint(44)).Return(&domain.User{ID: 44, Fullname: "Quản lý B", Role: domain.RolePartner}, nil)
+	userRepo.EXPECT().GetByID(gomock.Any(), uint(44)).Return(&domain.User{ID: 44, Fullname: "Quản lý B", Role: domain.RoleQuanly}, nil)
 
-	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RolePartner))
+	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RoleQuanly))
 	require.NoError(t, err)
 	require.False(t, alreadyManaged)
 
@@ -78,7 +78,7 @@ func TestRequestEmployeeAccessIdempotent(t *testing.T) {
 
 	employeeRepo.EXPECT().GetByID(gomock.Any(), uint(31)).Return(&domain.Employee{ID: 31, CreatedBy: 9}, nil)
 
-	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RolePartner))
+	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RoleQuanly))
 	require.NoError(t, err)
 	require.True(t, alreadyManaged)
 	require.Len(t, employeeUserRepo.rows, 1, "no duplicate row")
@@ -99,7 +99,7 @@ func TestRequestEmployeeAccessByCreatorIsNoOp(t *testing.T) {
 
 	employeeRepo.EXPECT().GetByID(gomock.Any(), uint(31)).Return(&domain.Employee{ID: 31, CreatedBy: 44}, nil)
 
-	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RolePartner))
+	alreadyManaged, err := service.RequestEmployeeAccess(context.Background(), 31, 44, string(domain.RoleQuanly))
 	require.NoError(t, err)
 	require.True(t, alreadyManaged)
 	require.Empty(t, employeeUserRepo.rows, "creator needs no row")

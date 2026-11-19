@@ -24,7 +24,7 @@ type assetStorer interface {
 // the report (FR-4) — later price changes never rewrite history.
 type BillingReportService struct {
 	reports    domain.BillingReportRepository
-	kyPaid     domain.KyPaidRecordRepository
+	kyPaid     domain.EmployeePayCycleRepository
 	timesheets domain.TimesheetRepository
 	employees  domain.EmployeeRepository
 	feeSource  *config.SettingsConfigService
@@ -35,7 +35,7 @@ type BillingReportService struct {
 
 func NewBillingReportService(
 	reports domain.BillingReportRepository,
-	kyPaid domain.KyPaidRecordRepository,
+	kyPaid domain.EmployeePayCycleRepository,
 	timesheets domain.TimesheetRepository,
 	employees domain.EmployeeRepository,
 	feeSource *config.SettingsConfigService,
@@ -70,7 +70,7 @@ type projectSheet struct {
 type PaymentRow struct {
 	EmployeeName     string
 	CCCD             string
-	Ky               int
+	Cycle            int
 	Date             string
 	Amount           int64
 	PaymentDate      string
@@ -83,7 +83,7 @@ type PaymentRow struct {
 func (s *BillingReportService) GenerateMonthly(ctx context.Context, workMonth string, generatedBy uint) (*domain.BillingReport, []domain.BillingReportLine, error) {
 	fee := s.feeSource.GetSubscriptionFeePerEmployeePerKy(ctx)
 
-	byKy, err := s.kyPaid.CountDistinctEmployeesByKy(ctx, workMonth)
+	byCycle, err := s.kyPaid.CountDistinctEmployeesByCycle(ctx, workMonth)
 	if err != nil {
 		return nil, nil, fmt.Errorf("billing report: distinct counts: %w", err)
 	}
@@ -96,12 +96,12 @@ func (s *BillingReportService) GenerateMonthly(ctx context.Context, workMonth st
 	}
 	var lines []domain.BillingReportLine
 	for ky := 1; ky <= clock.TimesheetKyCount; ky++ {
-		distinct := byKy[ky]
+		distinct := byCycle[ky]
 		if distinct == 0 {
 			continue
 		}
 		lines = append(lines, domain.BillingReportLine{
-			Ky:            ky,
+			Cycle:         ky,
 			DistinctCount: int(distinct),
 			AmountVnd:     int64(distinct) * fee,
 		})
@@ -227,7 +227,7 @@ func (s *BillingReportService) projectSheets(ctx context.Context, workMonth stri
 		sheet.Rows = append(sheet.Rows, PaymentRow{
 			EmployeeName:     names[ts.EmployeeID],
 			CCCD:             cccds[ts.EmployeeID],
-			Ky:               clock.KyFromWorkDay(ts.Date.Day()),
+			Cycle:            clock.KyFromWorkDay(ts.Date.Day()),
 			Date:             ts.Date.Format("02/01/2006"),
 			Amount:           ts.PaidAmount,
 			PaymentDate:      paymentDate,
@@ -263,4 +263,10 @@ func (s *BillingReportService) GetReport(ctx context.Context, workMonth string) 
 		return nil, nil, err
 	}
 	return report, lines, nil
+}
+
+// PaidSeries returns the FR-6 per-day paid time series (distinct employees
+// and amount) per project. projectID nil = all projects.
+func (s *BillingReportService) PaidSeries(ctx context.Context, from, to time.Time, projectID *uint) ([]domain.PaidSeriesRow, error) {
+	return s.timesheets.GetPaidSeries(ctx, from, to, projectID)
 }

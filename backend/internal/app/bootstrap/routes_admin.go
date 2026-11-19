@@ -34,7 +34,6 @@ func setupClockRoutes(v1 *gin.RouterGroup, container *Container) {
 	admin.POST("/reset", container.Handlers.AdminClock.ResetTime)
 }
 
-
 // setupProviderTransactionsAdminRoutes mounts the read-only stats endpoint
 // for provider_transactions. Casbin-protects to admin via the standard
 // Authorize() middleware. Always mounted — even when 9pay is dormant,
@@ -59,7 +58,6 @@ func setupSettingsRoutes(v1 *gin.RouterGroup, container *Container) {
 		settings.DELETE("/:id", container.Middleware.Authorization.Authorize(), container.Handlers.Settings.DeleteSetting)
 	}
 }
-
 
 func setupDBExportRoutes(protected *gin.RouterGroup, container *Container) {
 	dbExport := protected.Group("/db-export")

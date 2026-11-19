@@ -139,4 +139,3 @@ func NewTimesheetDeletedEvent(ctx context.Context, timesheet *Timesheet) Timeshe
 		ProjectName:  projectName,
 	}
 }
-

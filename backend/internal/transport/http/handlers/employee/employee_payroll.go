@@ -169,20 +169,20 @@ func (h *Handler) GetEmployeePayroll(c *gin.Context) {
 		}
 
 		payrollItem := dto.EmployeePayrollHistoryItem{
-			ID:               timesheet.ID,
-			TimesheetID:      timesheet.ID,
-			ProjectID:        timesheet.ProjectID,
-			ProjectName:      projectName,
-			Date:             timesheet.Date.Format("2006-01-02"),
-			HoursWorked:      utils.RoundToTwoDecimals(timesheet.HoursWorked),
-			PayType:          timesheet.PayType,
-			PayRate:          utils.RoundToTwoDecimals(float64(timesheet.PayRate)),
-			Amount:           utils.RoundToTwoDecimals(float64(timesheet.Amount)),
-			PaymentStatus:    string(timesheet.PaymentStatus),
-			PaymentDate:      paymentDateStr,
-			CreatedAt:        timesheet.CreatedAt,
-			PaidAmount:       utils.RoundToTwoDecimals(float64(timesheet.PaidAmount)),
-			PaidAt:           timesheet.PaidAt,
+			ID:            timesheet.ID,
+			TimesheetID:   timesheet.ID,
+			ProjectID:     timesheet.ProjectID,
+			ProjectName:   projectName,
+			Date:          timesheet.Date.Format("2006-01-02"),
+			HoursWorked:   utils.RoundToTwoDecimals(timesheet.HoursWorked),
+			PayType:       timesheet.PayType,
+			PayRate:       utils.RoundToTwoDecimals(float64(timesheet.PayRate)),
+			Amount:        utils.RoundToTwoDecimals(float64(timesheet.Amount)),
+			PaymentStatus: string(timesheet.PaymentStatus),
+			PaymentDate:   paymentDateStr,
+			CreatedAt:     timesheet.CreatedAt,
+			PaidAmount:    utils.RoundToTwoDecimals(float64(timesheet.PaidAmount)),
+			PaidAt:        timesheet.PaidAt,
 		}
 
 		payrollItems = append(payrollItems, payrollItem)

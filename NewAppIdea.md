@@ -78,7 +78,7 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | Kỳ attribution | `KyFromWorkDay(timesheet.Date)` — `Timesheet.Date` is `not null` (`domain/timesheet.go:45`), so every timesheet maps to exactly one Kỳ |
 | Employee registry | `domain/employee.go` (CCCD globally unique — plain UNIQUE constraint under hard-delete, D16; `GetByCCCD`/`ListByCCCDs`) |
 | Projects & assignments | `domain/project.go`, `domain/project_employee.go` (minus the check-in config columns dropped in §6.3) |
-| Timesheets / approval | `domain/timesheet.go`, `domain/approval_request.go` — salary amounts + work dates + approval flow, the substrate for counting |
+| Timesheets | `domain/timesheet.go` — salary amounts + work dates + approval-by-admin flow, the substrate for counting (edit-request flow removed, D25/D26) |
 | Paid marker fields | `Timesheet.PaymentStatus` enum + `PaymentDate` + `PaidAmount` (`domain/timesheet.go:51-56`) — in the rebuilt schema they mean exactly one thing: customer-paid, verified from the transfer upload (D11); only FR-2 verification writes them |
 | Auth, RBAC, audit | `routes_auth.go`, casbin policy (roles admin/quanly/ketoan/nhanvien, D19), `domain/audit_log*` |
 | Client file upload pipeline | `app/services/bcc_import_service.go` — job lifecycle, locks, replacement, result/audit; template for FR-2 |
@@ -95,6 +95,7 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | FR-2 | Upload of bank transfer result per Kỳ by the paying company: job-based pipeline (bcc-import pattern) + FileHash idempotency; verification cross-checks the file's employees/amounts against the Kỳ's approved timesheets; on pass, marks covered timesheets customer-paid (`payment_status='paid'` + `payment_date`, D11); on rejection/mismatch, the upload is marked rejected, the Kỳ count stays frozen, and all admins receive a push notification (D10); a corrected re-upload re-runs verification |
 | FR-3 | Month-end consolidated billing report: distinct employees per Kỳ × fee, per project and total; Excel export is the terminal deliverable the operator sends out (D9); workbook layout per D24: Summary sheet + one sheet per project with payment-history rows; titled by work month + fee — no customer/partner header (D21); optional portal/push notice that the report is ready |
 | FR-4 | Subscription fee setting: `subscription_fee_per_employee_per_ky_vnd`, default 10000; admin-configurable; snapshot the fee into each billing report so later price changes don't rewrite history |
+| FR-6 | Tổng quan page (replaces the removed old-model dashboard widgets): (1) time series of paid-employee count per project; (2) time series of paid amount per project; (3) per-month per-Kỳ table — distinct employees per Kỳ × fee (BR-1: 10,000 VND/employee/Kỳ default) with monthly fee total |
 
 ### 6.3 Remove (with code evidence)
 
@@ -115,6 +116,9 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | External API surface | `settings?tab=api` tab: API keys, ops keys, endpoints, metrics | `domain/api_key.go`, `domain/ops_api_key.go`, `domain/api_endpoint.go`, `domain/api_metric.go`, `routes_api_key_admin.go`, `routes_integration.go`, `ApiKeysSection`, `OpsApiKeysSection` |
 | Health pages | `/cron-health`, `/system-health` pages + cron admin routes | `frontend/src/App.tsx:291-293`, `frontend/src/components/cron-health/`, `routes_admin.go:118-123` (`/cron-jobs`), `domain/cron_job_status.go` |
 | Zalo ZNS (all) | ZNS notifications, Zalo OA connection management, token renewal | `routes_zalo.go`, `domain/zns_message.go`, `zaloconnect` service + `zalo_token_renew` cron (`scheduler_jobs.go`), settings tab `zalo` (`ZaloConnectionSection`), `pages/ZaloResetPassword.tsx` (switch nhanvien reset to password flow) |
+| Timesheet edit requests | Edit-request flow (table, endpoints, UI, `allowed_edit`/`request_edit_id` gates) — approved timesheets are immutable (D25) | `domain/timesheet_edit_request.go`, `internal/transport/http/handlers/timesheet_edit_request.go`, edit-requests routes, `timesheets.allowed_edit`/`request_edit_id` columns |
+| Payment schedule switch | `payment_schedule`/`pending_payment_schedule`/`schedule_effective_from` on assignments + `PayCycleChangedEvent` + `ApplyPendingScheduleChanges` + per-schedule payout getters — only weekly (the 4-Kỳ calendar) exists (D8) | `domain/project_employee.go` fields, `domain/payment_cycle_event.go`, scheduler job, `GetPaymentPercentageForSchedule` |
+| Approval engine | `approval_requests` table + approval service/handler/routes + ApprovalsPage — every guarded action was old-model (D26) | `domain/approval_request.go`, `app/services/approval/`, `transport/http/handlers/approval/`, `bootstrap/routes_approval.go`, `pages/admin/ApprovalsPage` + mobile |
 
 ### 6.4 Settings Changes
 
@@ -163,6 +167,8 @@ Add: `subscription_fee_per_employee_per_ky_vnd` (default 10000; BR-1).
 | D22 | Fresh schema keeps no dead logic (founder decision 2026-11-19, grill Q7): `timesheets.force_payroll` (+ its index) and the `'failed'` value of `payment_status` are removed — `payment_status` = `pending/paid/cancelled`. Correction in grill: `timesheets.payment_reference` is **kept** — it records the bank transaction reference from the uploaded transfer result, written only by verification (row-level traceability the upload file id alone doesn't give). |
 | D23 | All old-model report surfaces are removed (founder requirement 2026-11-19, grill): payroll report export/email by project (`report_by_project_exporter.go`, `PayrollReportExportDialog`, `PayrollReportEmailDialog`, `useExportPayrollReport`), the whole AccountantPage (bulk-transfer half + payroll half), and old payment-history content. The only reports in the new model: the FR-3 billing report (Excel) and the upload/report history view (A6). Data pages (timesheets, employees) stay as views, not exports. |
 | D24 | Billing report workbook layout (founder decision 2026-11-19, grill Q8): first sheet = Summary (per-Kỳ distinct × fee + total), then N sheets — one per project — each listing that project's payment history (employee, CCCD, Kỳ, amount, payment date/reference). |
+| D25 | No timesheet edit requests (founder decision 2026-11-19, grill): approved timesheets are immutable. The `timesheet_edit_requests` table, `allowed_edit`/`request_edit_id` columns, edit-request endpoints/UI, and the approval detour are removed. Corrections to a pending timesheet = direct edit by its owner; a paid timesheet is never edited (D11/D18). |
+| D26 | `approval_requests` table removed (founder decision 2026-11-19, grill): every guarded type it gated (sao-kê email, payroll-report email, reminders, void-timesheet detour) belongs to the removed old model (D20/D23/D25). Admin voiding a timesheet is a direct hard delete — no approval detour. Approval service/handler/routes/ApprovalsPage deleted. |
 
 ## 9. Open Questions
 

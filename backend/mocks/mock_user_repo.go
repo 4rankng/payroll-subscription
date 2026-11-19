@@ -51,38 +51,6 @@ func (mr *MockUserRepositoryMockRecorder) Count(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockUserRepository)(nil).Count), arg0)
 }
 
-// CountActiveEmployeesByProject mocks base method.
-func (m *MockUserRepository) CountActiveEmployeesByProject(arg0 context.Context, arg1, arg2 time.Time) ([]*domain.ProjectActiveCount, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountActiveEmployeesByProject", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*domain.ProjectActiveCount)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountActiveEmployeesByProject indicates an expected call of CountActiveEmployeesByProject.
-func (mr *MockUserRepositoryMockRecorder) CountActiveEmployeesByProject(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveEmployeesByProject", reflect.TypeOf((*MockUserRepository)(nil).CountActiveEmployeesByProject), arg0, arg1, arg2)
-}
-
-// CountActiveEmployeesBySchedule mocks base method.
-func (m *MockUserRepository) CountActiveEmployeesBySchedule(arg0 context.Context, arg1, arg2 time.Time) (int, int, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountActiveEmployeesBySchedule", arg0, arg1, arg2)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(int)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// CountActiveEmployeesBySchedule indicates an expected call of CountActiveEmployeesBySchedule.
-func (mr *MockUserRepositoryMockRecorder) CountActiveEmployeesBySchedule(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveEmployeesBySchedule", reflect.TypeOf((*MockUserRepository)(nil).CountActiveEmployeesBySchedule), arg0, arg1, arg2)
-}
-
 // CountByRole mocks base method.
 func (m *MockUserRepository) CountByRole(arg0 context.Context, arg1 domain.UserRole) (int64, error) {
 	m.ctrl.T.Helper()
@@ -186,21 +154,6 @@ func (mr *MockUserRepositoryMockRecorder) FindUsersWithNullLastLogin(arg0, arg1,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUsersWithNullLastLogin", reflect.TypeOf((*MockUserRepository)(nil).FindUsersWithNullLastLogin), arg0, arg1, arg2)
 }
 
-// GetActiveEmployeesBySchedule mocks base method.
-func (m *MockUserRepository) GetActiveEmployeesBySchedule(arg0 context.Context, arg1, arg2 time.Time, arg3 string) ([]*domain.ActiveEmployeeUser, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActiveEmployeesBySchedule", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*domain.ActiveEmployeeUser)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetActiveEmployeesBySchedule indicates an expected call of GetActiveEmployeesBySchedule.
-func (mr *MockUserRepositoryMockRecorder) GetActiveEmployeesBySchedule(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveEmployeesBySchedule", reflect.TypeOf((*MockUserRepository)(nil).GetActiveEmployeesBySchedule), arg0, arg1, arg2, arg3)
-}
-
 // GetByCCCD mocks base method.
 func (m *MockUserRepository) GetByCCCD(arg0 context.Context, arg1 string) (*domain.User, error) {
 	m.ctrl.T.Helper()
@@ -291,21 +244,6 @@ func (mr *MockUserRepositoryMockRecorder) GetByUsername(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUsername", reflect.TypeOf((*MockUserRepository)(nil).GetByUsername), arg0, arg1)
 }
 
-// GetByUsernameIncludingDeleted mocks base method.
-func (m *MockUserRepository) GetByUsernameIncludingDeleted(arg0 context.Context, arg1 string) (*domain.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByUsernameIncludingDeleted", arg0, arg1)
-	ret0, _ := ret[0].(*domain.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByUsernameIncludingDeleted indicates an expected call of GetByUsernameIncludingDeleted.
-func (mr *MockUserRepositoryMockRecorder) GetByUsernameIncludingDeleted(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUsernameIncludingDeleted", reflect.TypeOf((*MockUserRepository)(nil).GetByUsernameIncludingDeleted), arg0, arg1)
-}
-
 // GetCurrentProjectNamesByUserIDs mocks base method.
 func (m *MockUserRepository) GetCurrentProjectNamesByUserIDs(arg0 context.Context, arg1 []uint) (map[uint][]string, error) {
 	m.ctrl.T.Helper()
@@ -380,20 +318,6 @@ func (m *MockUserRepository) ListWithFilters(arg0 context.Context, arg1 *domain.
 func (mr *MockUserRepositoryMockRecorder) ListWithFilters(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWithFilters", reflect.TypeOf((*MockUserRepository)(nil).ListWithFilters), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-}
-
-// Restore mocks base method.
-func (m *MockUserRepository) Restore(arg0 context.Context, arg1 uint) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Restore", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Restore indicates an expected call of Restore.
-func (mr *MockUserRepositoryMockRecorder) Restore(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restore", reflect.TypeOf((*MockUserRepository)(nil).Restore), arg0, arg1)
 }
 
 // Update mocks base method.

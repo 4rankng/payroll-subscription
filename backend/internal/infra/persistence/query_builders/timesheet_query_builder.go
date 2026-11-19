@@ -55,7 +55,7 @@ func (b *TimesheetQueryBuilder) ApplyAccessControl(query *gorm.DB, filters domai
 	}
 
 	// JOIN employees table for access control filtering
-	query = query.Joins("INNER JOIN employees e ON timesheets.employee_id = e.id AND e.deleted_at IS NULL")
+	query = query.Joins("INNER JOIN employees e ON timesheets.employee_id = e.id")
 	return b.ApplyPartnerAccessControl(query, filters)
 }
 
@@ -72,13 +72,13 @@ func (b *TimesheetQueryBuilder) ApplyPartnerAccessControl(query *gorm.DB, filter
 			LEFT JOIN (
 				SELECT DISTINCT employee_id, created_by as partner_id, 'project' as access_type
 				FROM project_employees
-				WHERE created_by = ? AND deleted_at IS NULL
+				WHERE created_by = ?
 				UNION ALL
 				SELECT DISTINCT employee_id, user_id as partner_id, 'user' as access_type
 				FROM employee_users
 			) access ON access.employee_id = e.id AND (access.partner_id = ? OR e.created_by = ?)
 		`, partnerID, partnerID, partnerID).
-			Where("e.created_by = ? OR access.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ? AND pu.deleted_at IS NULL)", partnerID, partnerID)
+			Where("e.created_by = ? OR access.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ?)", partnerID, partnerID)
 	} else if filters.EmployeeCreatedBy != nil {
 		partnerID := *filters.EmployeeCreatedBy
 		query = query.Joins(`
@@ -86,21 +86,21 @@ func (b *TimesheetQueryBuilder) ApplyPartnerAccessControl(query *gorm.DB, filter
 			ON eu.employee_id = e.id
 			AND eu.user_id = ?
 		`, partnerID).
-			Where("e.created_by = ? OR eu.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ? AND pu.deleted_at IS NULL)", partnerID, partnerID)
+			Where("e.created_by = ? OR eu.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ?)", partnerID, partnerID)
 	} else if filters.EmployeeAssignedByPartner != nil {
 		partnerID := *filters.EmployeeAssignedByPartner
 		query = query.Joins(`
 			LEFT JOIN (
 				SELECT employee_id, created_by as partner_id
 				FROM project_employees
-				WHERE created_by = ? AND deleted_at IS NULL
+				WHERE created_by = ?
 				UNION ALL
 				SELECT employee_id, user_id as partner_id
 				FROM employee_users
-				WHERE user_id = ? AND deleted_at IS NULL
+				WHERE user_id = ?
 			) access ON access.employee_id = e.id
 		`, partnerID, partnerID).
-			Where("access.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ? AND pu.deleted_at IS NULL)", partnerID)
+			Where("access.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ?)", partnerID)
 	}
 
 	return query
@@ -154,7 +154,7 @@ func (b *TimesheetQueryBuilder) applyFilters(query *gorm.DB, filters domain.Time
 	// Join employees table once if needed for access control or search
 	needsEmployeeJoin := filters.EmployeeCreatedBy != nil || filters.EmployeeAssignedByPartner != nil || filters.Search != ""
 	if needsEmployeeJoin {
-		query = query.Joins("INNER JOIN employees e ON timesheets.employee_id = e.id AND e.deleted_at IS NULL")
+		query = query.Joins("INNER JOIN employees e ON timesheets.employee_id = e.id")
 	}
 
 	// Apply access control filters (employees table already joined above)

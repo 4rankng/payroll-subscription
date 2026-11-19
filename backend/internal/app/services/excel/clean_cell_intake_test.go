@@ -23,14 +23,14 @@ func TestParseStripsTextEscapeQuotes(t *testing.T) {
 		}
 		// parsePositionSheet layout: row 4 headers, row 5 rates, rows 7+ data.
 		rows := [][]interface{}{
-			{},                                                             // row 1
-			{},                                                             // row 2
-			{},                                                             // row 3
+			{}, // row 1
+			{}, // row 2
+			{}, // row 3
 			{0: "STT", 1: "Mã nhân viên", 2: "Họ và tên", 3: 8, 4: 9, 5: "Tổng"}, // row 4
-			{3: 50000, 4: 50000},                                           // row 5 rates
-			{},                                                             // row 6
-			{0: 1, 1: "'030172019748", 2: "'Lại Thị Hải Hà", 3: 8, 4: 7.5},       // row 7
-			{0: 2, 1: `"033072000021"`, 2: `"Lương Đức Phong"`, 4: 8},            // row 8
+			{3: 50000, 4: 50000}, // row 5 rates
+			{},                   // row 6
+			{0: 1, 1: "'030172019748", 2: "'Lại Thị Hải Hà", 3: 8, 4: 7.5}, // row 7
+			{0: 2, 1: `"033072000021"`, 2: `"Lương Đức Phong"`, 4: 8},      // row 8
 		}
 		setRows(t, f, sheet, rows)
 

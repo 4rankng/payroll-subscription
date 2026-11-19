@@ -297,25 +297,6 @@ func (b *EmployeeQueryBuilder) BuildGetByCreatorQuery(creatorID uint) *gorm.DB {
 		Where("created_by = ?", creatorID)
 }
 
-// BuildGetWithBankingInfoQuery builds a query for getting employees with banking info
-func (b *EmployeeQueryBuilder) BuildGetWithBankingInfoQuery() *gorm.DB {
-	return b.DB.Model(&domain.Employee{}).
-		Preload("Creator").
-		Where("bank_account_number != '' AND bank_account_name != ''")
-}
-
-// BuildGetByAgeRangeQuery builds a query for getting employees within an age range
-func (b *EmployeeQueryBuilder) BuildGetByAgeRangeQuery(minAge, maxAge int) *gorm.DB {
-	// Calculate date ranges for age filtering
-	now := clock.Now()
-	maxBirthDate := now.AddDate(-minAge, 0, 0)
-	minBirthDate := now.AddDate(-maxAge-1, 0, 0)
-
-	return b.DB.Model(&domain.Employee{}).
-		Preload("Creator").
-		Where("date_of_birth BETWEEN ? AND ?", minBirthDate, maxBirthDate)
-}
-
 // BuildGetDuplicateCCCDsQuery builds a query for getting duplicate CCCDs
 func (b *EmployeeQueryBuilder) BuildGetDuplicateCCCDsQuery() *gorm.DB {
 	return b.DB.Model(&domain.Employee{}).

@@ -42,6 +42,9 @@ type TimesheetRepository interface {
 	GetByProjectEmployeeDateHourType(ctx context.Context, projectID, employeeID uint, date time.Time, hourType string) (*Timesheet, error)
 	GetPaidTimesheetsInDateRange(ctx context.Context, startDate, endDate time.Time, timesheets *[]*Timesheet) error
 	CountDistinctEmployeesPaidInPeriod(ctx context.Context, startDate, endDate time.Time) (int, error)
+	// GetPaidSeries aggregates customer-paid timesheets per day per project
+	// (FR-6 Tổng quan): distinct employees and paid amount by payment date.
+	GetPaidSeries(ctx context.Context, startDate, endDate time.Time, projectID *uint) ([]PaidSeriesRow, error)
 	GetByProjectEmployeeDate(ctx context.Context, projectID, employeeID uint, date time.Time) ([]*Timesheet, error)
 	GetPendingApprovalCount(ctx context.Context, startDate, endDate time.Time) (int, error)
 	GetApprovedSalaryTotal(ctx context.Context, startDate, endDate time.Time) (int64, error)
@@ -170,6 +173,9 @@ type TimesheetDashboardReader interface {
 	GetPendingApprovalCount(ctx context.Context, startDate, endDate time.Time) (int, error)
 	GetApprovedSalaryTotal(ctx context.Context, startDate, endDate time.Time) (int64, error)
 	CountDistinctEmployeesPaidInPeriod(ctx context.Context, startDate, endDate time.Time) (int, error)
+	// GetPaidSeries aggregates customer-paid timesheets per day per project
+	// (FR-6 Tổng quan): distinct employees and paid amount by payment date.
+	GetPaidSeries(ctx context.Context, startDate, endDate time.Time, projectID *uint) ([]PaidSeriesRow, error)
 }
 
 // TimesheetReportingReader provides reporting and aggregation queries.
@@ -429,4 +435,12 @@ type TimesheetWithDetails struct {
 
 	// Payroll details
 	PayrollBatchCode *string `json:"payroll_batch_code"`
+}
+
+// PaidSeriesRow is one day×project bucket of the FR-6 paid time series.
+type PaidSeriesRow struct {
+	Date          time.Time `json:"date"`
+	ProjectID     uint      `json:"project_id"`
+	EmployeeCount int64     `json:"employee_count"`
+	Amount        int64     `json:"amount"`
 }

@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"log/slog"
 	"time"
 
@@ -48,7 +47,7 @@ type UploadResult struct {
 // only when it has no processable rows at all.
 type TransferUploadService struct {
 	uploads    domain.TransferUploadRepository
-	kyPaid     domain.KyPaidRecordRepository
+	kyPaid     domain.EmployeePayCycleRepository
 	timesheets domain.TimesheetRepository
 	employees  domain.EmployeeRepository
 	txManager  domain.TransactionManager
@@ -58,7 +57,7 @@ type TransferUploadService struct {
 
 func NewTransferUploadService(
 	uploads domain.TransferUploadRepository,
-	kyPaid domain.KyPaidRecordRepository,
+	kyPaid domain.EmployeePayCycleRepository,
 	timesheets domain.TimesheetRepository,
 	employees domain.EmployeeRepository,
 	txManager domain.TransactionManager,
@@ -79,10 +78,10 @@ func NewTransferUploadService(
 	}
 }
 
-// ProcessUpload ingests one uploaded transfer result for (Ky, workMonth).
+// ProcessUpload ingests one uploaded transfer result for (cycle, workMonth).
 // Idempotent on the file content: an identical re-upload returns the prior
 // outcome without touching the books.
-func (s *TransferUploadService) ProcessUpload(ctx context.Context, ky int, workMonth string, filename string, data []byte, uploadedBy uint) (*UploadResult, error) {
+func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, workMonth string, filename string, data []byte, uploadedBy uint) (*UploadResult, error) {
 	sum := sha256.Sum256(data)
 	fileHash := hex.EncodeToString(sum[:])
 
@@ -94,9 +93,9 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, ky int, workM
 		return &UploadResult{UploadID: prior.ID, Status: prior.Status, Duplicate: true}, nil
 	}
 
-	rows, parseErr := ParseTransferResultExcel(newByteReader(data))
+	rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data))
 	upload := &domain.TransferUpload{
-		Ky:               ky,
+		Cycle:            cycle,
 		WorkMonth:        workMonth,
 		FileHash:         fileHash,
 		OriginalFilename: filename,
@@ -150,7 +149,7 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, ky int, workM
 		s.notifyRejected(ctx, upload, deref(upload.RejectReason))
 	}
 	s.logger.Info("transfer upload processed",
-		"upload_id", upload.ID, "ky", ky, "work_month", workMonth,
+		"upload_id", upload.ID, "cycle", cycle, "work_month", workMonth,
 		"rows_total", result.RowsTotal, "rows_ok", result.RowsOK, "rows_failed", result.RowsFailed,
 		"status", upload.Status,
 	)
@@ -163,7 +162,7 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, ky int, workM
 // employee are marked customer-paid (D11) and the billing atom is
 // accumulated (founder decision: one row per employee per Kỳ).
 func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.TransferUpload, rows []ParsedTransferRow, result *UploadResult) error {
-	from, to := window(upload.Ky, upload.WorkMonth)
+	from, to := window(upload.Cycle, upload.WorkMonth)
 	now := clock.Now()
 	nowDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
@@ -207,8 +206,8 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 				PaidAmount:       &amount,
 				PaidAt:           &now,
 			})
-			if err := s.kyPaid.UpsertAmount(ctx, &domain.KyPaidRecord{
-				Ky:             upload.Ky,
+			if err := s.kyPaid.UpsertAmount(ctx, &domain.EmployeePayCycle{
+				Cycle:          upload.Cycle,
 				WorkMonth:      upload.WorkMonth,
 				EmployeeID:     employee.ID,
 				CCCD:           employee.CCCD,
@@ -218,7 +217,7 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 				PaidAmount:     amount,
 				CreatedAt:      now,
 			}); err != nil {
-				return fmt.Errorf("accumulate ky paid record (employee %d, ky %d): %w", employee.ID, upload.Ky, err)
+				return fmt.Errorf("accumulate ky paid record (employee %d, ky %d): %w", employee.ID, upload.Cycle, err)
 			}
 		}
 		if err := s.timesheets.BulkUpdatePaymentStatus(ctx, updates); err != nil {
@@ -235,7 +234,7 @@ func (s *TransferUploadService) notifyRejected(ctx context.Context, upload *doma
 	title := "Kết quả chuyển khoản bị từ chối"
 	message := fmt.Sprintf(
 		"File kết quả chuyển khoản kỳ %d tháng %s (%s) bị từ chối: %s. Số đếm của kỳ bị đóng băng cho đến khi có file sửa đúng.",
-		upload.Ky, upload.WorkMonth, upload.OriginalFilename, reason,
+		upload.Cycle, upload.WorkMonth, upload.OriginalFilename, reason,
 	)
 	if err := s.notifier.NotifyUsersByRole(ctx, domain.RoleAdmin, domain.NotificationTypeTransferUploadRejected, title, message); err != nil {
 		s.logger.Error("transfer upload rejection push failed", "upload_id", upload.ID, "error", err)
@@ -243,13 +242,13 @@ func (s *TransferUploadService) notifyRejected(ctx context.Context, upload *doma
 }
 
 // window resolves the Kỳ work window (clock is the canonical calendar).
-func window(ky int, workMonth string) (time.Time, time.Time) {
+func window(cycle int, workMonth string) (time.Time, time.Time) {
 	monthTime, err := time.ParseInLocation("2006-01", workMonth, clock.DefaultLocation)
 	if err != nil {
 		now := clock.Now()
 		monthTime = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, clock.DefaultLocation)
 	}
-	return (clock.TimesheetPayCycle{Ky: ky, WorkMonth: monthTime}).CycleWindow()
+	return (clock.TimesheetPayCycle{Ky: cycle, WorkMonth: monthTime}).CycleWindow()
 }
 
 func truncate(s string, max int) string {
@@ -266,21 +265,18 @@ func deref(s *string) string {
 	return *s
 }
 
-// newByteReader avoids importing bytes just for one reader at call sites.
-func newByteReader(data []byte) io.Reader { return bytes.NewReader(data) }
-
 // ListUploads returns the upload history of one work month, newest first.
 func (s *TransferUploadService) ListUploads(ctx context.Context, workMonth string, limit int) ([]domain.TransferUpload, error) {
 	return s.uploads.ListByWorkMonth(ctx, workMonth, limit)
 }
 
-// ListKyPaidRecords returns the per-employee-per-Kỳ billing rows of one work
+// ListEmployeePayCycles returns the per-employee-per-Kỳ billing rows of one work
 // month — the FR-1 read model behind the FR-3 billing report.
-func (s *TransferUploadService) ListKyPaidRecords(ctx context.Context, workMonth string) ([]domain.KyPaidRecord, error) {
+func (s *TransferUploadService) ListEmployeePayCycles(ctx context.Context, workMonth string) ([]domain.EmployeePayCycle, error) {
 	return s.kyPaid.ListByWorkMonth(ctx, workMonth)
 }
 
 // MonthlySummary returns distinct-employee counts per Kỳ for one work month.
 func (s *TransferUploadService) MonthlySummary(ctx context.Context, workMonth string) (map[int]int64, error) {
-	return s.kyPaid.CountDistinctEmployeesByKy(ctx, workMonth)
+	return s.kyPaid.CountDistinctEmployeesByCycle(ctx, workMonth)
 }

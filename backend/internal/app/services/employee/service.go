@@ -276,7 +276,7 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, employee *domain.E
 			return fmt.Errorf("%s: %w", constants.MsgFailedToUpdateEmployeeVN, err)
 		}
 
-		// 4. Sync email to linked User account (required for Google OAuth login)
+		// 3. Sync email to linked User account (required for Google OAuth login)
 		emailChanged := (employee.Email == nil) != (originalEmployee.Email == nil) ||
 			(employee.Email != nil && originalEmployee.Email != nil && *employee.Email != *originalEmployee.Email)
 		if emailChanged && employee.UserID != nil {

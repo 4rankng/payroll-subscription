@@ -29,44 +29,6 @@ func NewEmployeeDomainService(
 	}
 }
 
-// GetEmployeeStatistics calculates employee statistics using business rules
-func (s *EmployeeDomainService) GetEmployeeStatistics(ctx context.Context) (*domain.EmployeeStatistics, error) {
-	// Get basic employee count using list with no filters
-	employees, err := s.employeeRepo.List(ctx, domain.EmployeeFilters{})
-	if err != nil {
-		return nil, domain.NewInternalError("Lỗi lấy danh sách nhân viên", err)
-	}
-
-	stats := &domain.EmployeeStatistics{
-		TotalEmployees: int64(len(employees)),
-	}
-
-	// Count employees with banking info
-	var withBankingInfo int64
-	for _, emp := range employees {
-		if emp.BankAccountNumber != "" && emp.BankAccountName != "" {
-			withBankingInfo++
-		}
-	}
-	stats.WithBankingInfo = withBankingInfo
-
-	// Count employees assigned to projects
-	var assignedCount int64
-	for _, emp := range employees {
-		hasActiveAssignment, err := s.hasActiveProjectAssignment(ctx, emp.ID)
-		if err != nil {
-			return nil, domain.NewInternalError("Lỗi kiểm tra phân công dự án", err)
-		}
-		if hasActiveAssignment {
-			assignedCount++
-		}
-	}
-	stats.AssignedToProjects = assignedCount
-	stats.UnassignedEmployees = stats.TotalEmployees - assignedCount
-
-	return stats, nil
-}
-
 // GetEmployeesSummary generates comprehensive employee summary with business metrics
 func (s *EmployeeDomainService) GetEmployeesSummary(ctx context.Context) (*domain.EmployeesSummary, error) {
 	// Use repository method for efficient summary calculation

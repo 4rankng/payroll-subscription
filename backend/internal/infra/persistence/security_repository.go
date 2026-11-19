@@ -43,7 +43,7 @@ func (r *BlacklistedTokenRepository) GetByJTI(ctx context.Context, jti string) (
 	var token domain.BlacklistedToken
 	err := r.DB.WithContext(ctx).
 		Select("blacklisted_tokens.*, users.fullname as user_fullname").
-		Joins("LEFT JOIN users ON blacklisted_tokens.user_id = users.id AND users.deleted_at IS NULL").
+		Joins("LEFT JOIN users ON blacklisted_tokens.user_id = users.id").
 		Where("blacklisted_tokens.token_jti = ?", jti).
 		First(&token).Error
 
@@ -78,7 +78,7 @@ func (r *BlacklistedTokenRepository) List(ctx context.Context, filters domain.Bl
 	var tokens []*domain.BlacklistedToken
 	query := r.DB.WithContext(ctx).
 		Select("blacklisted_tokens.*, users.fullname as user_fullname").
-		Joins("LEFT JOIN users ON blacklisted_tokens.user_id = users.id AND users.deleted_at IS NULL")
+		Joins("LEFT JOIN users ON blacklisted_tokens.user_id = users.id")
 
 	query = r.applyBlacklistFilters(query, filters)
 
@@ -183,7 +183,7 @@ func (r *AuditLogRepository) GetByID(ctx context.Context, id uint) (*domain.Audi
 	var log domain.AuditLog
 	err := r.DB.WithContext(ctx).
 		Select("audit_logs.*, users.fullname as user_fullname, users.username as user_username, users.role as user_role").
-		Joins("LEFT JOIN users ON audit_logs.user_id = users.id AND users.deleted_at IS NULL").
+		Joins("LEFT JOIN users ON audit_logs.user_id = users.id").
 		Where("audit_logs.id = ?", id).
 		First(&log).Error
 
@@ -201,7 +201,7 @@ func (r *AuditLogRepository) List(ctx context.Context, filters domain.AuditFilte
 	var logs []*domain.AuditLog
 	query := r.DB.WithContext(ctx).
 		Select("audit_logs.*, users.fullname as user_fullname, users.username as user_username, users.role as user_role").
-		Joins("LEFT JOIN users ON audit_logs.user_id = users.id AND users.deleted_at IS NULL")
+		Joins("LEFT JOIN users ON audit_logs.user_id = users.id")
 
 	query = r.applyAuditFilters(query, filters)
 
@@ -331,7 +331,7 @@ func (r *AuditLogRepository) usersByCondition(ctx context.Context, since time.Ti
 		Table("audit_logs").
 		Select("audit_logs.user_id, users.username, users.fullname, users.role, "+
 			"COUNT(*) AS actions, MAX(audit_logs.created_at) AS last_seen").
-		Joins("LEFT JOIN users ON audit_logs.user_id = users.id AND users.deleted_at IS NULL").
+		Joins("LEFT JOIN users ON audit_logs.user_id = users.id").
 		Where("audit_logs.created_at >= ?", since)
 	if condition != "" {
 		q = q.Where(condition, args...)

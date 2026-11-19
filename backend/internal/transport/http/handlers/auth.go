@@ -246,63 +246,6 @@ func (h *AuthHandler) ConfirmPasswordReset(c *gin.Context) {
 	response.Success(c, nil, constants.MsgPasswordResetSuccessVN)
 }
 
-// RequestZaloReset — POST /auth/zalo-reset/request. Always returns 200 with a
-// session id + generic message whether or not the mobile exists, to prevent
-// mobile enumeration. The session id is structurally identical for known and
-// unknown mobiles (not-found + disabled-toggle paths return a dummy id).
-//
-// @Summary Request Zalo OTP password reset
-// @Description Send a 6-digit OTP via Zalo ZNS to the employee's mobile. Always 200.
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param body body dto.ZaloResetRequestDTO true "Mobile number"
-// @Success 200 {object} response.SuccessResponse
-// @Router /auth/zalo-reset/request [post]
-func (h *AuthHandler) RequestZaloReset(c *gin.Context) {
-	if h.zaloResetService == nil {
-		response.Success(c, gin.H{"otp_session_id": ""}, constants.MsgZaloResetRequestedVN)
-		return
-	}
-	var req dto.ZaloResetRequestDTO
-	if !helpers.BindJSON(c, &req) {
-		return
-	}
-	// Service ALWAYS returns a session id (real or dummy) + nil. Anti-enumeration.
-	sessionID, _ := h.zaloResetService.RequestReset(c.Request.Context(), req.Mobile)
-	response.Success(c, gin.H{"otp_session_id": sessionID}, constants.MsgZaloResetRequestedVN)
-}
-
-// ConfirmZaloReset — POST /auth/zalo-reset/confirm. Validates the code,
-// applies password-strength rules, and atomically updates the password +
-// invalidates all existing sessions.
-
-// @Summary Confirm Zalo OTP password reset
-// @Description Set a new password using the Zalo OTP session + code.
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param body body dto.ZaloResetConfirmDTO true "Session id + code + new password"
-// @Success 200 {object} response.SuccessResponse
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Router /auth/zalo-reset/confirm [post]
-func (h *AuthHandler) ConfirmZaloReset(c *gin.Context) {
-	if h.zaloResetService == nil {
-		response.HandleDomainError(c, zaloreset.ErrFeatureDisabled)
-		return
-	}
-	var req dto.ZaloResetConfirmDTO
-	if !helpers.BindJSON(c, &req) {
-		return
-	}
-	if err := h.zaloResetService.ConfirmReset(c.Request.Context(), req.OTPSessionID, req.Code, req.NewPassword); err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
-	response.Success(c, nil, constants.MsgZaloResetSuccessVN)
-}
-
 // @Description Get the profile of the currently authenticated user
 // @Tags auth
 // @Accept json

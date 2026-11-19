@@ -10,35 +10,6 @@ import (
 	"api-server/internal/domain"
 )
 
-func (r *EmployeeRepository) GetEmployeeStatistics(ctx context.Context) (*domain.EmployeeStatistics, error) {
-	var stats domain.EmployeeStatistics
-
-	// Use conditional aggregation to get all counts in one query
-	err := r.statisticsBuilder.BuildStatisticsQuery().Scan(&stats).Error
-	if err != nil {
-		return nil, err
-	}
-
-	// Separate query for JOIN-based count (assigned to projects)
-	var assignedCount int64
-	err = r.statisticsBuilder.BuildStatisticsAssignedQuery().Count(&assignedCount).Error
-	if err != nil {
-		return nil, err
-	}
-	stats.AssignedToProjects = assignedCount
-
-	stats.UnassignedEmployees = stats.TotalEmployees - stats.AssignedToProjects
-
-	return &stats, nil
-}
-
-func (r *EmployeeRepository) GetEmployeesByAgeRange(ctx context.Context, minAge, maxAge int) ([]*domain.Employee, error) {
-	var employees []*domain.Employee
-	query := r.queryBuilder.BuildGetByAgeRangeQuery(minAge, maxAge)
-	err := query.Find(&employees).Error
-	return employees, err
-}
-
 func (r *EmployeeRepository) GetDuplicateCCCDs(ctx context.Context) ([]string, error) {
 	var cccds []string
 	query := r.queryBuilder.BuildGetDuplicateCCCDsQuery()

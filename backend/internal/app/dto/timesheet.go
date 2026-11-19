@@ -246,3 +246,17 @@ type EmployeeGroupedTimesheetResponse struct {
 type ListGroupedTimesheetsResponse struct {
 	Groups []EmployeeGroupedTimesheetResponse `json:"groups"`
 }
+
+// TimesheetImportFailure represents one rejected row from the Excel template upload.
+type TimesheetImportFailure struct {
+	Index int    `json:"index"`
+	Error string `json:"error"`
+}
+
+// TimesheetImportResult represents the outcome of the Excel template upload.
+type TimesheetImportResult struct {
+	CreatedCount  int                      `json:"created_count"`
+	SkippedCount  int                      `json:"skipped_count"`
+	ErrorCount    int                      `json:"error_count"`
+	FailedEntries []TimesheetImportFailure `json:"failed_entries"`
+}

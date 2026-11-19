@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"api-server/internal/app/services/billing"
 	"api-server/internal/constants"
+	"api-server/internal/pkg/clock"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,13 +28,13 @@ func NewBillingHandler(uploads *billing.TransferUploadService, reports *billing.
 	return &BillingHandler{uploads: uploads, reports: reports}
 }
 
-// Upload processes one bank-transfer result workbook for (ky, work_month).
+// Upload processes one bank-transfer result workbook for (cycle, work_month).
 // Per-row outcomes are returned inline; a whole-file rejection (no
 // processable rows) already fired the D10 all-admin push inside the service.
 func (h *BillingHandler) Upload(c *gin.Context) {
-	ky, err := strconv.Atoi(c.PostForm("ky"))
+	cycle, err := strconv.Atoi(c.PostForm("cycle"))
 	if err != nil || cycle < 1 || cycle > 4 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ky phải là số 1..4"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cycle phải là số 1..4"})
 		return
 	}
 	workMonth := strings.TrimSpace(c.PostForm("work_month"))
@@ -58,12 +60,12 @@ func (h *BillingHandler) Upload(c *gin.Context) {
 	}
 
 	uploaderID := c.GetUint(constants.CtxUserID)
-	result, err := h.uploads.ProcessUpload(c.Request.Context(), ky, workMonth, fileHeader.Filename, data, uploaderID)
+	result, err := h.uploads.ProcessUpload(c.Request.Context(), cycle, workMonth, fileHeader.Filename, data, uploaderID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": result})
 }
 
 // ListUploads returns the upload history of one work month, newest first.
@@ -79,7 +81,7 @@ func (h *BillingHandler) ListUploads(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": rows})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"items": rows}})
 }
 
 // KyPaidRecords returns the per-employee-per-Kỳ billing rows of one work
@@ -91,7 +93,7 @@ func (h *BillingHandler) KyPaidRecords(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "work_month phải có dạng YYYY-MM"})
 		return
 	}
-	rows, err := h.uploads.ListKyPaidRecords(c.Request.Context(), workMonth)
+	rows, err := h.uploads.ListEmployeePayCycles(c.Request.Context(), workMonth)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -101,7 +103,7 @@ func (h *BillingHandler) KyPaidRecords(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": rows, "summary_by_ky": summary})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"items": rows, "summary_by_cycle": summary}})
 }
 
 // GenerateReport builds (or regenerates) the monthly billing report for one
@@ -127,7 +129,7 @@ func (h *BillingHandler) GenerateReport(c *gin.Context) {
 		return
 	}
 	h.reports.NotifyReportReady(c.Request.Context(), workMonth)
-	c.JSON(http.StatusOK, gin.H{"report": report, "lines": lines})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"report": report, "lines": lines}})
 }
 
 // GetReport returns one monthly report with its Kỳ lines.
@@ -146,5 +148,44 @@ func (h *BillingHandler) GetReport(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "chưa có báo cáo cho tháng này"})
 		return
 	}
-	c.JSON(http.StatusOK, report)
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": report})
+}
+
+// PaidSeries serves the FR-6 Tổng quan time series: per-day distinct paid
+// employees and paid amount per project. Defaults to the last 90 days.
+func (h *BillingHandler) PaidSeries(c *gin.Context) {
+	to := clock.Now()
+	from := to.AddDate(0, 0, -90)
+	if v := c.Query("from"); v != "" {
+		parsed, err := time.ParseInLocation("2006-01-02", v, time.Local)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "from phải có dạng YYYY-MM-DD"})
+			return
+		}
+		from = parsed
+	}
+	if v := c.Query("to"); v != "" {
+		parsed, err := time.ParseInLocation("2006-01-02", v, time.Local)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "to phải có dạng YYYY-MM-DD"})
+			return
+		}
+		to = parsed
+	}
+	var projectID *uint
+	if v := c.Query("project_id"); v != "" {
+		id, err := strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "project_id không hợp lệ"})
+			return
+		}
+		p := uint(id)
+		projectID = &p
+	}
+	rows, err := h.reports.PaidSeries(c.Request.Context(), from, to, projectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"items": rows}})
 }

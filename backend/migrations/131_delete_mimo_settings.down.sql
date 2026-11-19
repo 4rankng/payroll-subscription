@@ -1,2 +1,0 @@
--- No-op: sealed MiMo key material is not restorable and the assistant feature
--- is gone. Deleted rows stay deleted.

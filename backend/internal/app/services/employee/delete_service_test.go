@@ -93,30 +93,3 @@ func TestDeleteEmployeeRetainsProtectedHistoryAndUnlinksProjects(t *testing.T) {
 		t.Fatal("unlinking an employee with protected history must emit its own audit event")
 	}
 }
-
-func TestDeleteEmployeeRejectsActiveFlexiblePaymentSchedule(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	employeeRepo := mocks.NewMockEmployeeRepository(ctrl)
-	projectEmployeeRepo := mocks.NewMockProjectEmployeeRepository(ctrl)
-	service := &EmployeeService{
-		EmployeeRepo:        employeeRepo,
-		ProjectEmployeeRepo: projectEmployeeRepo,
-		TransactionManager:  directTransactionManager{},
-		events:              discardEventBus{},
-	}
-
-	ctx := audit.WithAuditContext(context.Background(), 44, "Admin")
-	employee := &domain.Employee{ID: 33, Fullname: "Le Thi C", CCCD: "031086019745"}
-	employeeRepo.EXPECT().GetByIDForUpdate(ctx, uint(33)).Return(employee, nil)
-	projectEmployeeRepo.EXPECT().HasActiveFlexiblePaymentScheduleByEmployeeID(ctx, uint(33)).Return(true, nil)
-
-	result, err := service.DeleteEmployee(ctx, 33, 44)
-	if err == nil {
-		t.Fatal("DeleteEmployee() succeeded for an employee on a flexible payment schedule")
-	}
-	if result != nil {
-		t.Fatalf("DeleteEmployee() result = %#v, want nil", result)
-	}
-}

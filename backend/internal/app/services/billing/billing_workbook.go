@@ -32,7 +32,7 @@ func renderBillingWorkbook(workMonth string, fee int64, lines []domain.BillingRe
 	}
 	rowIdx := 4
 	for _, line := range lines {
-		if err := f.SetCellValue(summary, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("Kỳ %d", line.Ky)); err != nil {
+		if err := f.SetCellValue(summary, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("Kỳ %d", line.Cycle)); err != nil {
 			return nil, err
 		}
 		if err := f.SetCellValue(summary, fmt.Sprintf("B%d", rowIdx), line.DistinctCount); err != nil {
@@ -70,7 +70,7 @@ func renderBillingWorkbook(workMonth string, fee int64, lines []domain.BillingRe
 		for i, row := range sheet.Rows {
 			r := i + 2
 			values := []interface{}{
-				i + 1, row.EmployeeName, row.CCCD, fmt.Sprintf("Kỳ %d", row.Ky),
+				i + 1, row.EmployeeName, row.CCCD, fmt.Sprintf("Kỳ %d", row.Cycle),
 				row.Date, row.Amount, row.PaymentDate, row.PaymentReference,
 			}
 			for j, v := range values {

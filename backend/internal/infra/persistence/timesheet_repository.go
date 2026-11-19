@@ -765,3 +765,23 @@ func (r *TimesheetRepository) getDB(ctx context.Context) *gorm.DB {
 	}
 	return r.DB.WithContext(ctx)
 }
+
+// GetPaidSeries aggregates customer-paid timesheets per payment-date per
+// project (FR-6). projectID nil = all projects.
+func (r *TimesheetRepository) GetPaidSeries(ctx context.Context, startDate, endDate time.Time, projectID *uint) ([]domain.PaidSeriesRow, error) {
+	q := r.getDB(ctx).
+		Model(&domain.Timesheet{}).
+		Select("COALESCE(payment_date, DATE(paid_at)) AS date, project_id, COUNT(DISTINCT employee_id) AS employee_count, SUM(amount) AS amount").
+		Where("payment_status = ?", domain.PaymentStatusPaid).
+		Where("COALESCE(payment_date, DATE(paid_at)) BETWEEN ? AND ?", startDate, endDate).
+		Group("date, project_id").
+		Order("date ASC")
+	if projectID != nil {
+		q = q.Where("project_id = ?", *projectID)
+	}
+	var rows []domain.PaidSeriesRow
+	if err := q.Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("timesheets: paid series: %w", err)
+	}
+	return rows, nil
+}

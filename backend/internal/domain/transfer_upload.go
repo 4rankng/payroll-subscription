@@ -24,7 +24,7 @@ const (
 // no soft-delete columns anywhere (D16).
 type TransferUpload struct {
 	ID               uint64               `gorm:"column:id;primaryKey;autoIncrement"`
-	Ky               int                  `gorm:"column:ky;type:tinyint unsigned;not null"`
+	Cycle            int                  `gorm:"column:cycle;type:tinyint unsigned;not null"`
 	WorkMonth        string               `gorm:"column:work_month;type:char(7);not null"`
 	FileHash         string               `gorm:"column:file_hash;type:char(64);not null;uniqueIndex:uq_transfer_uploads_file_hash"`
 	OriginalFilename string               `gorm:"column:original_filename;type:varchar(255);not null"`

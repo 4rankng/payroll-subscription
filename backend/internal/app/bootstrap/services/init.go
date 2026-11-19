@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"time"
 
+	cacheAdapter "api-server/internal/adapters/cache"
 	bootstrapRepos "api-server/internal/app/bootstrap/repositories"
 	appHandlers "api-server/internal/app/handlers"
 	"api-server/internal/app/services"

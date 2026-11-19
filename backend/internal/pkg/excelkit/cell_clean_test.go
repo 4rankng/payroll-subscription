@@ -8,15 +8,15 @@ import (
 
 func TestClean(t *testing.T) {
 	cases := []struct{ in, want string }{
-		{"'030172019748", "030172019748"},          // Excel text-escape apostrophe
-		{`"030172019748"`, "030172019748"},         // double-quote escape
-		{"  030172019748  ", "030172019748"},       // plain padding (existing contract)
-		{"'\t 033072000021 \n\"", "033072000021"},  // mixed junk on both ends
-		{"Lại Thị Hải Hà", "Lại Thị Hải Hà"},       // untouched
-		{"O'Brien", "O'Brien"},                     // interior quote untouched
-		{"Techcombank'", "Techcombank"},            // trailing escape
-		{"   ", ""},                                // whitespace-only → blank
-		{"''", ""},                                 // all quotes → blank
+		{"'030172019748", "030172019748"},         // Excel text-escape apostrophe
+		{`"030172019748"`, "030172019748"},        // double-quote escape
+		{"  030172019748  ", "030172019748"},      // plain padding (existing contract)
+		{"'\t 033072000021 \n\"", "033072000021"}, // mixed junk on both ends
+		{"Lại Thị Hải Hà", "Lại Thị Hải Hà"},      // untouched
+		{"O'Brien", "O'Brien"},                    // interior quote untouched
+		{"Techcombank'", "Techcombank"},           // trailing escape
+		{"   ", ""},                               // whitespace-only → blank
+		{"''", ""},                                // all quotes → blank
 		{"", ""},
 	}
 	for _, tc := range cases {

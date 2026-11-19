@@ -325,4 +325,3 @@ func TestProjectEmployeeRepository_SearchVietnameseAndCountBeforePagination(t *t
 		t.Fatalf("accent-insensitive search total = %d, want 2", total)
 	}
 }
-

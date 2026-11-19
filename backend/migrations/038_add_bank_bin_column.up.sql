@@ -1,1 +1,0 @@
-ALTER TABLE banks ADD COLUMN bin VARCHAR(6) NULL AFTER branch_name;

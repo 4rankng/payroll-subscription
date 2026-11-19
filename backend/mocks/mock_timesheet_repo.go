@@ -50,20 +50,6 @@ func (mr *MockTimesheetRepositoryMockRecorder) Approve(arg0, arg1, arg2 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Approve", reflect.TypeOf((*MockTimesheetRepository)(nil).Approve), arg0, arg1, arg2)
 }
 
-// BatchUpdatePaymentStatusToFailed mocks base method.
-func (m *MockTimesheetRepository) BatchUpdatePaymentStatusToFailed(arg0 context.Context, arg1 interface{}, arg2 []uint) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BatchUpdatePaymentStatusToFailed", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BatchUpdatePaymentStatusToFailed indicates an expected call of BatchUpdatePaymentStatusToFailed.
-func (mr *MockTimesheetRepositoryMockRecorder) BatchUpdatePaymentStatusToFailed(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchUpdatePaymentStatusToFailed", reflect.TypeOf((*MockTimesheetRepository)(nil).BatchUpdatePaymentStatusToFailed), arg0, arg1, arg2)
-}
-
 // BulkApprove mocks base method.
 func (m *MockTimesheetRepository) BulkApprove(arg0 context.Context, arg1 []uint, arg2 uint) error {
 	m.ctrl.T.Helper()
@@ -132,48 +118,6 @@ func (m *MockTimesheetRepository) BulkUpdatePaymentStatus(arg0 context.Context, 
 func (mr *MockTimesheetRepositoryMockRecorder) BulkUpdatePaymentStatus(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpdatePaymentStatus", reflect.TypeOf((*MockTimesheetRepository)(nil).BulkUpdatePaymentStatus), arg0, arg1)
-}
-
-// BulkUpdateRevenuePaid mocks base method.
-func (m *MockTimesheetRepository) BulkUpdateRevenuePaid(arg0 context.Context, arg1 []uint) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BulkUpdateRevenuePaid", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BulkUpdateRevenuePaid indicates an expected call of BulkUpdateRevenuePaid.
-func (mr *MockTimesheetRepositoryMockRecorder) BulkUpdateRevenuePaid(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpdateRevenuePaid", reflect.TypeOf((*MockTimesheetRepository)(nil).BulkUpdateRevenuePaid), arg0, arg1)
-}
-
-// BulkUpdateRevenueReceivable mocks base method.
-func (m *MockTimesheetRepository) BulkUpdateRevenueReceivable(arg0 context.Context, arg1 map[uint]int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BulkUpdateRevenueReceivable", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BulkUpdateRevenueReceivable indicates an expected call of BulkUpdateRevenueReceivable.
-func (mr *MockTimesheetRepositoryMockRecorder) BulkUpdateRevenueReceivable(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpdateRevenueReceivable", reflect.TypeOf((*MockTimesheetRepository)(nil).BulkUpdateRevenueReceivable), arg0, arg1)
-}
-
-// BulkUpdateTransactionID mocks base method.
-func (m *MockTimesheetRepository) BulkUpdateTransactionID(arg0 context.Context, arg1 uint, arg2 []uint) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BulkUpdateTransactionID", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BulkUpdateTransactionID indicates an expected call of BulkUpdateTransactionID.
-func (mr *MockTimesheetRepositoryMockRecorder) BulkUpdateTransactionID(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpdateTransactionID", reflect.TypeOf((*MockTimesheetRepository)(nil).BulkUpdateTransactionID), arg0, arg1, arg2)
 }
 
 // Count mocks base method.
@@ -336,21 +280,6 @@ func (m *MockTimesheetRepository) DeleteByProjectID(arg0 context.Context, arg1 u
 func (mr *MockTimesheetRepositoryMockRecorder) DeleteByProjectID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByProjectID", reflect.TypeOf((*MockTimesheetRepository)(nil).DeleteByProjectID), arg0, arg1)
-}
-
-// GetAccrualCohort mocks base method.
-func (m *MockTimesheetRepository) GetAccrualCohort(arg0 context.Context, arg1 domain.TimesheetFilters) ([]domain.TimesheetAccrualDailyRow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccrualCohort", arg0, arg1)
-	ret0, _ := ret[0].([]domain.TimesheetAccrualDailyRow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAccrualCohort indicates an expected call of GetAccrualCohort.
-func (mr *MockTimesheetRepositoryMockRecorder) GetAccrualCohort(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccrualCohort", reflect.TypeOf((*MockTimesheetRepository)(nil).GetAccrualCohort), arg0, arg1)
 }
 
 // GetApprovedSalaryTotal mocks base method.
@@ -533,21 +462,6 @@ func (mr *MockTimesheetRepositoryMockRecorder) GetByProjectEmployeeDatePaytype(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByProjectEmployeeDatePaytype", reflect.TypeOf((*MockTimesheetRepository)(nil).GetByProjectEmployeeDatePaytype), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetByTransactionID mocks base method.
-func (m *MockTimesheetRepository) GetByTransactionID(arg0 context.Context, arg1 uint) ([]*domain.Timesheet, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByTransactionID", arg0, arg1)
-	ret0, _ := ret[0].([]*domain.Timesheet)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByTransactionID indicates an expected call of GetByTransactionID.
-func (mr *MockTimesheetRepositoryMockRecorder) GetByTransactionID(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTransactionID", reflect.TypeOf((*MockTimesheetRepository)(nil).GetByTransactionID), arg0, arg1)
-}
-
 // GetEmployeeCurrentWeekHours mocks base method.
 func (m *MockTimesheetRepository) GetEmployeeCurrentWeekHours(arg0 context.Context, arg1 uint) (float64, error) {
 	m.ctrl.T.Helper()
@@ -683,6 +597,21 @@ func (mr *MockTimesheetRepositoryMockRecorder) GetPaidSalaryForMonth(arg0, arg1,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaidSalaryForMonth", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPaidSalaryForMonth), arg0, arg1, arg2)
 }
 
+// GetPaidSeries mocks base method.
+func (m *MockTimesheetRepository) GetPaidSeries(arg0 context.Context, arg1, arg2 time.Time, arg3 *uint) ([]domain.PaidSeriesRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaidSeries", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]domain.PaidSeriesRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaidSeries indicates an expected call of GetPaidSeries.
+func (mr *MockTimesheetRepositoryMockRecorder) GetPaidSeries(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaidSeries", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPaidSeries), arg0, arg1, arg2, arg3)
+}
+
 // GetPaidTimesheetsInDateRange mocks base method.
 func (m *MockTimesheetRepository) GetPaidTimesheetsInDateRange(arg0 context.Context, arg1, arg2 time.Time, arg3 *[]*domain.Timesheet) error {
 	m.ctrl.T.Helper()
@@ -695,22 +624,6 @@ func (m *MockTimesheetRepository) GetPaidTimesheetsInDateRange(arg0 context.Cont
 func (mr *MockTimesheetRepositoryMockRecorder) GetPaidTimesheetsInDateRange(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaidTimesheetsInDateRange", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPaidTimesheetsInDateRange), arg0, arg1, arg2, arg3)
-}
-
-// GetPaymentHistories mocks base method.
-func (m *MockTimesheetRepository) GetPaymentHistories(arg0 context.Context, arg1 domain.PaymentHistoryFilters) ([]*domain.PaymentHistory, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPaymentHistories", arg0, arg1)
-	ret0, _ := ret[0].([]*domain.PaymentHistory)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetPaymentHistories indicates an expected call of GetPaymentHistories.
-func (mr *MockTimesheetRepositoryMockRecorder) GetPaymentHistories(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentHistories", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPaymentHistories), arg0, arg1)
 }
 
 // GetPendingApprovalCount mocks base method.
@@ -741,21 +654,6 @@ func (m *MockTimesheetRepository) GetPendingSalaryForMonth(arg0 context.Context,
 func (mr *MockTimesheetRepositoryMockRecorder) GetPendingSalaryForMonth(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSalaryForMonth", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPendingSalaryForMonth), arg0, arg1, arg2)
-}
-
-// GetPendingSalaryForMonthBySchedule mocks base method.
-func (m *MockTimesheetRepository) GetPendingSalaryForMonthBySchedule(arg0 context.Context, arg1, arg2 time.Time, arg3 domain.PaymentSchedule) (int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingSalaryForMonthBySchedule", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPendingSalaryForMonthBySchedule indicates an expected call of GetPendingSalaryForMonthBySchedule.
-func (mr *MockTimesheetRepositoryMockRecorder) GetPendingSalaryForMonthBySchedule(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSalaryForMonthBySchedule", reflect.TypeOf((*MockTimesheetRepository)(nil).GetPendingSalaryForMonthBySchedule), arg0, arg1, arg2, arg3)
 }
 
 // GetProjectsForEmployeeOnDate mocks base method.
@@ -1009,20 +907,6 @@ func (m *MockTimesheetRepository) ResetAllApproved(arg0 context.Context) (int64,
 func (mr *MockTimesheetRepositoryMockRecorder) ResetAllApproved(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetAllApproved", reflect.TypeOf((*MockTimesheetRepository)(nil).ResetAllApproved), arg0)
-}
-
-// SetForcePayroll mocks base method.
-func (m *MockTimesheetRepository) SetForcePayroll(arg0 context.Context, arg1 uint, arg2 bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetForcePayroll", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetForcePayroll indicates an expected call of SetForcePayroll.
-func (mr *MockTimesheetRepositoryMockRecorder) SetForcePayroll(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetForcePayroll", reflect.TypeOf((*MockTimesheetRepository)(nil).SetForcePayroll), arg0, arg1, arg2)
 }
 
 // Update mocks base method.

@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// KyPaidRecord is the per-employee-per-Kỳ billing atom (FR-1, founder
+// EmployeePayCycle is the per-employee-per-Kỳ billing atom (FR-1, founder
 // decision: the billing unit is one distinct employee in one Kỳ). A row is
 // created/accumulated by upload verification: `paid_amount` is the SUM of the
 // employee's customer-paid timesheet amounts across all projects in that Kỳ —
 // projects are internal detail, never a second billing row. One row per
 // (employee, Kỳ, work month), hard delete only (D16).
-type KyPaidRecord struct {
+type EmployeePayCycle struct {
 	ID             uint64    `gorm:"column:id;primaryKey;autoIncrement"`
-	Ky             int       `gorm:"column:ky;type:tinyint unsigned;not null"`
+	Cycle          int       `gorm:"column:cycle;type:tinyint unsigned;not null"`
 	WorkMonth      string    `gorm:"column:work_month;type:char(7);not null"`
 	EmployeeID     uint      `gorm:"column:employee_id;type:bigint unsigned;not null"`
 	CCCD           string    `gorm:"column:cccd;type:varchar(255);not null"`
@@ -25,18 +25,18 @@ type KyPaidRecord struct {
 }
 
 // TableName pins the consolidated-schema table name.
-func (KyPaidRecord) TableName() string { return "ky_paid_records" }
+func (EmployeePayCycle) TableName() string { return "employee_pay_cycles" }
 
-// KyPaidRecordRepository persists the per-employee-per-Kỳ read model.
-type KyPaidRecordRepository interface {
+// EmployeePayCycleRepository persists the per-employee-per-Kỳ read model.
+type EmployeePayCycleRepository interface {
 	// UpsertAmount inserts the row, or — when the employee already has a row
 	// for this (Kỳ, work month) — adds the amount to the existing row's
-	// paid_amount. The unique key (employee_id, ky, work_month) is the
+	// paid_amount. The unique key (employee_id, cycle, work_month) is the
 	// conflict target.
-	UpsertAmount(ctx context.Context, record *KyPaidRecord) error
+	UpsertAmount(ctx context.Context, record *EmployeePayCycle) error
 	// ListByWorkMonth returns every paid record of one work month.
-	ListByWorkMonth(ctx context.Context, workMonth string) ([]KyPaidRecord, error)
-	// CountDistinctEmployeesByKy returns distinct-employee counts per Kỳ for
+	ListByWorkMonth(ctx context.Context, workMonth string) ([]EmployeePayCycle, error)
+	// CountDistinctEmployeesByCycle returns distinct-employee counts per Kỳ for
 	// one work month — the billing-report summary input (FR-3).
-	CountDistinctEmployeesByKy(ctx context.Context, workMonth string) (map[int]int64, error)
+	CountDistinctEmployeesByCycle(ctx context.Context, workMonth string) (map[int]int64, error)
 }
