@@ -3,7 +3,7 @@
 # Payroll
 
 ## Purpose
-Payroll management system for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, advance payments (FlexPay), salary disbursements via OnePay/9Pay, double-entry wallet/ledger accounting, and web push notifications. Three user roles: Admin, Partner, Employee (with mobile-first views).
+Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, per-Kỳ distinct-employee counting, customer transfer-upload verification, and month-end billing reports; the platform bills a subscription fee per distinct employee per Kỳ. Four roles: admin, quanly, giamdoc, nhanvien (with mobile-first views).
 
 ## Key Files
 | File | Description |
@@ -28,7 +28,7 @@ Payroll management system for Vietnamese companies. Monorepo with a Go backend (
 - Run `make api-test` after every feature change to catch regressions
 - All business time uses `clock.Now()` (Asia/Ho_Chi_Minh) — never `time.Now()` for domain logic
 - Production server is **x86_64/amd64** — never build arm64 Docker images
-- Production uses **OnePay** (NOT 9Pay); system is provider-agnostic
+- `backend/migrations/schema.sql` (TechnicalDesign §3) is the only schema authority — applied once on first deploy; AutoMigrate stays OFF
 - Work on main branch directly, no worktrees
 - Treat desktop and mobile as one frontend delivery scope for **both Admin and Partner**: every frontend feature or fix must be implemented for both views of every affected role unless the user explicitly requests a narrower exception
 - When routes or responsive wrappers render separate desktop and mobile components, trace and update both paths; never assume a desktop change automatically reaches mobile
@@ -71,8 +71,7 @@ Payroll management system for Vietnamese companies. Monorepo with a Go backend (
 - MySQL 8 — primary database
 - Redis — caching, event bus, background jobs (asynq)
 - Docker / Docker Compose — local development and deployment
-- OnePay — production payment disbursement provider
-- 9Pay — sandbox/dev payment provider
+- MySQL 8 schema: `backend/migrations/schema.sql` (TechnicalDesign §3, 21 tables)
 
 <!-- MANUAL: Custom project notes can be added below -->
 

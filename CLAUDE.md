@@ -6,18 +6,18 @@
 
 ## Project Summary
 
-Payroll management system for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, advance payments (FlexPay), salary disbursements via OnePay/9Pay, double-entry wallet/ledger accounting, attendance with geofencing, and web push notifications.
+Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, per-Kỳ distinct-employee counting, customer transfer-result uploads with verification, and month-end billing reports. Customers pay salary directly; the platform bills a subscription fee per distinct employee per Kỳ (default 10,000 VND — see PRD `NewAppIdea.md` / `TechnicalDesign.md` §3).
 
-**Three roles:** Admin (full access), Partner (project-scoped), Employee (mobile-first). All user-facing text is in Vietnamese.
+**Four roles:** admin (full access), quanly (project-scoped), giamdoc (director oversight), nhanvien (employee mobile-first). All user-facing text is in Vietnamese.
 
 ## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Go 1.26, Gin, GORM, MySQL 8, Redis, asynq |
+| Backend | Go 1.26, Gin, GORM, MySQL 8, Redis |
 | Frontend | React 18.3, Vite 6.4, TypeScript 5.8, TanStack Query 5, shadcn/ui, Tailwind 3.4, PWA |
-| Auth | JWT + Casbin RBAC (Admin / Partner / Employee / adv_partner) |
-| Payments | OnePay (production), 9Pay (sandbox/dev) |
+| Auth | JWT + Casbin RBAC (admin / quanly / giamdoc / nhanvien) |
+| Billing | Customer bank-transfer uploads (verified), subscription fee setting, D24 report export |
 | Infrastructure | Docker, Docker Compose, SSH deploy to `tingting.vip` |
 
 ## Repo Layout
@@ -25,22 +25,22 @@ Payroll management system for Vietnamese companies. Monorepo with a Go backend (
 ```
 payroll/
   backend/           Go API server (DDD / Clean Architecture)
-    cmd/             Entry points: api-server, hashpw, seed-temp, migrate
+    cmd/             Entry points: api-server, hashpw, seed-temp
     configs/         Casbin RBAC policy (model + CSV)
     internal/
-      domain/        Entities, value objects, domain services, ports, specs, wallet aggregate
-      app/           Application services, bootstrap/DI, DTOs, asynq workers
+      domain/        Entities, value objects, domain services, ports
+      app/           Application services, bootstrap/DI, DTOs
       adapters/      Anti-corruption layer for external contracts
-      infra/         GORM repos, event bus, asynq, email, disbursement adapters, storage
-      pkg/           clock, db, geo, retry, httputils, scopes, validation
+      infra/         GORM repos, event bus, email, storage
+      pkg/           clock, db, retry, httputils, validation
       transport/http/ Handlers, middleware (auth, RBAC, rate-limit, security headers)
-    migrations/      88 SQL .up.sql files
-    tests/integration/ 30 flow test files + HTML report generator
+    migrations/      schema.sql — the single schema authority (TechnicalDesign §3); applied once on first deploy
+    tests/integration/ Flow test files + HTML report generator
   frontend/          React 18 SPA
     src/
-      components/    Domain components (timesheet, wallet, ledger, employees, ...)
+      components/    Domain components (timesheet, billing, employees, ...)
       hooks/api/     TanStack Query hooks wrapping backend APIs
-      pages/         admin/, partner/, employee/, mobile/
+      pages/         admin/, quanly/, nhanvien/, mobile/
       services/      API client (Axios)
       lib/           Utilities, modal registry
     tests/           Playwright E2E tests
@@ -52,7 +52,7 @@ payroll/
 
 1. **All business time uses `clock.Now()` (Asia/Ho_Chi_Minh)** — never `time.Now()` for domain logic. See [ADR-006](docs/decisions/ADR-006-clock-injection-pattern.md).
 2. **Production server is x86_64/amd64** — never build arm64 Docker images.
-3. **Production uses OnePay** (NOT 9Pay) — system is provider-agnostic via [ADR-003](docs/decisions/ADR-003-payment-provider-abstraction.md).
+3. **`backend/migrations/schema.sql` is the only schema authority** (TechnicalDesign §3) — applied once on first deploy; gorm AutoMigrate stays OFF so boots can never resurrect dropped tables.
 4. **Domain layer has zero framework imports** — no Gin, no GORM in `internal/domain/`. See [ADR-001](docs/decisions/ADR-001-ddd-clean-architecture.md).
 5. **Cache invalidation happens AFTER transaction commit** — never before. See [ADR-007](docs/decisions/ADR-007-transaction-manager-unit-of-work.md).
 6. **Commit format:** `<type>(<scope>): <subject>` — e.g. `feat(timesheet): add bulk export`. No AI references in commit messages.
