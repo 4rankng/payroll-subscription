@@ -49,55 +49,15 @@ func setupClockRoutes(v1 *gin.RouterGroup, container *Container) {
 	admin.POST("/reset", container.Handlers.AdminClock.ResetTime)
 }
 
-func setupAdminAttendanceRoutes(v1 *gin.RouterGroup, container *Container) {
-	if container == nil || container.Handlers == nil || container.Handlers.AdminAttendance == nil {
-		return
-	}
-	admin := v1.Group("/admin/attendances")
-	admin.Use(container.Middleware.Auth.Authenticate())
-	if container.Middleware.Authorization != nil {
-		admin.Use(container.Middleware.Authorization.Authorize())
-	}
-	admin.GET("", container.Handlers.AdminAttendance.List)
-	admin.POST("", container.Handlers.AdminAttendance.CreateCheckIn)
-	admin.GET("/shifts", container.Handlers.AdminAttendance.ListCreateCheckInShifts)
-	admin.GET("/failed-attempts", container.Handlers.AdminAttendance.AdminListFailedAttempts)
-	admin.GET("/:id", container.Handlers.AdminAttendance.Get)
-	admin.POST("/:id/approve", container.Handlers.AdminAttendance.Approve)
-	admin.POST("/:id/reject", container.Handlers.AdminAttendance.Reject)
-	admin.POST("/:id/credit-quota", container.Handlers.AdminAttendance.CreditQuota)
-}
 
 // setupProviderTransactionsAdminRoutes mounts the read-only stats endpoint
 // for provider_transactions. Casbin-protects to admin via the standard
 // Authorize() middleware. Always mounted — even when 9pay is dormant,
 // the table exists and reports an empty (or historical) result set.
-func setupProviderTransactionsAdminRoutes(v1 *gin.RouterGroup, container *Container) {
-	if container == nil || container.Handlers == nil || container.Handlers.ProviderTransactions == nil {
-		return
-	}
-	stats := v1.Group("/admin/provider-transactions")
-	stats.Use(container.Middleware.Auth.Authenticate())
-	if container.Middleware.Authorization != nil {
-		stats.Use(container.Middleware.Authorization.Authorize())
-	}
-	stats.GET("/stats", container.Handlers.ProviderTransactions.Stats)
-}
 
 // setupZnsAdminRoutes mounts the admin ZNS tracking list over zns_messages —
 // every ZNS the system sends, whatever feature. Casbin-protects to admin via
 // the standard Authorize() middleware (admin-only, 403 for everyone else).
-func setupZnsAdminRoutes(v1 *gin.RouterGroup, container *Container) {
-	if container == nil || container.Handlers == nil || container.Handlers.ZnsMessages == nil {
-		return
-	}
-	zns := v1.Group("/admin/zns-notifications")
-	zns.Use(container.Middleware.Auth.Authenticate())
-	if container.Middleware.Authorization != nil {
-		zns.Use(container.Middleware.Authorization.Authorize())
-	}
-	zns.GET("", container.Handlers.ZnsMessages.List)
-}
 
 func setupSettingsRoutes(v1 *gin.RouterGroup, container *Container) {
 	settings := v1.Group("/settings")
@@ -115,14 +75,6 @@ func setupSettingsRoutes(v1 *gin.RouterGroup, container *Container) {
 	}
 }
 
-func setupCronRoutes(protected *gin.RouterGroup, container *Container) {
-	cronJobs := protected.Group("/cron-jobs")
-	{
-		cronJobs.GET("", container.Handlers.Cron.GetCronJobs)
-		cronJobs.PUT("/:name/toggle", container.Handlers.Cron.ToggleCronJob)
-		cronJobs.POST("/:name/run", container.Handlers.Cron.RunCronJob)
-	}
-}
 
 func setupDBExportRoutes(protected *gin.RouterGroup, container *Container) {
 	dbExport := protected.Group("/db-export")

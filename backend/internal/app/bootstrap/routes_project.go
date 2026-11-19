@@ -41,17 +41,6 @@ func setupProjectRoutes(protected *gin.RouterGroup, container *Container) {
 	}
 }
 
-func setupBankRoutes(protected *gin.RouterGroup, container *Container) {
-	banks := protected.Group("/banks")
-	{
-		banks.POST("", container.Handlers.Bank.CreateBank)
-		banks.GET("", container.Handlers.Bank.ListBanks)
-		banks.GET("/:id", container.Handlers.Bank.GetBank)
-		banks.PUT("/:id", container.Handlers.Bank.UpdateBank)
-		banks.DELETE("/:id", container.Handlers.Bank.DeleteBank)
-	}
-}
-
 func setupPayrateRoutes(protected *gin.RouterGroup, container *Container) {
 	payrates := protected.Group("/payrates")
 	{

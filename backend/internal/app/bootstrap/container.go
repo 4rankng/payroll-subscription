@@ -9,8 +9,8 @@ import (
 	bootstrapServices "api-server/internal/app/bootstrap/services"
 	"api-server/internal/app/services/apikey"
 	"api-server/internal/app/services/asset"
-	"api-server/internal/app/services/billing"
 	"api-server/internal/app/services/auth"
+	"api-server/internal/app/services/billing"
 	"api-server/internal/app/services/cleanup"
 	servicesconfig "api-server/internal/app/services/config"
 	dbExportSvc "api-server/internal/app/services/db_export"
@@ -30,7 +30,6 @@ import (
 	"api-server/internal/domain/wallet"
 	asynqinfra "api-server/internal/infra/asynq"
 	"api-server/internal/infra/events"
-	"api-server/internal/infra/observability"
 	"api-server/internal/infra/persistence"
 	"api-server/internal/infra/storage"
 	"api-server/internal/pkg/clock"
@@ -38,13 +37,8 @@ import (
 	"api-server/internal/seed"
 	"api-server/internal/transport/http/handlers"
 	adminHandlers "api-server/internal/transport/http/handlers/admin"
-	advPartnerHandlers "api-server/internal/transport/http/handlers/adv_partner"
-	advancePaymentHandlers "api-server/internal/transport/http/handlers/advance_payment"
 	approvalHandlers "api-server/internal/transport/http/handlers/approval"
-	attendanceHandlers "api-server/internal/transport/http/handlers/attendance"
-	disbursementHandlers "api-server/internal/transport/http/handlers/disbursement"
 	employeeHandlers "api-server/internal/transport/http/handlers/employee"
-	integrationHandlers "api-server/internal/transport/http/handlers/integration"
 	pushHandlers "api-server/internal/transport/http/handlers/push"
 	timesheetHandlers "api-server/internal/transport/http/handlers/timesheet"
 	"api-server/internal/transport/http/middleware"
@@ -69,65 +63,31 @@ type Container struct {
 }
 
 type Handlers struct {
-	User                   *handlers.UserHandler
-	Auth                   *handlers.AuthHandler
-	Dashboard              *handlers.DashboardHandler
-	Project                *handlers.ProjectHandler
-	Employee               *handlers.EmployeeHandler
-	EmployeeUsers          *employeeHandlers.EmployeeUsersHandler
-	EmployeeProfile        *handlers.EmployeeProfileHandler
-	ProjectEmployee        *handlers.ProjectEmployeeHandler
-	AdminClock             *adminHandlers.ClockHandler
-	AdminZalo              *adminHandlers.ZaloHandler
-	APIKey                 *adminHandlers.APIKeyHandler
-	MCPAPIKey              *adminHandlers.MCPAPIKeyHandler
-	OpsAPIKey              *adminHandlers.OpsAPIKeyHandler
-	IntegrationReset       *integrationHandlers.PasswordResetHandler
-	IntegrationLookup      *integrationHandlers.EmployeeLookupHandler
-	IntegrationSelfCheckin *integrationHandlers.SelfCheckinHandler
-	IntegrationZaloToken   *integrationHandlers.ZaloTokenHandler
-	VendorTimesheet        *integrationHandlers.VendorTimesheetHandler
-	AdminAttendance        *adminHandlers.AttendanceHandler
-	Bank                   *handlers.BankHandler
-	Timesheet              *handlers.TimesheetHandler
-	TimesheetEditRequest   *handlers.TimesheetEditRequestHandler
-	Payroll                *handlers.PayrollHandler
-	Payrate                *handlers.PayrateHandler
-	Ledger                 *handlers.LedgerHandler
-	Transaction            *handlers.TransactionHandler
-	Health                 *handlers.HealthHandler
-	Notification           *handlers.NotificationHandler
-	Settings               *handlers.SettingsHandler
-	Billing                *handlers.BillingHandler
-	Asset                  *handlers.AssetHandler
-	Cache                  *handlers.CacheHandler
-	Lender                 *handlers.LenderHandler
-	Loan                   *handlers.LoanHandler
-	Email                  *handlers.EmailHandler
-	Settlement             *handlers.SettlementHandler
-	Metric                 *handlers.MetricHandler
-	Audit                  *handlers.AuditHandler
-	AdvancePayment         *advancePaymentHandlers.AdvancePaymentHandler
-	AdvancePaymentFee      *advancePaymentHandlers.FeeScheduleHandler
-	AdBanner               *handlers.AdBannerHandler
-	EmployeeImport         *employeeHandlers.ImportHandler
-	DBExport               *handlers.DBExportHandler
-	Push                   *pushHandlers.Handler
-	Approval               *approvalHandlers.Handler
-	Cron                   *handlers.CronHandler
-	DisbursementWebhook    *disbursementHandlers.WebhookHandler
-	DisbursementFee        *disbursementHandlers.FeeScheduleHandler
-	DisbursementSettings   *disbursementHandlers.SettingsHandler
-	ManualDisbursement     *disbursementHandlers.ManualDisbursementHandler
-	WeeklyPaymentFee       *handlers.WeeklyPaymentFeeHandler
-	ReconciliationExport   *disbursementHandlers.ReconciliationExportHandler
-	ProviderTransactions   *adminHandlers.WalletPaymentStatsHandler
-	ZnsMessages            *adminHandlers.ZnsMessageHandler
-	Wallet                 *handlers.WalletHandler
-	WalletBulkTransfer     *handlers.WalletBulkTransferHandler
-	AdvPartnerUser         *advPartnerHandlers.UserHandler
-	BCCImport              *timesheetHandlers.BCCImportHandler
-	Attendance             *attendanceHandlers.Handler
+	User                 *handlers.UserHandler
+	Auth                 *handlers.AuthHandler
+	Dashboard            *handlers.DashboardHandler
+	Project              *handlers.ProjectHandler
+	Employee             *handlers.EmployeeHandler
+	EmployeeUsers        *employeeHandlers.EmployeeUsersHandler
+	EmployeeProfile      *handlers.EmployeeProfileHandler
+	ProjectEmployee      *handlers.ProjectEmployeeHandler
+	AdminClock           *adminHandlers.ClockHandler
+	Timesheet            *handlers.TimesheetHandler
+	TimesheetEditRequest *handlers.TimesheetEditRequestHandler
+	Payrate              *handlers.PayrateHandler
+	Health               *handlers.HealthHandler
+	Notification         *handlers.NotificationHandler
+	Settings             *handlers.SettingsHandler
+	Billing              *handlers.BillingHandler
+	Asset                *handlers.AssetHandler
+	Cache                *handlers.CacheHandler
+	Email                *handlers.EmailHandler
+	Audit                *handlers.AuditHandler
+	EmployeeImport       *employeeHandlers.ImportHandler
+	DBExport             *handlers.DBExportHandler
+	Push                 *pushHandlers.Handler
+	Approval             *approvalHandlers.Handler
+	BCCImport            *timesheetHandlers.BCCImportHandler
 }
 
 type Middleware struct {
@@ -251,9 +211,7 @@ func NewContainer(cfg *config.Config, version string) (*Container, error) {
 	)
 	aggregateRecomputeSvc := project.NewAggregateRecomputeService(repos.Project, clock.New(), infra.Logger)
 	sched := initScheduler(services.Notification, services.Email, services.ProjectEmployee, services.APIMetricCleanupService, services.Reconcile, repos.APIMetric, repos.AdvancePaymentRequest, services.Wallet, services.FlexPayReconciliationService, loanRepaymentReminderService, services.ZaloConnect, aggregateRecomputeSvc, walletBalanceAlertSvc, services.Asset, checkInActivationReminderSvc, services.SettingsConfig, cfg, infra.Logger, services.BillingReport)
-	sched.SetRepo(repos.CronJobStatus)
-	h.Cron = handlers.NewCronHandler(repos.CronJobStatus, sched)
-	// init tenant queue manager for per-tenant background workers
+	sched.SetRepo(repos.CronJobStatus) // init tenant queue manager for per-tenant background workers
 	tqm := tenantqueue.NewManager(cfg.TenantQueueWorkers, cfg.TenantQueueBuffer)
 
 	// Disbursement poller workers (conditional on provider flags)
@@ -478,86 +436,25 @@ func initHandlers(services *bootstrapServices.Services, repos *bootstrapRepos.Re
 	)
 
 	return &Handlers{
-		User:                 handlers.NewUserHandler(services.User, services.PasswordResetJobManager, services.Audit),
-		Auth:                 handlers.NewAuthHandler(services.Auth, services.User, services.EmailPasswordReset, services.ZaloPasswordReset, cfg.Auth.AccessTTL, cfg.App.Env == "production"),
-		Dashboard:            handlers.NewDashboardHandler(services.Dashboard),
-		Project:              handlers.NewProjectHandlerWithServices(services.Project, services.Payrate, services.Timesheet, services.ProjectEmployee, services.ProjectPermission, clk),
-		Employee:             handlers.NewEmployeeHandlerWithServices(services.Employee, services.Timesheet, services.ProjectEmployee, services.EmployeePermission, services.Audit, clk),
-		EmployeeUsers:        employeeHandlers.NewEmployeeUsersHandler(services.EmployeePermission),
-		EmployeeProfile:      handlers.NewEmployeeProfileHandler(services.EmployeeProfile, services.EmployeeUser),
-		ProjectEmployee:      handlers.NewProjectEmployeeHandler(services.ProjectEmployee, services.Employee, services.Project, services.ProjectPermission, services.EmployeePermission, logger, clk),
-		Bank:                 handlers.NewBankHandler(services.Bank),
-		Timesheet:            handlers.NewTimesheetHandler(services.Timesheet, services.PayrollReport, services.SettingsConfig, services.PayrollReportExporter, services.PayrollReportByProjectService, services.PayrollReportByProjectExporter, services.Project, services.ProjectEmployee, services.Payrate, services.ProjectPermission, services.EmployeePermission, services.SettlementUpload, repos.Timesheet, services.Audit, clk, services.CashReadiness),
-		TimesheetEditRequest: handlers.NewTimesheetEditRequestHandler(services.TimesheetEditRequest),
-		Payroll:              handlers.NewPayrollHandler(services.Payroll, services.AutoBulkTransfer, services.OnePayExporter, services.Cache, repos.BulkTransferFile, repos.Asset, fileStorage, eventBus),
-		Payrate:              handlers.NewPayrateHandler(services.Payrate, services.Project, services.ProjectPermission, clk),
-		Ledger:               handlers.NewLedgerHandler(services.Ledger, services.OnePayFeeImport, clk),
-		Transaction:          handlers.NewTransactionHandler(services.Transaction, repos.BulkTransferFile, repos.Timesheet, services.Notification, eventBus, clk),
-		Health:               handlers.NewHealthHandler(healthCheckers, version),
-		Notification:         handlers.NewNotificationHandler(services.Notification),
-		Settings:             handlers.NewSettingsHandler(services.Settings),
-		Billing:              handlers.NewBillingHandler(services.Billing, services.BillingReport),
-		Approval:             approvalHandlers.NewHandler(services.Approval),
-		Asset:                handlers.NewAssetHandler(services.Asset),
-		Cache:                handlers.NewCacheHandler(services.Cache, logger),
-		Lender:               handlers.NewLenderHandler(services.Lender),
-		Loan:                 handlers.NewLoanHandler(services.Loan, clk),
-		Email:                handlers.NewEmailHandler(services.Email, asynqClient),
-		Settlement:           handlers.NewSettlementHandler(services.SettlementUpload, repos.Notification, clk),
-		Metric:               handlers.NewMetricHandler(services.Metric, services.Cache, eventBus, clk),
-		Audit:                handlers.NewAuditHandler(repos.AuditLog),
-		ZnsMessages:          adminHandlers.NewZnsMessageHandler(repos.ZnsMessage),
-		AdvancePayment:       advancePaymentHandlers.NewAdvancePaymentHandler(services.AdvancePayment, repos.Asset, asynqClient, services.ImportProgress, fileStorage, services.FlexPayReconciliationService, services.FlexPayReconciliationExporter, services.FlexPaySettlementService, services.Email, services.Audit, repos.Notification, repos.WalletPayment, repos.TxWalletPayment, clk),
-		AdvancePaymentFee:    advancePaymentHandlers.NewFeeScheduleHandler(services.AdvancePaymentFeeSchedule, clk),
-		AdBanner:             handlers.NewAdBannerHandler(services.AdBanner, logger),
-		EmployeeImport:       employeeImportHandler,
-		DBExport:             handlers.NewDBExportHandler(dbExportSvc.NewDBExportService(db, services.CacheService, cfg.Asset.StoragePath), services.Audit),
-		Push:                 pushHandlers.NewHandler(services.Push),
-		DisbursementWebhook: func() *disbursementHandlers.WebhookHandler {
-			var onepayFileLogger *slog.Logger
-			if cfg.Disbursement.Onepay.Enabled {
-				onepayFileLogger, _ = observability.NewFileLogger("logs/payment-gateway.log")
-			}
-			return disbursementHandlers.NewWebhookHandler(services.DisbursementRegistry, services.ProviderTransactions, asynqClient, repos.WalletIPN, redis, logger, onepayFileLogger)
-		}(),
-		DisbursementSettings: disbursementHandlers.NewSettingsHandler(
-			services.DisbursementRegistry,
-			services.DisbursementFeeSchedule,
-			services.Wallet,
-			cfg.Disbursement.Onepay.EnabledForEmployee,
-			cfg.Disbursement.Ninepay.EnabledForEmployee,
-			cfg.Disbursement.Onepay.EnabledForBulkTransfer,
-			cfg.Disbursement.Ninepay.EnabledForBulkTransfer,
-		),
-		DisbursementFee: disbursementHandlers.NewFeeScheduleHandler(services.DisbursementFeeSchedule, clk, func(ctx context.Context) []string {
-			return services.DisbursementRegistry.Names()
-		}),
-		WeeklyPaymentFee: handlers.NewWeeklyPaymentFeeHandler(services.WeeklyPaymentFeeSchedule, clk),
-		ManualDisbursement: disbursementHandlers.NewManualDisbursementHandler(services.DisbursementRegistry, services.ProviderTransactions, repos.Employee, repos.Bank, repos.TransactionCode, services.Wallet, logger, func() *slog.Logger {
-			if cfg.Disbursement.Onepay.Enabled {
-				l, _ := observability.NewFileLogger("logs/payment-gateway.log")
-				return l
-			}
-			return nil
-		}()),
-		ReconciliationExport:   disbursementHandlers.NewReconciliationExportHandler(services.DisbursementRegistry, logger),
-		ProviderTransactions:   adminHandlers.NewWalletPaymentStatsHandler(services.WalletPaymentStats, logger),
-		AdminClock:             adminHandlers.NewClockHandler(clk, cfg.App.Env),
-		AdminZalo:              adminHandlers.NewZaloHandler(services.ZaloConnect),
-		APIKey:                 adminHandlers.NewAPIKeyHandler(services.APIKey),
-		MCPAPIKey:              adminHandlers.NewMCPAPIKeyHandler(services.MCPAPIKey),
-		OpsAPIKey:              adminHandlers.NewOpsAPIKeyHandler(services.OpsAPIKey),
-		IntegrationReset:       integrationHandlers.NewPasswordResetHandler(services.Integration),
-		IntegrationLookup:      integrationHandlers.NewEmployeeLookupHandler(services.Integration),
-		IntegrationSelfCheckin: integrationHandlers.NewSelfCheckinHandler(services.IntegrationSelfCheckin),
-		IntegrationZaloToken:   integrationHandlers.NewZaloTokenHandler(services.ZaloConnect),
-		VendorTimesheet:        integrationHandlers.NewVendorTimesheetHandler(services.Timesheet, repos.Project, repos.Employee, repos.ProjectEmployee),
-		AdminAttendance:        adminHandlers.NewAttendanceHandler(services.Attendance, repos.AttendanceFailedAttempt, repos.Project, clk, logger),
-		Wallet:                 handlers.NewWalletHandler(services.Wallet, services.DisbursementRegistry, clk),
-		WalletBulkTransfer:     newWalletBulkTransferHandler(walletBulkSvc, logger),
-		AdvPartnerUser:         advPartnerHandlers.NewUserHandler(services.Employee, services.ProjectEmployee, services.User),
-		BCCImport:              timesheetHandlers.NewBCCImportHandler(services.BCCImport, repos.Asset, fileStorage, services.ProjectPermission, services.Audit),
-		Attendance:             attendanceHandlers.NewHandler(services.Attendance, repos.Employee, repos.AttendanceFailedAttempt, clk, logger),
+		User:            handlers.NewUserHandler(services.User, services.PasswordResetJobManager, services.Audit),
+		Auth:            handlers.NewAuthHandler(services.Auth, services.User, services.EmailPasswordReset, services.ZaloPasswordReset, cfg.Auth.AccessTTL, cfg.App.Env == "production"),
+		Dashboard:       handlers.NewDashboardHandler(services.Dashboard),
+		Project:         handlers.NewProjectHandlerWithServices(services.Project, services.Payrate, services.Timesheet, services.ProjectEmployee, services.ProjectPermission, clk),
+		Employee:        handlers.NewEmployeeHandlerWithServices(services.Employee, services.Timesheet, services.ProjectEmployee, services.EmployeePermission, services.Audit, clk),
+		EmployeeUsers:   employeeHandlers.NewEmployeeUsersHandler(services.EmployeePermission),
+		EmployeeProfile: handlers.NewEmployeeProfileHandler(services.EmployeeProfile, services.EmployeeUser),
+		ProjectEmployee: handlers.NewProjectEmployeeHandler(services.ProjectEmployee, services.Employee, services.Project, services.ProjectPermission, services.EmployeePermission, logger, clk), Timesheet: handlers.NewTimesheetHandler(services.Timesheet, services.PayrollReport, services.SettingsConfig, services.PayrollReportExporter, services.PayrollReportByProjectService, services.PayrollReportByProjectExporter, services.Project, services.ProjectEmployee, services.Payrate, services.ProjectPermission, services.EmployeePermission, services.SettlementUpload, repos.Timesheet, services.Audit, clk, services.CashReadiness),
+		TimesheetEditRequest: handlers.NewTimesheetEditRequestHandler(services.TimesheetEditRequest), Payrate: handlers.NewPayrateHandler(services.Payrate, services.Project, services.ProjectPermission, clk), Health: handlers.NewHealthHandler(healthCheckers, version),
+		Notification:   handlers.NewNotificationHandler(services.Notification),
+		Settings:       handlers.NewSettingsHandler(services.Settings),
+		Billing:        handlers.NewBillingHandler(services.Billing, services.BillingReport),
+		Approval:       approvalHandlers.NewHandler(services.Approval),
+		Asset:          handlers.NewAssetHandler(services.Asset),
+		EmployeeImport: employeeImportHandler,
+		Cache:          handlers.NewCacheHandler(services.Cache, logger), Email: handlers.NewEmailHandler(services.Email, asynqClient), Audit: handlers.NewAuditHandler(repos.AuditLog), DBExport: handlers.NewDBExportHandler(dbExportSvc.NewDBExportService(db, services.CacheService, cfg.Asset.StoragePath), services.Audit),
+		Push:       pushHandlers.NewHandler(services.Push),
+		AdminClock: adminHandlers.NewClockHandler(clk, cfg.App.Env),
+		BCCImport:  timesheetHandlers.NewBCCImportHandler(services.BCCImport, repos.Asset, fileStorage, services.ProjectPermission, services.Audit),
 	}
 }
 
@@ -622,17 +519,4 @@ func initScheduler(notificationService *notification.NotificationService, emailS
 	)
 
 	return s
-}
-
-// newWalletBulkTransferHandler keeps the handler absent when the wallet bulk
-// transfer service is not wired (no employee-disbursement provider). That is
-// what routes_wallet.go checks before mounting /wallet/bulk-transfer/*, and what
-// the integration probe treats as "not enabled in this deployment". Building the
-// handler around a nil service instead left the routes registered and every call
-// panicked into an empty 500 — indistinguishable from a real outage.
-func newWalletBulkTransferHandler(svc *wallet_bulk.WalletBulkTransferService, logger *slog.Logger) *handlers.WalletBulkTransferHandler {
-	if svc == nil {
-		return nil
-	}
-	return handlers.NewWalletBulkTransferHandler(svc, logger)
 }
