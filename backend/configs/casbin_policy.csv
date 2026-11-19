@@ -241,3 +241,14 @@ p, employee, /api/v1/approvals/*, *, deny
 # admin policy above applies verbatim. The read_only/read_write breadth gate
 # lives in the auth middleware (verb gate) — scope is access, never an RBAC
 # bypass; business rules and the approval engine apply unchanged.
+# Subscription billing (PAYSUB FR-2/FR-3): quanly uploads transfer results,
+# ketoan reads the billing read model; admin wildcard already covers both.
+p, quanly, /api/v1/billing/uploads, POST, allow
+p, quanly, /api/v1/billing/uploads, GET, allow
+p, quanly, /api/v1/billing/ky-paid-records, GET, allow
+p, ketoan, /api/v1/billing/uploads, GET, allow
+p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
+p, giamdoc, /api/v1/billing/reports/generate, POST, allow
+p, giamdoc, /api/v1/billing/reports, GET, allow
+p, ketoan, /api/v1/billing/reports, GET, allow
+p, quanly, /api/v1/billing/reports, GET, allow

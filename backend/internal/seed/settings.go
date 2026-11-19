@@ -35,6 +35,10 @@ var bootFlags = []settingRow{
 	{key: "transfer_bank_visible", value: "true", valueType: "string"},
 	// Same rationale for the FlexPay (OnePay) beneficiary block.
 	{key: "flexpay_transfer_bank_visible", value: "true", valueType: "string"},
+	// Subscription fee per distinct employee per Kỳ (FR-4): seeded so the
+	// billing-report generator and the admin fee field always read 200,
+	// matching the documented default (10,000 VND) for missing rows.
+	{key: "subscription_fee_per_employee_per_ky_vnd", value: "10000", valueType: "number"},
 }
 
 // devDefaults are placeholder values created only by GenerateTestData in

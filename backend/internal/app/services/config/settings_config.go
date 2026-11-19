@@ -40,10 +40,19 @@ const (
 	// FlexPay (OnePay early-salary) reconciliation statements print their own
 	// beneficiary account, configured separately from the weekly payroll
 	// statement account above.
+	// FlexPay (OnePay early-salary) reconciliation statements print their own
+	// beneficiary account, configured separately from the weekly payroll
+	// statement account above.
 	SettingKeyFlexPayTransferBankHolder  = "flexpay_transfer_bank_account_holder"
 	SettingKeyFlexPayTransferBankNumber  = "flexpay_transfer_bank_account_number"
 	SettingKeyFlexPayTransferBankName    = "flexpay_transfer_bank_account_name"
 	SettingKeyFlexPayTransferBankVisible = "flexpay_transfer_bank_visible"
+
+	// Subscription fee (FR-4, PAYSUB-5): flat VND charged per distinct
+	// employee per Kỳ (PRD BR-1, default 10,000). Admin-configurable via the
+	// generic settings API; the value is snapshotted into each billing
+	// report at generation time so later changes never rewrite history.
+	SettingKeySubscriptionFeePerEmployeePerKyVnd = "subscription_fee_per_employee_per_ky_vnd"
 )
 
 // TransferBankInfo carries the beneficiary identity printed on payroll
@@ -67,14 +76,19 @@ const (
 	DefaultAdvanceCashFeePercentage   = 0.02
 	DefaultWeeklyPaymentFeePercentage = 0.02
 	DefaultPartnerCompany             = "VFIC Manpower"
-	DefaultAdvancePaymentPercentage   = 0.60  // 60% max advance
-	DefaultAdvancePaymentFeeMin       = 10000 // 10,000 VND minimum fee
-	DefaultBulkTransferWorkbookLimit  = int64(400_000_000)
-	DefaultSelfCheckInAdvancePercent  = domain.DefaultSelfCheckInAdvancePercentage
-	DefaultSelfCheckInAdvanceHold     = domain.QuotaCreditHoldDuration
-	MinBulkTransferWorkbookLimit      = int64(100_000_000)
-	MaxBulkTransferWorkbookLimit      = int64(500_000_000)
-	MaxSelfCheckInAdvanceHoldHours    = uint64(720)
+
+	// DefaultSubscriptionFeePerEmployeePerKy is the flat fee per distinct
+	// employee per Kỳ (PRD BR-1: default 10,000 VND).
+	DefaultSubscriptionFeePerEmployeePerKy = int64(10_000)
+
+	DefaultAdvancePaymentPercentage  = 0.60  // 60% max advance
+	DefaultAdvancePaymentFeeMin      = 10000 // 10,000 VND minimum fee
+	DefaultBulkTransferWorkbookLimit = int64(400_000_000)
+	DefaultSelfCheckInAdvancePercent = domain.DefaultSelfCheckInAdvancePercentage
+	DefaultSelfCheckInAdvanceHold    = domain.QuotaCreditHoldDuration
+	MinBulkTransferWorkbookLimit     = int64(100_000_000)
+	MaxBulkTransferWorkbookLimit     = int64(500_000_000)
+	MaxSelfCheckInAdvanceHoldHours   = uint64(720)
 
 	// Bounds for the self-check-in advance window-open day. Owner decision
 	// (2026-11-07): the window may open as early as day 1 — days 1-9 overlap
@@ -843,4 +857,32 @@ func (s *SettingsConfigService) GetAdvancePaymentFeeMin(ctx context.Context) uin
 		return s.feeSchedule.MinFeeAt(ctx, clock.Now())
 	}
 	return DefaultAdvancePaymentFeeMin
+}
+
+// GetSubscriptionFeePerEmployeePerKy retrieves the flat subscription fee in
+// VND charged per distinct employee per Kỳ (FR-4, PRD BR-1), with caching.
+// Returns DefaultSubscriptionFeePerEmployeePerKy (10,000) when the row is
+// missing or invalid; negative values are rejected the same way. Billing
+// reports snapshot the returned value at generation time (FR-3), so later
+// changes never rewrite history.
+func (s *SettingsConfigService) GetSubscriptionFeePerEmployeePerKy(ctx context.Context) int64 {
+	if cached, ok := s.getFromCache(SettingKeySubscriptionFeePerEmployeePerKyVnd); ok {
+		return cached.(int64)
+	}
+
+	setting, err := s.settingsService.GetSettingByKey(ctx, SettingKeySubscriptionFeePerEmployeePerKyVnd)
+	if err != nil {
+		observability.GetLogger().Warn("subscription fee setting missing, using default", "key", SettingKeySubscriptionFeePerEmployeePerKyVnd, "error", err)
+		return DefaultSubscriptionFeePerEmployeePerKy
+	}
+
+	value, err := setting.GetFloatValue()
+	if err != nil || value < 0 || value != float64(int64(value)) {
+		observability.GetLogger().Warn("invalid subscription fee setting, using default", "key", SettingKeySubscriptionFeePerEmployeePerKyVnd, "value", value)
+		return DefaultSubscriptionFeePerEmployeePerKy
+	}
+
+	fee := int64(value)
+	s.setCache(SettingKeySubscriptionFeePerEmployeePerKyVnd, fee)
+	return fee
 }

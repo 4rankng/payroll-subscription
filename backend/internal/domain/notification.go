@@ -24,7 +24,13 @@ const (
 	NotificationTypeAdvancePaymentStatusChanged NotificationType = "advance_payment_status_changed"
 	NotificationTypeAdvancePaymentReport        NotificationType = "advance_payment_report"
 	NotificationTypeWalletBalanceLow            NotificationType = "wallet_balance_low"
-	NotificationTypeCustom                      NotificationType = "custom"
+	// NotificationTypeTransferUploadRejected is the D10 all-admin push fired
+	// when an uploaded bank-transfer result has no processable rows.
+	NotificationTypeTransferUploadRejected NotificationType = "transfer_upload_rejected"
+	// NotificationTypeBillingReportGenerated is the push fired when a monthly
+	// billing report has been generated and is ready to export.
+	NotificationTypeBillingReportGenerated NotificationType = "billing_report_generated"
+	NotificationTypeCustom                 NotificationType = "custom"
 	// NotificationTypeCheckInRoster is the day-9 reminder that the self
 	// check-in roster for the previous month is prepared and waiting on
 	// Tổng quan. The dashboard card keys off this type (unread = pending),

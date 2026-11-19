@@ -16,6 +16,7 @@ import (
 	"api-server/internal/app/services/asset"
 	"api-server/internal/app/services/attendance"
 	"api-server/internal/app/services/auth"
+	"api-server/internal/app/services/billing"
 	"api-server/internal/app/services/cleanup"
 	"api-server/internal/app/services/config"
 	"api-server/internal/app/services/dashboard"
@@ -105,6 +106,8 @@ type Services struct {
 	SettlementUpload                  *settlement.SettlementUploadService
 	Notification                      *notification.NotificationService
 	EmployeeNotifier                  notification.EmployeeNotifier
+	Billing                           *billing.TransferUploadService
+	BillingReport                     *billing.BillingReportService
 	Settings                          *config.SettingsService
 	SettingsConfig                    *config.SettingsConfigService
 	Approval                          *approval.Service
@@ -166,6 +169,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	employeeNotificationService := notification.NewEmployeeNotificationService(notificationService, repos.Employee, logger)
 	transactionManager := infraServices.NewTransactionManager(db.DB)
 	settingsService := config.NewSettingsService(repos.Settings, repos.AdvancePayment, repos.Attendance, transactionManager, cacheService, eventBus, asynqClient)
+	billingService := billing.NewTransferUploadService(repos.TransferUpload, repos.KyPaidRecord, repos.Timesheet, repos.Employee, transactionManager, notificationService, logger)
 	settingsConfigService := config.NewSettingsConfigService(settingsService)
 	// A committed settings change must reach the in-process business-settings
 	// cache immediately: statement emails and Excel exports read the beneficiary
@@ -176,6 +180,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	pdfService := reporting.NewPDFService("fonts/Roboto-Regular.ttf")
 	fileStorage := storage.NewLocalFileStorage(cfg.Asset.StoragePath, cfg.Asset.BaseURL)
 	assetService := asset.NewAssetService(repos.Asset, fileStorage, cfg.Asset.MaxFileSize, eventBus)
+	billingReportService := billing.NewBillingReportService(repos.BillingReport, repos.KyPaidRecord, repos.Timesheet, repos.Employee, settingsConfigService, assetService, notificationService, logger)
 
 	// Step 4: Create domain services using infrastructure ports
 	ledgerService := settlement.NewLedgerService(repos.Ledger, eventBus, cachePort)
@@ -840,6 +845,8 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		Ledger:                            ledgerService,
 		Notification:                      notificationService,
 		EmployeeNotifier:                  employeeNotificationService,
+		Billing:                           billingService,
+		BillingReport:                     billingReportService,
 		Settings:                          settingsService,
 		SettingsConfig:                    settingsConfigService,
 		Approval:                          approvalService,

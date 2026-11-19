@@ -81,6 +81,7 @@ func setupProtectedRoutes(v1 *gin.RouterGroup, container *Container) {
 	setupAdBannerRoutes(protected, container)
 	setupAuditRoutes(protected, container)
 	setupSettingsRoutes(v1, container) // Admin-only routes, use v1 directly
+	setupBillingRoutes(v1, container)
 	setupZaloAdminRoutes(v1, container)
 	setupAPIKeyAdminRoutes(v1, container)
 	setupMCPAPIKeyAdminRoutes(v1, container)

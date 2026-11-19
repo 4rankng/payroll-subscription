@@ -10,6 +10,7 @@ import (
 
 	"api-server/internal/app/dto"
 	"api-server/internal/app/services/advance_payment"
+	"api-server/internal/app/services/billing"
 	"api-server/internal/app/services/asset"
 	"api-server/internal/app/services/cleanup"
 	"api-server/internal/app/services/config"
@@ -50,7 +51,7 @@ func registerSchedulerJobs(
 	checkInActivationReminderService *notification.CheckInActivationReminderService,
 	settingsConfigSvc *config.SettingsConfigService,
 	logger *slog.Logger,
-) {
+	billingReportService *billing.BillingReportService,) {
 	// Helper for template rendering
 	renderTemplate := func(template string) string {
 		now := clock.Now()
@@ -121,6 +122,26 @@ func registerSchedulerJobs(
 			} else {
 				logger.Info("Payment schedule changes applied successfully")
 			}
+		},
+	})
+
+	// 0. Monthly billing report (FR-3/PAYSUB-4): generate the previous work
+	// month's report on day 1 at 09:00 (after Kỳ 4's pay date). Regeneration
+	// replaces lines/workbook; the fee snapshot follows the generation-time rule.
+	s.AddJob(scheduler.Job{
+		Name:    "generate_monthly_billing_report",
+		Cron:    "0 9 1 * *",
+		Enabled: true,
+		Handler: func() {
+			ctx := context.Background()
+			workMonth := clock.Now().In(time.Local).AddDate(0, -1, 0).Format("2006-01")
+			logger.Info("Generating monthly billing report", "work_month", workMonth)
+			if _, _, err := billingReportService.GenerateMonthly(ctx, workMonth, 0); err != nil {
+				logger.Error("Failed to generate monthly billing report", "work_month", workMonth, "error", err)
+				return
+			}
+			billingReportService.NotifyReportReady(ctx, workMonth)
+			logger.Info("Monthly billing report generated", "work_month", workMonth)
 		},
 	})
 

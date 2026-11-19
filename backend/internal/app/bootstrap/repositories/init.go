@@ -47,6 +47,9 @@ type Repositories struct {
 	Attendance                domain.AttendanceRepository
 	AttendanceFailedAttempt   domain.AttendanceFailedAttemptRepository
 	SettlementUpload          domain.SettlementUploadRepository
+	TransferUpload            domain.TransferUploadRepository
+	KyPaidRecord              domain.KyPaidRecordRepository
+	BillingReport             domain.BillingReportRepository
 	CashForecastSnapshot      domain.CashForecastSnapshotRepository
 	BulkTransferBatch         domain.BulkTransferBatchRepository
 	TimesheetImportJob        domain.TimesheetImportJobRepository
@@ -97,6 +100,9 @@ func Initialize(db *persistence.Database, eventBus domain.EventBus) *Repositorie
 		Attendance:                persistence.NewAttendanceRepository(db.DB),
 		AttendanceFailedAttempt:   persistence.NewAttendanceFailedAttemptRepository(db.DB),
 		SettlementUpload:          persistence.NewSettlementUploadRepository(db),
+		TransferUpload:            persistence.NewTransferUploadRepository(db),
+		KyPaidRecord:              persistence.NewKyPaidRecordRepository(db),
+		BillingReport:             persistence.NewBillingReportRepository(db),
 		CashForecastSnapshot:      persistence.NewCashForecastSnapshotRepository(db.DB),
 		BulkTransferBatch:         persistence.NewBulkTransferBatchRepository(db),
 		TimesheetImportJob:        persistence.NewTimesheetImportJobRepository(db),
