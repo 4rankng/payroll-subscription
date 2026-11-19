@@ -1,53 +1,33 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { TimesheetPageHeaderMobile } from "@/components/timesheet/mobile/TimesheetPageHeaderMobile";
 import { TimesheetDisplaySection } from "@/components/timesheet/TimesheetDisplaySection";
-import {
-  TimesheetsExportDialog,
-  TimesheetsExportParams,
-} from "@/components/timesheet/TimesheetsExportDialog";
 import { BCCUploadModal } from "@/components/timesheet/BCCUploadModal";
 import { UploadHistorySheet } from "@/components/timesheet/UploadHistorySheet";
-import { ExportSaoKeDialog } from "@/components/transaction/ExportSaoKeDialog";
-import { PaymentHistorySheet } from "@/components/payroll/PaymentHistorySheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { GroupedStatCard } from "@/components/shared/GroupedStatCard";
 import { MobilePageShell, MobileSurface } from "@/components/shared/MobilePageShell";
-import { Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar, AlertCircle } from "lucide-react";
 import { useTimesheetManagement } from "@/hooks/timesheet/useTimesheetManagement";
 import { useEmployeeModals, useTimesheetModals } from "@/hooks/useModalNavigation";
-import { useExportApprovedTimesheets } from "@/hooks/api/usePayrolls";
-import { useSettingByKey } from "@/hooks/api/useSettings";
-import { useCreateEditRequest } from "@/hooks/api/useTimesheetEditRequests";
 import { useTimesheetStatsConfig } from "@/hooks/useTimesheetStatsConfig";
 import { MobileTimesheetEntry } from "@/components/sheets/timesheet-entry/mobile/MobileTimesheetEntry";
 import type { Employee } from "@/types/api/employee.types";
 import type { Timesheet } from "@/types/api/timesheet.types";
 
 export default function TimesheetsPageMobile() {
-  const [approvedTimesheetsDialogOpen, setApprovedTimesheetsDialogOpen] =
-    useState(false);
-  const [exportSaoKeOpen, setExportSaoKeOpen] = useState(false);
   const [bccUploadOpen, setBccUploadOpen] = useState(false);
   const [bccHistoryOpen, setBccHistoryOpen] = useState(false);
-  const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { openTimesheetEntry, openTimesheetDetails } = useTimesheetModals();
+  const { openTimesheetEntry } = useTimesheetModals();
   const { openEmployeeDetails } = useEmployeeModals();
-  const queryClient = useQueryClient();
 
   const handleEmployeeClick = useCallback(
     (employee: Employee) => openEmployeeDetails(employee.id.toString()),
     [openEmployeeDetails],
   );
-
-  const createEditRequestMutation = useCreateEditRequest();
-  const [requestingTimesheetId, setRequestingTimesheetId] = useState<
-    number | null
-  >(null);
 
   // Full-page entry mode when modal=timesheet_entry
   const isEntryMode = searchParams.get("modal") === "timesheet_entry";
@@ -76,15 +56,9 @@ export default function TimesheetsPageMobile() {
   });
 
   const timesheetManagement = useTimesheetManagement({
-    userRole: "partner",
+    userRole: "quanly",
     useYearToDate: true,
   });
-  const { data: bulkTransferSetting } = useSettingByKey(
-    "bulk_transfer_payment_percentage",
-  );
-  const bulkTransferPercentage = bulkTransferSetting?.value
-    ? parseFloat(bulkTransferSetting.value)
-    : 0;
 
   const statsFilters = useMemo(() => ({
     project_id: timesheetManagement.selectedProject !== "all" ? parseInt(timesheetManagement.selectedProject) : undefined,
@@ -150,32 +124,6 @@ export default function TimesheetsPageMobile() {
   ]);
 
   // All hooks must be called BEFORE any early returns
-  const exportApprovedTimesheetsMutation = useExportApprovedTimesheets();
-
-  const handleRequestEdit = useCallback(
-    async (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => {
-      if (createEditRequestMutation.isPending) return;
-      setRequestingTimesheetId(timesheet.id);
-      try {
-        await createEditRequestMutation.mutateAsync(timesheet.id);
-        if (onSuccess) await onSuccess();
-      } finally {
-        setRequestingTimesheetId(null);
-      }
-    },
-    [createEditRequestMutation],
-  );
-
-  const handleApprovedTimesheetsExportSubmit = async (
-    params: TimesheetsExportParams,
-  ) => {
-    try {
-      await exportApprovedTimesheetsMutation.mutateAsync(params);
-      setApprovedTimesheetsDialogOpen(false);
-    } catch {
-      /* handled by mutation */
-    }
-  };
 
   const handleDelete = async (timesheet: Timesheet) => {
     await timesheetManagement.handleDelete(timesheet);
@@ -227,13 +175,9 @@ export default function TimesheetsPageMobile() {
     <MobilePageShell className="space-y-3">
       <TimesheetPageHeaderMobile
         onAddTimesheet={() => openTimesheetEntry()}
-        onApprovedTimesheetsExport={() => setApprovedTimesheetsDialogOpen(true)}
-        onPayrollReportExport={() => setExportSaoKeOpen(true)}
         onBccUpload={() => setBccUploadOpen(true)}
         onBccHistory={() => setBccHistoryOpen(true)}
-        onPaymentHistory={() => setPaymentHistoryOpen(true)}
-        isApprovedExportPending={exportApprovedTimesheetsMutation.isPending}
-        userRole="partner"
+        userRole="quanly"
         monthValue={timesheetManagement.selectedMonth}
         onMonthChange={timesheetManagement.setSelectedMonth}
       />
@@ -301,32 +245,9 @@ export default function TimesheetsPageMobile() {
           onEdit={timesheetManagement.handleEdit}
           onDelete={handleDelete}
           onAddTimesheet={() => openTimesheetEntry()}
-          bulkTransferPercentage={bulkTransferPercentage}
-          onRequestEdit={handleRequestEdit}
-          requestingTimesheetId={requestingTimesheetId}
-          showEditRequestTable={true}
-          userRole="partner"
-          onEditRequestRowClick={(timesheet) => {
-            queryClient.setQueryData(
-              ["timesheets", "detail", timesheet.id],
-              timesheet,
-            );
-            openTimesheetDetails(timesheet.id.toString());
-          }}
+          userRole="quanly"
         />
       </MobileSurface>
-
-      <TimesheetsExportDialog
-        open={approvedTimesheetsDialogOpen}
-        onOpenChange={setApprovedTimesheetsDialogOpen}
-        onExport={handleApprovedTimesheetsExportSubmit}
-        isLoading={exportApprovedTimesheetsMutation.isPending}
-      />
-
-      <ExportSaoKeDialog
-        open={exportSaoKeOpen}
-        onOpenChange={setExportSaoKeOpen}
-      />
 
       <BCCUploadModal
         open={bccUploadOpen}
@@ -348,11 +269,6 @@ export default function TimesheetsPageMobile() {
             : undefined
         }
         projects={timesheetManagement.projects}
-      />
-
-      <PaymentHistorySheet
-        isOpen={paymentHistoryOpen}
-        onClose={() => setPaymentHistoryOpen(false)}
       />
     </MobilePageShell>
   );

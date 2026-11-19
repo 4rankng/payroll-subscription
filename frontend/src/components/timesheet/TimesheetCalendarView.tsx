@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, HandCoins } from 'lucide-react';
-import { showErrorNotification } from '@/utils/error-handler';
 import { Timesheet } from '@/types/api/timesheet.types';
 import type { EmployeeTimesheetFilters } from '@/types/api/employee.types';
 import {
@@ -54,8 +53,6 @@ interface TimesheetCalendarViewProps {
   onDelete?: (timesheet: Timesheet) => void;
   canDelete?: (timesheet: Timesheet) => boolean;
   bulkTransferPercentage?: number;
-  onRequestEdit?: (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  requestingTimesheetId?: number | null;
 }
 
 const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -81,9 +78,7 @@ export function TimesheetCalendarView({
   // Action handlers
   onDelete,
   canDelete,
-  bulkTransferPercentage = 0,
-  onRequestEdit,
-  requestingTimesheetId = null
+  bulkTransferPercentage = 0
 }: TimesheetCalendarViewProps) {
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [entryModalData, setEntryModalData] = useState<{
@@ -252,14 +247,6 @@ export function TimesheetCalendarView({
     handleEntryModalClose();
   };
 
-  const handleRequestEditWithClose = useCallback((timesheet: Timesheet) => {
-    if (!onRequestEdit) {
-      return;
-    }
-    // Call onRequestEdit with success callback to close modal
-    void Promise.resolve(onRequestEdit(timesheet, handleEntryModalClose)).catch((error) => { showErrorNotification(error); });
-  }, [onRequestEdit]);
-
   const handleDayEntriesModalClose = () => {
     setIsDayEntriesModalOpen(false);
     setDayEntriesModalData(null);
@@ -387,9 +374,6 @@ export function TimesheetCalendarView({
           onSuccess={handleEntryModalSuccess}
           onDelete={onDelete}
           canDelete={canDelete}
-          onRequestEdit={handleRequestEditWithClose}
-          onRequestEditSuccess={handleEntryModalClose}
-          requestingTimesheetId={requestingTimesheetId}
         />
       )}
     </>

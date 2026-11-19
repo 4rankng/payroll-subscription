@@ -30,7 +30,6 @@ import { employeeService } from "@/services/api/employee.service";
 import { showErrorNotification, showSuccessNotification } from "@/utils/error-handler";
 import type { Employee } from "@/types/api/employee.types";
 import type { EmployeeTimesheetResponse } from "@/types/api/timesheet.types";
-import type { Bank } from "@/types/api/bank.types";
 
 // Components
 import { EmployeeHeader } from "./components/EmployeeHeader";
@@ -48,7 +47,7 @@ interface EmployeeDetailsSheetProps {
   fetchError?: boolean;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate?: (employeeId: number, employeeData: Partial<Employee>, bankObject?: Bank | null) => Promise<void> | void;
+  onUpdate?: (employeeId: number, employeeData: Partial<Employee>) => Promise<void> | void;
   onDelete?: (employee: Employee) => void;
   onRefetch?: () => void;
 }
@@ -80,9 +79,7 @@ export function EmployeeDetailsSheet({
     isEditing,
     setIsEditing,
     formData,
-    selectedBank,
     handleInputChange,
-    handleBankChange,
     handleSave,
     handleCancel,
     resetFormData,
@@ -116,12 +113,11 @@ export function EmployeeDetailsSheet({
   } = useEmployeeDetails({ employee, onRefetch: onRefetch || (() => {}) });
 
   // Default update handler
-  const defaultOnUpdate = useCallback(async (employeeId: number, employeeData: Partial<Employee>, bankObject?: Bank | null) => {
+  const defaultOnUpdate = useCallback(async (employeeId: number, employeeData: Partial<Employee>) => {
     return new Promise<void>((resolve, reject) => {
       updateEmployeeMutation.mutate({
         id: employeeId,
-        data: employeeData,
-        bank: bankObject
+        data: employeeData
       }, {
         onSuccess: () => {
           // Cache is already updated with backend response in useUpdateEmployee hook
@@ -340,10 +336,7 @@ export function EmployeeDetailsSheet({
             <EmployeeEditForm
               employee={employee}
               formData={formData}
-              selectedBank={selectedBank}
               onInputChange={handleInputChange}
-              onBankChange={handleBankChange}
-              canCreateBank={isAdmin}
             />
           ) : (
             <>

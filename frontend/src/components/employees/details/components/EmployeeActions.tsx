@@ -29,7 +29,7 @@ export const EmployeeActions = memo(({
   isDirty,
 }: EmployeeActionsProps) => {
   const userRole = authManager.getUserRole();
-  const canResetPassword = userRole === 'admin' || userRole === 'partner';
+  const canResetPassword = userRole === 'admin' || userRole === 'quanly';
   // Employee deletion is admin-only — partners never see the "Xóa" button.
   const canDelete = userRole === 'admin';
 

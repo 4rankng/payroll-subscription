@@ -5,14 +5,12 @@ import {
   AlertCircle,
   XCircle,
   Users,
-  FileEdit,
   DollarSign,
   Clock,
   Wallet
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { useTimesheetSummary } from '@/hooks/api/useTimesheets';
-import { useEditRequests } from '@/hooks/api/useTimesheetEditRequests';
 import type { StatCardConfig, StatGroupConfig } from '@/components/shared/SummaryStatsCards';
 
 interface UseTimesheetStatsConfigParams {
@@ -24,11 +22,6 @@ interface UseTimesheetStatsConfigParams {
 
 export const useTimesheetStatsConfig = (params?: UseTimesheetStatsConfigParams) => {
   const { data: summary, isLoading, error } = useTimesheetSummary(params);
-  const { data: editRequests, isLoading: isLoadingEditRequests } = useEditRequests({
-    status: 'pending',
-    page: 1,
-    pageSize: 100
-  });
 
   // Flat stats config (backward compatible)
   const statsConfig: StatCardConfig[] = useMemo(() => {
@@ -71,17 +64,12 @@ export const useTimesheetStatsConfig = (params?: UseTimesheetStatsConfigParams) 
         icon: XCircle,
       },
       {
-        title: 'Yêu cầu sửa',
-        value: editRequests?.pagination?.totalRecords ?? 0,
-        icon: FileEdit,
-      },
-      {
         title: 'Chờ thanh toán',
         value: summary.pendingPaymentAmount ? formatCurrency(summary.pendingPaymentAmount) : formatCurrency(0),
         icon: Wallet,
       },
     ];
-  }, [summary, editRequests]);
+  }, [summary]);
 
   // Grouped stats config for enhanced visual organization
   const groupedStats: StatGroupConfig[] = useMemo(() => {
@@ -117,11 +105,6 @@ export const useTimesheetStatsConfig = (params?: UseTimesheetStatsConfigParams) 
             icon: Clock,
           },
           {
-            title: 'Yêu cầu sửa',
-            value: editRequests?.pagination?.totalRecords ?? 0,
-            icon: FileEdit,
-          },
-          {
             title: 'Chờ thanh toán',
             value: summary.pendingPaymentAmount ? formatCurrency(summary.pendingPaymentAmount) : formatCurrency(0),
             icon: Wallet,
@@ -149,12 +132,12 @@ export const useTimesheetStatsConfig = (params?: UseTimesheetStatsConfigParams) 
         ],
       },
     ];
-  }, [summary, editRequests]);
+  }, [summary]);
 
   return {
     statsConfig,
     groupedStats,
-    isLoading: isLoading || isLoadingEditRequests,
+    isLoading,
     error: !!error,
     summary
   };

@@ -6,7 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { NotificationFAB } from "@/components/notifications/NotificationFAB";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SectionErrorBoundary } from "@/components/ErrorBoundary";
-import { Briefcase01, Calendar, Grid01, Users01 } from "@untitledui/icons";
+import { Briefcase01, Calendar, Grid01, Users01, Wallet01 } from "@untitledui/icons";
 import type { NavGroup } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts";
 
@@ -15,6 +15,7 @@ const PARTNER_NAV_GROUPS: NavGroup[] = [
   { title: "Dự án", icon: Briefcase01, path: "/partner/projects" },
   { title: "Nhân viên", icon: Users01, path: "/partner/employees" },
   { title: "Bảng công", icon: Calendar, path: "/partner/timesheet" },
+  { title: "Thanh toán", icon: Wallet01, path: "/partner/billing", end: true },
 ];
 
 const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
@@ -54,10 +55,10 @@ const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
 
 const PartnerLayout = () => {
   const { user } = useAuth();
-  const isPartner = user?.role === "partner";
+  const isPartner = user?.role === "quanly";
 
   return (
-    <ProtectedRoute requiredRole="partner">
+    <ProtectedRoute requiredRole="quanly">
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner isPartner={isPartner} />
         <MobileBottomNav groups={PARTNER_NAV_GROUPS} />

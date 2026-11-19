@@ -21,10 +21,10 @@ export const createUserMobileConfig = (
         if (user.role === "admin") {
           roleLabel = "Quản trị viên";
           variant = "destructive";
-        } else if (user.role === "partner") {
+        } else if (user.role === "quanly") {
           roleLabel = "Quản lý";
           variant = "default";
-        } else if (user.role === "employee") {
+        } else if (user.role === "nhanvien") {
           roleLabel = "Nhân viên";
           variant = "outline";
         }

@@ -81,23 +81,8 @@ vi.mock('@/hooks/settings/useSettingsForm', () => ({
   useSettingsForm: () => mocks.formState,
 }));
 
-vi.mock('@/components/admin/AdvancePaymentFeeSchedule/FeeScheduleSection', () => ({
-  FeeScheduleSection: () => null,
-}));
-vi.mock('@/components/admin/WeeklyPaymentFeeSchedule/WeeklyPaymentFeeScheduleSection', () => ({
-  WeeklyPaymentFeeScheduleSection: () => null,
-}));
-vi.mock('@/components/admin/DisbursementFeeSchedule/DisbursementFeeScheduleSection', () => ({
-  DisbursementFeeScheduleSection: () => null,
-}));
 vi.mock('@/components/email/AdminEmailComposer', () => ({
   AdminEmailComposer: () => null,
-}));
-vi.mock('@/components/settings/ZaloConnectionSection', () => ({
-  ZaloConnectionSection: () => <div>Quy trình cấu hình Zalo ZNS</div>,
-}));
-vi.mock('@/components/settings/AdBannerSection', () => ({
-  AdBannerSection: () => <div>Chiến dịch quảng cáo</div>,
 }));
 // SettingsEmployeePanel renders for real in the parity tests below; its data
 // hooks are stubbed so the tab wiring and toggle row are what's under test.
@@ -221,27 +206,5 @@ describe.each([
     expect(
       screen.getByRole('switch', { name: 'Bắt buộc số điện thoại khi thêm nhân viên mới' }),
     ).not.toBeChecked();
-  });
-
-  it('keeps the Zalo ZNS workflow available', () => {
-    render(
-      <MemoryRouter initialEntries={['/admin/settings?tab=zalo']}>
-        <PageComponent />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('tab', { name: /Zalo ZNS/ })).toHaveAttribute('data-state', 'active');
-    expect(screen.getByText('Quy trình cấu hình Zalo ZNS')).toBeInTheDocument();
-  });
-
-  it('keeps the ad campaign management available', () => {
-    render(
-      <MemoryRouter initialEntries={['/admin/settings?tab=ads']}>
-        <PageComponent />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('tab', { name: /Quảng cáo/ })).toHaveAttribute('data-state', 'active');
-    expect(screen.getByText('Chiến dịch quảng cáo')).toBeInTheDocument();
   });
 });

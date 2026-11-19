@@ -3,12 +3,8 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import UsersPage from "./UsersPage";
 import UsersPageMobile from "@/pages/mobile/admin/UsersPage";
-import LoansPage from "./LoansPage";
-import LoansPageMobile from "@/pages/mobile/admin/LoansPage";
 import AuditLogPage from "./AuditLogPage";
 import AuditLogPageMobile from "@/pages/mobile/admin/AuditLogPage";
-import CronHealthPage from "./CronHealthPage";
-import CronHealthPageMobile from "@/pages/mobile/admin/CronHealthPage";
 
 const mocks = vi.hoisted(() => ({
   query: {} as Record<string, unknown>,
@@ -19,13 +15,7 @@ vi.mock("@/contexts", () => ({
   useAppState: () => ({ setPageTitle: mocks.setPageTitle }),
   useAuth: () => ({ user: { role: "admin" } }),
 }));
-vi.mock("@/hooks/api/useLoans", () => ({
-  useLoans: () => mocks.query, useLenders: () => ({ data: undefined }),
-}));
 vi.mock("@/hooks/api/useAuditLogs", () => ({ useInfiniteAuditLogs: () => mocks.query }));
-vi.mock("@/hooks/api/useCronHealth", () => ({
-  useCronJobs: () => mocks.query, useToggleCronJob: () => ({ mutate: vi.fn(), isPending: false }),
-}));
 vi.mock("@/hooks/users/useUserDataInfinite", () => ({ useUserDataInfinite: () => mocks.query }));
 vi.mock("@/hooks/users/useUserExport", () => ({
   useUserExport: () => ({ exportUsers: vi.fn(), isExporting: false }),
@@ -61,24 +51,15 @@ vi.mock("@/components/ui/responsive-table", () => ({
 }));
 vi.mock("@/config/user-table-columns", () => ({ createUserColumns: () => [] }));
 vi.mock("@/config/user-table-mobile", () => ({ createUserMobileConfig: () => ({}) }));
-vi.mock("@/components/sheets/AddLoanSheet", () => ({ AddLoanSheet: () => null }));
-vi.mock("@/components/sheets/LoanDetailsSheet", () => ({ LoanDetailsSheet: () => null }));
-vi.mock("@/components/sheets/LenderManagementSheet", () => ({ LenderManagementSheet: () => null }));
 vi.mock("./AuditLogPage/AuditLogDetailSheet", () => ({ AuditLogDetailSheet: () => null }));
 vi.mock("./AuditLogPage/AuditLogFilters", () => ({ AuditLogFilters: () => null }));
 vi.mock("./AuditLogPage/AuditLogCard", () => ({
   AuditLogCard: ({ log }: { log: { id: number } }) => <p>Bản ghi {log.id}</p>,
   AuditLogCardSkeleton: () => <div>Đang tải nhật ký</div>,
 }));
-vi.mock("@/components/cron-health", () => ({
-  CronJobTable: () => <p>Danh sách tác vụ</p>, CronJobCard: () => <p>Tác vụ</p>,
-  computeCronSummary: () => ({ total: 0, enabled: 0, failed: 0 }),
-}));
 const views = [
   ["users desktop", UsersPage], ["users mobile", UsersPageMobile],
-  ["loans desktop", LoansPage], ["loans mobile", LoansPageMobile],
   ["audit desktop", AuditLogPage], ["audit mobile", AuditLogPageMobile],
-  ["cron desktop", CronHealthPage], ["cron mobile", CronHealthPageMobile],
 ] as const;
 beforeEach(() => {
   vi.clearAllMocks();
@@ -90,16 +71,16 @@ describe.each(views)("%s failure state", (_label, Component) => {
   it("announces request failure without inventing an empty result and retries", () => {
     render(<MemoryRouter><Component /></MemoryRouter>);
     expect(screen.getByRole("alert")).toHaveTextContent("Không thể tải");
-    expect(screen.queryByText(/^(Không có dữ liệu|Không có bản ghi nào|Không tìm thấy người dùng nào|Chưa có khoản vay nào)$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^(Không có dữ liệu|Không có bản ghi nào|Không tìm thấy người dùng nào)$/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(mocks.refetch).toHaveBeenCalledOnce();
     expect(mocks.fetchNextPage).not.toHaveBeenCalled();
   });
 });
-describe.each(views.filter(([name]) => name.startsWith("users") || name.startsWith("audit")))("%s next-page failure", (label, Component) => {
+describe.each(views)("%s next-page failure", (label, Component) => {
   it("preserves loaded records and retries the failed next page", () => {
     mocks.query = { ...mocks.query, isFetchNextPageError: true, hasMore: true, hasNextPage: true,
-      users: [{ id: 1, username: "loaded-user", role: "employee" }],
+      users: [{ id: 1, username: "loaded-user", role: "nhanvien" }],
       data: { pages: [{ data: [{ id: 1 }], pagination: { totalRecords: 2 } }] } };
     render(<MemoryRouter><Component /></MemoryRouter>);
     expect(screen.getByText(label.startsWith("users") ? "loaded-user" : "Bản ghi 1")).toBeInTheDocument();

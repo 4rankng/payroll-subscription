@@ -1,10 +1,7 @@
 import { useMemo, useCallback, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Banknote, ClipboardEdit, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, Banknote, ChevronRight, ChevronDown } from 'lucide-react';
 import { Timesheet } from '@/types/api/timesheet.types';
 import { TimesheetEntryModal } from './components/TimesheetEntryModal';
-import { showErrorNotification } from '@/utils/error-handler';
 import { formatTimesheetHours, groupTimesheetsByEmployeeDate, sortGroupedTimesheets } from './utils/timesheetGrouping';
 import { formatDateWithWeekday, getMergedStatusBadge, getPaytypeText } from './utils/timesheetHelpers';
 import { formatCurrency } from '@/utils/formatters';
@@ -12,11 +9,10 @@ import { cn } from '@/lib/utils';
 import { AccentStripCard, type AccentColor } from '@/components/shared/AccentStripCard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MobilePagination } from '@/components/shared/MobilePagination';
-import type { MouseEvent } from 'react';
 import { useTimesheetContext } from './TimesheetContext';
 
 export function TimesheetMobileList() {
-  const { state, actions, meta } = useTimesheetContext();
+  const { state, actions } = useTimesheetContext();
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -35,19 +31,6 @@ export function TimesheetMobileList() {
     setIsEntryModalOpen(false);
     setSelectedTimesheet(null);
   }, []);
-
-  const handleRequestEditWithClose = useCallback((timesheet: Timesheet) => {
-    if (!actions.requestEdit) return;
-    void Promise.resolve(actions.requestEdit(timesheet, handleEntryModalClose)).catch((error) => { showErrorNotification(error); });
-  }, [actions, handleEntryModalClose]);
-
-  const getRequestEditHandler = useCallback((timesheet: Timesheet) => {
-    if (!actions.requestEdit) return undefined;
-    return (event: MouseEvent<HTMLButtonElement>) => {
-      event.stopPropagation();
-      void Promise.resolve(actions.requestEdit(timesheet)).catch((error) => { showErrorNotification(error); });
-    };
-  }, [actions]);
 
   const toggleGroup = useCallback((key: string) => {
     setExpandedGroups(prev => {
@@ -184,12 +167,6 @@ export function TimesheetMobileList() {
                         <p className="text-xs font-medium text-foreground truncate">{entry.projectName}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-muted-foreground">{getPaytypeText(entry.paytype)}</p>
-                          {entry.request_edit_id != null && (
-                            <Badge variant="warning" className="inline-flex items-center gap-0.5 text-xs h-4 px-1.5">
-                              <ClipboardEdit className="w-2.5 h-2.5" />
-                              Yêu cầu sửa
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -205,28 +182,6 @@ export function TimesheetMobileList() {
                 </div>
               )}
 
-              {group.entries.length === 1 && (() => {
-                const entry = group.entries[0];
-                const showRequestEdit = actions.requestEdit &&
-                  entry.status === 'approved' &&
-                  entry.payment_status === 'pending' &&
-                  !entry.allowed_edit &&
-                  entry.request_edit_id == null;
-                if (!showRequestEdit) return null;
-                return (
-                  <div className="border-t border-border/60 px-4 py-2.5">
-                    <Button
-                      onClick={getRequestEditHandler(entry)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      disabled={meta.requestingTimesheetId === entry.id}
-                    >
-                      {meta.requestingTimesheetId === entry.id ? 'Đang gửi...' : 'Yêu cầu chỉnh sửa'}
-                    </Button>
-                  </div>
-                );
-              })()}
             </AccentStripCard>
           );
         })}
@@ -249,9 +204,6 @@ export function TimesheetMobileList() {
           onSuccess={handleEntryModalClose}
           onDelete={actions.delete}
           canDelete={actions.canDelete}
-          onRequestEdit={handleRequestEditWithClose}
-          onRequestEditSuccess={handleEntryModalClose}
-          requestingTimesheetId={meta.requestingTimesheetId}
         />
       )}
     </>

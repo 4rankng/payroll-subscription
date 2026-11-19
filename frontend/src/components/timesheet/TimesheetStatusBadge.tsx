@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { getStatusBadgeClasses } from './utils/timesheetStatusColors';
 
 export type TimesheetStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected';
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | undefined;
+export type PaymentStatus = 'pending' | 'paid' | 'cancelled' | undefined;
 
 interface TimesheetStatusBadgeProps {
   status: TimesheetStatus;
@@ -57,12 +57,6 @@ const PAYMENT_STATUS_CONFIG = {
     icon: DollarSign,
     className: 'bg-green-50 text-green-800 border-green-200',
     tooltip: 'Đã thanh toán hoàn tất'
-  },
-  failed: {
-    label: 'Thất bại',
-    icon: XCircle,
-    className: 'bg-red-50 text-red-700 border-red-200',
-    tooltip: 'Thanh toán không thành công'
   },
   cancelled: {
     label: 'Đã hủy',

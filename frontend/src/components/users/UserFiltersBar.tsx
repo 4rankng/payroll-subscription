@@ -4,7 +4,7 @@ import { FilterPill } from '@/components/shared/FilterPill';
 import { useAllProjects } from '@/hooks/api/useProjects';
 import { cn } from '@/lib/utils';
 
-type UserRoleFilter = 'admin' | 'partner' | 'employee' | 'accountant';
+type UserRoleFilter = 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
 
 interface UserFiltersBarProps {
   search: string;
@@ -48,9 +48,9 @@ export const UserFiltersBar = ({
           placeholder="Vai trò"
           options={[
             { value: 'admin', label: 'Quản trị viên' },
-            { value: 'partner', label: 'Quản lý' },
-            { value: 'employee', label: 'Nhân viên' },
-            { value: 'accountant', label: 'Kế toán' },
+            { value: 'quanly', label: 'Quản lý' },
+            { value: 'nhanvien', label: 'Nhân viên' },
+            { value: 'giamdoc', label: 'Kế toán' },
           ]}
         />
       )}

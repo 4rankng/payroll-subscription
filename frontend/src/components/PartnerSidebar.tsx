@@ -8,10 +8,10 @@ import {
   Key01,
   Moon01,
   LogOut01,
-  Receipt,
   Sun,
   UserCircle,
   Users01,
+  Wallet01,
   ChevronSelectorVertical,
 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,7 @@ const menuItems = [
   { title: "Dự án", icon: Briefcase01, path: "/partner/projects", end: false },
   { title: "Nhân viên", icon: Users01, path: "/partner/employees" },
   { title: "Bảng công", icon: Calendar, path: "/partner/timesheet", end: true },
-  { title: "Lịch sử trả lương", icon: Receipt, path: "/partner/timesheet/payment-history" },
+  { title: "Thanh toán", icon: Wallet01, path: "/partner/billing", end: true },
 ];
 
 interface NavItemProps {

@@ -8,7 +8,7 @@ export const USER_STATUS = {
 
 export const USER_ROLES = {
   ADMIN: 'admin',
-  PARTNER: 'partner',
+  PARTNER: 'quanly',
 } as const;
 
 export const PROJECT_STATUS = {

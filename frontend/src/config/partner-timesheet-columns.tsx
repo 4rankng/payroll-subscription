@@ -175,7 +175,7 @@ export function createPartnerTimesheetColumns(): ColumnDef<Timesheet>[] {
       cell: ({ row }) => {
         const timesheet = row.original;
         const status = timesheet.status as TimesheetStatus;
-        const paymentStatus = timesheet.payment_status;
+        const paymentStatus = timesheet.payment_status === 'failed' ? undefined : timesheet.payment_status;
 
         return (
           <TimesheetStatusBadge

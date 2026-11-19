@@ -3,16 +3,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { SectionErrorBoundary } from "@/components/ErrorBoundary";
 import EmployeePage from "@/pages/employee/EmployeePage";
-import FlexiblePayEmployeePage from "@/pages/employee/FlexiblePayEmployeePage";
 import { AlertCircle, RefreshCw05 } from "@untitledui/icons";
 import { EmployeeMobileShell } from "@/components/employees/EmployeeMobileShell";
 import { cn } from "@/lib/utils";
 
 /**
- * Router component that selects the appropriate employee page
- * based on the employee's payment schedule:
- * - "flexible" -> FlexiblePayEmployeePage (salary advance feature)
- * - "weekly" | "monthly" -> EmployeePage (timesheet view)
+ * Router component that renders the employee timesheet page. Previously it
+ * switched on the employee's payment schedule ("flexible" salary-advance page
+ * vs "weekly"|"monthly" timesheet view); the salary-advance surface is gone.
  */
 const EmployeeRouter = () => {
   const { data: profile, isLoading, isError, isFetching, refetch } = useEmployeeProfile();
@@ -63,13 +61,9 @@ const EmployeeRouter = () => {
     );
   }
 
-  const employeePage = profile.payment_schedule === "flexible"
-    ? <FlexiblePayEmployeePage />
-    : <EmployeePage />;
-
   return (
     <SectionErrorBoundary sectionName="trang nhân viên">
-      <div className="mobile-page">{employeePage}</div>
+      <div className="mobile-page"><EmployeePage /></div>
     </SectionErrorBoundary>
   );
 };

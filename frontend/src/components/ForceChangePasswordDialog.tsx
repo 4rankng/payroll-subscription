@@ -85,7 +85,7 @@ export const ForceChangePasswordDialog = () => {
   // keeping it up for the ~3s the mutation waits before logging the user out.
   const [justChanged, setJustChanged] = useState(false);
 
-  const isEmployee = isAuthenticated && user?.role === 'employee';
+  const isEmployee = isAuthenticated && user?.role === 'nhanvien';
 
   const queryClient = useQueryClient();
   // Once /auth/me has answered "no change needed" this session, idle the

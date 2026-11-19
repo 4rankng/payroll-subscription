@@ -15,7 +15,7 @@ interface TimesheetState {
     totalRecords: number;
   } | null;
   sorting: SortingState;
-  userRole: 'admin' | 'partner';
+  userRole: 'admin' | 'quanly';
 }
 
 interface TimesheetActions {
@@ -26,14 +26,12 @@ interface TimesheetActions {
   delete: (t: Timesheet) => void;
   canDelete: (t: Timesheet) => boolean;
   exportExcel: () => void;
-  requestEdit: ((t: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void) | undefined;
   pageChange: (page: number) => void;
   pageSizeChange: (size: number) => void;
   sortingChange: OnChangeFn<SortingState>;
 }
 
 interface TimesheetMeta {
-  requestingTimesheetId: number | null;
   bulkTransferPercentage: number;
   isExportLoading: boolean;
 }
@@ -51,7 +49,7 @@ interface TimesheetFilterState {
   projectEmployees?: Array<{ id: number; name: string; subtitle?: string; cccd?: string; fullname?: string; current_projects?: Array<{ project_id: number }> }>;
   searchTerm?: string;
   onSearchChange?: (v: string) => void;
-  userRole: 'admin' | 'partner';
+  userRole: 'admin' | 'quanly';
   onAddTimesheet?: () => void;
   onExportExcel?: () => void;
   onPaymentHistory?: () => void;
@@ -73,13 +71,9 @@ interface TimesheetProviderProps {
   onApprove?: (t: Timesheet) => void;
   onDelete?: (t: Timesheet) => void;
   onAddTimesheet?: () => void;
-  onRequestEdit?: (t: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  requestingTimesheetId?: number | null;
   onBulkApprove?: () => void;
   bulkTransferPercentage?: number;
-  showEditRequestTable?: boolean;
-  userRole?: 'admin' | 'partner';
-  onEditRequestRowClick?: (t: Timesheet) => void;
+  userRole?: 'admin' | 'quanly';
   onExportExcel?: () => void;
   onPaymentHistory?: () => void;
   isExportLoading?: boolean;
@@ -92,8 +86,6 @@ export function TimesheetProvider({
   onApprove,
   onDelete,
   userRole = 'admin',
-  onRequestEdit,
-  requestingTimesheetId = null,
   bulkTransferPercentage = 0,
   onExportExcel,
   onPaymentHistory,
@@ -101,8 +93,8 @@ export function TimesheetProvider({
   children,
 }: TimesheetProviderProps) {
   const value = useMemo<TimesheetContextValue>(() => {
-    const handleApprove = userRole === 'partner' ? () => {} : (onApprove || management.handleApprove);
-    const handleReject = userRole === 'partner' ? () => {} : management.handleReject;
+    const handleApprove = userRole === 'quanly' ? () => {} : (onApprove || management.handleApprove);
+    const handleReject = userRole === 'quanly' ? () => {} : management.handleReject;
     const handleDelete = onDelete || management.handleDelete;
 
     return {
@@ -122,13 +114,11 @@ export function TimesheetProvider({
       delete: handleDelete,
       canDelete: management.canDeleteTimesheet,
       exportExcel: management.handleExportExcel,
-      requestEdit: onRequestEdit,
       pageChange: management.handlePageChange,
       pageSizeChange: management.handlePageSizeChange,
       sortingChange: management.setSorting,
     },
     meta: {
-      requestingTimesheetId,
       bulkTransferPercentage,
       isExportLoading,
     },
@@ -162,8 +152,8 @@ export function TimesheetProvider({
     management.statusFilter, management.setStatusFilter,
     management.projects, management.projectEmployees, management.searchTerm,
     management.setSearchTerm,
-    onEdit, onRequestEdit, userRole,
-    requestingTimesheetId, bulkTransferPercentage, isExportLoading,
+    onEdit, userRole,
+    bulkTransferPercentage, isExportLoading,
     onExportExcel, onPaymentHistory,
     onApprove, onDelete, management.handleApprove, management.handleReject, management.handleDelete,
   ]);

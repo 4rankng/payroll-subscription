@@ -23,12 +23,8 @@ import { useCallback, useMemo } from "react";
 import { useTableSorting } from "@/utils/sorting";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useMediaQuery } from "@/hooks/useBreakpoint";
-import { useAuth } from "@/contexts";
 
 const UsersPage = () => {
-  const { user } = useAuth();
-  const isAdvPartner = user?.role === "adv_partner";
-
   const filterState = useUserFiltersWithBackend();
   const { exportUsers, isExporting } = useUserExport();
   const userData = useUserDataInfinite({
@@ -52,14 +48,14 @@ const UsersPage = () => {
   };
 
   const handleRoleSelect = useCallback(
-    (role?: "admin" | "partner" | "employee" | "accountant") => {
+    (role?: "admin" | "quanly" | "nhanvien" | "giamdoc") => {
       filterState.setRole(role);
     },
     [filterState],
   );
 
   const handleDropdownRoleChange = useCallback(
-    (role: "admin" | "partner" | "employee" | "accountant" | undefined) => {
+    (role: "admin" | "quanly" | "nhanvien" | "giamdoc" | undefined) => {
       filterState.setRole(role);
     },
     [filterState],
@@ -122,27 +118,23 @@ const UsersPage = () => {
 
   return (
     <AdminPageCanvas>
-      {!isAdvPartner && (
-        <AdminPageHeaderCard>
-          <UserPageHeader
-            onAddUser={() => openAddUser()}
-            onExportUsers={() => exportUsers(filterState.filters)}
-            isExporting={isExporting}
-            totalUsers={summaryData?.total_users}
-          />
-        </AdminPageHeaderCard>
-      )}
-
-      {!isAdvPartner && (
-        <UserStatsCards
-          stats={summaryData}
-          isLoading={summaryLoading}
-          error={!!summaryError}
-          onRoleSelect={handleRoleSelect}
-          selectedRole={filterState.role}
-          lastLoginToday={filterState.lastLoginToday}
+      <AdminPageHeaderCard>
+        <UserPageHeader
+          onAddUser={() => openAddUser()}
+          onExportUsers={() => exportUsers(filterState.filters)}
+          isExporting={isExporting}
+          totalUsers={summaryData?.total_users}
         />
-      )}
+      </AdminPageHeaderCard>
+
+      <UserStatsCards
+        stats={summaryData}
+        isLoading={summaryLoading}
+        error={!!summaryError}
+        onRoleSelect={handleRoleSelect}
+        selectedRole={filterState.role}
+        lastLoginToday={filterState.lastLoginToday}
+      />
 
       <AdminSectionCard aria-label="Danh sách người dùng">
         <AdminFilterRow>
@@ -151,13 +143,13 @@ const UsersPage = () => {
             <UserFiltersBar
               search={filterState.search}
               onSearchChange={filterState.setSearch}
-              role={isAdvPartner ? undefined : filterState.role}
+              role={filterState.role}
               onRoleChange={handleDropdownRoleChange}
               projectId={filterState.projectId}
               onProjectChange={filterState.setProjectId}
               onClearFilters={filterState.clearFilters}
               hasActiveFilters={filterState.hasActiveFilters}
-              hideRoleFilter={isAdvPartner}
+              hideRoleFilter={false}
             />
           </div>
         </AdminFilterRow>
@@ -174,7 +166,7 @@ const UsersPage = () => {
           </div>
         )}
         {(!userData.error || userData.users.length > 0) && <ResponsiveTable
-          data={userData.users.filter((u) => u.role !== 'adv_partner')}
+          data={userData.users}
           columns={desktopColumns}
           mobileFields={mobileConfig.mobileFields}
           rowTitle={mobileConfig.rowTitle}

@@ -5,6 +5,7 @@ const SETTINGS_KEYS = {
   WEEKLY_PAYMENT_PERCENTAGE: 'bulk_transfer_payment_percentage',
   MONTHLY_PAYMENT_PERCENTAGE: 'monthly_payment_percentage',
   PARTNER_COMPANY: 'partner_company',
+  SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND: 'subscription_fee_per_employee_per_ky_vnd',
   BULK_TRANSFER_WORKBOOK_LIMIT_VND: 'bulk_transfer_workbook_limit_vnd',
   WALLET_BALANCE_ALERT_THRESHOLD_VND: 'wallet_balance_alert_threshold_vnd',
   SELF_CHECK_IN_ADVANCE_PERCENTAGE: 'self_check_in_advance_percentage',
@@ -35,6 +36,8 @@ export interface SettingsFormState {
   originalMonthlyPayment: string;
   partnerCompany: string;
   originalPartnerCompany: string;
+  subscriptionFeeVnd: string;
+  originalSubscriptionFeeVnd: string;
   bulkTransferWorkbookLimitVnd: string;
   originalBulkTransferWorkbookLimitVnd: string;
   bulkTransferWorkbookLimitSaveError: string | null;
@@ -73,6 +76,7 @@ export interface SettingsFormState {
   setWeeklyPaymentPercentage: (v: string) => void;
   setMonthlyPaymentPercentage: (v: string) => void;
   setPartnerCompany: (v: string) => void;
+  setSubscriptionFeeVnd: (v: string) => void;
   setBulkTransferWorkbookLimitVnd: (v: string) => void;
   setWalletBalanceAlertThresholdVnd: (v: string) => void;
   setSelfCheckInAdvancePercentage: (v: string) => void;
@@ -90,6 +94,7 @@ export interface SettingsFormState {
   handleSaveWeeklyPayment: () => void;
   handleSaveMonthlyPayment: () => void;
   handleSavePartnerCompany: () => void;
+  handleSaveSubscriptionFee: () => void;
   handleSaveBulkTransferWorkbookLimitVnd: () => Promise<void>;
   handleSaveWalletBalanceAlertThresholdVnd: () => Promise<void>;
   handleSaveSelfCheckInAdvancePercentage: () => void;
@@ -113,6 +118,7 @@ export function useSettingsForm(): SettingsFormState {
     SETTINGS_KEYS.WEEKLY_PAYMENT_PERCENTAGE,
     SETTINGS_KEYS.MONTHLY_PAYMENT_PERCENTAGE,
     SETTINGS_KEYS.PARTNER_COMPANY,
+    SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND,
     SETTINGS_KEYS.BULK_TRANSFER_WORKBOOK_LIMIT_VND,
     SETTINGS_KEYS.WALLET_BALANCE_ALERT_THRESHOLD_VND,
     SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_PERCENTAGE,
@@ -138,6 +144,8 @@ export function useSettingsForm(): SettingsFormState {
   const [originalMonthlyPayment, setOriginalMonthlyPayment] = useState('');
   const [partnerCompany, setPartnerCompany] = useState('');
   const [originalPartnerCompany, setOriginalPartnerCompany] = useState('');
+  const [subscriptionFeeVnd, setSubscriptionFeeVnd] = useState('');
+  const [originalSubscriptionFeeVnd, setOriginalSubscriptionFeeVnd] = useState('');
   const [bulkTransferWorkbookLimitVnd, setBulkTransferWorkbookLimitVndState] = useState('');
   const [originalBulkTransferWorkbookLimitVnd, setOriginalBulkTransferWorkbookLimitVnd] = useState('');
   const [walletBalanceAlertThresholdVnd, setWalletBalanceAlertThresholdVndState] = useState('');
@@ -229,6 +237,13 @@ export function useSettingsForm(): SettingsFormState {
       if (partnerCompanySetting?.value) {
         setPartnerCompany(partnerCompanySetting.value);
         setOriginalPartnerCompany(partnerCompanySetting.value);
+      }
+      const subscriptionFeeSetting = settings.find(
+        (s) => s?.key === SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND,
+      );
+      if (subscriptionFeeSetting?.value != null) {
+        setSubscriptionFeeVnd(subscriptionFeeSetting.value);
+        setOriginalSubscriptionFeeVnd(subscriptionFeeSetting.value);
       }
       if (bulkTransferWorkbookLimitSetting?.value != null) {
         setBulkTransferWorkbookLimitVndState(bulkTransferWorkbookLimitSetting.value);
@@ -362,6 +377,22 @@ export function useSettingsForm(): SettingsFormState {
       { id: setting.id, data: { value: partnerCompany } },
       { onSuccess: () => setOriginalPartnerCompany(partnerCompany) },
     );
+  };
+
+  // Upsert: the fee row may not exist yet on an environment that never saved
+  // it — the backend defaults the fee until an admin stores one.
+  const handleSaveSubscriptionFee = () => {
+    const setting = settings?.find((s) => s?.key === SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND);
+    const value = subscriptionFeeVnd;
+    const onSaved = () => setOriginalSubscriptionFeeVnd(value);
+    if (setting?.id) {
+      updateMutation.mutate({ id: setting.id, data: { value } }, { onSuccess: onSaved });
+    } else {
+      createMutation.mutate(
+        { key: SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND, value, value_type: 'number' },
+        { onSuccess: onSaved },
+      );
+    }
   };
 
   const handleSaveSelfCheckInAdvancePercentage = () => {
@@ -510,6 +541,8 @@ export function useSettingsForm(): SettingsFormState {
     originalMonthlyPayment,
     partnerCompany,
     originalPartnerCompany,
+    subscriptionFeeVnd,
+    originalSubscriptionFeeVnd,
     bulkTransferWorkbookLimitVnd,
     originalBulkTransferWorkbookLimitVnd,
     bulkTransferWorkbookLimitSaveError,
@@ -550,6 +583,7 @@ export function useSettingsForm(): SettingsFormState {
     setWeeklyPaymentPercentage,
     setMonthlyPaymentPercentage,
     setPartnerCompany,
+    setSubscriptionFeeVnd,
     setBulkTransferWorkbookLimitVnd,
     setWalletBalanceAlertThresholdVnd,
     setSelfCheckInAdvancePercentage,
@@ -567,6 +601,7 @@ export function useSettingsForm(): SettingsFormState {
     handleSaveWeeklyPayment,
     handleSaveMonthlyPayment,
     handleSavePartnerCompany,
+    handleSaveSubscriptionFee,
     handleSaveBulkTransferWorkbookLimitVnd,
     handleSaveWalletBalanceAlertThresholdVnd,
     handleSaveSelfCheckInAdvancePercentage,

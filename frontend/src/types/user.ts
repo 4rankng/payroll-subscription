@@ -4,7 +4,7 @@ export interface User {
   username: string;
   fullname: string;
   mobile?: string;
-  role: 'admin' | 'partner' | 'employee' | 'adv_partner' | 'accountant';
+  role: 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
   last_login?: string;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ export interface CreateUserData {
   username: string;
   fullname: string;
   password: string;
-  role: 'admin' | 'partner' | 'employee' | 'adv_partner' | 'accountant';
+  role: 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
   mobile?: string;
 }
 
@@ -34,7 +34,7 @@ export interface UpdateUserData {
   email?: string;
   username?: string;
   fullname?: string;
-  role?: 'admin' | 'partner' | 'employee' | 'adv_partner' | 'accountant';
+  role?: 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
   mobile?: string;
 }
 

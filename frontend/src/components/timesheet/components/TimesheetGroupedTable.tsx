@@ -39,7 +39,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 
 export interface TimesheetGroupedTableProps {
   timesheets: Timesheet[];
-  userRole: "admin" | "partner";
+  userRole: "admin" | "quanly";
   expandedGroups: Set<string>;
   onToggleGroup: (groupKey: string) => void;
   onRowClick: (timesheet: Timesheet) => void;
@@ -96,10 +96,10 @@ export const TimesheetGroupedTable = memo(function TimesheetGroupedTable({
             <TableRow className="bg-utility-gray-200 hover:bg-utility-gray-200 border-b border-utility-gray-300">
               <TableHead className="p-0"><span className="sr-only">Trạng thái</span></TableHead>
               <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                {userRole === "partner" ? "Nhân viên · Ngày" : "Nhân viên"}
+                {userRole === "quanly" ? "Nhân viên · Ngày" : "Nhân viên"}
               </TableHead>
               <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                {userRole === "partner" ? "Dự án · Loại ngày" : "Loại ngày"}
+                {userRole === "quanly" ? "Dự án · Loại ngày" : "Loại ngày"}
               </TableHead>
               <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                 Ca làm · Trạng thái
@@ -140,7 +140,7 @@ export const TimesheetGroupedTable = memo(function TimesheetGroupedTable({
 interface GroupRowProps {
   group: EmployeeGroupedTimesheet;
   idx: number;
-  userRole: "admin" | "partner";
+  userRole: "admin" | "quanly";
   isExpanded: boolean;
   onToggle: () => void;
   onRowClick: (timesheet: Timesheet) => void;
@@ -195,7 +195,7 @@ const GroupRow = memo(function GroupRow({
             </TableCell>
             {/* [2] role-specific column */}
             <TableCell className="px-3 py-2.5">
-              {userRole === "partner" ? (
+              {userRole === "quanly" ? (
                 <PartnerGroupColumn group={group} />
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full bg-utility-gray-100 text-xs font-semibold text-muted-foreground tabular-nums">
@@ -340,7 +340,7 @@ const ProjectSection = memo(function ProjectSection({
   project: ProjectTimesheetSection;
   showHeader: boolean;
   isFirstProject: boolean;
-  userRole: "admin" | "partner";
+  userRole: "admin" | "quanly";
   onRowClick: (timesheet: Timesheet) => void;
 }) {
   return (
@@ -392,7 +392,7 @@ interface EntryRowProps {
   entryIdx: number;
   showDate: boolean;
   startsAfterProjectHeader: boolean;
-  userRole: "admin" | "partner";
+  userRole: "admin" | "quanly";
   onClick: () => void;
 }
 
@@ -488,7 +488,7 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
           "text-xs tabular-nums",
           (!entry.payrate || entry.payrate === 0) ? "text-red-700 font-semibold" : "font-medium text-muted-foreground",
         )}>
-          {(!entry.payrate || entry.payrate === 0) && userRole === "partner" ? (
+          {(!entry.payrate || entry.payrate === 0) && userRole === "quanly" ? (
             <span
               className="cursor-pointer hover:underline"
               onClick={(e) => {

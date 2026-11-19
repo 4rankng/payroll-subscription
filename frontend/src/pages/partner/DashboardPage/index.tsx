@@ -18,7 +18,6 @@ import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
 import { PartnerEmployeeListSheet } from '@/components/partner-dashboard/PartnerEmployeeListSheet';
 import { PartnerWorkforceOverviewCard } from '@/components/partner-dashboard/PartnerWorkforceOverviewCard';
-import { PartnerApprovalRequestsCard } from '@/components/partner-dashboard/PartnerApprovalRequestsCard';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatFullCurrency } from '@/utils/formatters';
@@ -276,8 +275,6 @@ const PartnerDashboardPage = () => {
             />
           </div>
         )}
-
-        <PartnerApprovalRequestsCard />
 
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeClick} />

@@ -71,7 +71,7 @@ const NotFound = () => {
             </Button>
           </div>
 
-          {isAuthenticated && (userRole === 'admin' || userRole === 'partner') && (
+          {isAuthenticated && (userRole === 'admin' || userRole === 'quanly') && (
             <div className="pt-4 border-t">
               <p className="typography-body-medium text-muted-foreground text-center mb-3">
                 Hoặc điều hướng đến:
@@ -105,7 +105,7 @@ const NotFound = () => {
                     </Button>
                   </>
                 )}
-                {userRole === 'partner' && (
+                {userRole === 'quanly' && (
                   <>
                     <Button
                       onClick={handlePartnerEmployees}

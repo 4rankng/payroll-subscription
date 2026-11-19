@@ -13,14 +13,6 @@ import {
   VALID_SETTINGS_TABS,
 } from '@/components/settings/SettingsTabList';
 import { useSettingsForm } from '@/hooks/settings/useSettingsForm';
-import { FeeScheduleSection } from '@/components/admin/AdvancePaymentFeeSchedule/FeeScheduleSection';
-import { WeeklyPaymentFeeScheduleSection } from '@/components/admin/WeeklyPaymentFeeSchedule/WeeklyPaymentFeeScheduleSection';
-import { DisbursementFeeScheduleSection } from '@/components/admin/DisbursementFeeSchedule/DisbursementFeeScheduleSection';
-import { ZaloConnectionSection } from '@/components/settings/ZaloConnectionSection';
-import { AdBannerSection } from '@/components/settings/AdBannerSection';
-import { ApiKeysSection } from '@/components/settings/ApiKeysSection';
-import { McpApiKeysSection } from '@/components/settings/McpApiKeysSection';
-import { OpsApiKeysSection } from '@/components/settings/OpsApiKeysSection';
 
 const SettingsPage = () => {
   const form = useSettingsForm();
@@ -97,26 +89,6 @@ const SettingsPage = () => {
 
         <TabsContent value={SETTINGS_TABS.employees} className="mt-0">
           <SettingsEmployeePanel />
-        </TabsContent>
-
-        <TabsContent value={SETTINGS_TABS.feeConfig} className="mt-0 space-y-3">
-          <WeeklyPaymentFeeScheduleSection />
-          <FeeScheduleSection />
-          <DisbursementFeeScheduleSection />
-        </TabsContent>
-
-        <TabsContent value={SETTINGS_TABS.zalo} className="mt-0">
-          <ZaloConnectionSection />
-        </TabsContent>
-
-        <TabsContent value={SETTINGS_TABS.ads} className="mt-0">
-          <AdBannerSection />
-        </TabsContent>
-
-        <TabsContent value={SETTINGS_TABS.apiKeys} className="mt-0 space-y-3">
-          <ApiKeysSection />
-          <McpApiKeysSection />
-          <OpsApiKeysSection />
         </TabsContent>
       </Tabs>
     </div>

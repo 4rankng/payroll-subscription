@@ -116,13 +116,5 @@ export const TAB_CONFIGS = {
   TIMESHEET_DETAILS: {
     validTabs: ['overview', 'breakdown', 'history'] as string[],
     defaultTab: 'overview'
-  },
-  LEDGER_ENTRY_DETAILS: {
-    validTabs: ['details', 'metadata'] as string[],
-    defaultTab: 'details'
-  },
-  APPROVAL_DETAILS: {
-    validTabs: ['details', 'history', 'documents'] as string[],
-    defaultTab: 'details'
   }
 };

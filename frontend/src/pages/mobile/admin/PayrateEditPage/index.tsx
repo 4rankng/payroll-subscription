@@ -252,7 +252,7 @@ export default function PayrateEditPageMobile() {
     clearServerField('rates');
   }, [ratesLocked, clearServerField]);
 
-  const basePath = authManager.getUserRole() === 'partner' ? '/partner' : '/admin';
+  const basePath = authManager.getUserRole() === 'quanly' ? '/partner' : '/admin';
   const goBack = useCallback(() => {
     navigate(`${basePath}/projects?modal=project_details&id=${numProjectId}`);
   }, [navigate, basePath, numProjectId]);

@@ -3,7 +3,6 @@ import {
   FolderOpen,
   UserCheck,
   Clock,
-  CheckSquare,
   UserPlus,
   FolderPlus,
   CalendarPlus,
@@ -24,7 +23,7 @@ export interface Action {
   href?: string;
   onClick?: () => void;
   category: 'navigation' | 'creation' | 'data' | 'management';
-  permissions?: ('admin' | 'partner' | 'employee' | 'adv_partner')[];
+  permissions?: ('admin' | 'quanly' | 'nhanvien')[];
 }
 
 // Define all available actions
@@ -46,7 +45,7 @@ export const allActions: Action[] = [
     icon: FolderOpen,
     href: '/partner/projects',
     category: 'navigation',
-    permissions: ['partner']
+    permissions: ['quanly']
   },
   {
     id: 'nav-users',
@@ -82,7 +81,7 @@ export const allActions: Action[] = [
     icon: UserCheck,
     href: '/partner/employees',
     category: 'navigation',
-    permissions: ['partner']
+    permissions: ['quanly']
   },
   {
     id: 'nav-admin-timesheet',
@@ -100,16 +99,7 @@ export const allActions: Action[] = [
     icon: Clock,
     href: '/partner/timesheet',
     category: 'navigation',
-    permissions: ['partner']
-  },
-  {
-    id: 'nav-approvals',
-    label: 'Hàng đợi duyệt',
-    description: 'Xử lý các yêu cầu cần duyệt',
-    icon: CheckSquare,
-    href: '/admin/approvals',
-    category: 'navigation',
-    permissions: ['admin']
+    permissions: ['quanly']
   },
 
   // Creation Actions
@@ -138,7 +128,7 @@ export const allActions: Action[] = [
     icon: Users,
     href: '/admin/employees?modal=add_employee',
     category: 'creation',
-    permissions: ['admin', 'partner'],
+    permissions: ['admin', 'quanly'],
   },
   {
     id: 'create-timesheet',
@@ -147,7 +137,7 @@ export const allActions: Action[] = [
     icon: CalendarPlus,
     href: '/admin/timesheet?modal=timesheet_entry',
     category: 'creation',
-    permissions: ['admin', 'partner'],
+    permissions: ['admin', 'quanly'],
   },
 
   // Data Actions
@@ -157,7 +147,7 @@ export const allActions: Action[] = [
     description: 'Tải xuống danh sách nhân viên',
     icon: Download,
     category: 'data',
-    permissions: ['admin', 'partner']
+    permissions: ['admin', 'quanly']
   },
   {
     id: 'import-employees',
@@ -165,7 +155,7 @@ export const allActions: Action[] = [
     description: 'Nhập danh sách nhân viên từ file',
     icon: Upload,
     category: 'data',
-    permissions: ['admin', 'partner']
+    permissions: ['admin', 'quanly']
   },
   {
     id: 'export-timesheet',
@@ -173,7 +163,7 @@ export const allActions: Action[] = [
     description: 'Tải xuống dữ liệu chấm công',
     icon: Download,
     category: 'data',
-    permissions: ['admin', 'partner']
+    permissions: ['admin', 'quanly']
   },
 
   // Management Actions
@@ -183,7 +173,7 @@ export const allActions: Action[] = [
     description: 'Xem thông tin cá nhân',
     icon: Eye,
     category: 'management',
-    permissions: ['admin', 'partner']
+    permissions: ['admin', 'quanly']
   },
   {
     id: 'edit-profile',
@@ -191,7 +181,7 @@ export const allActions: Action[] = [
     description: 'Cập nhật thông tin cá nhân',
     icon: Edit,
     category: 'management',
-    permissions: ['admin', 'partner']
+    permissions: ['admin', 'quanly']
   },
   {
     id: 'search',
@@ -199,18 +189,18 @@ export const allActions: Action[] = [
     description: 'Tìm kiếm trong hệ thống',
     icon: Search,
     category: 'management',
-    permissions: ['admin', 'partner'],
+    permissions: ['admin', 'quanly'],
   }
 ];
 
 // Helper functions to get actions by role
-export const getActionsByRole = (role: 'admin' | 'partner' | 'employee' | 'adv_partner'): Action[] => {
+export const getActionsByRole = (role: 'admin' | 'quanly' | 'nhanvien'): Action[] => {
   return allActions.filter(action =>
     action.permissions?.includes(role) || !action.permissions
   );
 };
 
-export const getActionsByCategory = (category: Action['category'], role?: 'admin' | 'partner' | 'employee' | 'adv_partner'): Action[] => {
+export const getActionsByCategory = (category: Action['category'], role?: 'admin' | 'quanly' | 'nhanvien'): Action[] => {
   let actions = allActions.filter(action => action.category === category);
 
   if (role) {
@@ -222,7 +212,7 @@ export const getActionsByCategory = (category: Action['category'], role?: 'admin
   return actions;
 };
 
-export const getQuickActions = (role: 'admin' | 'partner' | 'employee' | 'adv_partner', limit: number = 6): Action[] => {
+export const getQuickActions = (role: 'admin' | 'quanly' | 'nhanvien', limit: number = 6): Action[] => {
   // Fixed list of priority quick actions: add new project, add new employee, add new timesheet entry
   const priorityActionIds = [
     'create-project',
@@ -253,7 +243,7 @@ export const getActionById = (id: string): Action | undefined => {
 };
 
 // Search actions
-export const searchActions = (query: string, role?: 'admin' | 'partner' | 'employee' | 'adv_partner'): Action[] => {
+export const searchActions = (query: string, role?: 'admin' | 'quanly' | 'nhanvien'): Action[] => {
   const normalizedQuery = query.trim();
 
   const actions = role ? getActionsByRole(role) : allActions;

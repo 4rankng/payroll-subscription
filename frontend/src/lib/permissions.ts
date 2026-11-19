@@ -6,39 +6,15 @@ import { Timesheet } from '@/types/api/timesheet.types';
  * Handles business rules for role-based actions
  */
 
-export type UserRole = 'admin' | 'partner' | 'employee' | 'adv_partner' | 'accountant';
-
-/**
- * Check if Partner can edit a timesheet
- * Rules:
- * - Admin can always edit timesheets
- * - Partner can edit timesheets EXCEPT when status is 'approved' or 'rejected'
- */
-export const canPartnerEditTimesheet = (
-  timesheet: Timesheet | { status: string },
-  userRole?: UserRole | null
-): boolean => {
-  const role = userRole || authManager.getUserRole();
-
-  if (!role) return false;
-
-  // Admin has full access
-  if (role === 'admin') return true;
-
-  // Partner cannot edit approved or rejected timesheets
-  if (role === 'partner') {
-    return timesheet.status !== 'approved' && timesheet.status !== 'rejected';
-  }
-
-  return false;
-};
+export type UserRole = 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
 
 /**
  * Check if user can edit a timesheet entry
- * Rules:
- * - Admin can edit approved timesheets if not paid
- * - Admin can edit any timesheet that is not paid
- * - Partner can only edit pending/draft timesheets
+ * Rules (approved timesheets are immutable — reset them first):
+ * - Paid timesheets are never editable
+ * - Approved timesheets are never editable
+ * - Admin can edit pending/rejected timesheets that are not paid
+ * - Partner can edit pending/rejected timesheets that are not paid
  */
 export const canEditTimesheet = (
   timesheet: Timesheet | { status: string; payment_status?: string },
@@ -46,21 +22,16 @@ export const canEditTimesheet = (
 ): boolean => {
   const role = userRole || authManager.getUserRole();
 
-  if (!role) return false;
+  if (role !== 'admin' && role !== 'quanly') return false;
 
   // Cannot edit if already paid
   const paymentStatus = 'payment_status' in timesheet ? timesheet.payment_status : undefined;
   if (paymentStatus === 'paid') return false;
 
-  // Admin can edit if not paid
-  if (role === 'admin') return true;
+  // Approved timesheets are immutable
+  if (timesheet.status === 'approved') return false;
 
-  // Partner cannot edit approved or rejected timesheets
-  if (role === 'partner') {
-    return timesheet.status !== 'approved' && timesheet.status !== 'rejected';
-  }
-
-  return false;
+  return true;
 };
 
 /**
@@ -72,7 +43,7 @@ export const canPartnerManageProject = (userRole?: UserRole | null): boolean => 
 
   if (!role) return false;
 
-  return role === 'admin' || role === 'partner';
+  return role === 'admin' || role === 'quanly';
 };
 
 /**
@@ -103,7 +74,7 @@ export const canDeleteTimesheet = (
   if (role === 'admin') return true;
 
   // Partner cannot delete approved or rejected timesheets
-  if (role === 'partner') {
+  if (role === 'quanly') {
     return timesheet.status !== 'approved' && timesheet.status !== 'rejected';
   }
 

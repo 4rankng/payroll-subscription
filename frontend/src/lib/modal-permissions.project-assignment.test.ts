@@ -9,13 +9,13 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 describe('add employee to project modal permissions', () => {
-  it.each(['admin', 'partner'] as const)('allows the existing %s assignment workflow', (role) => {
+  it.each(['admin', 'quanly'] as const)('allows the existing %s assignment workflow', (role) => {
     vi.mocked(authManager.getUserRole).mockReturnValue(role);
     expect(validateModalPermissionSync('add_employee_to_project')).toBe(true);
     expect(validateModalPermissionSync('add_employee_to_project', { projectId: '123' })).toBe(true);
   });
 
-  it.each(['employee', 'adv_partner', 'accountant', null] as Array<AppRole | null>)(
+  it.each(['nhanvien', 'giamdoc', null] as Array<AppRole | null>)(
     'denies assignment access for %s',
     (role) => {
       vi.mocked(authManager.getUserRole).mockReturnValue(role);

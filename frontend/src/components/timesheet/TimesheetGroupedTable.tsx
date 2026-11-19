@@ -17,7 +17,6 @@ import {
   Trash2
 } from 'lucide-react';
 import { Timesheet } from '@/types/api/timesheet.types';
-import { showErrorNotification } from '@/utils/error-handler';
 import { TimesheetEntryModal } from './components/TimesheetEntryModal';
 import { GroupBulkRejectDialog } from './components/GroupBulkRejectDialog';
 import { TimesheetEntryCard } from './components/TimesheetEntryCard';
@@ -54,8 +53,6 @@ interface TimesheetGroupedTableProps {
   onDelete: (timesheet: Timesheet) => void;
   onBulkApprove?: (ids: number[]) => Promise<void>;
   onBulkReject?: (ids: number[], reason: string) => Promise<void>;
-  onRequestEdit?: (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  requestingTimesheetId?: number | null;
 }
 
 export function TimesheetGroupedTable({
@@ -67,9 +64,7 @@ export function TimesheetGroupedTable({
   onReject,
   onDelete,
   onBulkApprove,
-  onBulkReject,
-  onRequestEdit,
-  requestingTimesheetId = null
+  onBulkReject
 }: TimesheetGroupedTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
@@ -104,14 +99,6 @@ export function TimesheetGroupedTable({
     setIsEntryModalOpen(false);
     setSelectedTimesheet(null);
   };
-
-  const handleRequestEditWithClose = useCallback((timesheet: Timesheet) => {
-    if (!onRequestEdit) {
-      return;
-    }
-    // Call onRequestEdit with success callback to close modal
-    void Promise.resolve(onRequestEdit(timesheet, handleEntryModalClose)).catch((error) => { showErrorNotification(error); });
-  }, [onRequestEdit]);
 
   const handleBulkGroupApproveClick = (group: GroupedTimesheet) => {
     setBulkApproveGroup(group);
@@ -469,9 +456,6 @@ export function TimesheetGroupedTable({
           existingEntry={selectedTimesheet}
           onSuccess={handleEntryModalClose}
           onDelete={onDelete}
-          onRequestEdit={handleRequestEditWithClose}
-          onRequestEditSuccess={handleEntryModalClose}
-          requestingTimesheetId={requestingTimesheetId}
         />
       )}
 

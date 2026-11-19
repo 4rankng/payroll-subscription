@@ -50,7 +50,7 @@ function UserDetailsSheet({
     username: "",
     fullname: "",
     mobile: "",
-    role: "partner",
+    role: "quanly",
   });
 
   const { data: activityData, isLoading: activityLoading } = useUserActivities(
@@ -80,7 +80,7 @@ function UserDetailsSheet({
     setFormData(prev => ({
       ...prev,
       [field]: value,
-      ...(field === "role" && value !== "admin" && value !== "partner" ? { mobile: "" } : {}),
+      ...(field === "role" && value !== "admin" && value !== "quanly" ? { mobile: "" } : {}),
     }));
   }, []);
 
@@ -175,7 +175,7 @@ function UserDetailsSheet({
                   <Label htmlFor="email" className="text-xs text-muted-foreground">Email</Label>
                   <Input id="email" type="email" value={formData.email || ""} onChange={(e) => handleInputChange("email", e.target.value)} disabled={loading} className="h-11 text-sm" />
                 </div>
-                {(formData.role === "admin" || formData.role === "partner") && (
+                {(formData.role === "admin" || formData.role === "quanly") && (
                   <div className="space-y-1 sm:col-span-2">
                     <Label htmlFor="mobile" className="text-xs text-muted-foreground">Số điện thoại</Label>
                     <Input
@@ -197,9 +197,9 @@ function UserDetailsSheet({
                     <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Quản trị viên</SelectItem>
-                      <SelectItem value="partner">Quản lý</SelectItem>
-                      <SelectItem value="employee">Nhân viên</SelectItem>
-                      <SelectItem value="accountant">Kế toán</SelectItem>
+                      <SelectItem value="quanly">Quản lý</SelectItem>
+                      <SelectItem value="nhanvien">Nhân viên</SelectItem>
+                      <SelectItem value="giamdoc">Kế toán</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -220,7 +220,7 @@ function UserDetailsSheet({
                   <span className="text-xs text-muted-foreground shrink-0">Email</span>
                   <span className="text-xs font-medium break-all min-[380px]:text-right">{user.email || '-'}</span>
                 </div>
-                {(user.role === "admin" || user.role === "partner") && (
+                {(user.role === "admin" || user.role === "quanly") && (
                   <div className="flex flex-col gap-1 px-3 py-2.5 border-b border-border/50 min-[380px]:flex-row min-[380px]:items-baseline min-[380px]:justify-between">
                     <span className="text-xs text-muted-foreground shrink-0">Số điện thoại</span>
                     <span className="text-xs font-medium tabular-nums break-all min-[380px]:text-right">{user.mobile || '-'}</span>
@@ -229,7 +229,7 @@ function UserDetailsSheet({
                 <div className="flex flex-col gap-1 px-3 py-2.5 min-[380px]:flex-row min-[380px]:items-baseline min-[380px]:justify-between">
                   <span className="text-xs text-muted-foreground shrink-0">Vai trò</span>
                   <span className="text-xs font-medium text-right">
-                    {user.role === 'admin' ? 'Quản trị viên' : user.role === 'partner' ? 'Quản lý' : 'Nhân viên'}
+                    {user.role === 'admin' ? 'Quản trị viên' : user.role === 'quanly' ? 'Quản lý' : 'Nhân viên'}
                   </span>
                 </div>
               </div>

@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
-  X, Calendar, Clock, Trash2, Check, XCircle, RotateCcw, FileEdit,
-  AlertTriangle, Info, Lock, Ban, User, Building2,
+  X, Calendar, Clock, Trash2, Check, XCircle, RotateCcw,
+  AlertTriangle, Lock, User, Building2,
 } from "lucide-react";
 import { Timesheet } from "@/types/api/timesheet.types";
 import { InlineAlert } from "@/components/shared/InlineAlert";
@@ -28,9 +28,6 @@ interface TimesheetEntryModalProps {
   onSuccess?: () => void;
   onDelete?: (timesheet: Timesheet) => void;
   canDelete?: (timesheet: Timesheet) => boolean;
-  onRequestEdit?: (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  onRequestEditSuccess?: () => void;
-  requestingTimesheetId?: number | null;
 }
 
 export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
@@ -81,9 +78,6 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
           {existingEntry?.payment_status === "paid" && (
             <InlineAlert severity="error" icon={Lock} message="Đã thanh toán — không thể chỉnh sửa." />
           )}
-          {existingEntry?.status === "approved" && !f.isReadOnly && f.user?.role === "admin" && (
-            <InlineAlert severity="warning" icon={AlertTriangle} message="Bản ghi đã duyệt — hãy cẩn thận khi chỉnh sửa." />
-          )}
           {!f.dateValidation.isValid && (
             <InlineAlert severity="error" icon={AlertTriangle} message={f.dateValidation.errorMessage ?? ""} />
           )}
@@ -103,15 +97,6 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
           )}
           {!f.isPayrateLoading && !f.isPayrateError && f.availableHourTypes.length === 0 && (
             <InlineAlert severity="warning" icon={AlertTriangle} message="Dự án chưa có cấu hình loại giờ." />
-          )}
-          {existingEntry?.request_edit_id != null && (
-            <InlineAlert severity="info" icon={Info} message="Yêu cầu chỉnh sửa đang chờ duyệt."
-              action={f.user?.role === "admin" ? (
-                <Button type="button" variant="success" size="sm" onClick={f.handleApproveEditRequest} disabled={f.isLoading} className="h-7 text-xs px-2.5 shrink-0">
-                  {f.approveEditRequestMutation.isPending ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><Check className="w-3 h-3 mr-1" />Duyệt</>}
-                </Button>
-              ) : undefined}
-            />
           )}
 
           {/* Form fields */}
@@ -201,27 +186,13 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
           {/* Actions */}
           <div className="border-t border-slate-200 pt-4 -mx-5 px-5">
             {f.isReadOnly ? (
-              <div className="space-y-2">
-                {f.requestEditError && <p className="text-xs text-destructive" role="alert">{f.requestEditError}</p>}
-                <div className="flex items-center justify-between">
-                  <div>
-                    {f.user?.role === "partner" && existingEntry?.request_edit_id != null && (
-                      <button type="button" onClick={f.handleCancelEditRequest} disabled={f.isLoading}
-                        className="flex items-center gap-1.5 text-red-700 text-sm font-semibold hover:bg-red-50 px-3 py-2 rounded-lg transition-colors disabled:opacity-40">
-                        {f.cancelEditRequestMutation.isPending ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Ban className="w-3.5 h-3.5" />}
-                        Hủy yêu cầu
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap justify-end gap-2">
-                    {f.canRequestEdit && (
-                      <Button variant="outline" size="sm" onClick={f.handleRequestEditClick} disabled={f.isRequestEditPending || f.isLoading} className="min-h-11">
-                        {f.isRequestEditPending ? <><div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5" />Đang gửi...</> : <><FileEdit className="w-3.5 h-3.5 mr-1.5" />Yêu cầu chỉnh sửa</>}
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={onClose} disabled={f.isLoading} className="min-h-11 text-slate-600">Đóng</Button>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between">
+                {f.user?.role === "admin" && existingEntry?.status === "approved" && existingEntry.payment_status !== "paid" && (
+                  <Button variant="outline" size="sm" onClick={f.handleReset} disabled={f.isLoading} className="min-h-11 text-slate-600">
+                    {f.resetTimesheetMutation.isPending ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><RotateCcw className="w-3.5 h-3.5 mr-1.5" />Reset</>}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={onClose} disabled={f.isLoading} className="min-h-11 text-slate-600">Đóng</Button>
               </div>
             ) : (
               <div className="flex items-center justify-between">

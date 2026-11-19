@@ -8,7 +8,6 @@ import {
 } from '@/hooks/api/useEmployees';
 import { Employee, CreateEmployeeData, UpdateEmployeeData } from '@/types/api/employee.types';
 import type { EmployeeFilters } from '@/types/api/employee.types';
-import type { Bank } from '@/types/api/bank.types';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export interface PaginationState {
@@ -34,7 +33,7 @@ export interface UseEmployeeDataReturn {
   bulkUpdateEmployeeStatus: (employeeIds: number[], status: string) => Promise<void>;
   deleteEmployee: (employeeId: number) => Promise<void>;
   createEmployee: (employee: CreateEmployeeData) => Promise<void>;
-  updateEmployee: (employeeId: number, employee: UpdateEmployeeData, bankObject?: Bank | null) => Promise<void>;
+  updateEmployee: (employeeId: number, employee: UpdateEmployeeData) => Promise<void>;
   refreshData: () => void;
 }
 
@@ -155,8 +154,8 @@ export const useEmployeeData = (): UseEmployeeDataReturn => {
     await createMutation.mutateAsync(employeeData);
   }, [createMutation]);
 
-  const updateEmployee = useCallback(async (employeeId: number, employeeData: UpdateEmployeeData, bankObject?: Bank | null): Promise<void> => {
-    await updateMutation.mutateAsync({ id: employeeId, data: employeeData, bank: bankObject });
+  const updateEmployee = useCallback(async (employeeId: number, employeeData: UpdateEmployeeData): Promise<void> => {
+    await updateMutation.mutateAsync({ id: employeeId, data: employeeData });
   }, [updateMutation]);
 
   const refreshData = useCallback(() => {

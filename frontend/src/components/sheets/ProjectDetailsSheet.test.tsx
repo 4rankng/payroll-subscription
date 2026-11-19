@@ -8,7 +8,7 @@ const navigateMock = vi.fn();
 const closeModalMock = vi.fn();
 const invalidateQueriesMock = vi.fn();
 
-let currentRole: "admin" | "partner" = "admin";
+let currentRole: "admin" | "quanly" = "admin";
 
 const project = {
   id: 58,
@@ -181,7 +181,7 @@ describe("ProjectDetailsSheet", () => {
   });
 
   it("navigates partners to the partner payrate editor", () => {
-    currentRole = "partner";
+    currentRole = "quanly";
 
     render(
       <ProjectDetailsSheet
@@ -197,7 +197,7 @@ describe("ProjectDetailsSheet", () => {
   });
 
   it("shows the Phân quyền tab to a partner who holds a project grant (PAYR-30)", () => {
-    currentRole = "partner";
+    currentRole = "quanly";
     accessManage.list = [managerRow];
 
     render(
@@ -212,7 +212,7 @@ describe("ProjectDetailsSheet", () => {
   });
 
   it("hides the Phân quyền tab from a partner without a project grant", () => {
-    currentRole = "partner";
+    currentRole = "quanly";
     accessManage.list = [];
 
     render(
@@ -227,7 +227,7 @@ describe("ProjectDetailsSheet", () => {
   });
 
   it("survives the deep-link loading → loaded transition (hook order, PAYR-30)", () => {
-    currentRole = "partner";
+    currentRole = "quanly";
     accessManage.list = [managerRow];
     mockUseProject.mockReturnValue({ data: undefined, isLoading: true });
 

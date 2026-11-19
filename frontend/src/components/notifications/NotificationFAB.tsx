@@ -25,7 +25,7 @@ export const NotificationFAB = () => {
   };
 
   const role = authManager.getUserRole();
-  const isAdminOrPartner = role === 'admin' || role === 'partner';
+  const isAdminOrPartner = role === 'admin' || role === 'quanly';
 
   const hasUnread = unreadCount > 0;
 

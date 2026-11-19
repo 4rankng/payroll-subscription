@@ -116,7 +116,7 @@ function ProjectDetailsSheet({
 
     // Check user permissions - use the same permission system as canEditProject but allow deletion of cancelled projects
     const userRole = authManager.getUserRole();
-    const hasPermission = userRole === 'admin' || userRole === 'partner';
+    const hasPermission = userRole === 'admin' || userRole === 'quanly';
     if (!hasPermission) return false;
 
     // Check project constraints - can delete any status except completed, and no approved timesheets
@@ -254,7 +254,7 @@ function ProjectDetailsSheet({
 
   const handleEditPayrate = useCallback((payrateId: number) => {
     if (!project) return;
-    const basePath = userRole === 'partner' ? '/partner' : '/admin';
+    const basePath = userRole === 'quanly' ? '/partner' : '/admin';
     navigate(`${basePath}/projects/${project.id}/payrates/${payrateId}/edit`);
   }, [navigate, project, userRole]);
 
@@ -608,7 +608,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: 'read',
     subject: 'Project',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
   },
   deeplink: {
     enabled: true,

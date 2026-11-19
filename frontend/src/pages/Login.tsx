@@ -135,10 +135,9 @@ const Login = () => {
     if (!isLoading && isAuthenticated) {
       const role = authManager.getUserRole();
       if (role === "admin") navigate("/admin", { replace: true });
-      else if (role === "partner") navigate("/partner/dashboard", { replace: true });
-      else if (role === "adv_partner") navigate("/adv-partner/advance-payments", { replace: true });
-      else if (role === "accountant") navigate("/accountant", { replace: true });
-      else if (role === "employee") navigate("/employee", { replace: true });
+      else if (role === "quanly") navigate("/partner/dashboard", { replace: true });
+      else if (role === "giamdoc") navigate("/accountant", { replace: true });
+      else if (role === "nhanvien") navigate("/employee", { replace: true });
       else navigate("/", { replace: true });
     }
   }, [isLoading, isAuthenticated, navigate]);

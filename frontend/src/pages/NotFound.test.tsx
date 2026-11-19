@@ -3,12 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import NotFound from './NotFound';
 
-const auth = vi.hoisted(() => ({ role: 'employee', valid: true }));
+const auth = vi.hoisted(() => ({ role: 'nhanvien', valid: true }));
 vi.mock('@/lib/auth', () => ({ authManager: { hasSession: () => auth.valid, getUserRole: () => auth.role } }));
 vi.mock('@/lib/logger', () => ({ logNotFoundPath: vi.fn() }));
 
 describe('404 recovery', () => {
-  it.each(['admin', 'partner', 'adv_partner', 'employee', 'accountant'])('returns %s to the role-aware entry point', (role) => {
+  it.each(['admin', 'quanly', 'nhanvien', 'giamdoc'])('returns %s to the role-aware entry point', (role) => {
     auth.role = role;
     auth.valid = true;
     render(<MemoryRouter initialEntries={['/missing']}><Routes><Route path="/missing" element={<NotFound />} /><Route path="/" element={<p>Role home</p>} /></Routes></MemoryRouter>);

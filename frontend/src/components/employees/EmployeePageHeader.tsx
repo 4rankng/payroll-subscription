@@ -44,7 +44,7 @@ export const EmployeePageHeader = ({
   const isAdmin = user?.role === 'admin';
 
   const segments: ToolbarSegment[] = [];
-  if (onExportClick && (isAdmin || user?.role === 'partner')) {
+  if (onExportClick && (isAdmin || user?.role === 'quanly')) {
     segments.push({
       key: 'export',
       label: isExporting ? 'Đang xuất...' : 'Xuất Excel',

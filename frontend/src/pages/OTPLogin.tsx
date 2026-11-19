@@ -85,8 +85,8 @@ const OTPLogin = () => {
         });
         // Navigate by role (mirrors useLogin).
         if (data.user.role === "admin") navigate("/admin", { replace: true });
-        else if (data.user.role === "partner") navigate("/partner/dashboard", { replace: true });
-        else if (data.user.role === "employee") navigate("/employee", { replace: true });
+        else if (data.user.role === "quanly") navigate("/partner/dashboard", { replace: true });
+        else if (data.user.role === "nhanvien") navigate("/employee", { replace: true });
         else navigate("/", { replace: true });
       } else {
         setError("Không nhận được thông tin người dùng. Vui lòng thử lại.");

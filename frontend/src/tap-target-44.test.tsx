@@ -27,15 +27,9 @@ describe("Tap targets ≥44px trên mobile (PAYR-24)", () => {
     expect(css).toContain("max-width: 767.98px");
   });
 
-  it("control ngoài Button cũng được fix: link Quên mật khẩu, chips approvals, month selector", () => {
+  it("control ngoài Button cũng được fix: link Quên mật khẩu, month selector", () => {
     const login = readFileSync(resolve(process.cwd(), "src/pages/Login.tsx"), "utf8");
     expect(login).toContain("tap-target-44 inline-flex min-h-6");
-
-    const approvals = readFileSync(
-      resolve(process.cwd(), "src/pages/mobile/admin/ApprovalsPage/index.tsx"),
-      "utf8",
-    );
-    expect(approvals).toContain("tap-target-44 h-9 shrink-0 rounded-full");
 
     // Selector đóng overflow-hidden + nút dính nhau → phải grow thật, không pseudo.
     const monthSelector = readFileSync(

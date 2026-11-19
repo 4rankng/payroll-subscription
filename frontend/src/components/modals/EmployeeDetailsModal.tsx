@@ -3,7 +3,6 @@ import { EmployeeDetailsSheet } from "@/components/sheets/EmployeeDetailsSheet";
 import { useEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/api/useEmployees";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
 import type { Employee, UpdateEmployeeData } from "@/types/api/employee.types";
-import type { Bank } from "@/types/api/bank.types";
 
 export const modalConfig = {
   id: 'employee-details',
@@ -32,9 +31,9 @@ export function EmployeeDetailsModal() {
     closeModal();
   };
 
-  const handleUpdate = async (employeeId: number, employeeData: Partial<Employee>, bankObject?: Bank | null) => {
+  const handleUpdate = async (employeeId: number, employeeData: Partial<Employee>) => {
     const updateData = employeeData as UpdateEmployeeData;
-    return updateEmployeeMutation.mutateAsync({ id: employeeId, data: updateData, bank: bankObject });
+    return updateEmployeeMutation.mutateAsync({ id: employeeId, data: updateData });
   };
 
   const handleDelete = (employee: Employee) => {

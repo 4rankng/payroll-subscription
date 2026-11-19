@@ -5,9 +5,6 @@ import type {
   DashboardSummaryParams,
   FinancialOverviewResponse,
   FinancialOverviewParams,
-  FinancialChartResponse,
-  FinancialChartParams,
-  FinancialChartDataPoint,
   RecentActivity,
   RecentActivitiesResponse,
   RecentActivitiesParams,
@@ -68,24 +65,6 @@ class DashboardService {
       status: response.status || 'success',
       data: response.data,
       message: response.message || 'Financial overview retrieved successfully'
-    };
-  }
-
-  /**
-   * Get Financial Chart Data
-   * Returns financial data for charts based on period (day/week/month/quarter/year)
-   */
-  async getFinancialChart(params: FinancialChartParams): Promise<FinancialChartResponse> {
-    const queryString = buildQueryString(params);
-    const response = await apiClient.get<FinancialChartResponse>(`${API_ENDPOINTS.dashboard.financial}${queryString}`);
-    if (!response.data) {
-      return { status: 'success' as const, data: [], message: 'No data' };
-    }
-    const data = response.data;
-    return {
-      status: (data.status as 'success' | 'error') || 'success',
-      data: data.data || [],
-      message: data.message || response.message || 'Financial chart data retrieved successfully'
     };
   }
 

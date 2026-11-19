@@ -24,7 +24,6 @@ import { EmployeeDetailsSheet } from "@/components/employees/details/EmployeeDet
 import { useActiveEmployeesBySchedule } from "@/hooks/api/useDashboard";
 import { useEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/api/useEmployees";
 import type { Employee } from "@/types/api/employee.types";
-import type { Bank } from "@/types/api/bank.types";
 
 type Schedule = "weekly" | "monthly" | "flexible";
 
@@ -36,8 +35,8 @@ const SCHEDULE_LABELS: Record<Schedule, string> = {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Quản trị",
-  partner: "Quản lý",
-  employee: "Nhân viên",
+  quanly: "Quản lý",
+  nhanvien: "Nhân viên",
 };
 
 /** Desktop variant of the dashboard "active users" drill-down (PAYR-23):
@@ -60,12 +59,10 @@ const ActivityUsersPage = () => {
   const handleUpdate = async (
     employeeId: number,
     employeeData: Partial<Employee>,
-    bankObject?: Bank | null,
   ) => {
     updateEmployeeMutation.mutate({
       id: employeeId,
       data: employeeData as Partial<Employee>,
-      bank: bankObject,
     });
   };
 

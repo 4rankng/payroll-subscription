@@ -12,7 +12,6 @@ Page-level route components for the Admin role. Admins have full access to all f
 | File | Description |
 |------|-------------|
 | `index.tsx` | Admin layout with sidebar navigation and role guard |
-| `AdvPartnerView.tsx` | Advance payment partner management view |
 | `types.ts` | Admin page-level type definitions |
 
 ## Subdirectories
@@ -24,15 +23,9 @@ Page-level route components for the Admin role. Admins have full access to all f
 | `ProjectsPage/` | Project list, create, detail with assignments |
 | `TimesheetPage/` | Timesheet entry, approval, export, import |
 | `PayrateEditPage/` | Payrate editor (flexible and matrix modes) |
-| `AdvancePaymentsPage/` | Advance payment management and approval |
-| `TransactionsPage/` | Transaction history and settlement tracking |
-| `WalletPage/` | Wallet balance and disbursement management |
 | `ManualDisbursementPage/` | Shared manual disbursement form/dialog components used by wallet flows |
 | `UsersPage/` | User management with role assignments |
-| `LoansPage/` | Loan management and repayment tracking |
 | `AuditLogPage/` | Audit log viewer with filtering |
-| `SystemHealthPage/` | System health monitoring dashboard |
-| `CronHealthPage/` | Cron job status and health monitoring |
 | `SettingsPage/` | Application settings configuration |
 | `components/` | Shared admin page components |
 
@@ -74,27 +67,6 @@ Page-level route components for the Admin role. Admins have full access to all f
 | `types.ts` | Payrate page types |
 | `utils.ts` | Payrate page utility functions |
 
-### AdvancePaymentsPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | Advance payment list with status filters |
-| `utils.ts` | Advance payment page utilities |
-
-### TransactionsPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | Transaction history at `/admin/transactions` |
-| `constants.ts` | Transaction page constants |
-| `utils.ts` | Transaction page utility functions |
-
-### WalletPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | Wallet page with balance and transaction tabs |
-
 ### ManualDisbursementPage/
 
 | File | Description |
@@ -112,12 +84,6 @@ Page-level route components for the Admin role. Admins have full access to all f
 |------|-------------|
 | `index.tsx` | User management page |
 
-### LoansPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | Loan management page |
-
 ### AuditLogPage/
 
 | File | Description |
@@ -128,19 +94,6 @@ Page-level route components for the Admin role. Admins have full access to all f
 | `AuditLogFilters.tsx` | Audit log filter bar |
 | `MetadataRenderer.tsx` | Metadata JSON renderer |
 | `utils.ts` | Audit log utility functions |
-
-### SystemHealthPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | System health dashboard |
-
-### CronHealthPage/
-
-| File | Description |
-|------|-------------|
-| `index.tsx` | Cron health monitoring page |
-| `utils.ts` | Cron health utility functions |
 
 ### SettingsPage/
 

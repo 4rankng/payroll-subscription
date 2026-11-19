@@ -9,17 +9,12 @@ import {
   useRejectTimesheet,
   useResetTimesheet,
 } from "@/hooks/api/useTimesheets";
-import {
-  useCancelEditRequest,
-  useApproveEditRequest,
-} from "@/hooks/api/useTimesheetEditRequests";
 import { useCurrentPayRate, isForbiddenError } from "@/hooks/api/usePayRates";
 import { useActiveProjectEmployees } from "@/hooks/api/useProjectEmployees";
 import { useProject } from "@/hooks/api/useProjects";
 import { useAuth } from "@/contexts/AuthContext";
 import { canEditTimesheet } from "@/lib/permissions";
 import { vietnameseEquals } from "@/utils/vietnameseNormalization";
-import { getErrorMessage } from "@/utils/error-handler";
 import {
   calculateTimesheetPreviewAmount,
   findTimesheetRate,
@@ -40,9 +35,6 @@ interface UseTimesheetEntryFormProps {
   existingEntry?: Timesheet | null;
   onSuccess?: () => void;
   onDelete?: (timesheet: Timesheet) => void;
-  onRequestEdit?: (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  onRequestEditSuccess?: () => void;
-  requestingTimesheetId?: number | null;
 }
 
 export function useTimesheetEntryForm({
@@ -54,9 +46,6 @@ export function useTimesheetEntryForm({
   existingEntry,
   onSuccess,
   onDelete,
-  onRequestEdit,
-  onRequestEditSuccess,
-  requestingTimesheetId = null,
 }: UseTimesheetEntryFormProps) {
   const [formData, setFormData] = useState<FormData>({
     hoursWorked: 8,
@@ -69,8 +58,6 @@ export function useTimesheetEntryForm({
   const approveTimesheetMutation = useApproveTimesheet();
   const rejectTimesheetMutation = useRejectTimesheet();
   const resetTimesheetMutation = useResetTimesheet();
-  const cancelEditRequestMutation = useCancelEditRequest();
-  const approveEditRequestMutation = useApproveEditRequest();
   const { user } = useAuth();
 
   const { data: payrateData, isLoading: isPayrateLoading, isError: isPayrateError, error: payrateError } =
@@ -93,19 +80,6 @@ export function useTimesheetEntryForm({
 
   const isEditing = !!existingEntry;
   const isReadOnly = existingEntry ? !canEditTimesheet(existingEntry, user?.role) : false;
-
-  const canRequestEdit = Boolean(
-    user?.role === "partner" &&
-    existingEntry &&
-    existingEntry.status === "approved" &&
-    existingEntry.payment_status === "pending" &&
-    !existingEntry.allowed_edit &&
-    (existingEntry.request_edit_id === undefined || existingEntry.request_edit_id === null) &&
-    onRequestEdit,
-  );
-
-  const isRequestEditPending = existingEntry ? requestingTimesheetId === existingEntry.id : false;
-  const [requestEditError, setRequestEditError] = useState<string | null>(null);
 
   const displayProjectName = existingEntry?.projectName ?? "";
   const displayEmployeeName = existingEntry?.employeeName ?? "";
@@ -187,9 +161,6 @@ export function useTimesheetEntryForm({
     }
   }, [isOpen, existingEntry, availableHourTypes, availableDayTypes]);
 
-  useEffect(() => { if (!isOpen) setRequestEditError(null); }, [isOpen]);
-  useEffect(() => { setRequestEditError(null); }, [existingEntry?.id]);
-
   // Save logic
   const performSave = useCallback(async () => {
     if (isEditing && existingEntry) {
@@ -238,9 +209,7 @@ export function useTimesheetEntryForm({
     updateTimesheetMutation.isPending ||
     approveTimesheetMutation.isPending ||
     rejectTimesheetMutation.isPending ||
-    resetTimesheetMutation.isPending ||
-    cancelEditRequestMutation.isPending ||
-    approveEditRequestMutation.isPending;
+    resetTimesheetMutation.isPending;
 
   const handleDelete = useCallback(async () => {
     if (!existingEntry || !onDelete) return;
@@ -290,45 +259,6 @@ export function useTimesheetEntryForm({
       onClose();
     } catch (error) { console.error("Reset failed:", error); }
   }, [existingEntry, resetTimesheetMutation, onSuccess, onClose]);
-
-  const handleRequestEditClick = useCallback(async () => {
-    if (!existingEntry || !onRequestEdit || isRequestEditPending) return;
-    setRequestEditError(null);
-    let hasHandledSuccess = false;
-    const handleSuccess = async () => {
-      if (hasHandledSuccess) return;
-      hasHandledSuccess = true;
-      if (onRequestEditSuccess) await onRequestEditSuccess();
-      if (onSuccess) await onSuccess();
-      onClose();
-    };
-    try {
-      await Promise.resolve(onRequestEdit(existingEntry, handleSuccess));
-      await handleSuccess();
-    } catch (error) { setRequestEditError(getErrorMessage(error)); }
-  }, [existingEntry, onRequestEdit, isRequestEditPending, onRequestEditSuccess, onSuccess, onClose]);
-
-  const handleCancelEditRequest = useCallback(async () => {
-    if (!existingEntry) return;
-    try {
-      await cancelEditRequestMutation.mutateAsync(existingEntry.id);
-      await new Promise((r) => setTimeout(r, 50));
-      if (onRequestEditSuccess) await onRequestEditSuccess();
-      if (onSuccess) await onSuccess();
-      onClose();
-    } catch (error) { console.error("Cancel edit request failed:", error); }
-  }, [existingEntry, cancelEditRequestMutation, onRequestEditSuccess, onSuccess, onClose]);
-
-  const handleApproveEditRequest = useCallback(async () => {
-    if (!existingEntry || typeof existingEntry.request_edit_id !== "number") return;
-    try {
-      await approveEditRequestMutation.mutateAsync(existingEntry.request_edit_id);
-      await new Promise((r) => setTimeout(r, 50));
-      if (onRequestEditSuccess) await onRequestEditSuccess();
-      if (onSuccess) await onSuccess();
-      onClose();
-    } catch (error) { console.error("Approve edit request failed:", error); }
-  }, [existingEntry, approveEditRequestMutation, onRequestEditSuccess, onSuccess, onClose]);
 
   // Live payrate calculation
   const liveAmount = useMemo(() => {
@@ -407,14 +337,9 @@ export function useTimesheetEntryForm({
     isReadOnly,
     isEditing,
     canSaveAndApprove,
-    canRequestEdit,
-    isRequestEditPending,
-    requestEditError,
     statusBadge,
     user,
     // Mutations (for pending states in JSX)
-    approveEditRequestMutation,
-    cancelEditRequestMutation,
     rejectTimesheetMutation,
     resetTimesheetMutation,
     // Handlers
@@ -426,8 +351,5 @@ export function useTimesheetEntryForm({
     handleApprove,
     handleReject,
     handleReset,
-    handleRequestEditClick,
-    handleCancelEditRequest,
-    handleApproveEditRequest,
   };
 }

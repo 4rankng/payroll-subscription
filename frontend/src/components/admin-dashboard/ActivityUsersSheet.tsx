@@ -13,8 +13,6 @@ import { useEmployee, useUpdateEmployee, useDeleteEmployee } from '@/hooks/api/u
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { EmptyState } from '@/components/shared/EmptyState';
 import type { Employee } from '@/types/api/employee.types';
-import type { Bank } from '@/types/api/bank.types';
-
 type Schedule = 'weekly' | 'monthly' | 'flexible';
 
 const SCHEDULE_LABELS: Record<Schedule, string> = {
@@ -25,8 +23,8 @@ const SCHEDULE_LABELS: Record<Schedule, string> = {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Quản trị',
-  partner: 'Quản lý',
-  employee: 'Nhân viên',
+  quanly: 'Quản lý',
+  nhanvien: 'Nhân viên',
 };
 
 const SCHEDULE_BADGE_LABELS: Record<string, string> = {
@@ -50,8 +48,8 @@ export function ActivityUsersSheet({ schedule, month, onClose }: ActivityUsersSh
   const updateEmployeeMutation = useUpdateEmployee();
   const deleteEmployeeMutation = useDeleteEmployee();
 
-  const handleUpdate = async (employeeId: number, employeeData: Partial<Employee>, bankObject?: Bank | null) => {
-    updateEmployeeMutation.mutate({ id: employeeId, data: employeeData as Partial<Employee>, bank: bankObject });
+  const handleUpdate = async (employeeId: number, employeeData: Partial<Employee>) => {
+    updateEmployeeMutation.mutate({ id: employeeId, data: employeeData as Partial<Employee> });
   };
 
   const handleDelete = (employee: Employee) => {

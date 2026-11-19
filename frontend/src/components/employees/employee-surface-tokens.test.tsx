@@ -16,7 +16,6 @@ import { describe, expect, it } from "vitest";
 const PORTAL_SURFACE_FILES = [
   "../../pages/employee/EmployeeRouter/index.tsx",
   "../../pages/employee/EmployeePage/index.tsx",
-  "../../pages/employee/FlexiblePayEmployeePage/index.tsx",
   "./EmployeeMobileShell.tsx",
   "./EmployeePortalHeader.tsx",
   "./EmployeeCanopy.tsx",
@@ -28,11 +27,6 @@ const PORTAL_SURFACE_FILES = [
   "./EmployeeAttendanceActionDock.tsx",
   "./EmployeeAttendanceHistoryCard.tsx",
   "./ChangePasswordSheet.tsx",
-  "./EmployeeAdBanner.tsx",
-  "./EmployeeAdSheet.tsx",
-  "../advance-payment/AdvancePaymentRequestForm.tsx",
-  "../advance-payment/AdvancePaymentHistoryCard.tsx",
-  "../advance-payment/AdvancePaymentConfirmSheet.tsx",
 ] as const;
 
 /** Map-canvas overlay file exempt from the legacy-palette scan (see above). */

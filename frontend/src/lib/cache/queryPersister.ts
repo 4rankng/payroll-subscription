@@ -39,7 +39,7 @@ const DO_NOT_PERSIST_KEYS = [
 function shouldPersist(queryKey: readonly unknown[]): boolean {
   if (!Array.isArray(queryKey) || queryKey.length === 0) return false;
   const rootKey = String(queryKey[0]);
-  if (rootKey === 'employee' && queryKey[1] === 'profile') return false;
+  if (rootKey === 'nhanvien' && queryKey[1] === 'profile') return false;
   return !DO_NOT_PERSIST_KEYS.includes(rootKey);
 }
 

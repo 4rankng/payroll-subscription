@@ -146,7 +146,7 @@ const getRoleBasedPermissions = (role: string): string[] => {
     ];
   }
   
-  if (role === 'partner') {
+  if (role === 'quanly') {
     return [
       'timesheet:edit',
       'timesheet:create',

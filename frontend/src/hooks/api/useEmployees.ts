@@ -21,7 +21,6 @@ import type {
   EmployeeCurrentProjectsFilters,
   GrantEmployeeAccessData,
 } from "@/types/api/employee.types";
-import type { Bank } from "@/types/api/bank.types";
 import type { EmployeeProjectListParams } from "@/types/api/project-employee.types";
 import {
   addItemToList,
@@ -33,15 +32,13 @@ import {
   showErrorNotification,
   showSuccessNotification,
 } from "@/utils/error-handler";
-import { useBankAccountWarning } from "@/contexts/BankAccountWarningContext";
 import { invalidateCache } from "@/lib/cache/invalidationService";
 import { authManager } from "@/lib/auth";
-import { getRejectedBankAccountWarning } from "@/utils/bank-account-warning";
 
 // Get employees summary
 export const useEmployeesSummary = () => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'partner') && userRole !== null;
+  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.employees.summary(),
@@ -54,7 +51,7 @@ export const useEmployeesSummary = () => {
 // Get paginated employees list
 export const useEmployees = (filters?: EmployeeFilters) => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'partner') && userRole !== null;
+  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.employees.list(filters),
@@ -227,7 +224,6 @@ export const useEmployeeTimesheet = (
 // Create employee
 export const useCreateEmployee = () => {
   const queryClient = useQueryClient();
-  const { showBankAccountWarning } = useBankAccountWarning();
 
   return useMutation({
     mutationFn: (data: CreateEmployeeData) =>
@@ -269,18 +265,6 @@ export const useCreateEmployee = () => {
       }
     },
     onError: (error, data) => {
-      const warning = getRejectedBankAccountWarning(
-        error,
-        data.bank_account_name,
-      );
-      if (warning) {
-        showBankAccountWarning({
-          ...warning,
-          attemptedAccountNumber:
-            warning.attemptedAccountNumber ?? data.bank_account_number,
-        });
-        return;
-      }
       showErrorNotification(error);
     },
   });
@@ -289,25 +273,17 @@ export const useCreateEmployee = () => {
 // Update employee
 export const useUpdateEmployee = () => {
   const queryClient = useQueryClient();
-  const { showBankAccountWarning } = useBankAccountWarning();
 
   return useMutation({
     mutationFn: ({
       id,
       data,
-      bank,
     }: {
       id: number;
       data: UpdateEmployeeData;
-      bank?: Bank | null;
     }) => employeeService.updateEmployee(id, data),
-    onSuccess: (response, { id, bank: selectedBank }) => {
+    onSuccess: (response, { id }) => {
       const employeeData = response.data!;
-
-      // If bank object is missing in response but we have bank data, add it
-      if (!employeeData.bank && selectedBank) {
-        employeeData.bank = selectedBank;
-      }
 
       // Use server response to update caches directly
       updateItemInList(queryClient, QueryKeys.employees.list(), employeeData);
@@ -331,27 +307,7 @@ export const useUpdateEmployee = () => {
 
       return employeeData;
     },
-    onError: (error, { id, data }) => {
-      const currentEmployee = queryClient.getQueryData<Employee>(
-        QueryKeys.employees.detail(id),
-      );
-      const warning = getRejectedBankAccountWarning(
-        error,
-        data.bank_account_name ?? currentEmployee?.bank_account_name,
-      );
-      if (warning) {
-        showBankAccountWarning({
-          ...warning,
-          originalAccountNumber:
-            warning.originalAccountNumber ??
-            currentEmployee?.bank_account_number,
-          attemptedAccountNumber:
-            warning.attemptedAccountNumber ??
-            data.bank_account_number ??
-            currentEmployee?.bank_account_number,
-        });
-        return;
-      }
+    onError: (error) => {
       showErrorNotification(error);
     },
   });

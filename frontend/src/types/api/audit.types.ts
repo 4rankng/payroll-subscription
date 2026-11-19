@@ -25,7 +25,7 @@ export interface AuditLogEntry {
   id: number;
   userId: number;
   userName: string;
-  userRole: 'admin' | 'partner';
+  userRole: 'admin' | 'quanly';
   userEmail?: string;
   action: AuditAction;
   entityType: EntityType;
@@ -54,7 +54,7 @@ export interface AuditChange {
 export interface UserActivity {
   userId: number;
   userName: string;
-  userRole: 'admin' | 'partner';
+  userRole: 'admin' | 'quanly';
   activitySummary: {
     totalActions: number;
     lastLogin: string;

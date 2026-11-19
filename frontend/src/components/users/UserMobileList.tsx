@@ -17,28 +17,21 @@ const ROLE_CONFIG = {
     name: "text-red-900",
     sub: "text-red-700",
   },
-  partner: {
+  quanly: {
     label: "Quản lý",
     dot: "bg-blue-500",
     card: "border-blue-200 bg-blue-50/60",
     name: "text-blue-900",
     sub: "text-blue-700",
   },
-  adv_partner: {
-    label: "Quản lý ứng lương",
-    dot: "bg-violet-500",
-    card: "border-violet-200 bg-violet-50/60",
-    name: "text-violet-900",
-    sub: "text-violet-700",
-  },
-  accountant: {
+  giamdoc: {
     label: "Kế toán",
     dot: "bg-amber-500",
     card: "border-amber-200 bg-amber-50/60",
     name: "text-amber-900",
     sub: "text-amber-800",
   },
-  employee: {
+  nhanvien: {
     label: "Nhân viên",
     dot: "bg-gray-400",
     card: "border-border/60 bg-card",
@@ -56,7 +49,7 @@ const UserGridCard = React.memo(function UserGridCard({
   user: User;
   onRowClick?: (user: User) => void;
 }) {
-  const cfg = ROLE_CONFIG[(user.role as Role)] ?? ROLE_CONFIG.employee;
+  const cfg = ROLE_CONFIG[(user.role as Role)] ?? ROLE_CONFIG.nhanvien;
 
   return (
     <button

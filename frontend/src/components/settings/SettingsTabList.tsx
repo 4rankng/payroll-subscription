@@ -1,25 +1,17 @@
-import { KeyRound, Megaphone, MessageCircle, Receipt, Settings, Users } from 'lucide-react';
+import { Settings, Users } from 'lucide-react';
 
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const SETTINGS_TABS = {
   general: 'general',
-  feeConfig: 'fee-config',
   employees: 'employees',
-  zalo: 'zalo',
-  ads: 'ads',
-  apiKeys: 'api',
 } as const;
 
 export const VALID_SETTINGS_TABS = new Set<string>(Object.values(SETTINGS_TABS));
 
 const tabs = [
   { value: SETTINGS_TABS.general, label: 'Trả lương', icon: Settings },
-  { value: SETTINGS_TABS.feeConfig, label: 'Tạm ứng', icon: Receipt },
   { value: SETTINGS_TABS.employees, label: 'Nhân viên', icon: Users },
-  { value: SETTINGS_TABS.zalo, label: 'Zalo ZNS', icon: MessageCircle },
-  { value: SETTINGS_TABS.ads, label: 'Quảng cáo', icon: Megaphone },
-  { value: SETTINGS_TABS.apiKeys, label: 'API', icon: KeyRound },
 ] as const;
 
 /**

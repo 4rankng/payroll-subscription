@@ -118,7 +118,7 @@ export function ProjectUserAccessTab({ project }: ProjectUserAccessTabProps) {
             onValueChange={setSelectedUserId}
             placeholder="Chọn người dùng để cấp quyền..."
             excludeUserIds={excludeUserIds}
-            filterRole="partner"
+            filterRole="quanly"
             className="flex-1"
           />
           <Button

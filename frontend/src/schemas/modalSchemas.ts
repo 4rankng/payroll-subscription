@@ -69,12 +69,6 @@ export const saturdayDayTypeSchema = z.object({
   projectId: optionalIdSchema
 });
 
-// Report & Ledger schemas
-export const ledgerDetailsSchema = z.object({
-  id: idSchema,
-  tab: z.enum(['details', 'entries', 'adjustments']).optional().default('details')
-});
-
 export const approvalDetailsSchema = z.object({
   id: idSchema,
   type: z.enum(['timesheet', 'project', 'employee']).optional()
@@ -93,7 +87,6 @@ export const MODAL_SCHEMAS = {
   timesheetDetails: timesheetDetailsSchema,
   timesheetEntry: timesheetEntrySchema,
   saturdayDayType: saturdayDayTypeSchema,
-  ledgerDetails: ledgerDetailsSchema,
   approvalDetails: approvalDetailsSchema
 } as const;
 

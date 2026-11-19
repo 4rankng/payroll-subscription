@@ -51,7 +51,6 @@ export const getMergedStatusBadge = (approvalStatus: Timesheet['status'], paymen
     const paymentVariants = {
       paid: { variant: 'outline' as const, text: 'Đã thanh toán', className: 'bg-green-50 text-green-800 border-green-200' },
       pending: { variant: 'outline' as const, text: 'Đã duyệt', className: 'bg-blue-50 text-blue-800 border-blue-200' },
-      failed: { variant: 'outline' as const, text: 'Thất bại', className: 'bg-red-50 text-red-700 border-red-200' },
       cancelled: { variant: 'outline' as const, text: 'Đã hủy', className: 'bg-muted/50 text-foreground border-border' }
     };
 

@@ -292,31 +292,6 @@ export class ImportExportService {
   }
 
   /**
-   * Export bulk bank transfer file with UTC datetime
-   */
-  async exportBulkBankTransfer(filters: {
-    project_id?: number[];
-    employee_id?: number[];
-    fromDate: string;
-    toDate: string;
-  }): Promise<ExportCreateResponse> {
-    // Ensure dates are in UTC format
-    const utcFilters = {
-      ...filters,
-      fromDate: new Date(filters.fromDate).toISOString(),
-      toDate: new Date(filters.toDate).toISOString(),
-    };
-
-    const response = await apiClient.post<ExportCreateResponse>(API_ENDPOINTS.payrolls.exportBulkTransfer, {
-      filters: utcFilters,
-      format: 'excel',
-      includeHeaders: true,
-      timezone: 'UTC'
-    });
-    return response.data!;
-  }
-
-  /**
    * Wait for export completion with polling
    */
   async waitForExportCompletion(

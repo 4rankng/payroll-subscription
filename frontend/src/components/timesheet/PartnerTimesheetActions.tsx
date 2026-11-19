@@ -1,42 +1,18 @@
 import {
   Clock3,
-  FileDown,
   Files,
   FileUp,
-  History,
   Plus,
-  ReceiptText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PartnerTimesheetActionsProps {
   onAddTimesheet: () => void;
-  onOpenPaymentHistory: () => void;
-  onExportTimesheets: () => void;
-  onExportStatement: () => void;
   onOpenBccHistory: () => void;
   onUploadBcc: () => void;
 }
 
 const supportingActions = [
-  {
-    label: "Lịch sử trả lương",
-    description: "Xem các đợt chi trả",
-    icon: History,
-    handler: "onOpenPaymentHistory",
-  },
-  {
-    label: "Xuất bảng công",
-    description: "Tải dữ liệu đã duyệt",
-    icon: FileDown,
-    handler: "onExportTimesheets",
-  },
-  {
-    label: "Xuất sao kê",
-    description: "Lập sao kê thanh toán",
-    icon: ReceiptText,
-    handler: "onExportStatement",
-  },
   {
     label: "Lịch sử BCC",
     description: "Kiểm tra các lần tải lên",
@@ -53,16 +29,10 @@ const supportingActions = [
 
 export function PartnerTimesheetActions({
   onAddTimesheet,
-  onOpenPaymentHistory,
-  onExportTimesheets,
-  onExportStatement,
   onOpenBccHistory,
   onUploadBcc,
 }: PartnerTimesheetActionsProps) {
   const handlers = {
-    onOpenPaymentHistory,
-    onExportTimesheets,
-    onExportStatement,
     onOpenBccHistory,
     onUploadBcc,
   };
@@ -100,7 +70,7 @@ export function PartnerTimesheetActions({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-1.5 p-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-1.5 p-2 sm:grid-cols-2">
         {supportingActions.map((action) => {
           const Icon = action.icon;
 

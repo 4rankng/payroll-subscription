@@ -27,7 +27,7 @@ import { showSuccessNotification } from '@/utils/error-handler';
 /**
  * EmailPromptGate
  *
- * Nudges authenticated admin/partner/adv_partner users who have no email on
+ * Nudges authenticated admin/quanly users who have no email on
  * file to provide one. OTP 2FA requires an email to deliver codes; this gate
  * runs while OTP is disabled so the population of no-email accounts is reduced
  * before OTP is turned on. (When OTP is enabled, a no-email admin/partner is
@@ -58,7 +58,7 @@ export const EmailPromptGate = () => {
     isAuthenticated &&
     !!user &&
     !user.email &&
-    (role === 'admin' || role === 'partner' || role === 'adv_partner');
+    (role === 'admin' || role === 'quanly');
 
   // Sync dismissal from sessionStorage whenever the authenticated user changes.
   useEffect(() => {

@@ -16,16 +16,13 @@ const SAFE_ROUTES = {
     '/admin/projects',
     '/admin/settings',
   ],
-  partner: [
+  quanly: [
     '/partner/timesheet',
     '/partner/employees',
     '/partner/project',
   ],
-  employee: [
+  nhanvien: [
     '/employee/timesheet',
-  ],
-  adv_partner: [
-    '/adv-partner/advance-payments',
   ],
 } as const;
 
@@ -106,9 +103,8 @@ export const buildNavigationUrl = (target: NavigationTarget): string => {
 export const getFallbackPath = (userRole: string): string => {
   switch (userRole) {
     case 'admin': return '/admin/notifications';
-    case 'partner': return '/partner/notifications';
-    case 'employee': return '/employee/timesheet';
-    case 'adv_partner': return '/adv-partner/advance-payments';
+    case 'quanly': return '/partner/notifications';
+    case 'nhanvien': return '/employee/timesheet';
     default: return '/';
   }
 };

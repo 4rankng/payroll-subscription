@@ -27,9 +27,8 @@ interface UserMultiSelectorProps {
 
 const getRoleLabel = (role: User['role']) => {
   if (role === 'admin') return 'Quản trị viên';
-  if (role === 'partner') return 'Đối tác';
-  if (role === 'adv_partner') return 'Quản lý ứng lương';
-  if (role === 'accountant') return 'Kế toán';
+  if (role === 'quanly') return 'Quản lý';
+  if (role === 'giamdoc') return 'Kế toán';
   return 'Nhân viên';
 };
 
@@ -40,7 +39,7 @@ const buildSelectedUsers = (
   return selectedIds.map((id) => {
     const user = userMap?.[id];
     if (user) return user;
-    return { id, fullname: `Người dùng #${id}`, email: '', username: '', role: 'employee', created_at: '', updated_at: '' };
+    return { id, fullname: `Người dùng #${id}`, email: '', username: '', role: 'nhanvien', created_at: '', updated_at: '' };
   });
 };
 

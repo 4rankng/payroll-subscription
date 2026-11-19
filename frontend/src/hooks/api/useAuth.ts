@@ -45,10 +45,10 @@ export const useLogin = () => {
       if (data.user.role === 'admin') {
 
         navigate('/admin');
-      } else if (data.user.role === 'partner') {
+      } else if (data.user.role === 'quanly') {
 
         navigate('/partner/dashboard');
-      } else if (data.user.role === 'employee') {
+      } else if (data.user.role === 'nhanvien') {
 
         navigate('/employee');
       } else {
@@ -95,9 +95,9 @@ export const useGoogleLogin = () => {
       // Navigate based on role
       if (data.user.role === 'admin') {
         navigate('/admin');
-      } else if (data.user.role === 'partner') {
+      } else if (data.user.role === 'quanly') {
         navigate('/partner/dashboard');
-      } else if (data.user.role === 'employee') {
+      } else if (data.user.role === 'nhanvien') {
         navigate('/employee');
       } else {
         navigate('/');
@@ -181,11 +181,11 @@ export const useUserRole = () => {
 };
 
 // Check if user has specific role
-export const useHasRole = (role: 'admin' | 'partner') => {
+export const useHasRole = (role: 'admin' | 'quanly') => {
   return authService.hasRole(role);
 };
 
 // Check if user has unknown of the roles
-export const useHasAnyRole = (roles: ('admin' | 'partner')[]) => {
+export const useHasAnyRole = (roles: ('admin' | 'quanly')[]) => {
   return authService.hasAnyRole(roles);
 };

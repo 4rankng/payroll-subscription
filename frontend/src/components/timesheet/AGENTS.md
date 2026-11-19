@@ -33,8 +33,6 @@ Components for the timesheet management feature: entry tables, calendar view, bu
 | `TimesheetImportDialog.tsx` | Excel/CSV import dialog |
 | `TimesheetsExportDialog.tsx` | Export dialog (Excel, CSV, PDF) |
 | `TimesheetTemplateExportDialog.tsx` | Template download for bulk import |
-| `PayrollReportExportDialog.tsx` | Payroll report export dialog |
-| `PayrollReportEmailDialog.tsx` | Email payroll report dialog |
 | `BCCUploadModal.tsx` | BCC (Bang Cham Cong) timesheet upload modal |
 | `BulkTransferExportDialog.tsx` | Bulk transfer export dialog |
 | `BulkTransferResultUploadDialog.tsx` | Bulk transfer result upload dialog |

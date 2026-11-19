@@ -32,22 +32,12 @@ component renders bare.
 |------|-------------|
 | `DashboardPage/index.tsx` | Mobile admin dashboard |
 | `DashboardPage/ActivityUsersPage.tsx` | Active-users drill-down (paired with desktop `pages/admin/DashboardPage/ActivityUsersPage.tsx`) |
-| `ApprovalsPage/index.tsx` | Mobile approval queue |
 | `EmployeesPage/index.tsx` | Mobile employee list |
 | `ProjectsPage/index.tsx` | Mobile project list |
 | `TimesheetPage/index.tsx` | Mobile timesheet view |
-| `AdvancePaymentsPage/index.tsx` | Mobile advance payment list |
-| `AdvancePaymentsPage/EmployeeListPage.tsx` | FlexPay employee-limit drill-down (paired with desktop `pages/admin/AdvancePaymentsPage/EmployeeListPage.tsx`) |
 | `AuditLogPage/index.tsx` | Mobile audit log |
-| `CronHealthPage/index.tsx` | Mobile cron health |
-| `LedgerEntriesPage/index.tsx` | Mobile ledger (Transaction model, shared with desktop) |
-| `LoansPage/index.tsx` | Mobile loan management |
-| `LoansPage/LendersPage.tsx` | Lenders drill-down (paired with desktop `pages/admin/LoansPage/LendersPage.tsx`) |
 | `PayrateEditPage/` | Mobile payrate edit |
-| `SettingsPage/index.tsx` | Mobile settings |
-| `SystemHealthPage/index.tsx` | Mobile system health |
 | `UsersPage/index.tsx` | Mobile user management |
-| `WalletPage/index.tsx` | Mobile wallet view |
 
 ### partner/
 
@@ -57,7 +47,6 @@ component renders bare.
 | `EmployeesPage/index.tsx` | Mobile partner employee list |
 | `ProjectsPage/index.tsx` | Mobile project list |
 | `TimesheetsPage/index.tsx` | Mobile partner timesheet view |
-| `TimesheetsPage/PaymentHistoryPage.tsx` | Payment-history mobile variant (paired with desktop `pages/partner/PaymentHistoryPage`) |
 
 ## For AI Agents
 

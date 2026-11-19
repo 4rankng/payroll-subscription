@@ -26,7 +26,6 @@ import { useUserFiltersWithBackend } from "@/hooks/users/useUserFiltersWithBacke
 import { useUserExport } from "@/hooks/users/useUserExport";
 import { useAllProjects } from "@/hooks/api/useProjects";
 import { useUsersSummary } from "@/hooks/api/useUsers";
-import { useAuth } from "@/contexts";
 import { useLocation } from "react-router-dom";
 import { getConsoleKicker } from "@/lib/console";
 import { Download01, FilterLines, Plus, Users01, XClose } from "@untitledui/icons";
@@ -34,9 +33,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const UsersPageMobile = () => {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-  const { user } = useAuth();
   const { pathname } = useLocation();
-  const isAdvPartner = user?.role === "adv_partner";
 
   const filterState = useUserFiltersWithBackend();
   const { exportUsers, isExporting } = useUserExport();
@@ -53,7 +50,7 @@ const UsersPageMobile = () => {
   const { openUserDetails, openAddUser } = useUserModals();
 
   const handleRoleSelect = useCallback(
-    (role?: "admin" | "partner" | "employee") => {
+    (role?: "admin" | "quanly" | "nhanvien") => {
       filterState.setLastLoginToday(false);
       filterState.setRole(role);
     },
@@ -73,7 +70,7 @@ const UsersPageMobile = () => {
       {
         label: "Tổng",
         value: summaryData.total_users || 0,
-        role: null as "admin" | "partner" | "employee" | null,
+        role: null as "admin" | "quanly" | "nhanvien" | null,
       },
       {
         label: "Quản trị",
@@ -83,12 +80,12 @@ const UsersPageMobile = () => {
       {
         label: "Quản lý",
         value: summaryData.total_partners || 0,
-        role: "partner" as const,
+        role: "quanly" as const,
       },
       {
         label: "Nhân viên",
         value: summaryData.total_employees || 0,
-        role: "employee" as const,
+        role: "nhanvien" as const,
       },
     ];
   }, [summaryData]);
@@ -133,33 +130,31 @@ const UsersPageMobile = () => {
         kicker={getConsoleKicker(pathname)}
         icon={Users01}
         actions={
-          !isAdvPartner ? (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-11 w-11 px-0 shrink-0"
-                onClick={() => exportUsers(filterState.filters)}
-                aria-label="Xuất danh sách người dùng"
-                disabled={isExporting}
-              >
-                <Download01 className="h-4 w-4" aria-hidden="true" />
-              </Button>
-              <Button
-                size="sm"
-                className="h-11 px-4 btn-admin-primary shrink-0"
-                onClick={() => openAddUser()}
-              >
-                <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-                Thêm
-              </Button>
-            </div>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11 w-11 px-0 shrink-0"
+              onClick={() => exportUsers(filterState.filters)}
+              aria-label="Xuất danh sách người dùng"
+              disabled={isExporting}
+            >
+              <Download01 className="h-4 w-4" aria-hidden="true" />
+            </Button>
+            <Button
+              size="sm"
+              className="h-11 px-4 btn-admin-primary shrink-0"
+              onClick={() => openAddUser()}
+            >
+              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+              Thêm
+            </Button>
+          </div>
         }
       />
 
       {/* Stats strip */}
-      {!isAdvPartner && !summaryLoading && stats.length > 0 && (
+      {!summaryLoading && stats.length > 0 && (
         <div className="px-4 pb-3">
           <MobileStatStrip
             items={stats.map((stat) => {
@@ -182,7 +177,7 @@ const UsersPageMobile = () => {
           />
         </div>
       )}
-      {summaryLoading && !isAdvPartner && (
+      {summaryLoading && (
         <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-border bg-card mx-4 mb-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className={i > 0 ? "flex min-h-16 flex-col justify-center gap-1.5 border-l border-border px-2 py-2.5" : "flex min-h-16 flex-col justify-center gap-1.5 px-2 py-2.5"}>
@@ -199,16 +194,14 @@ const UsersPageMobile = () => {
           value={filterState.search}
           onSearch={filterState.setSearch}
           placeholder="Tìm tên, email..."
-          className={isAdvPartner ? 'flex-1' : ''}
         />
-        {!isAdvPartner && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 rounded-lg border-border/60 bg-card shrink-0 relative"
-            onClick={() => setFilterSheetOpen(true)}
-            aria-label="Bộ lọc"
-          >
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 rounded-lg border-border/60 bg-card shrink-0 relative"
+          onClick={() => setFilterSheetOpen(true)}
+          aria-label="Bộ lọc"
+        >
             <FilterLines className="h-4 w-4" aria-hidden="true" />
             {activeFilterCount > 0 && (
               <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-xs text-white flex items-center justify-center font-bold">
@@ -216,7 +209,6 @@ const UsersPageMobile = () => {
               </span>
             )}
           </Button>
-        )}
       </div>
 
       {/* Active filter chips */}
@@ -232,9 +224,9 @@ const UsersPageMobile = () => {
               {
                 {
                   admin: "Quản trị viên",
-                  partner: "Quản lý",
-                  employee: "Nhân viên",
-                  accountant: "Kế toán",
+                  quanly: "Quản lý",
+                  nhanvien: "Nhân viên",
+                  giamdoc: "Kế toán",
                 }[filterState.role]
               }
               <XClose className="h-3 w-3" aria-hidden="true" />
@@ -274,7 +266,7 @@ const UsersPageMobile = () => {
           </div>
         )}
         {(!userData.error || userData.users.length > 0) && <UserMobileList
-          users={userData.users.filter((u) => u.role !== 'adv_partner')}
+          users={userData.users}
           onRowClick={(user) => openUserDetails(user.id.toString())}
           emptyState={
             <EmptyState
@@ -313,9 +305,9 @@ const UsersPageMobile = () => {
         )}
         {!userData.error && !userData.hasMore &&
           !userData.isFetchingNextPage &&
-          userData.users.filter((u) => u.role !== 'adv_partner').length > 0 && (
+          userData.users.length > 0 && (
             <p className="text-center py-3 text-xs text-muted-foreground">
-              {userData.users.filter((u) => u.role !== 'adv_partner').length} người dùng
+              {userData.users.length} người dùng
             </p>
           )}
       </div>
@@ -338,7 +330,7 @@ const UsersPageMobile = () => {
                   filterState.setRole(
                     v === "all"
                       ? undefined
-                      : (v as "admin" | "partner" | "employee" | "accountant"),
+                      : (v as "admin" | "quanly" | "nhanvien" | "giamdoc"),
                   )
                 }
               >
@@ -348,9 +340,9 @@ const UsersPageMobile = () => {
                 <SelectContent>
                   <SelectItem value="all">Tất cả vai trò</SelectItem>
                   <SelectItem value="admin">Quản trị viên</SelectItem>
-                  <SelectItem value="partner">Quản lý</SelectItem>
-                  <SelectItem value="employee">Nhân viên</SelectItem>
-                  <SelectItem value="accountant">Kế toán</SelectItem>
+                  <SelectItem value="quanly">Quản lý</SelectItem>
+                  <SelectItem value="nhanvien">Nhân viên</SelectItem>
+                  <SelectItem value="giamdoc">Kế toán</SelectItem>
                 </SelectContent>
               </Select>
             </div>

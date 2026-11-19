@@ -1,15 +1,13 @@
 import { PageHeader } from '@/components/shared/PageHeader';
-import { EditRequestBadge } from './EditRequestBadge';
 import { Plus } from 'lucide-react';
 
 interface TimesheetPageHeaderProps {
-  onEditRequestClick?: () => void;
   onAddTimesheet?: () => void;
-  userRole?: 'admin' | 'partner';
+  userRole?: 'admin' | 'quanly';
 }
 
-export const TimesheetPageHeader = ({ onEditRequestClick, onAddTimesheet, userRole = 'admin' }: TimesheetPageHeaderProps) => {
-  const description = userRole === 'partner'
+export const TimesheetPageHeader = ({ onAddTimesheet, userRole = 'admin' }: TimesheetPageHeaderProps) => {
+  const description = userRole === 'quanly'
     ? 'Theo dõi và quản lý bảng công'
     : 'Theo dõi và duyệt bảng công';
 
@@ -18,12 +16,6 @@ export const TimesheetPageHeader = ({ onEditRequestClick, onAddTimesheet, userRo
       title="Bảng công"
       description={description}
       actions={onAddTimesheet ? [{ label: 'Nhập công', onClick: onAddTimesheet, icon: Plus }] : []}
-    >
-      {onEditRequestClick && (
-        <div className="flex items-center">
-          <EditRequestBadge onClick={onEditRequestClick} />
-        </div>
-      )}
-    </PageHeader>
+    />
   );
 };

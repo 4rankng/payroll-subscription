@@ -1,7 +1,6 @@
 import { TimesheetFilters } from '@/components/timesheet/TimesheetFilters';
 import { TimesheetListTable } from '@/components/timesheet/TimesheetListTable';
 import { TimesheetMobileList } from '@/components/timesheet/TimesheetMobileList';
-import { EditRequestTable } from '@/components/timesheet/EditRequestTable';
 import { TimesheetEmptyState } from '@/components/timesheet/TimesheetEmptyState';
 import { TimesheetProvider, useTimesheetContext } from '@/components/timesheet/TimesheetContext';
 import { useIsMobile } from '@/hooks/useBreakpoint';
@@ -15,13 +14,9 @@ interface TimesheetDisplaySectionProps {
   onApprove?: (timesheet: Timesheet) => void;
   onDelete?: (timesheet: Timesheet) => void;
   onAddTimesheet?: () => void;
-  onRequestEdit?: (timesheet: Timesheet, onSuccess?: () => Promise<void> | void) => Promise<void> | void;
-  requestingTimesheetId?: number | null;
   onBulkApprove?: () => void;
   bulkTransferPercentage?: number;
-  showEditRequestTable?: boolean;
-  userRole?: 'admin' | 'partner';
-  onEditRequestRowClick?: (timesheet: Timesheet) => void;
+  userRole?: 'admin' | 'quanly';
   onExportExcel?: () => void;
   onPaymentHistory?: () => void;
   isExportLoading?: boolean;
@@ -34,11 +29,7 @@ export function TimesheetDisplaySection({
   onDelete,
   onAddTimesheet,
   bulkTransferPercentage = 0,
-  onRequestEdit,
-  requestingTimesheetId = null,
-  showEditRequestTable = false,
   userRole = 'admin',
-  onEditRequestRowClick,
   onExportExcel,
   onPaymentHistory,
   isExportLoading = false,
@@ -50,16 +41,11 @@ export function TimesheetDisplaySection({
       onApprove={onApprove}
       onDelete={onDelete}
       userRole={userRole}
-      onRequestEdit={onRequestEdit}
-      requestingTimesheetId={requestingTimesheetId}
       bulkTransferPercentage={bulkTransferPercentage}
       onExportExcel={onExportExcel}
       onPaymentHistory={onPaymentHistory}
       isExportLoading={isExportLoading}
     >
-      {showEditRequestTable && (
-        <EditRequestTable userRole={userRole} onRowClick={onEditRequestRowClick} />
-      )}
       <TimesheetDisplayContent
         onAddTimesheet={onAddTimesheet}
       />

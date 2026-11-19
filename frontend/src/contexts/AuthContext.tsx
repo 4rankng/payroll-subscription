@@ -153,9 +153,8 @@ export const useAuth = (): AuthContextValue => {
 const getDisplayName = (username: string, role: AppRole): string => {
   if (!username) {
     if (role === 'admin') return 'Quản trị viên';
-    if (role === 'partner') return 'Quản lý';
-    if (role === 'adv_partner') return 'Quản lý ứng lương';
-    if (role === 'accountant') return 'Kế toán';
+    if (role === 'quanly') return 'Quản lý';
+    if (role === 'giamdoc') return 'Kế toán';
     return 'Nhân viên';
   }
 
@@ -167,8 +166,7 @@ const getDisplayName = (username: string, role: AppRole): string => {
   if (capitalizedName) return capitalizedName;
 
   if (role === 'admin') return 'Quản trị viên';
-  if (role === 'partner') return 'Quản lý';
-  if (role === 'adv_partner') return 'Quản lý ứng lương';
-  if (role === 'accountant') return 'Kế toán';
+  if (role === 'quanly') return 'Quản lý';
+  if (role === 'giamdoc') return 'Kế toán';
   return 'Nhân viên';
 };

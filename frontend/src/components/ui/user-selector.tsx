@@ -20,7 +20,7 @@ interface UserSelectorProps {
   placeholder?: string;
   className?: string;
   excludeUserIds?: number[];
-  filterRole?: 'admin' | 'partner' | 'employee';
+  filterRole?: 'admin' | 'quanly' | 'nhanvien';
 }
 
 export function UserSelector({
@@ -177,9 +177,8 @@ export function UserSelector({
                   <span className="typography-caption text-muted-foreground">
                     {user.email} • {
                       user.role === 'admin' ? 'Quản trị viên' :
-                      user.role === 'partner' ? 'Quản lý' :
-                      user.role === 'adv_partner' ? 'Quản lý ứng lương' :
-                      user.role === 'accountant' ? 'Kế toán' :
+                      user.role === 'quanly' ? 'Quản lý' :
+                      user.role === 'giamdoc' ? 'Kế toán' :
                       'Nhân viên'
                     }
                   </span>

@@ -170,7 +170,7 @@ export function EditUserModal({ open, onClose, onSubmit, user, loading = false }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Quản trị viên</SelectItem>
-                <SelectItem value="partner">Quản lý</SelectItem>
+                <SelectItem value="quanly">Quản lý</SelectItem>
               </SelectContent>
             </Select>
             {errors.role && <p className="typography-body-medium text-destructive">{errors.role}</p>}

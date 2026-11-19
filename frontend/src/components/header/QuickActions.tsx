@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Briefcase, FileDown, BarChart3, Wallet } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -7,17 +6,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { PayrollReportExportDialog, PayrollReportExportParams } from '@/components/timesheet/PayrollReportExportDialog';
-import { AdvancePaymentExportDialog } from '@/components/advance-payment/AdvancePaymentExportDialog';
 import { useAuth } from '@/contexts';
 import { useNavigate } from 'react-router-dom';
-import { useExportPayrollReport } from '@/hooks/api/usePayrolls';
 import { cn } from '@/lib/utils';
 import type { AppRole } from '@/lib/auth';
 
@@ -53,22 +43,6 @@ interface QuickActionsProps {
 export const QuickActions = ({ className }: QuickActionsProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [payrollReportDialogOpen, setPayrollReportDialogOpen] = useState(false);
-  const [advancePaymentExportDialogOpen, setAdvancePaymentExportDialogOpen] = useState(false);
-  const exportPayrollReportMutation = useExportPayrollReport();
-
-  const handlePayrollReportExport = () => {
-    setPayrollReportDialogOpen(true);
-  };
-
-  const handlePayrollReportExportSubmit = async (params: PayrollReportExportParams) => {
-    try {
-      await exportPayrollReportMutation.mutateAsync(params);
-      setPayrollReportDialogOpen(false);
-    } catch (error) {
-      // Error is handled by the mutation's onError callback
-    }
-  };
 
   // Fixed list of quick actions - ALL actions available for both roles
   const fixedActions: FixedAction[] = [
@@ -77,21 +51,21 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
       label: 'Tạo dự án',
       icon: () => <IconImage src="/icons/add-project.png" alt="Add project" />,
       href: '/admin/projects?modal=project_create',
-      permissions: ['admin', 'partner'],
+      permissions: ['admin', 'quanly'],
     },
     {
       id: 'create-employee',
       label: 'Thêm nhân viên',
       icon: () => <IconImage src="/icons/add-worker.png" alt="Add employee" />,
       href: '/admin/employees?modal=add_employee',
-      permissions: ['admin', 'partner'],
+      permissions: ['admin', 'quanly'],
     },
     {
       id: 'create-timesheet',
       label: 'Tạo chấm công',
       icon: () => <IconImage src="/icons/add-event.png" alt="Add timesheet" />,
       href: '/admin/timesheet?modal=timesheet_entry',
-      permissions: ['admin', 'partner'],
+      permissions: ['admin', 'quanly'],
     },
   ];
 
@@ -106,7 +80,7 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
     if (action.href) {
       let targetHref = action.href;
 
-      if (user.role === 'partner') {
+      if (user.role === 'quanly') {
         // Update URLs for partner role with same modals
         if (action.id === 'create-project') {
           targetHref = '/partner/projects?modal=project_create';
@@ -155,52 +129,7 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
             </Tooltip>
           );
         })}
-
-        {/* Xuất sao kê — dropdown for Bảng công and Ứng lương */}
-        {user && (user.role === 'admin' || user.role === 'partner') && (
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="relative h-9 w-9 p-0 hover:bg-accent hover:text-accent-foreground touch-manipulation"
-                    aria-label="Xuất sao kê"
-                    disabled={exportPayrollReportMutation.isPending}
-                  >
-                    <IconImage src="/icons/export-doc.png" alt="Export statement" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="font-medium">Xuất sao kê</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handlePayrollReportExport}>
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Bảng công
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setAdvancePaymentExportDialogOpen(true)}>
-                <Wallet className="w-4 h-4 mr-2" />
-                Ứng lương
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
-
-      <PayrollReportExportDialog
-        open={payrollReportDialogOpen}
-        onOpenChange={setPayrollReportDialogOpen}
-        onExport={handlePayrollReportExportSubmit}
-        isLoading={exportPayrollReportMutation.isPending}
-      />
-      <AdvancePaymentExportDialog
-        open={advancePaymentExportDialogOpen}
-        onOpenChange={setAdvancePaymentExportDialogOpen}
-      />
     </TooltipProvider>
   );
 };

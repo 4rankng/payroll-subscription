@@ -7,7 +7,7 @@ import { getModalMetadata } from '@/constants/modalRegistry/index';
 vi.mock('@/lib/auth', () => ({ authManager: { getUserRole: vi.fn() } }));
 
 describe('self-account modal permissions', () => {
-  it.each(['admin', 'partner', 'adv_partner', 'accountant', 'employee'] as const)(
+  it.each(['admin', 'quanly', 'giamdoc', 'nhanvien'] as const)(
     'allows %s to open their own password form', (role) => {
       vi.mocked(authManager.getUserRole).mockReturnValue(role);
       expect(validateModalPermissionSync('change_password')).toBe(true);
@@ -16,12 +16,12 @@ describe('self-account modal permissions', () => {
     },
   );
 
-  it.each(['admin', 'partner'] as const)('allows the existing %s self-profile modal', (role) => {
+  it.each(['admin', 'quanly'] as const)('allows the existing %s self-profile modal', (role) => {
     vi.mocked(authManager.getUserRole).mockReturnValue(role);
     expect(validateModalPermissionSync('user_profile')).toBe(true);
   });
 
-  it.each(['adv_partner', 'accountant', 'employee'] as const)(
+  it.each(['giamdoc', 'nhanvien'] as const)(
     'does not grant %s user administration or new profile routes', (role) => {
       vi.mocked(authManager.getUserRole).mockReturnValue(role);
       expect(canAccess('update', 'User')).toBe(false);

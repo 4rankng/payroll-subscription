@@ -112,7 +112,7 @@ function AddUserSheet({
       newErrors.role = "Vai trò là bắt buộc";
     }
 
-    if ((formData.role === "admin" || formData.role === "partner") && formData.mobile.trim()) {
+    if ((formData.role === "admin" || formData.role === "quanly") && formData.mobile.trim()) {
       const mobileValidation = validatePhoneNumber(formData.mobile);
       if (!mobileValidation.valid) {
         newErrors.mobile = mobileValidation.error || "Số điện thoại không hợp lệ";
@@ -161,7 +161,7 @@ function AddUserSheet({
           fullname: formData.fullname.trim(),
           password: formData.password.trim(),
           role: formData.role as User["role"],
-          ...((formData.role === "admin" || formData.role === "partner") && formData.mobile.trim() && { mobile: formData.mobile.trim() }),
+          ...((formData.role === "admin" || formData.role === "quanly") && formData.mobile.trim() && { mobile: formData.mobile.trim() }),
         });
 
         onClose();
@@ -259,10 +259,9 @@ function AddUserSheet({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Quản trị viên</SelectItem>
-                        <SelectItem value="partner">Quản lý</SelectItem>
-                        <SelectItem value="employee">Nhân viên</SelectItem>
-                        <SelectItem value="adv_partner">Quản lý ứng lương</SelectItem>
-                        <SelectItem value="accountant">Kế toán</SelectItem>
+                        <SelectItem value="quanly">Quản lý</SelectItem>
+                        <SelectItem value="nhanvien">Nhân viên</SelectItem>
+                        <SelectItem value="giamdoc">Kế toán</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.role && <p className="text-xs text-destructive mt-0.5">{errors.role}</p>}
@@ -296,7 +295,7 @@ function AddUserSheet({
                   </div>
                 </div>
 
-                {(formData.role === "admin" || formData.role === "partner") && (
+                {(formData.role === "admin" || formData.role === "quanly") && (
                   <div className="space-y-1">
                     <Label htmlFor="mobile" className="text-xs font-medium">Số điện thoại</Label>
                     <Input
@@ -382,7 +381,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: 'create',
     subject: 'User',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
   },
   deeplink: {
     enabled: false,

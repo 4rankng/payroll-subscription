@@ -16,7 +16,6 @@ vi.mock("@/hooks/api/useSettings", () => ({ useSettingByKey: vi.fn() }));
 vi.mock("@/hooks/api/useNotifications", () => ({ useUnreadNotifications: () => ({ data: { count: 0 } }) }));
 vi.mock("@/hooks/use-infinite-scroll", () => ({ useInfiniteScroll: () => ({ observerRef: vi.fn() }) }));
 vi.mock("@/components/employees/EmployeeMobileShell", () => ({ EmployeeMobileShell: ({ children, canopy }: { children: ReactNode; canopy?: ReactNode }) => <>{canopy}{children}</> }));
-vi.mock("@/components/employees/EmployeeAdBanner", () => ({ EmployeeAdBanner: () => null }));
 vi.mock("@/components/employees/EmployeeBankInfoCard", () => ({ EmployeeBankInfoCard: () => null }));
 vi.mock("@/components/employees/ChangePasswordSheet", () => ({ ChangePasswordSheet: () => null }));
 vi.mock("@/components/notifications/NotificationSheet", () => ({ NotificationSheet: () => null }));

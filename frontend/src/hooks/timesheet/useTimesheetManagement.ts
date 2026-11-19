@@ -18,7 +18,7 @@ import { buildTimesheetStatusFilters, TimesheetStatusFilter } from '@/utils/time
 import { getWeeklyPayrollDefaultMonth } from '@/utils/weekPeriodHelpers';
 
 interface TimesheetManagementConfig {
-  userRole?: 'admin' | 'partner';
+  userRole?: 'admin' | 'quanly';
   useYearToDate?: boolean;
   extraFilters?: Partial<TimesheetFilters>;
 }
@@ -77,7 +77,7 @@ export function useTimesheetManagement(config: TimesheetManagementConfig = {}) {
             sortOrder: (sorting[0].desc ? 'desc' : 'asc') as 'desc' | 'asc',
           }
         : {
-            sortBy: userRole === 'partner' ? 'date' : 'created_at',
+            sortBy: userRole === 'quanly' ? 'date' : 'created_at',
             sortOrder: 'desc' as const,
           }),
     };
@@ -94,7 +94,7 @@ export function useTimesheetManagement(config: TimesheetManagementConfig = {}) {
       apiFilters.toDate = `${selectedMonth}-${lastDay.toString().padStart(2, '0')}`;
     }
     // For partner role, use year-to-date if useYearToDate is true and no specific month is selected
-    else if (useYearToDate && userRole === 'partner') {
+    else if (useYearToDate && userRole === 'quanly') {
       apiFilters.fromDate = yearToDateRange.fromDate;
       apiFilters.toDate = yearToDateRange.toDate;
     }
@@ -404,7 +404,7 @@ export function useTimesheetManagement(config: TimesheetManagementConfig = {}) {
   };
 
   const handleExportExcel = async () => {
-    const defaultDateRange = useYearToDate && userRole === 'partner' ? yearToDateRange : {
+    const defaultDateRange = useYearToDate && userRole === 'quanly' ? yearToDateRange : {
       fromDate: (() => {
         const now = new Date();
         return `${now.getFullYear()}-01-01`;

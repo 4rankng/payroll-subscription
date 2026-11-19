@@ -37,7 +37,7 @@ export interface FinancialOverviewGrowth {
   profit_change_percentage: number;
 }
 
-export interface FinancialChartDataPoint {
+export interface FinancialOverviewChartDataPoint {
   month: string;
   revenue_vnd: number;
   expenses_vnd: number;
@@ -49,7 +49,7 @@ export interface FinancialOverviewData {
   current_month: FinancialOverviewCurrentMonth;
   previous_month: FinancialOverviewCurrentMonth;
   growth: FinancialOverviewGrowth;
-  chart_data: FinancialChartDataPoint[];
+  chart_data: FinancialOverviewChartDataPoint[];
 }
 
 export interface FinancialOverviewParams {
@@ -168,28 +168,6 @@ export interface NewEmployeesResponse {
   status: 'success' | 'error';
   data: NewEmployee[];
   pagination: PaginationData;
-  message: string;
-}
-
-// Financial Chart Types (New endpoint)
-export interface FinancialChartDataPoint {
-  date: string; // Format depends on period: YYYY-MM-DD, YYYY-WW, YYYY-MM, YYYY-QN, YYYY
-  cash_vnd: number;
-  receivable_vnd: number;
-  payable_vnd: number;
-  revenue_vnd: number;
-  expenses_vnd: number;
-  profit_vnd: number;
-  active_employees: number; // total employees assigned to project during the period
-}
-
-export interface FinancialChartParams {
-  period: 'day' | 'week' | 'month' | 'quarter' | 'year';
-}
-
-export interface FinancialChartResponse {
-  status: 'success' | 'error';
-  data: FinancialChartDataPoint[];
   message: string;
 }
 

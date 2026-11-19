@@ -12,7 +12,6 @@ const profileQuery = vi.hoisted(() => ({
 
 vi.mock("@/hooks/api/useEmployeePortal", () => ({ useEmployeeProfile: () => profileQuery }));
 vi.mock("@/pages/employee/EmployeePage", () => ({ default: () => <p>Trang bảng công</p> }));
-vi.mock("@/pages/employee/FlexiblePayEmployeePage", () => ({ default: () => <p>Trang ứng lương</p> }));
 
 describe("EmployeeRouter", () => {
   beforeEach(() => {
@@ -42,19 +41,12 @@ describe("EmployeeRouter", () => {
     expect(profileQuery.refetch).not.toHaveBeenCalled();
   });
 
-  it("routes flexible employees to the advance-pay experience", () => {
-    profileQuery.data = { payment_schedule: "flexible" };
-    render(<EmployeeRouter />);
-
-    expect(screen.getByText("Trang ứng lương")).toBeInTheDocument();
-  });
-
-  it("keeps rendering a retained profile after a background refetch fails", () => {
+  it("keeps rendering the timesheet page after a background refetch fails", () => {
     profileQuery.data = { payment_schedule: "flexible" };
     profileQuery.isError = true;
     render(<EmployeeRouter />);
 
-    expect(screen.getByText("Trang ứng lương")).toBeInTheDocument();
+    expect(screen.getByText("Trang bảng công")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Chưa tải được hồ sơ" })).not.toBeInTheDocument();
   });
 });

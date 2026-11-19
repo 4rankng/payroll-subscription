@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectUserAccessTab } from "./ProjectUserAccessTab";
 import type { Project, ProjectUser } from "@/types/api/project.types";
 
-let currentRole: "admin" | "partner" = "partner";
+let currentRole: "admin" | "quanly" = "quanly";
 let currentUserId = 200;
 let projectUsers: ProjectUser[] = [];
 
@@ -76,7 +76,7 @@ describe("ProjectUserAccessTab (PAYR-30)", () => {
   beforeEach(() => {
     grantMock.mockReset();
     revokeMock.mockReset();
-    currentRole = "partner";
+    currentRole = "quanly";
     currentUserId = 200;
     projectUsers = [creatorRow, managerRow];
   });

@@ -98,6 +98,25 @@ interface SettingsGeneralPanelProps {
 
 export const SettingsGeneralPanel = ({ form }: SettingsGeneralPanelProps) => (
   <div className="columns-1 gap-3 xl:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
+    <SettingsSection kicker="PAYSUB" title="Phí subscription">
+      <SettingCard
+        title="Phí subscription (VND/nhân viên/kỳ)"
+        description="Số tiền tính phí cho mỗi nhân viên distinct trong mỗi kỳ của một tháng làm việc."
+        value={form.subscriptionFeeVnd}
+        originalValue={form.originalSubscriptionFeeVnd}
+        onChange={form.setSubscriptionFeeVnd}
+        onSave={form.handleSaveSubscriptionFee}
+        onReset={() => form.setSubscriptionFeeVnd(form.originalSubscriptionFeeVnd)}
+        isDirty={form.subscriptionFeeVnd !== form.originalSubscriptionFeeVnd}
+        isSaving={form.isSaving}
+        type="number"
+        min={0}
+        max={999999999}
+        step={1000}
+        suffix="VND"
+      />
+    </SettingsSection>
+
     <SettingsSection kicker="Chu kỳ tuần" title="Lương tuần">
       <SettingCard
         title="Tỷ lệ trả lương tuần"

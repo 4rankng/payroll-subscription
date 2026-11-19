@@ -66,16 +66,13 @@ export const createUserColumns = (
       if (role === "admin") {
         roleLabel = "Quản trị viên";
         variant = "destructive";
-      } else if (role === "partner") {
+      } else if (role === "quanly") {
         roleLabel = "Quản lý";
         variant = "default";
-      } else if (role === "employee") {
+      } else if (role === "nhanvien") {
         roleLabel = "Nhân viên";
         variant = "outline";
-      } else if (role === "adv_partner") {
-        roleLabel = "Quản lý ứng lương";
-        variant = "outline";
-      } else if (role === "accountant") {
+      } else if (role === "giamdoc") {
         roleLabel = "Kế toán";
         variant = "outline";
       }

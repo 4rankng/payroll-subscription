@@ -159,7 +159,7 @@ export const TimesheetFilters = () => {
 
       <div className="h-5 w-px bg-border/50 shrink-0 hidden sm:block" />
 
-      {userRole !== 'partner' && (
+      {userRole !== 'quanly' && (
         <FilterPill
           value={selectedMonth}
           onChange={onMonthChange}

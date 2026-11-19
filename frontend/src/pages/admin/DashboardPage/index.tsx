@@ -6,7 +6,6 @@ import { format, startOfMonth } from 'date-fns';
 // follow-up), so UU's plain-FC icons fit everywhere on this page.
 import {
   AlertTriangle,
-  FolderCheck,
   SwitchHorizontal01,
 } from '@untitledui/icons';
 
@@ -15,6 +14,7 @@ import { DashboardHeader } from '@/components/admin-dashboard/DashboardHeader';
 import { RecentEmployeesCard } from '@/components/admin-dashboard/RecentEmployeesCard';
 import { ActivityUsersSheet } from '@/components/admin-dashboard/ActivityUsersSheet';
 import { ProjectProfitabilityCard } from '@/components/admin-dashboard/ProjectProfitabilityCard';
+import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { SalaryDistributionChart } from '@/components/admin-dashboard/SalaryDistributionChart';
 import { MonthlyFinancialTable } from '@/components/admin-dashboard/MonthlyFinancialTable';
 import { TopPaidEmployeesCard } from '@/components/admin-dashboard/TopPaidEmployeesCard';
@@ -29,7 +29,6 @@ import {
 } from '@/components/admin-dashboard/DashboardOverview';
 import { ConsoleSectionHeading } from '@/components/shared/console-panel';
 import { MasonryGrid } from '@/components/shared/masonry-grid';
-import { useApprovalsList } from '@/hooks/api/useApprovals';
 import { useDashboardData } from '@/hooks/admin-dashboard/useDashboardData';
 import { useDashboardActions } from '@/hooks/admin-dashboard/useDashboardActions';
 import { useDashboardStats } from '@/hooks/admin-dashboard/useDashboardStats';
@@ -75,11 +74,6 @@ const AdminDashboard = () => {
   } = useEmployeeActivityStats(monthParam);
   const navigate = useNavigate();
   const dashboardNav = useDashboardNavigation();
-  // Approval-engine queue counts (pending + rescheduled + escalated). The
-  // priority row renders only when non-zero (row law: no zero-value rows).
-  const approvalsQueue = useApprovalsList({ statuses: ['pending', 'rescheduled'], pageSize: 1 });
-  const approvalsEscalated = useApprovalsList({ statuses: ['escalated'], pageSize: 1 });
-
   const pendingApprovals = pendingData?.pagination?.totalRecords ?? null;
 
   const handleRefresh = useCallback(async () => {
@@ -226,28 +220,6 @@ const AdminDashboard = () => {
       });
     }
 
-    const approvalsTotal =
-      (approvalsQueue.data?.pagination?.totalRecords ?? 0) +
-      (approvalsEscalated.data?.pagination?.totalRecords ?? 0);
-
-    if (approvalsTotal > 0) {
-      items.push({
-        title: 'Yêu cầu phê duyệt',
-        detail: 'Đang chờ duyệt hoặc đã leo thang.',
-        value: approvalsTotal.toLocaleString('vi-VN'),
-        statusLabel:
-          (approvalsEscalated.data?.pagination?.totalRecords ?? 0) > 0
-            ? 'Có leo thang'
-            : 'Cần duyệt',
-        icon: FolderCheck,
-        tone:
-          (approvalsEscalated.data?.pagination?.totalRecords ?? 0) > 0
-            ? 'warning'
-            : 'primary',
-        onClick: () => navigate('/admin/approvals'),
-      });
-    }
-
     return items;
   }, [
     dashboardNav,
@@ -255,9 +227,6 @@ const AdminDashboard = () => {
     hasPendingError,
     monthLabel,
     pendingApprovals,
-    approvalsQueue.data,
-    approvalsEscalated.data,
-    navigate,
   ]);
 
   if (loading) {
@@ -314,6 +283,15 @@ const AdminDashboard = () => {
             <MonthlyFinancialTable className="lg:col-span-8" />
             <BankTransferBreakdownCard className="lg:col-span-4" />
           </MasonryGrid>
+        </section>
+
+        <section className="flex flex-col gap-2">
+          <ConsoleSectionHeading
+            kicker="PAYSUB"
+            title="Đã thanh toán"
+            meta="Nhân viên và số tiền đã trả · 12 tháng"
+          />
+          <PaidSeriesSection />
         </section>
 
         <section className="flex flex-col gap-2">

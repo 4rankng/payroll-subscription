@@ -46,7 +46,7 @@ describe('EmployeePageHeader', () => {
   });
 
   it('hides admin-only export segments for partners', () => {
-    mockUser.role = 'partner';
+    mockUser.role = 'quanly';
     renderHeader();
 
     const toolbar = screen.getByTestId('employee-header-toolbar');

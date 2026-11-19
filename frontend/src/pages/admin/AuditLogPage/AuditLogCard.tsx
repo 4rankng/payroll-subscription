@@ -22,8 +22,8 @@ interface AuditLogCardProps {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Quản trị',
-  partner: 'Quản lý',
-  employee: 'Nhân viên',
+  quanly: 'Quản lý',
+  nhanvien: 'Nhân viên',
 };
 
 function getRoleLabel(role: string): string {

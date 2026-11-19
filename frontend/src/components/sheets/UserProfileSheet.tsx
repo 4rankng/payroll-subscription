@@ -95,7 +95,7 @@ export const UserProfileSheet = ({ isOpen, onClose }: UserProfileSheetProps) => 
     },
   });
 
-  const storesMobileOnUser = displayUser?.role === 'admin' || displayUser?.role === 'partner';
+  const storesMobileOnUser = displayUser?.role === 'admin' || displayUser?.role === 'quanly';
 
   const handleEditToggle = () => {
     if (isEditing) {
@@ -163,8 +163,8 @@ export const UserProfileSheet = ({ isOpen, onClose }: UserProfileSheetProps) => 
 
   const getRoleText = (role: NonNullable<typeof displayUser>["role"]): string => {
     if (role === 'admin') return 'Quản trị viên';
-    if (role === 'partner' || role === 'adv_partner') return 'Quản lý';
-    if (role === 'accountant') return 'Kế toán';
+    if (role === 'quanly') return 'Quản lý';
+    if (role === 'giamdoc') return 'Kế toán';
     return 'Nhân viên';
   };
 
@@ -418,7 +418,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: 'read',
     subject: 'User',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
   },
   deeplink: {
     enabled: false,

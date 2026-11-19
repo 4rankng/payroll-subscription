@@ -141,7 +141,7 @@ export const MissingMobileSection = ({
 
   const toggle = useCallback(() => setIsExpanded(v => !v), []);
 
-  // "No dead card" rule (same as PartnerApprovalRequestsCard): while loading
+  // "No dead card" rule: while loading
   // or when both lists are clean the section renders nothing at all — a
   // partner with a healthy phone book never sees an empty warning shell.
   if (missingLoading || duplicateLoading) return null;

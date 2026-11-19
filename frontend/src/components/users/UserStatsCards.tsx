@@ -8,8 +8,8 @@ interface UserStatsCardsProps {
   stats?: UserSummary;
   isLoading?: boolean;
   error?: boolean;
-  onRoleSelect?: (role?: 'admin' | 'partner' | 'employee' | 'accountant') => void;
-  selectedRole?: 'admin' | 'partner' | 'employee' | 'accountant';
+  onRoleSelect?: (role?: 'admin' | 'quanly' | 'nhanvien' | 'giamdoc') => void;
+  selectedRole?: 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
   lastLoginToday?: boolean;
 }
 
@@ -23,8 +23,8 @@ export const UserStatsCards = ({
 }: UserStatsCardsProps) => {
   const handleAll = useCallback(() => onRoleSelect?.(undefined), [onRoleSelect]);
   const handleAdmin = useCallback(() => onRoleSelect?.('admin'), [onRoleSelect]);
-  const handlePartner = useCallback(() => onRoleSelect?.('partner'), [onRoleSelect]);
-  const handleEmployee = useCallback(() => onRoleSelect?.('employee'), [onRoleSelect]);
+  const handlePartner = useCallback(() => onRoleSelect?.('quanly'), [onRoleSelect]);
+  const handleEmployee = useCallback(() => onRoleSelect?.('nhanvien'), [onRoleSelect]);
 
   // Merged stats in 2x2 grid: [Tổng, QTV] [QL, NV]
   const mergedStats = useMemo<StatItemProps[]>(() => {
@@ -49,14 +49,14 @@ export const UserStatsCards = ({
         value: stats.total_partners || 0,
         icon: Briefcase,
         onClick: onRoleSelect ? handlePartner : undefined,
-        isActive: selectedRole === 'partner',
+        isActive: selectedRole === 'quanly',
       },
       {
         label: 'Nhân viên',
         value: stats.total_employees || 0,
         icon: UserCheck,
         onClick: onRoleSelect ? handleEmployee : undefined,
-        isActive: selectedRole === 'employee',
+        isActive: selectedRole === 'nhanvien',
       },
     ];
   }, [stats, onRoleSelect, handleAll, handleAdmin, handlePartner, handleEmployee, selectedRole, lastLoginToday]);

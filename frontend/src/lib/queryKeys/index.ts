@@ -56,17 +56,6 @@ interface AuditLogFilters {
   pageSize?: number;
 }
 
-interface ZnsMessageFilters {
-  page?: number;
-  pageSize?: number;
-  status?: string[];
-  feature?: string;
-  templateId?: string;
-  fromDate?: string;
-  toDate?: string;
-  q?: string;
-}
-
 /**
  * Core Query Keys Factory
  * Hierarchical structure with type-safe builders
@@ -96,7 +85,7 @@ export const QueryKeys = {
 
     // Partner projects
     partner: {
-      all: () => [...QueryKeys.projects.all, 'partner'] as const,
+      all: () => [...QueryKeys.projects.all, 'quanly'] as const,
       summary: () => [...QueryKeys.projects.partner.all(), 'summary'] as const,
       list: (filters?: ProjectFilters) => [...QueryKeys.projects.partner.all(), 'list', filters] as const,
     },
@@ -283,12 +272,6 @@ export const QueryKeys = {
     logDetail: (id: number) => [...QueryKeys.audit.all, 'logs', id] as const,
   },
 
-  // ========== ZNS TRACKING ==========
-  zns: {
-    all: ['zns'] as const,
-    messages: (filters?: ZnsMessageFilters) => [...QueryKeys.zns.all, 'messages', filters] as const,
-  },
-
   // ========== SETTINGS ==========
   approvals: {
     all: ['approvals'] as const,
@@ -323,12 +306,6 @@ export const QueryKeys = {
     details: () => [...QueryKeys.loans.all, 'detail'] as const,
     detail: (id: number) => [...QueryKeys.loans.details(), id] as const,
     schedule: (id: number) => [...QueryKeys.loans.all, id, 'schedule'] as const,
-  },
-
-  // ========== CRON HEALTH ==========
-  cronHealth: {
-    all: ['cron-health'] as const,
-    jobs: () => [...QueryKeys.cronHealth.all, 'jobs'] as const,
   },
 
   // ========== SYSTEM HEALTH ==========
@@ -371,9 +348,7 @@ export const QueryKeys = {
       flexPayEmployees: (filters?: Record<string, unknown>) =>
         ['admin', 'advance-payments', 'flex-pay-employees', filters] as const,
       availableMonths: ['admin', 'advance-payments', 'available-months'] as const,
-      feeSchedules: ['admin', 'advance-payments', 'fee-schedules'] as const,
       disbursementFeeSchedules: ['admin', 'advance-payments', 'disbursement-fee-schedules'] as const,
-      weeklyPaymentFeeSchedules: ['admin', 'advance-payments', 'weekly-payment-fee-schedules'] as const,
     },
   },
 

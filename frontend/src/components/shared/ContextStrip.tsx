@@ -20,7 +20,7 @@ export interface ContextStripProps {
 
 /**
  * Grid of labelled context cells — project/employee context, month label, etc.
- * Implements the context strip pattern from TimesheetEntryModal and AdvancePaymentsPage.
+ * Implements the context strip pattern from TimesheetEntryModal.
  */
 export const ContextStrip = memo(function ContextStrip({
   items,

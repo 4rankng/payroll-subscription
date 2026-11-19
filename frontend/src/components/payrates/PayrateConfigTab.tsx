@@ -36,7 +36,7 @@ export function PayrateConfigTab({ project }: PayrateConfigTabProps) {
   const deletePayRate = useDeletePayRate();
 
   const navigate = useNavigate();
-  const payrateBasePath = authManager.getUserRole() === 'partner' ? '/partner' : '/admin';
+  const payrateBasePath = authManager.getUserRole() === 'quanly' ? '/partner' : '/admin';
 
   // Two-step inline delete confirm + surfaced failure (server still hard-blocks
   // configs with approved/paid timesheets).

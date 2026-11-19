@@ -5,29 +5,21 @@ import { useNavigate } from "react-router-dom";
 // --admin-sidebar-* surface stays the role identity (variables.css remains
 // authoritative); only glyph + token vocabulary changes here.
 import {
-  Activity,
-  Bank,
   Bell01,
-  BookOpen01,
   Briefcase01,
   CalendarCheck01,
   ChevronDown,
   ChevronUp,
   Clipboard,
-  Clock,
-  CoinsHand,
   Home01,
   Key01,
   LogOut01,
   Moon01,
-  MessageSquare01,
-  Receipt,
   Settings01,
   Sun,
   UserCircle,
   UserEdit,
   Users01,
-  Wallet01,
 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
 import { authManager } from "@/lib/auth";
@@ -81,22 +73,13 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
   { title: "Dự án", icon: Briefcase01, path: "/admin/projects", group: "quan-ly" },
   { title: "Nhân viên", icon: Users01, path: "/admin/employees", group: "quan-ly" },
   { title: "Bảng công", icon: CalendarCheck01, path: "/admin/timesheet", group: "quan-ly" },
-  { title: "Ứng lương", icon: CoinsHand, path: "/admin/advance-payments", group: "quan-ly" },
-  { title: "Lịch sử trả lương", icon: Receipt, path: "/admin/payment-history", group: "tai-chinh" },
-  { title: "Sổ Cái", icon: BookOpen01, path: "/admin/ledger", group: "tai-chinh" },
-  { title: "Khoản vay", icon: Bank, path: "/admin/loans", group: "tai-chinh" },
-  { title: "Kiểm tra API", icon: Activity, path: "/admin/system-health", group: "he-thong" },
-  { title: "Lịch công việc", icon: Clock, path: "/admin/cron-health", group: "he-thong" },
   { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log", group: "he-thong" },
-  { title: "ZNS tracking", icon: MessageSquare01, path: "/admin/zns-tracking", group: "he-thong" },
   { title: "Cài đặt", icon: Settings01, path: "/admin/settings", group: "he-thong" },
-  { title: "Quản lý ví", icon: Wallet01, path: "/admin/wallet", group: "tai-chinh" },
 ];
 
 const menuGroups = [
   { key: "top", label: null },
   { key: "quan-ly", label: "Quản lý" },
-  { key: "tai-chinh", label: "Tài chính" },
   { key: "he-thong", label: "Hệ thống" },
 ] as const;
 
@@ -285,29 +268,16 @@ const AdminSidebar = () => {
   const isCollapsed = getSidebarCollapsedState({ isMobile, open, openMobile });
   const { data: unreadData } = useUnreadNotifications();
   const unreadCount = unreadData?.count || 0;
-  const isAdvPartner = user?.role === 'adv_partner';
 
   const [showProfile, setShowProfile] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const topItems = useMemo(() => {
     const items = ADMIN_MENU_ITEMS.filter((i) => i.group === "top");
-    if (isAdvPartner) return [];
     return items;
-  }, [isAdvPartner]);
+  }, []);
 
-  const filteredMenuItems = useMemo(() => {
-    if (!isAdvPartner) return ADMIN_MENU_ITEMS;
-    const basePath = "/adv-partner";
-    const allowed = ["/admin/advance-payments", "/admin/users"];
-    return ADMIN_MENU_ITEMS
-      .filter((i) => allowed.includes(i.path))
-      .map((i) => ({
-        ...i,
-        path: i.path.replace("/admin", basePath),
-        ...(i.path === "/admin/users" ? { title: "Nhân viên" } : {}),
-      }));
-  }, [isAdvPartner]);
+  const filteredMenuItems = ADMIN_MENU_ITEMS;
 
   const activeGroupKey = useMemo(() => {
     for (const item of filteredMenuItems) {
@@ -332,9 +302,7 @@ const AdminSidebar = () => {
   );
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => isAdvPartner
-      ? (activeGroupKey && activeGroupKey !== "top" ? new Set([activeGroupKey]) : new Set<string>())
-      : new Set(allGroupKeys)
+    () => new Set(allGroupKeys)
   );
 
   const autoCollapsedRef = useRef(false);
@@ -346,15 +314,11 @@ const AdminSidebar = () => {
     if (prevCollapsedRef.current && !isCollapsed) {
       if (autoCollapsedRef.current) {
         autoCollapsedRef.current = false;
-        setExpandedGroups(
-          isAdvPartner
-            ? (activeGroupKey && activeGroupKey !== "top" ? new Set([activeGroupKey]) : new Set<string>())
-            : new Set(allGroupKeys)
-        );
+        setExpandedGroups(new Set(allGroupKeys));
       }
     }
     prevCollapsedRef.current = isCollapsed;
-  }, [isCollapsed, activeGroupKey, isAdvPartner, allGroupKeys]);
+  }, [isCollapsed, activeGroupKey, allGroupKeys]);
 
   useEffect(() => {
     let observer: ResizeObserver | null = null;
@@ -375,11 +339,7 @@ const AdminSidebar = () => {
             );
           } else if (!overflowing && autoCollapsedRef.current) {
             autoCollapsedRef.current = false;
-            setExpandedGroups(
-              isAdvPartner
-                ? (activeGroupKey && activeGroupKey !== "top" ? new Set([activeGroupKey]) : new Set<string>())
-                : new Set(allGroupKeys)
-            );
+            setExpandedGroups(new Set(allGroupKeys));
           }
         }, 300);
       };
@@ -394,7 +354,7 @@ const AdminSidebar = () => {
       observer?.disconnect();
       if (overflowTimerRef.current) clearTimeout(overflowTimerRef.current);
     };
-  }, [isCollapsed, isMobile, activeGroupKey, allGroupKeys, isAdvPartner]);
+  }, [isCollapsed, isMobile, activeGroupKey, allGroupKeys]);
 
   useEffect(() => {
     if (activeGroupKey && activeGroupKey !== "top" && autoCollapsedRef.current) {
@@ -582,7 +542,7 @@ const AdminSidebar = () => {
                       <div className="flex flex-col gap-0.5">
                         <p className="text-sm font-semibold">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">{isAdvPartner ? 'Quản lý ứng lương' : 'Quản trị viên'}</p>
+                        <p className="text-xs text-muted-foreground">Quản trị viên</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />

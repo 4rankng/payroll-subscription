@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { showErrorNotification } from "@/utils/error-handler";
 import { Timesheet } from "@/types/api/timesheet.types";
 import { TimesheetEntryModal } from "./components/TimesheetEntryModal";
 import {
@@ -12,7 +11,7 @@ import { TimesheetTablePagination } from "./components/TimesheetTablePagination"
 import { useTimesheetContext } from "./TimesheetContext";
 
 export function TimesheetListTable() {
-  const { state, actions, meta } = useTimesheetContext();
+  const { state, actions } = useTimesheetContext();
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -34,16 +33,6 @@ export function TimesheetListTable() {
     setIsEntryModalOpen(false);
     setSelectedTimesheet(null);
   }, []);
-
-  const handleRequestEditWithClose = useCallback(
-    (timesheet: Timesheet) => {
-      if (!actions.requestEdit) return;
-      void Promise.resolve(actions.requestEdit(timesheet, handleEntryModalClose)).catch((err) => {
-        showErrorNotification(err);
-      });
-    },
-    [actions, handleEntryModalClose],
-  );
 
   return (
     <div className="space-y-3">
@@ -94,9 +83,6 @@ export function TimesheetListTable() {
           onSuccess={handleEntryModalClose}
           onDelete={actions.delete}
           canDelete={actions.canDelete}
-          onRequestEdit={handleRequestEditWithClose}
-          onRequestEditSuccess={handleEntryModalClose}
-          requestingTimesheetId={meta.requestingTimesheetId}
         />
       )}
     </div>

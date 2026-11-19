@@ -4,9 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BankSelector } from '@/components/ui/bank-selector';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { X, User, CreditCard, UserPlus, Plus, Loader2, AlertTriangle, Search, HandHeart } from 'lucide-react';
+import { X, User, UserPlus, Plus, Loader2, AlertTriangle, Search, HandHeart } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { CreateEmployeeData, DuplicateCheckMatch } from '@/types/api/employee.types';
 import { useCreateEmployee, useDuplicateCheck, useRequestEmployeeAccess } from '@/hooks/api/useEmployees';
@@ -17,7 +16,6 @@ import { useModalNavigation } from '@/hooks/useModalNavigation';
 import { authManager } from '@/lib/auth';
 import { validateFullname, formatVietnameseName, validateMobileNotCCCD } from '@/lib/validation';
 import { cn } from '@/lib/utils';
-import type { Bank } from '@/types/api/bank.types';
 import type { ModalConfig } from '@/types/modal-config.types';
 
 /** Match card: masked existing employee + claim action for partners. */
@@ -123,7 +121,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: 'create',
     subject: 'Employee',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
   },
   deeplink: {
     enabled: true,
@@ -162,13 +160,8 @@ function AddEmployeeSheetComponent({
     cccd: '',
     address: '',
     mobile: '',
-    bank_id: undefined,
-    bank_account_number: '',
-    bank_account_name: '',
     date_of_birth: ''
   });
-
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -227,12 +220,8 @@ function AddEmployeeSheetComponent({
         cccd: '',
         address: '',
         mobile: '',
-        bank_id: undefined,
-        bank_account_number: '',
-        bank_account_name: '',
         date_of_birth: ''
       });
-      setSelectedBank(null);
       setErrors({});
     }
   }, [isOpen]);
@@ -272,20 +261,6 @@ function AddEmployeeSheetComponent({
       newErrors.date_of_birth = 'Ngày sinh phải có định dạng YYYY-MM-DD';
     }
 
-    // Bank validation - if any bank field is provided, all are required
-    const hasBankInfo = selectedBank || formData.bank_account_number?.trim() || formData.bank_account_name?.trim();
-    if (hasBankInfo) {
-      if (!selectedBank) {
-        newErrors.bank_id = 'Vui lòng chọn ngân hàng';
-      }
-      if (!formData.bank_account_number?.trim()) {
-        newErrors.bank_account_number = 'Số tài khoản là bắt buộc khi có thông tin ngân hàng';
-      }
-      if (!formData.bank_account_name?.trim()) {
-        newErrors.bank_account_name = 'Tên chủ tài khoản là bắt buộc khi có thông tin ngân hàng';
-      }
-    }
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -307,15 +282,6 @@ function AddEmployeeSheetComponent({
     }
     if (formData.mobile?.trim() || mobileRequired) {
       requestData.mobile = formData.mobile?.trim() ?? '';
-    }
-    if (selectedBank) {
-      requestData.bank_id = selectedBank.id;
-    }
-    if (formData.bank_account_number?.trim()) {
-      requestData.bank_account_number = formData.bank_account_number.trim();
-    }
-    if (formData.bank_account_name?.trim()) {
-      requestData.bank_account_name = formData.bank_account_name.trim();
     }
     if (formData.date_of_birth?.trim()) {
       requestData.date_of_birth = formData.date_of_birth.trim();
@@ -533,54 +499,6 @@ function AddEmployeeSheetComponent({
           </Alert>
         )}
 
-        {/* Bank Info Section */}
-        <FieldGroup>
-          <SectionTitle icon={CreditCard} label="Thông tin ngân hàng" />
-
-          <Field label="Ngân hàng">
-            <BankSelector
-              value={selectedBank}
-              onSelect={(bank) => {
-                setSelectedBank(bank);
-                handleInputChange("bank_id", bank?.id);
-              }}
-              placeholder="Chọn ngân hàng..."
-              className={errors.bank_id ? 'border-destructive' : ''}
-              canCreateBank={isAdmin}
-            />
-            {errors.bank_id && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_id}</p>}
-          </Field>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field id="bank_account_number" label="Số tài khoản">
-              <Input
-                id="bank_account_number"
-                placeholder="190123456789"
-                value={formData.bank_account_number || ''}
-                onChange={(e) => handleInputChange("bank_account_number", e.target.value)}
-                className={cn("h-11 typography-body-medium font-mono", errors.bank_account_number && "border-destructive")}
-              />
-              {errors.bank_account_number && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_account_number}</p>}
-            </Field>
-
-            <Field id="bank_account_name" label="Tên chủ tài khoản">
-              <Input
-                id="bank_account_name"
-                placeholder="NGUYỄN VĂN A"
-                value={formData.bank_account_name || ''}
-                onChange={(e) => handleInputChange("bank_account_name", e.target.value)}
-                onBlur={(e) => {
-                  const formatted = formatVietnameseName(e.target.value);
-                  if (formatted !== e.target.value) {
-                    handleInputChange("bank_account_name", formatted);
-                  }
-                }}
-                className={cn("h-11 typography-body-medium", errors.bank_account_name && "border-destructive")}
-              />
-              {errors.bank_account_name && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_account_name}</p>}
-            </Field>
-          </div>
-        </FieldGroup>
       </div>
     </SlideSheetTemplate>
   );

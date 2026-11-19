@@ -19,7 +19,7 @@ export const useUserFilters = (users: User[]) => {
   const userStats = useMemo(() => {
     const total = users.length;
     const admins = users.filter(u => u.role === "admin").length;
-    const partners = users.filter(u => u.role === "partner").length;
+    const partners = users.filter(u => u.role === "quanly").length;
 
     return {
       total,

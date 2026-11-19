@@ -25,7 +25,7 @@ import type { Employee, EmployeesResponse, CurrentProject, EmployeeProjectsRespo
 export const useProjectsSummary = () => {
   const userRole = authManager.getUserRole();
   const hasPermission =
-    (userRole === 'admin' || userRole === 'partner' || userRole === 'accountant') && userRole !== null;
+    (userRole === 'admin' || userRole === 'quanly' || userRole === 'giamdoc') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.projects.summary(),
@@ -43,7 +43,7 @@ export const useProjects = (filters?: ProjectFilters, options?: { enabled?: bool
   // accountant GET /api/v1/projects for the bulk-transfer export dialogs) -
   // deny if null, employee, or any other role
   const hasPermission =
-    (userRole === 'admin' || userRole === 'partner' || userRole === 'accountant') && userRole !== null;
+    (userRole === 'admin' || userRole === 'quanly' || userRole === 'giamdoc') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.projects.list(filters),
@@ -64,7 +64,7 @@ export const useProjects = (filters?: ProjectFilters, options?: { enabled?: bool
 export const useAllProjects = (options?: { enabled?: boolean }) => {
   const userRole = authManager.getUserRole();
   const hasPermission =
-    (userRole === 'admin' || userRole === 'partner' || userRole === 'accountant') && userRole !== null;
+    (userRole === 'admin' || userRole === 'quanly' || userRole === 'giamdoc') && userRole !== null;
 
   return useQuery({
     queryKey: [...QueryKeys.projects.all, 'all-pages'],
@@ -146,7 +146,7 @@ export const useSearchProjects = (params?: { search: string; pageSize?: number; 
 // Get assignable projects (draft, active, and paused) for project assignment
 export const useAssignableProjects = () => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'partner') && userRole !== null;
+  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.projects.list({ status: ['draft', 'active', 'paused'], pageSize: 50 }),
@@ -160,7 +160,7 @@ export const useAssignableProjects = () => {
 // Get projects available for timesheet creation (only active projects)
 export const useTimesheetProjects = (options?: { enabled?: boolean }) => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'partner') && userRole !== null;
+  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
 
   return useQuery({
     queryKey: QueryKeys.projects.list({ status: ['active'], pageSize: 50 }),

@@ -145,7 +145,7 @@ export function EmployeeUserAccessTab({ employee }: EmployeeUserAccessTabProps) 
             onValueChange={setSelectedUserId}
             placeholder="Chọn quản lý để cấp quyền..."
             excludeUserIds={excludeUserIds}
-            filterRole="partner"
+            filterRole="quanly"
             className="flex-1"
           />
           <Button

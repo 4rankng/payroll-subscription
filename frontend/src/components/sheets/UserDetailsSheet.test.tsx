@@ -75,7 +75,7 @@ describe("UserDetailsSheet mobile ownership", () => {
   });
 
   it("does not expose users.mobile for an Employee account", () => {
-    renderSheet(createUser({ role: "employee", mobile: undefined }));
+    renderSheet(createUser({ role: "nhanvien", mobile: undefined }));
 
     expect(screen.queryByText("Số điện thoại")).not.toBeInTheDocument();
   });

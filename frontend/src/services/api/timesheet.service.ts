@@ -25,9 +25,6 @@ import type {
   NewTimesheetEntry,
   BulkCreateTimesheetResult,
   TimesheetListResponse,
-  TimesheetEditRequestFilters,
-  TimesheetEditRequestListResponse,
-  TimesheetEditRequestResponse,
   UploadEntriesExcelResult,
   SettlementUploadResultResponse,
   EmployeeEntryTable,
@@ -688,71 +685,6 @@ class TimesheetService {
       throw new Error('API response missing expected data');
     }
     return response.data;
-  }
-
-  /**
-   * Create edit request for approved timesheet (Partner)
-   */
-  async createEditRequest(timesheetId: number): Promise<TimesheetEditRequestResponse> {
-    const response = await apiClient.post<TimesheetEditRequestResponse>(
-      API_ENDPOINTS.timesheets.requestEdit(timesheetId),
-      {}
-    );
-    return response.data!;
-  }
-
-  /**
-   * Get list of edit requests with filters
-   */
-  async getEditRequests(filters?: TimesheetEditRequestFilters): Promise<TimesheetEditRequestListResponse> {
-    const queryString = filters ? buildQueryString(filters) : '';
-    const response = await apiClient.get<TimesheetEditRequestListResponse>(
-      `${API_ENDPOINTS.timesheets.editRequests}${queryString}`
-    );
-    return response.data!;
-  }
-
-  /**
-   * Get single edit request by ID
-   */
-  async getEditRequestById(id: number): Promise<TimesheetEditRequestResponse> {
-    const response = await apiClient.get<TimesheetEditRequestResponse>(
-      API_ENDPOINTS.timesheets.editRequestById(id)
-    );
-    return response.data!;
-  }
-
-  /**
-   * Approve edit request (Admin)
-   */
-  async approveEditRequest(id: number): Promise<TimesheetEditRequestResponse> {
-    const response = await apiClient.put<TimesheetEditRequestResponse>(
-      API_ENDPOINTS.timesheets.approveEditRequest(id),
-      {}
-    );
-    return response.data!;
-  }
-
-  /**
-   * Reject edit request (Admin)
-   */
-  async rejectEditRequest(id: number): Promise<TimesheetEditRequestResponse> {
-    const response = await apiClient.put<TimesheetEditRequestResponse>(
-      API_ENDPOINTS.timesheets.rejectEditRequest(id),
-      {}
-    );
-    return response.data!;
-  }
-
-  /**
-   * Cancel edit request (Partner)
-   */
-  async cancelEditRequest(timesheetId: number): Promise<ApiResponse<null>> {
-    const response = await apiClient.post<ApiResponse<null>>(
-      API_ENDPOINTS.timesheets.cancelEditRequest(timesheetId),
-      {}
-    );
-    return response as ApiResponse<null>;
   }
 
   /**

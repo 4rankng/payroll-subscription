@@ -124,13 +124,6 @@ export const API_ENDPOINTS = {
     // New endpoints for bulk approval by project/employee
     approveByProject: (projectId: number) => `/projects/${projectId}/timesheets/approve`,
     approveByEmployee: (employeeId: number) => `/employees/${employeeId}/timesheets/approve`,
-    // Edit request endpoints
-    requestEdit: (id: number) => `/timesheets/${id}/request-edit`,
-    cancelEditRequest: (id: number) => `/timesheets/${id}/request-edit-cancel`,
-    editRequests: '/timesheets/edit-requests',
-    editRequestById: (id: number) => `/timesheets/edit-requests/${id}`,
-    approveEditRequest: (id: number) => `/timesheets/edit-requests/${id}/approve`,
-    rejectEditRequest: (id: number) => `/timesheets/edit-requests/${id}/reject`,
     // BCC partner import
     partnerImport: '/timesheets/partner-import',
     partnerImportById: (id: number) => `/timesheets/partner-import/${id}`,
@@ -427,7 +420,6 @@ export const API_ENDPOINTS = {
     base: '/dashboard',
     summary: '/dashboard/summary',
     financialOverview: '/dashboard/financial-overview',
-    financial: '/dashboard/financial',
     recentActivities: '/dashboard/recent-activities',
     notifications: '/dashboard/notifications',
     newEmployees: '/dashboard/new-employees',

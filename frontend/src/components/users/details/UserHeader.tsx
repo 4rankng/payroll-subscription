@@ -11,8 +11,8 @@ interface UserHeaderProps {
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Quản trị viên",
-  partner: "Quản lý",
-  employee: "Nhân viên",
+  quanly: "Quản lý",
+  nhanvien: "Nhân viên",
 };
 
 export function UserHeader({ user, showName = true }: UserHeaderProps) {
@@ -42,7 +42,7 @@ export function UserHeader({ user, showName = true }: UserHeaderProps) {
         {user.email && (
           <p className="hidden text-xs text-muted-foreground break-all sm:block">{user.email}</p>
         )}
-        {(user.role === "admin" || user.role === "partner") && user.mobile && (
+        {(user.role === "admin" || user.role === "quanly") && user.mobile && (
           <p className="hidden text-xs text-muted-foreground break-all sm:block">SĐT: {user.mobile}</p>
         )}
       </div>

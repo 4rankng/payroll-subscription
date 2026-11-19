@@ -12,7 +12,7 @@ interface Command {
   category: 'navigation' | 'action' | 'search';
   keywords: string[];
   action: () => void | Promise<void>;
-  role?: 'admin' | 'partner' | 'both';
+  role?: 'admin' | 'quanly' | 'both';
 }
 
 interface SearchResult {
@@ -125,16 +125,6 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         action: () => navigate('/admin/timesheet'),
         role: 'admin'
       },
-      {
-        id: 'nav-approvals',
-        label: 'Phê duyệt',
-        description: 'Xử lý các yêu cầu phê duyệt',
-        icon: 'CheckSquare',
-        category: 'navigation',
-        keywords: ['approvals', 'phê duyệt', 'duyệt'],
-        action: () => navigate('/admin/approvals'),
-        role: 'admin'
-      },
       // Admin actions
       {
         id: 'action-add-employee',
@@ -168,7 +158,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         category: 'navigation',
         keywords: ['projects', 'dự án'],
         action: () => navigate('/partner'),
-        role: 'partner'
+        role: 'quanly'
       },
       {
         id: 'nav-partner-employees',
@@ -178,7 +168,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         category: 'navigation',
         keywords: ['employees', 'nhân viên', 'team'],
         action: () => navigate('/partner/employees'),
-        role: 'partner'
+        role: 'quanly'
       },
       {
         id: 'nav-partner-timesheet',
@@ -188,7 +178,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         category: 'navigation',
         keywords: ['timesheet', 'bảng công', 'chấm công'],
         action: () => navigate('/partner/timesheet'),
-        role: 'partner'
+        role: 'quanly'
       },
       // Partner actions
       {
@@ -199,7 +189,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         category: 'action',
         keywords: ['submit timesheet', 'nộp bảng công', 'gửi bảng công'],
         action: () => navigate('/partner/timesheet?action=submit'),
-        role: 'partner'
+        role: 'quanly'
       }
     ];
 

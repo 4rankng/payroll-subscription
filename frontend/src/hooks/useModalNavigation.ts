@@ -289,22 +289,6 @@ export function useGeneralModals() {
 
     openNotifications: useCallback(() => {
       openModal(MODAL_IDS.NOTIFICATION_SHEET);
-    }, [openModal]),
-
-    openLedgerDetails: useCallback((entryId: string, tab?: 'details' | 'entries' | 'adjustments') => {
-      openModal(MODAL_IDS.LEDGER_ENTRY_DETAILS, { id: entryId, ...(tab && { tab }) });
-    }, [openModal]),
-
-    openAddLedgerEntry: useCallback(() => {
-      openModal(MODAL_IDS.ADD_LEDGER_ENTRY);
-    }, [openModal]),
-
-    openApprovalDetails: useCallback((approvalId: string, type?: 'timesheet' | 'project' | 'employee') => {
-      openModal(MODAL_IDS.APPROVAL_DETAILS, { id: approvalId, ...(type && { type }) });
-    }, [openModal]),
-
-    openTransactionDetails: useCallback((transactionId: string) => {
-      openModal(MODAL_IDS.TRANSACTION_DETAILS, { id: transactionId });
     }, [openModal])
   };
 }

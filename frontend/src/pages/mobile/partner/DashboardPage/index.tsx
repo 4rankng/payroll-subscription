@@ -24,7 +24,6 @@ import {
   type MobileOperationMetric,
   type MobileTaskRow,
 } from '@/components/shared/MobileOperationsPanel';
-import { PartnerApprovalRequestsCard } from '@/components/partner-dashboard/PartnerApprovalRequestsCard';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
 import { usePartnerDashboard } from '@/hooks/api/useDashboard';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
@@ -255,8 +254,6 @@ const PartnerDashboardMobile = () => {
         items={taskRows}
         className="rounded-lg bg-card"
       />
-
-      <PartnerApprovalRequestsCard compact />
 
       {/* Mobile warnings render nothing when clean (no dead card). */}
       <MissingMobileSection onEmployeeClick={handleEmployeeClick} />

@@ -15,7 +15,6 @@ import { useEmployeeMonth } from "@/hooks/useEmployeeMonth";
 import type { EmployeeTimesheetFilters } from "@/types/api/auth.types";
 import { NotificationSheet } from "@/components/notifications/NotificationSheet";
 import { EmployeeBankInfoCard } from "@/components/employees/EmployeeBankInfoCard";
-import { EmployeeAdBanner } from "@/components/employees/EmployeeAdBanner";
 import { EmployeeMobileShell } from "@/components/employees/EmployeeMobileShell";
 import { EmployeeCanopy } from "@/components/employees/EmployeeCanopy";
 import { EmployeeTimesheetPanel } from "@/components/employees/EmployeeTimesheetPanel";
@@ -181,8 +180,6 @@ const EmployeePage = () => {
       }
     >
       <div className="space-y-5">
-        <EmployeeAdBanner />
-
         <EmployeeTimesheetPanel
           month={month}
           days={groupedDays}

@@ -17,12 +17,6 @@ export interface Timesheet {
   amount: number;
   status: 'approved' | 'pending_approval' | 'rejected' | 'draft';
   payment_status?: 'pending' | 'paid' | 'failed' | 'cancelled';
-  allowed_edit?: boolean;
-  request_edit_id?: number | null;
-  request_edit_status?: 'pending' | 'approved' | 'rejected';
-  request_edit_requested_at?: string;
-  request_edit_requested_by_id?: number;
-  request_edit_requested_by_name?: string;
   paid_amount?: number;
   paid_at?: string | null;
   force_payroll?: boolean;
@@ -87,13 +81,11 @@ export interface TimesheetFilters {
   fromDate?: string;
   toDate?: string;
   status?: 'pending_payment' | 'pending_approval' | 'approved' | 'rejected' | 'paid' | 'failed' | 'cancelled' | ('pending_approval' | 'approved' | 'rejected' | 'paid' | 'failed' | 'cancelled')[];
-  payment_status?: string; // Backend: filter by payment_status (pending, paid, failed, cancelled)
-  allowed_edit?: boolean | 0 | 1;
+  payment_status?: string; // Backend: filter by payment_status (pending, paid, cancelled)
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
   created_by?: number;
-  has_request_edit?: boolean | 0 | 1;
   [key: string]: unknown;
 }
 
@@ -341,50 +333,6 @@ export interface EmployeeTimesheetSummaryResponse extends ApiResponse<EmployeeTi
 
 // Type alias for employee-specific timesheet filters
 export type EmployeeTimesheetFilters = TimesheetFilters;
-
-// Timesheet Edit Request Types
-export interface TimesheetEditRequest {
-  id: number;
-  timesheet_id: number;
-  status: 'pending' | 'approved' | 'rejected';
-  requested_by: number;
-  requested_by_name: string;
-  approved_by?: number | null;
-  approved_by_name?: string | null;
-  rejected_by?: number | null;
-  rejected_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
-  timesheet?: {
-    id: number;
-    date: string;
-    end_date?: string;
-    employee_id: number;
-    employee_name: string;
-    employee_code?: string;
-    employee_cccd?: string;
-    project_id: number;
-    project_name: string;
-    project_code?: string;
-    hours_worked: number;
-    overtime_hours?: number;
-    amount: number;
-    paytype?: string;
-    status: string;
-    payment_status: string;
-  };
-}
-
-export interface TimesheetEditRequestFilters {
-  page?: number;
-  pageSize?: number;
-  status?: 'pending' | 'approved' | 'rejected';
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface TimesheetEditRequestListResponse extends ApiListResponse<TimesheetEditRequest> {}
-export interface TimesheetEditRequestResponse extends ApiResponse<TimesheetEditRequest> {}
 
 // Upload Excel entries response
 export interface UploadEntriesExcelResult {

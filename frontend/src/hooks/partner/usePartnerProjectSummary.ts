@@ -9,7 +9,7 @@ const QUERY_KEYS = {
 export const usePartnerProjectSummary = () => {
   const userRole = authManager.getUserRole();
   // Only allow if explicitly partner - deny if null or any other role
-  const hasPermission = userRole === 'partner' && userRole !== null;
+  const hasPermission = userRole === 'quanly' && userRole !== null;
 
   return useQuery({
     queryKey: QUERY_KEYS.partnerSummary,

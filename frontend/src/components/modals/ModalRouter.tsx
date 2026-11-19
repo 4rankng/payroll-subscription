@@ -11,7 +11,6 @@ import type { AssignEmployeeData, Project, CreateProjectData } from '@/types/api
 import { useCreateUser, useUsers } from '@/hooks/api/useUsers';
 import { payRateService } from '@/services/api/payrate.service';
 import type { PayrateStructure } from '@/types/api/payrate.types';
-import { useTransaction } from '@/hooks/transactions/useTransactions';
 
 // Import working sheet components (default exports)
 import AddUserSheet from '@/components/sheets/AddUserSheet';
@@ -32,13 +31,7 @@ import { RemoveEmployeeSheet } from '@/components/modals/RemoveEmployeeModal';
 import { TimesheetDetailsModal } from '@/components/modals/TimesheetDetailsModal';
 import { TimesheetEntrySheetWrapper } from '@/components/sheets/TimesheetEntrySheetWrapper';
 import { FileUploadModal } from '@/components/modals/FileUploadModal';
-import { ApprovalDetailsModal } from '@/components/modals/ApprovalDetailsModal';
 import { NotificationSheet } from '@/components/notifications/NotificationSheet';
-import LedgerEntryDetailsSheet from '@/components/ledger/LedgerEntryDetailsSheet';
-import { AddTransactionSheet } from '@/components/sheets/AddTransactionSheet';
-import TransactionDetailsSheet from '@/components/sheets/TransactionDetailsSheet';
-import { SettleTransactionModal } from '@/components/modals/SettleTransactionModal';
-import { ReverseTransactionModal } from '@/components/modals/ReverseTransactionModal';
 
 /**
  * Modal Router - Clean URL-Driven Modal System
@@ -229,58 +222,6 @@ function AddProjectSheetContainer({
       isOpen={isOpen}
       onClose={onClose}
       onProjectCreate={handleProjectCreate}
-    />
-  );
-}
-
-// Container component for SettleTransactionModal to handle transaction data
-function SettleTransactionModalContainer({
-  isOpen,
-  onClose,
-  transactionId: transactionIdParam
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  transactionId?: string | null;
-}) {
-  const transactionId = transactionIdParam ? parseInt(String(transactionIdParam), 10) : 0;
-  const { data: transaction, isLoading } = useTransaction(transactionId);
-
-  if (isLoading || !transaction) {
-    return null;
-  }
-
-  return (
-    <SettleTransactionModal
-      isOpen={isOpen}
-      onClose={onClose}
-      transaction={transaction}
-    />
-  );
-}
-
-// Container component for ReverseTransactionModal to handle transaction data
-function ReverseTransactionModalContainer({
-  isOpen,
-  onClose,
-  transactionId: transactionIdParam
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  transactionId?: string | null;
-}) {
-  const transactionId = transactionIdParam ? parseInt(String(transactionIdParam), 10) : 0;
-  const { data: transaction, isLoading } = useTransaction(transactionId);
-
-  if (isLoading || !transaction) {
-    return null;
-  }
-
-  return (
-    <ReverseTransactionModal
-      isOpen={isOpen}
-      onClose={onClose}
-      transaction={transaction}
     />
   );
 }
@@ -521,11 +462,10 @@ export function ModalRouter({ fallback: CustomFallback }: ModalRouterProps) {
         key={instanceKey}
         isOpen={true}
         onClose={closeModal}
-        onUpdate={(employeeId, employeeData, bankObject) => {
+        onUpdate={(employeeId, employeeData) => {
           return updateEmployeeMutation.mutateAsync({
             id: employeeId,
-            data: employeeData,
-            bank: bankObject
+            data: employeeData
           });
         }}
         {...params}
@@ -542,32 +482,6 @@ export function ModalRouter({ fallback: CustomFallback }: ModalRouterProps) {
       return <FileUploadModal isOpen={true} onClose={closeModal} type="upload" title="Upload File" />;
     case MODAL_IDS.NOTIFICATION_SHEET:
       return <NotificationSheet variant="corporate" isOpen={true} onClose={closeModal} />;
-    case MODAL_IDS.LEDGER_ENTRY_DETAILS:
-      return <LedgerEntryDetailsSheet isOpen={true} onClose={closeModal} {...params} />;
-    case MODAL_IDS.ADD_LEDGER_ENTRY:
-      return <AddTransactionSheet isOpen={true} onClose={closeModal} />;
-    case MODAL_IDS.APPROVAL_DETAILS:
-      return <ApprovalDetailsModal {...params} />;
-
-    // Transaction modals
-    case MODAL_IDS.TRANSACTION_DETAILS:
-      return <TransactionDetailsSheet isOpen={true} onClose={closeModal} />;
-    case MODAL_IDS.SETTLE_TRANSACTION:
-      return (
-        <SettleTransactionModalContainer
-          isOpen={true}
-          onClose={closeModal}
-          transactionId={params.id}
-        />
-      );
-    case MODAL_IDS.REVERSE_TRANSACTION:
-      return (
-        <ReverseTransactionModalContainer
-          isOpen={true}
-          onClose={closeModal}
-          transactionId={params.id}
-        />
-      );
 
     default:
       console.warn(`Modal component not implemented: ${modalId}`);

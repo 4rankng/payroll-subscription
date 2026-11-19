@@ -5,56 +5,28 @@ import { getConsoleKicker } from '@/lib/console';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSelector';
-import { Plus, MoreHorizontal, FileText, ArrowRightLeft, History, Upload, FileDown, CheckSquare, X, FileSpreadsheet, FileUp, FileSpreadsheet as TableIcon, Banknote, Trash2, Undo2 } from 'lucide-react';
+import { Plus, MoreHorizontal, CheckSquare, X, FileUp, FileSpreadsheet, FileSpreadsheet as TableIcon, Trash2, Undo2 } from 'lucide-react';
 
 interface TimesheetPageHeaderMobileProps {
   onAddTimesheet: () => void;
-  onApprovedTimesheetsExport: () => void;
-  onPayrollReportExport?: () => void;
-  // Admin-only
-  onBulkTransferExport?: () => void;
-  onOnePayExport?: () => void;
-  onBulkTransferResultUpload?: () => void;
-  /** Admin-only "Tạo KQ CK" — build a bank result file from a chuyển-lô file. */
-  onBulkTransferKQ?: () => void;
-  onBulkTransferHistory?: () => void;
   onBulkApprove?: () => void;
   /** Admin-only "Bỏ duyệt hết" — reset all approved timesheets to pending. */
   onResetAll?: () => void;
-  /** Unified "Chuyển lô" batch-transfer flow — admin only. */
-  onChuyenLo?: () => void;
   onBccHistory?: () => void;
   onBccUpload?: () => void;
   onRejectUnpaid?: () => void;
-  // Partner-only
-  onPaymentHistory?: () => void;
-  isApprovedExportPending?: boolean;
-  isPayrollReportPending?: boolean;
-  isOnePayExportPending?: boolean;
-  userRole?: 'admin' | 'partner';
+  userRole?: 'admin' | 'quanly';
   monthValue: string;
   onMonthChange: (value: string) => void;
 }
 
 export function TimesheetPageHeaderMobile({
   onAddTimesheet,
-  onApprovedTimesheetsExport,
-  onPayrollReportExport,
-  onBulkTransferExport,
-  onOnePayExport,
-  onBulkTransferResultUpload,
-  onBulkTransferKQ,
-  onBulkTransferHistory,
   onBulkApprove,
   onResetAll,
-  onChuyenLo,
   onBccHistory,
   onBccUpload,
   onRejectUnpaid,
-  onPaymentHistory,
-  isApprovedExportPending = false,
-  isPayrollReportPending = false,
-  isOnePayExportPending = false,
   userRole = 'admin',
   monthValue,
   onMonthChange,
@@ -82,17 +54,6 @@ export function TimesheetPageHeaderMobile({
               Nhập
             </Button>
 
-            {onChuyenLo && userRole === 'admin' && (
-              <Button
-                variant="outline"
-                onClick={onChuyenLo}
-                className="h-11 min-w-0 flex-[1.25] rounded-xl border-primary/20 bg-primary/[0.04] px-3 text-primary shadow-none hover:bg-primary/[0.08] hover:text-primary touch-manipulation sm:flex-none"
-              >
-                <ArrowRightLeft className="mr-1 h-4 w-4" />
-                Chuyển lô
-              </Button>
-            )}
-
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl border-border bg-card shadow-none touch-manipulation" aria-label="Thêm tùy chọn">
@@ -104,89 +65,8 @@ export function TimesheetPageHeaderMobile({
               <SheetHeader><SheetTitle>Tùy chọn</SheetTitle></SheetHeader>
               <div className="space-y-1 py-3" style={{ paddingBottom: "max(12px, calc(12px + env(safe-area-inset-bottom)))" }}>
 
-                {/* Exports */}
-                <Button
-                  variant="ghost"
-                  className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                  onClick={() => { onApprovedTimesheetsExport(); close(); }}
-                  disabled={isApprovedExportPending}
-                >
-                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium">{isApprovedExportPending ? 'Đang xuất...' : 'Xuất bảng công đã duyệt'}</span>
-                </Button>
-
-                {onPayrollReportExport && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onPayrollReportExport(); close(); }}
-                    disabled={isPayrollReportPending}
-                  >
-                    <FileDown className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">
-                      {isPayrollReportPending
-                        ? 'Đang xuất...'
-                        : userRole === 'partner'
-                          ? 'Xuất sao kê'
-                          : 'Xuất sao kê lương'}
-                    </span>
-                  </Button>
-                )}
-
-                {onBulkTransferExport && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onBulkTransferExport(); close(); }}
-                  >
-                    <ArrowRightLeft className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">Xuất file chuyển lô</span>
-                  </Button>
-                )}
-
-                {onOnePayExport && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onOnePayExport(); close(); }}
-                    disabled={isOnePayExportPending}
-                  >
-                    <Banknote className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">
-                      {isOnePayExportPending ? 'Đang xuất...' : 'Chuyển OnePay'}
-                    </span>
-                  </Button>
-                )}
-
-                {/* Imports / uploads */}
-                {onBulkTransferResultUpload && (
-                  <>
-                    <div className="h-px bg-border mx-1 my-1" />
-                    <Button
-                      variant="ghost"
-                      className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                      onClick={() => { onBulkTransferResultUpload(); close(); }}
-                    >
-                      <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
-                      <span className="text-sm font-medium">Nhập KQ chuyển lô</span>
-                    </Button>
-                  </>
-                )}
-
-                {/* Bank result file generation */}
-                {onBulkTransferKQ && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onBulkTransferKQ(); close(); }}
-                  >
-                    <FileDown className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">Tạo KQ CK</span>
-                  </Button>
-                )}
-
                 {/* Actions */}
-                {(onBulkApprove || onResetAll || onBulkTransferHistory || onPaymentHistory || (onRejectUnpaid && userRole === 'admin')) && (
+                {(onBulkApprove || onResetAll || (onRejectUnpaid && userRole === 'admin')) && (
                   <div className="h-px bg-border mx-1 my-1" />
                 )}
 
@@ -209,17 +89,6 @@ export function TimesheetPageHeaderMobile({
                   >
                     <Undo2 className="h-5 w-5 text-muted-foreground shrink-0" />
                     <span className="text-sm font-medium">Bỏ duyệt hết</span>
-                  </Button>
-                )}
-
-                {onBulkTransferHistory && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onBulkTransferHistory(); close(); }}
-                  >
-                    <History className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">Lịch sử chuyển lô</span>
                   </Button>
                 )}
 
@@ -253,17 +122,6 @@ export function TimesheetPageHeaderMobile({
                   >
                     <Trash2 className="h-5 w-5 shrink-0" />
                     <span className="text-sm font-medium">Loại công</span>
-                  </Button>
-                )}
-
-                {onPaymentHistory && (
-                  <Button
-                    variant="ghost"
-                    className="w-full min-h-11 justify-start h-auto px-2 py-3"
-                    onClick={() => { onPaymentHistory(); close(); }}
-                  >
-                    <History className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <span className="text-sm font-medium">Lịch sử trả lương</span>
                   </Button>
                 )}
 

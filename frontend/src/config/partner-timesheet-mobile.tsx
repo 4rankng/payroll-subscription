@@ -138,7 +138,7 @@ export function createPartnerTimesheetMobileConfig({
       priority: 1,
       render: (timesheet) => {
         const status = timesheet.status as TimesheetStatus;
-        const paymentStatus = timesheet.payment_status as PaymentStatus | undefined;
+        const paymentStatus = timesheet.payment_status === 'failed' ? undefined : (timesheet.payment_status as PaymentStatus | undefined);
 
         return (
           <TimesheetStatusBadge

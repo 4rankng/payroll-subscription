@@ -11,7 +11,6 @@ import Login from "./pages/Login";
 import OTPLogin from "./pages/OTPLogin";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import ZaloResetPassword from "./pages/ZaloResetPassword";
 import AdminLayout from "./layouts/AdminLayout";
 import PartnerLayout from "./layouts/PartnerLayout";
 
@@ -21,20 +20,10 @@ const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
 const ProjectsPage = lazy(() => import("./pages/admin/ProjectsPage"));
 const EmployeesPage = lazy(() => import("./pages/admin/EmployeesPage"));
 const TimesheetPage = lazy(() => import("./pages/admin/TimesheetPage"));
-const TransactionsPage = lazy(() => import("./pages/admin/TransactionsPage"));
-const LoansPage = lazy(() => import("./pages/admin/LoansPage"));
-const AdvancePaymentsPage = lazy(() => import("./pages/admin/AdvancePaymentsPage"));
-const AdvPartnerAdvancePaymentsPage = lazy(() => import("./pages/admin/AdvancePaymentsPage/AdvPartnerView"));
-const CheckInSettingsPage = lazy(() => import("./components/advance-payment/CheckInSettingsPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
-const WalletPage = lazy(() => import("./pages/admin/WalletPage"));
 const EmailPage = lazy(() => import("./pages/admin/EmailPage"));
-const SystemHealthPage = lazy(() => import("./pages/admin/SystemHealthPage"));
-const CronHealthPage = lazy(() => import("./pages/admin/CronHealthPage"));
 const PayrateEditPage = lazy(() => import("./pages/admin/PayrateEditPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
-const ZnsTrackingPage = lazy(() => import("./pages/admin/ZnsTrackingPage"));
-const AdminPaymentHistoryPage = lazy(() => import("./pages/admin/PaymentHistoryPage"));
 
 // Admin Mobile Pages (lazy-loaded)
 const AdminDashboardMobile = lazy(() => import("./pages/mobile/admin/DashboardPage"));
@@ -42,25 +31,12 @@ const UsersPageMobile = lazy(() => import("./pages/mobile/admin/UsersPage"));
 const ProjectsPageMobile = lazy(() => import("./pages/mobile/admin/ProjectsPage"));
 const EmployeesPageMobile = lazy(() => import("./pages/mobile/admin/EmployeesPage"));
 const TimesheetPageMobile = lazy(() => import("./pages/mobile/admin/TimesheetPage"));
-const ApprovalsPage = lazy(() => import("./pages/admin/ApprovalsPage"));
-const ApprovalsPageMobile = lazy(() => import("./pages/mobile/admin/ApprovalsPage"));
-const LedgerEntriesPageMobile = lazy(() => import("./pages/mobile/admin/LedgerEntriesPage"));
-const LoansPageMobile = lazy(() => import("./pages/mobile/admin/LoansPage"));
-const AdvancePaymentsPageMobile = lazy(() => import("./pages/mobile/admin/AdvancePaymentsPage"));
-const AdvancePaymentsEmployeeListPageMobile = lazy(() => import("./pages/mobile/admin/AdvancePaymentsPage/EmployeeListPage"));
-const LendersPageMobile = lazy(() => import("./pages/mobile/admin/LoansPage/LendersPage"));
 const ActivityUsersPageMobile = lazy(() => import("./pages/mobile/admin/DashboardPage/ActivityUsersPage"));
-// Desktop variants for the drill-down routes above (PAYR-23): ResponsivePage
+// Desktop variant for the drill-down route above (PAYR-23): ResponsivePage
 // picks the right variant per width instead of pinning mobile UI everywhere.
-const AdvancePaymentsEmployeeListPage = lazy(() => import("./pages/admin/AdvancePaymentsPage/EmployeeListPage"));
-const LendersPage = lazy(() => import("./pages/admin/LoansPage/LendersPage"));
 const ActivityUsersPage = lazy(() => import("./pages/admin/DashboardPage/ActivityUsersPage"));
 const SettingsPageMobile = lazy(() => import("./pages/mobile/admin/SettingsPage"));
-const SystemHealthPageMobile = lazy(() => import("./pages/mobile/admin/SystemHealthPage"));
-const CronHealthPageMobile = lazy(() => import("./pages/mobile/admin/CronHealthPage"));
-const WalletPageMobile = lazy(() => import("./pages/mobile/admin/WalletPage"));
 const AuditLogPageMobile = lazy(() => import("./pages/mobile/admin/AuditLogPage"));
-const ZnsTrackingPageMobile = lazy(() => import("./pages/mobile/admin/ZnsTrackingPage"));
 const PayrateEditPageMobile = lazy(() => import("./pages/mobile/admin/PayrateEditPage"));
 
 // Partner Desktop Pages (lazy-loaded)
@@ -68,18 +44,13 @@ const PartnerProjectsPage = lazy(() => import("./pages/partner/ProjectsPage"));
 const PartnerEmployeesPage = lazy(() => import("./pages/partner/EmployeesPage"));
 const PartnerTimesheetsPage = lazy(() => import("./pages/partner/TimesheetsPage"));
 const PartnerDashboardPage = lazy(() => import("./pages/partner/DashboardPage"));
-const PartnerPaymentHistoryPage = lazy(() => import("./pages/partner/PaymentHistoryPage"));
-const PartnerPaymentHistoryPageMobile = lazy(() => import("./pages/mobile/partner/TimesheetsPage/PaymentHistoryPage"));
+const PartnerBillingPage = lazy(() => import("./pages/partner/BillingPage"));
 
 // Partner Mobile Pages (lazy-loaded)
 const PartnerProjectsPageMobile = lazy(() => import("./pages/mobile/partner/ProjectsPage"));
 const PartnerEmployeesPageMobile = lazy(() => import("./pages/mobile/partner/EmployeesPage"));
 const PartnerTimesheetsPageMobile = lazy(() => import("./pages/mobile/partner/TimesheetsPage"));
 const PartnerDashboardMobile = lazy(() => import("./pages/mobile/partner/DashboardPage"));
-
-// Adv Partner Desktop Pages (lazy-loaded)
-const AdvPartnerUsersPage = lazy(() => import("./pages/adv-partner/UsersPage"));
-const AccountantPage = lazy(() => import("./pages/accountant/AccountantPage"));
 
 // Employee Pages (lazy-loaded)
 const EmployeeRouter = lazy(() => import("./pages/employee/EmployeeRouter"));
@@ -118,16 +89,10 @@ const RootRedirect = () => {
   if (hasSession && userRole === "admin") {
     return <Navigate to="/admin" replace />;
   }
-  if (hasSession && userRole === "partner") {
+  if (hasSession && userRole === "quanly") {
     return <Navigate to="/partner/dashboard" replace />;
   }
-  if (hasSession && userRole === "adv_partner") {
-    return <Navigate to="/adv-partner/advance-payments" replace />;
-  }
-  if (hasSession && userRole === "accountant") {
-    return <Navigate to="/accountant" replace />;
-  }
-  if (hasSession && userRole === "employee") {
+  if (hasSession && userRole === "nhanvien") {
     return <Navigate to="/employee" replace />;
   }
   return <Navigate to="/login" replace />;
@@ -257,10 +222,9 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         {/* OTP second-step login (admin/partner when OTP_ENABLE is on) */}
         <Route path="/login/otp" element={<OTPLogin />} />
-        {/* Self-service password reset (email magic link + Zalo OTP) */}
+        {/* Self-service password reset (email magic link) */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/zalo-reset-password" element={<ZaloResetPassword />} />
 
         {/* Logout */}
         <Route path="/logout" element={<LogoutRedirect />} />
@@ -273,63 +237,27 @@ const AppContent = () => {
           <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
           <Route path="timesheet" element={<ResponsivePage desktopComponent={TimesheetPage} mobileComponent={TimesheetPageMobile} />} />
-          <Route path="payment-history" element={<AdminPaymentHistoryPage />} />
           <Route path="timesheets" element={<Navigate to="/admin/timesheet" replace />} />
-          {/* Legacy "Giao dịch" entry point — Sổ cái (/admin/ledger) is the single
-              double-entry workspace; old links redirect there. */}
-          <Route path="transactions" element={<Navigate to="/admin/ledger" replace />} />
-          <Route path="ledger" element={<ResponsivePage desktopComponent={TransactionsPage} mobileComponent={LedgerEntriesPageMobile} />} />
-          <Route path="loans" element={<ResponsivePage desktopComponent={LoansPage} mobileComponent={LoansPageMobile} />} />
-          <Route path="loans/lenders" element={<ResponsivePage desktopComponent={LendersPage} mobileComponent={LendersPageMobile} />} />
-          <Route path="advance-payments" element={<ResponsivePage desktopComponent={AdvancePaymentsPage} mobileComponent={AdvancePaymentsPageMobile} />} />
-          <Route path="advance-payments/check-in-settings" element={<CheckInSettingsPage />} />
-          <Route path="advance-payments/employees" element={<ResponsivePage desktopComponent={AdvancePaymentsEmployeeListPage} mobileComponent={AdvancePaymentsEmployeeListPageMobile} />} />
-          <Route path="advance-payment-fees" element={<Navigate to="/admin/settings?tab=fee-config" replace />} />
-          <Route path="approvals" element={<ResponsivePage desktopComponent={ApprovalsPage} mobileComponent={ApprovalsPageMobile} />} />
           <Route path="settings" element={<ResponsivePage desktopComponent={SettingsPage} mobileComponent={SettingsPageMobile} />} />
-          <Route path="wallet" element={<ResponsivePage desktopComponent={WalletPage} mobileComponent={WalletPageMobile} />} />
-          <Route path="system" element={<Navigate to="/admin/system-health" replace />} />
-          <Route path="system-health" element={<ResponsivePage desktopComponent={SystemHealthPage} mobileComponent={SystemHealthPageMobile} />} />
-          <Route path="cron-health" element={<ResponsivePage desktopComponent={CronHealthPage} mobileComponent={CronHealthPageMobile} />} />
           <Route path="audit-log" element={<ResponsivePage desktopComponent={AuditLogPage} mobileComponent={AuditLogPageMobile} />} />
-          <Route path="zns-tracking" element={<ResponsivePage desktopComponent={ZnsTrackingPage} mobileComponent={ZnsTrackingPageMobile} />} />
           <Route path="email" element={<EmailPage />} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Partner Routes */}
-        <Route path="/partner" element={<ProtectedRoute requiredRole="partner"><PartnerLayout /></ProtectedRoute>}>
+        <Route path="/partner" element={<ProtectedRoute requiredRole="quanly"><PartnerLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/partner/dashboard" replace />} />
           <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
-          <Route path="timesheet/payment-history" element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
+          <Route path="billing" element={<ResponsivePage desktopComponent={PartnerBillingPage} mobileComponent={PartnerBillingPage} />} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
 
         {/* Employee Routes */}
-        <Route path="/employee" element={<ProtectedRoute requiredRole="employee"><EmployeeRouter /></ProtectedRoute>} />
-
-        {/* Accountant Routes — single no-sidebar workspace (duyệt công, chuyển lô, sao kê) */}
-        <Route path="/accountant" element={<ProtectedRoute requiredRole="accountant"><AccountantPage /></ProtectedRoute>} />
-
-        {/* Advance Payment Partner Routes */}
-        <Route path="/adv-partner" element={<ProtectedRoute requiredRole="adv_partner"><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/adv-partner/advance-payments" replace />} />
-          <Route
-            path="advance-payments"
-            element={<ResponsivePage desktopComponent={AdvPartnerAdvancePaymentsPage} mobileComponent={AdvancePaymentsPageMobile} />}
-          />
-          <Route path="advance-payments/check-in-settings" element={<CheckInSettingsPage />} />
-          <Route path="advance-payments/employees" element={<ResponsivePage desktopComponent={AdvancePaymentsEmployeeListPage} mobileComponent={AdvancePaymentsEmployeeListPageMobile} />} />
-          <Route
-            path="users"
-            element={<AdvPartnerUsersPage />}
-          />
-          <Route path="*" element={<NotFound />} />
-        </Route>
+        <Route path="/employee" element={<ProtectedRoute requiredRole="nhanvien"><EmployeeRouter /></ProtectedRoute>} />
 
         {/* 404 Route */}
         <Route path="*" element={<NotFound />} />
@@ -339,7 +267,7 @@ const AppContent = () => {
       {/* Modal Router - centralized URL-driven modal system */}
       <ModalRouter />
 
-      {/* Prompts admin/partner/adv_partner users with no email to provide one. */}
+      {/* Prompts admin and quanly users with no email to provide one. */}
       <EmailPromptGate />
 
       {/* Blocks employee accounts still on the default password behind a compulsory change-password dialog. */}

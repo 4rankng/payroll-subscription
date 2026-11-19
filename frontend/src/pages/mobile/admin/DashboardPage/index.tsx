@@ -21,6 +21,7 @@ import {
   SwitchHorizontal01,
   UserPlus01,
   Users01,
+  Wallet01,
 } from '@untitledui/icons';
 
 import { MonthPicker } from '@/components/ui/month-picker';
@@ -34,12 +35,12 @@ import { RecentEmployeesCard } from '@/components/admin-dashboard/RecentEmployee
 import { TopPaidEmployeesCard } from '@/components/admin-dashboard/TopPaidEmployeesCard';
 import { BankTransferBreakdownCard } from '@/components/admin-dashboard/BankTransferBreakdownCard';
 import { CheckInHealthStrip } from '@/components/admin-dashboard/CheckInHealthStrip';
+import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useDashboardData } from '@/hooks/admin-dashboard/useDashboardData';
 import { useDashboardActions } from '@/hooks/admin-dashboard/useDashboardActions';
 import { useDashboardStats } from '@/hooks/admin-dashboard/useDashboardStats';
 import { useTimesheets } from '@/hooks/api/useTimesheets';
-import { useApprovalsList } from '@/hooks/api/useApprovals';
 import { useBankUsageAllProjects, useEmployeeActivityStats } from '@/hooks/api/useDashboard';
 import { useDashboardNavigation } from '@/hooks/useDashboardNavigation';
 import { useEmployeeModals, useTimesheetModals } from '@/hooks/useModalNavigation';
@@ -212,17 +213,12 @@ const AdminDashboardMobile = () => {
         badge: pendingApprovals !== null && pendingApprovals > 0 ? pendingApprovals : undefined,
       },
       {
-        label: 'Ví tiền',
-        icon: SwitchHorizontal01,
-        onClick: () => navigate('/admin/wallet'),
-      },
-      {
         label: 'Thêm NV',
         icon: UserPlus01,
         onClick: () => openAddEmployee(),
       },
     ],
-    [dashboardNav.navigateToPendingApprovals, navigate, openAddEmployee, openTimesheetEntry, pendingApprovals],
+    [dashboardNav.navigateToPendingApprovals, openAddEmployee, openTimesheetEntry, pendingApprovals],
   );
 
   const operationMetrics = useMemo<MobileOperationMetric[]>(() => {
@@ -256,12 +252,6 @@ const AdminDashboardMobile = () => {
     ];
   }, [dashboardNav, data.dashboardSummary, monthLabel]);
 
-  const approvalsQueue = useApprovalsList({ statuses: ['pending', 'rescheduled'], pageSize: 1 });
-  const approvalsEscalated = useApprovalsList({ statuses: ['escalated'], pageSize: 1 });
-  const approvalsCount =
-    (approvalsQueue.data?.pagination?.totalRecords ?? 0) +
-    (approvalsEscalated.data?.pagination?.totalRecords ?? 0);
-
   const priorityRows = useMemo<MobileTaskRow[]>(() => {
     const rows: MobileTaskRow[] = [];
     const pendingKnown = pendingApprovals !== null;
@@ -287,30 +277,10 @@ const AdminDashboardMobile = () => {
       });
     }
 
-    if (approvalsCount > 0) {
-      rows.push({
-        title: 'Yêu cầu phê duyệt',
-        description:
-          (approvalsEscalated.data?.pagination?.totalRecords ?? 0) > 0
-            ? 'Có yêu cầu đã leo thang.'
-            : 'Đang chờ duyệt.',
-        value: approvalsCount.toLocaleString('vi-VN'),
-        icon: AlertCircle,
-        tone:
-          (approvalsEscalated.data?.pagination?.totalRecords ?? 0) > 0
-            ? 'warning'
-            : 'primary',
-        onClick: () => navigate('/admin/approvals'),
-      });
-    }
-
     return rows;
   }, [
-    approvalsCount,
-    approvalsEscalated.data?.pagination?.totalRecords,
     dashboardNav,
     hasPendingError,
-    navigate,
     pendingApprovals,
   ]);
 
@@ -478,6 +448,17 @@ const AdminDashboardMobile = () => {
 
           <TopPaidEmployeesCard month={monthParam} />
           <MonthlyFinancialTable />
+        </DashboardDisclosureSection>
+
+        <DashboardDisclosureSection
+          value="paid-series"
+          eyebrow="PAYSUB"
+          title="Đã thanh toán"
+          summary="Nhân viên và số tiền đã trả theo dự án."
+          meta="12 tháng"
+          icon={Wallet01}
+        >
+          <PaidSeriesSection />
         </DashboardDisclosureSection>
 
         <DashboardDisclosureSection

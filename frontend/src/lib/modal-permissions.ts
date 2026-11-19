@@ -23,7 +23,7 @@ const defineAbilityFor = (role: string): AppAbility => {
   }
 
   // Partner permissions - limited access
-  else if (role === 'partner') {
+  else if (role === 'quanly') {
     // Read access to most resources
     can('read', ['Project', 'Employee', 'Timesheet', 'Report', 'PayRate', 'Transaction', 'Notification']);
 
@@ -53,7 +53,7 @@ const defineAbilityFor = (role: string): AppAbility => {
   }
 
   // Self-account password changes never grant access to user administration.
-  else if (['adv_partner', 'accountant', 'employee'].includes(role)) {
+  else if (['giamdoc', 'nhanvien'].includes(role)) {
     can(['read', 'update'], 'SelfAccount');
   }
 
@@ -112,25 +112,25 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'user_details',
     action: 'read',
     subject: 'User',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   add_user: {
     modalId: 'add_user',
     action: 'create',
     subject: 'User',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   edit_user: {
     modalId: 'edit_user',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   reset_password: {
     modalId: 'reset_password',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // Employee Management
@@ -138,7 +138,7 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'employee_details',
     action: 'read',
     subject: 'Employee',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     additionalChecks: (params) => {
       // Allow modal to open even without params (for initial state)
       if (!params || Object.keys(params).length === 0) return true;
@@ -150,19 +150,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'add_employee',
     action: 'create',
     subject: 'Employee',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   employee_import: {
     modalId: 'employee_import',
     action: 'import',
     subject: 'Employee',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   employee_export: {
     modalId: 'employee_export',
     action: 'export',
     subject: 'Employee',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // Project Management
@@ -170,7 +170,7 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'project_details',
     action: 'read',
     subject: 'Project',
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     additionalChecks: (params) => {
       // Allow modal to open even without params (for initial state)
       if (!params || Object.keys(params).length === 0) return true;
@@ -182,37 +182,37 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'project_create',
     action: 'create',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   add_project: {
     modalId: 'add_project',
     action: 'create',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   project_edit: {
     modalId: 'project_edit',
     action: 'update',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   project_assignment: {
     modalId: 'project_assignment',
     action: 'update',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   add_employee_to_project: {
     modalId: 'add_employee_to_project',
     action: 'update',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   remove_employee: {
     modalId: 'remove_employee',
     action: 'update',
     subject: 'Project',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // PayRate Management
@@ -220,19 +220,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'payrate_create',
     action: 'create',
     subject: 'PayRate',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   payrate_edit: {
     modalId: 'payrate_edit',
     action: 'update',
     subject: 'PayRate',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   payrate_details: {
     modalId: 'payrate_details',
     action: 'read',
     subject: 'PayRate',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // Timesheet Management
@@ -240,25 +240,25 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'timesheet_details',
     action: 'read',
     subject: 'Timesheet',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   timesheet_entry: {
     modalId: 'timesheet_entry',
     action: 'create',
     subject: 'Timesheet',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   timesheet_bulk_transfer: {
     modalId: 'timesheet_bulk_transfer',
     action: 'update',
     subject: 'Timesheet',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   saturday_day_type: {
     modalId: 'saturday_day_type',
     action: 'update',
     subject: 'Timesheet',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // Reports & Ledger
@@ -266,19 +266,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'ledger_entry_details',
     action: 'read',
     subject: 'Report',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   add_ledger_entry: {
     modalId: 'add_ledger_entry',
     action: 'create',
     subject: 'Report',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   approval_details: {
     modalId: 'approval_details',
     action: 'read',
     subject: 'Report',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // Transactions
@@ -286,19 +286,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'transaction_details',
     action: 'read',
     subject: 'Transaction',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   settle_transaction: {
     modalId: 'settle_transaction',
     action: 'update',
     subject: 'Transaction',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   reverse_transaction: {
     modalId: 'reverse_transaction',
     action: 'update',
     subject: 'Transaction',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
 
   // General Purpose
@@ -306,25 +306,25 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'file_upload',
     action: 'create',
     subject: 'all',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   notification_sheet: {
     modalId: 'notification_sheet',
     action: 'read',
     subject: 'Notification',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   user_profile: {
     modalId: 'user_profile',
     action: 'read',
     subject: 'SelfAccount',
-    roles: ['admin', 'partner']
+    roles: ['admin', 'quanly']
   },
   change_password: {
     modalId: 'change_password',
     action: 'update',
     subject: 'SelfAccount',
-    roles: ['admin', 'partner', 'adv_partner', 'accountant', 'employee']
+    roles: ['admin', 'quanly', 'giamdoc', 'nhanvien']
   }
 };
 

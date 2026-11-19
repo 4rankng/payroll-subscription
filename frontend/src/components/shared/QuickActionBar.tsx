@@ -172,7 +172,7 @@ export function useQuickActions(pageType: 'employees' | 'projects' | 'timesheet'
           label: 'Thêm NV',
           icon: UserPlus01,
           action: () => () => {},
-          roles: ['admin', 'partner'] as const
+          roles: ['admin', 'quanly'] as const
         },
         {
           id: 'export-employees',
@@ -180,7 +180,7 @@ export function useQuickActions(pageType: 'employees' | 'projects' | 'timesheet'
           icon: Download01,
           action: () => () => {},
           variant: 'secondary' as const,
-          roles: ['admin', 'partner'] as const
+          roles: ['admin', 'quanly'] as const
         },
         ...baseActions
       ];
@@ -192,7 +192,7 @@ export function useQuickActions(pageType: 'employees' | 'projects' | 'timesheet'
           label: 'Tạo DA',
           icon: FolderPlus,
           action: () => () => {},
-          roles: ['admin', 'partner'] as const
+          roles: ['admin', 'quanly'] as const
         },
         {
           id: 'assign-employees',
@@ -200,7 +200,7 @@ export function useQuickActions(pageType: 'employees' | 'projects' | 'timesheet'
           icon: Users01,
           action: () => () => {},
           variant: 'secondary' as const,
-          roles: ['admin', 'partner'] as const
+          roles: ['admin', 'quanly'] as const
         },
         ...baseActions
       ];
@@ -219,7 +219,7 @@ export function useQuickActions(pageType: 'employees' | 'projects' | 'timesheet'
           icon: Send01,
           action: () => () => {},
           variant: 'secondary' as const,
-          roles: ['partner'] as const
+          roles: ['quanly'] as const
         },
         ...baseActions
       ];

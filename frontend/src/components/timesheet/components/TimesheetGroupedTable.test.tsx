@@ -15,7 +15,7 @@ const timesheet: Timesheet = {
   projectName: 'PQC Hải Phòng', projectCode: 'PQC-HP', employeeName: 'Lê Thị Hằng', employeeCode: '031306002190',
 };
 
-describe.each(['admin', 'partner'] as const)('%s grouped timesheet table', (userRole) => {
+describe.each(['admin', 'quanly'] as const)('%s grouped timesheet table', (userRole) => {
   it('uses a named button to expand a semantic table row without double toggling', () => {
     const onRowClick = vi.fn();
     function TableHarness() {

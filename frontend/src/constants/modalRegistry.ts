@@ -34,14 +34,8 @@ export const MODAL_IDS = {
   TIMESHEET_BULK_TRANSFER: 'timesheet_bulk_transfer',
 
   // Ledger & Reports
-  LEDGER_ENTRY_DETAILS: 'ledger_entry_details',
-  ADD_LEDGER_ENTRY: 'add_ledger_entry',
-  APPROVAL_DETAILS: 'approval_details',
 
   // Transactions
-  TRANSACTION_DETAILS: 'transaction_details',
-  SETTLE_TRANSACTION: 'settle_transaction',
-  REVERSE_TRANSACTION: 'reverse_transaction',
 
   // General Purpose
   FILE_UPLOAD: 'file_upload',
@@ -75,7 +69,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem và chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner', 'adv_partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/UserDetailsSheet',
     hasParams: true,
     paramSchema: 'userDetails'
@@ -87,7 +81,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo tài khoản người dùng mới',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/AddUserSheet',
     hasParams: false
   },
@@ -98,7 +92,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/EditUserSheet',
     hasParams: true,
     paramSchema: 'userEdit'
@@ -110,7 +104,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đặt lại mật khẩu cho người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/ResetPasswordModal',
     hasParams: true,
     paramSchema: 'resetPassword'
@@ -123,7 +117,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông tin chi tiết nhân viên',
     category: 'employee',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/EmployeeDetailsSheet',
     hasParams: true,
     paramSchema: 'employeeDetails'
@@ -136,7 +130,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Thêm nhân viên mới vào hệ thống',
     category: 'employee',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/AddEmployeeSheet',
     hasParams: false
   },
@@ -147,7 +141,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Import danh sách nhân viên từ file',
     category: 'employee',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/EmployeeImportModal',
     hasParams: false
   },
@@ -158,7 +152,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Export danh sách nhân viên',
     category: 'employee',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/EmployeeExportModal',
     hasParams: false
   },
@@ -170,7 +164,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông tin chi tiết dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/ProjectDetailsSheet',
     hasParams: true,
     paramSchema: 'projectDetails'
@@ -183,7 +177,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo dự án mới',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/AddProjectSheet',
     hasParams: false
   },
@@ -194,7 +188,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Thêm dự án mới',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/AddProjectSheet',
     hasParams: false
   },
@@ -205,7 +199,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chỉnh sửa thông tin dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/ProjectEditSheet',
     hasParams: true,
     paramSchema: 'projectEdit'
@@ -219,7 +213,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Phân công nhân viên vào dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/ProjectAssignmentSheet',
     hasParams: true,
     paramSchema: 'projectAssignment'
@@ -231,7 +225,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Thêm nhân viên vào dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/project-employees/AddEmployeeSheet',
     hasParams: true,
     paramSchema: 'addEmployeeToProject'
@@ -243,7 +237,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xóa nhân viên khỏi dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/RemoveEmployeeModal',
     hasParams: true,
     paramSchema: 'removeEmployee'
@@ -256,7 +250,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem chi tiết bảng chấm công',
     category: 'timesheet',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/TimesheetDetailsModal',
     hasParams: true,
     paramSchema: 'timesheetDetails'
@@ -268,7 +262,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo hoặc chỉnh sửa bảng chấm công',
     category: 'timesheet',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/TimesheetEntryModal',
     hasParams: false
   },
@@ -279,84 +273,15 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chuyển giao timesheet hàng loạt',
     category: 'timesheet',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/TimesheetBulkTransferModal',
     hasParams: false
   },
 
 
   // Report & Ledger Modals
-  [MODAL_IDS.LEDGER_ENTRY_DETAILS]: {
-    id: MODAL_IDS.LEDGER_ENTRY_DETAILS,
-    name: 'Chi tiết bút toán',
-    description: 'Xem chi tiết bút toán',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/ledger/LedgerEntryDetailsSheet',
-    hasParams: true,
-    paramSchema: 'ledgerDetails'
-  },
-
-  [MODAL_IDS.ADD_LEDGER_ENTRY]: {
-    id: MODAL_IDS.ADD_LEDGER_ENTRY,
-    name: 'Thêm giao dịch',
-    description: 'Thêm giao dịch mới',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/sheets/AddTransactionSheet',
-    hasParams: false
-  },
-
-  [MODAL_IDS.APPROVAL_DETAILS]: {
-    id: MODAL_IDS.APPROVAL_DETAILS,
-    name: 'Chi tiết phê duyệt',
-    description: 'Xem chi tiết phê duyệt',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/modals/ApprovalDetailsModal',
-    hasParams: true,
-    paramSchema: 'approvalDetails'
-  },
 
   // Transaction Modals
-  [MODAL_IDS.TRANSACTION_DETAILS]: {
-    id: MODAL_IDS.TRANSACTION_DETAILS,
-    name: 'Chi tiết giao dịch',
-    description: 'Xem chi tiết giao dịch',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/sheets/TransactionDetailsSheet',
-    hasParams: true,
-    paramSchema: 'transactionDetails'
-  },
-
-  [MODAL_IDS.SETTLE_TRANSACTION]: {
-    id: MODAL_IDS.SETTLE_TRANSACTION,
-    name: 'Thanh toán giao dịch',
-    description: 'Thanh toán giao dịch với thông tin chi tiết',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/modals/SettleTransactionModal',
-    hasParams: true,
-    paramSchema: 'settleTransaction'
-  },
-
-  [MODAL_IDS.REVERSE_TRANSACTION]: {
-    id: MODAL_IDS.REVERSE_TRANSACTION,
-    name: 'Đảo ngược giao dịch',
-    description: 'Tạo bút toán đảo ngược để hủy giao dịch',
-    category: 'report',
-    requiresAuth: true,
-    roles: ['admin', 'partner'],
-    componentPath: '/src/components/modals/ReverseTransactionModal',
-    hasParams: true,
-    paramSchema: 'reverseTransaction'
-  },
 
   // General Purpose Modals
   [MODAL_IDS.FILE_UPLOAD]: {
@@ -365,7 +290,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tải lên tập tin',
     category: 'general',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/modals/FileUploadModal',
     hasParams: false
   },
@@ -376,7 +301,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông báo',
     category: 'general',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/notifications/NotificationSheet',
     hasParams: false
   },
@@ -387,7 +312,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem và chỉnh sửa hồ sơ cá nhân',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner'],
+    roles: ['admin', 'quanly'],
     componentPath: '/src/components/sheets/UserProfileSheet',
     hasParams: false
   },
@@ -398,7 +323,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đổi mật khẩu tài khoản',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'partner', 'adv_partner', 'accountant', 'employee'],
+    roles: ['admin', 'quanly', 'giamdoc', 'nhanvien'],
     componentPath: '/src/components/modals/ChangePasswordModal',
     hasParams: false
   }

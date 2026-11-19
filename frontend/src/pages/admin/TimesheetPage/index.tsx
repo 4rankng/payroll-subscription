@@ -1,67 +1,39 @@
-import { parseTimesheetStatusFilter } from "@/utils/timesheetFilterHelpers";
+import { parseTimesheetStatusFilter } from '@/utils/timesheetFilterHelpers';
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { format, parse } from 'date-fns';
 import { getConsoleKicker } from '@/lib/console';
 import {
   CheckDone01,
-  ClockStopwatch,
   DotsVertical,
-  FileCheck02,
-  FileDownload01,
   Grid01,
   Plus,
   RefreshCw05,
-  Send01,
   Trash01,
-  Upload01,
   UploadCloud01,
-  Wallet01,
 } from '@untitledui/icons';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { MissingBankDetailsSection } from '@/components/employees/MissingBankDetailsSection';
 import { TimesheetDisplaySection } from '@/components/timesheet/TimesheetDisplaySection';
-import { ChuyenLoDialog } from '@/components/timesheet/ChuyenLoDialog';
-import { BulkTransferExportDialog } from '@/components/timesheet/BulkTransferExportDialog';
-import { TimesheetsExportDialog, TimesheetsExportParams } from '@/components/timesheet/TimesheetsExportDialog';
-import { BulkTransferResultUploadDialog } from '@/components/timesheet/BulkTransferResultUploadDialog';
-import { BulkTransferKQDialog } from '@/components/timesheet/BulkTransferKQDialog';
-import { BulkTransferHistoryDialog } from '@/components/transaction/BulkTransferHistoryDialog';
 import { UploadHistorySheet } from '@/components/timesheet/UploadHistorySheet';
 import { BCCUploadModal } from '@/components/timesheet/BCCUploadModal';
 import { RejectUnpaidTimesheetsDialog } from '@/components/timesheet/RejectUnpaidTimesheetsDialog';
-import { BulkTransferHistoryDetailDialog } from '@/components/transaction/BulkTransferHistoryDetailDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTimesheetManagement } from '@/hooks/timesheet/useTimesheetManagement';
-import { useExportApprovedTimesheets } from '@/hooks/api/usePayrolls';
 import { useApproveAllTimesheets, useResetAllTimesheets, useCashReadiness, useTimesheetSummary } from '@/hooks/api/useTimesheets';
-import { useExportOnePayBulk } from '@/hooks/api/useOnePayExport';
 import { PayrollControlCenter } from '@/components/timesheet/PayrollControlCenter';
 import { useEmployeeModals, useModalNavigation } from '@/hooks/useModalNavigation';
-import { useSettingByKey } from '@/hooks/api/useSettings';
 import { MODAL_IDS } from '@/constants/modalRegistry';
 import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSelector';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Employee } from '@/types/api/employee.types';
 import type { Timesheet } from '@/types/api/timesheet.types';
-import type { BulkTransferExportParams } from '@/services/api/bulk-transfer.service';
 
 const TimesheetPage = () => {
   const location = useLocation();
-  const [chuyenLoDialogOpen, setChuyenLoDialogOpen] = useState(false);
-  const [onePayDialogOpen, setOnePayDialogOpen] = useState(false);
-  const [approvedTimesheetsDialogOpen, setApprovedTimesheetsDialogOpen] = useState(false);
   const [bulkApproveDialogOpen, setBulkApproveDialogOpen] = useState(false);
   const [resetAllDialogOpen, setResetAllDialogOpen] = useState(false);
-  const [bulkTransferResultDialogOpen, setBulkTransferResultDialogOpen] = useState(false);
-  const [bulkTransferKQDialogOpen, setBulkTransferKQDialogOpen] = useState(false);
-  const [bulkTransferHistoryDialogOpen, setBulkTransferHistoryDialogOpen] = useState(false);
-  const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(null);
-  const [selectedHistoryFilename, setSelectedHistoryFilename] = useState<string>('');
-  const [selectedHistoryUploadedAt, setSelectedHistoryUploadedAt] = useState<string | null>(null);
-  const [shouldLoadBulkTransferHistory, setShouldLoadBulkTransferHistory] = useState(false);
   const [bccHistoryOpen, setBccHistoryOpen] = useState(false);
   const [bccUploadOpen, setBccUploadOpen] = useState(false);
   const [rejectUnpaidDialogOpen, setRejectUnpaidDialogOpen] = useState(false);
@@ -72,13 +44,8 @@ const TimesheetPage = () => {
   const urlStatus = parseTimesheetStatusFilter(searchParams.get('status'));
 
   const timesheetManagement = useTimesheetManagement({ userRole: 'admin' });
-  const queryClient = useQueryClient();
   const { openModal } = useModalNavigation();
   const { openEmployeeDetails } = useEmployeeModals();
-  const { data: bulkTransferSetting } = useSettingByKey('bulk_transfer_payment_percentage');
-
-  // Calculate bulk transfer percentage from setting
-  const bulkTransferPercentage = bulkTransferSetting?.value ? parseFloat(bulkTransferSetting.value) : 0;
 
   // Global summary (no filters) for "Duyệt hết" confirm dialog — backend
   // approveAll() ignores filters and approves system-wide, so we show the
@@ -131,10 +98,8 @@ const TimesheetPage = () => {
 
   const { data: timesheetSummary, isLoading: isTimesheetSummaryLoading } = useTimesheetSummary(statsFilters);
 
-  const exportApprovedTimesheetsMutation = useExportApprovedTimesheets();
   const approveAllMutation = useApproveAllTimesheets();
   const resetAllMutation = useResetAllTimesheets();
-  const exportOnePayMutation = useExportOnePayBulk();
 
   const handleAddTimesheet = () => {
     openModal(MODAL_IDS.TIMESHEET_ENTRY);
@@ -152,16 +117,6 @@ const TimesheetPage = () => {
       entryId: timesheet.id?.toString()
     });
   };
-
-  const handleEditRequestRowClick = (timesheet: Timesheet) => {
-    queryClient.setQueryData(['timesheets', 'detail', timesheet.id], timesheet);
-    openModal(MODAL_IDS.TIMESHEET_DETAILS, {
-      id: timesheet.id.toString()
-    });
-  };
-
-
-
 
   const handleBulkApprove = () => {
     refetchGlobalSummary();
@@ -194,47 +149,6 @@ const TimesheetPage = () => {
     }
   };
 
-  // "Chuyển lô" primary button — opens the unified tabbed dialog
-  const handleChuyenLo = () => {
-    setChuyenLoDialogOpen(true);
-  };
-
-  const handleApprovedTimesheetsExport = () => {
-    setApprovedTimesheetsDialogOpen(true);
-  };
-
-  const handleApprovedTimesheetsExportSubmit = async (params: TimesheetsExportParams) => {
-    try {
-      await exportApprovedTimesheetsMutation.mutateAsync(params);
-      setApprovedTimesheetsDialogOpen(false);
-    } catch {
-      // Error is handled by the mutation's onError callback
-    }
-  };
-
-  // OnePay uses weekly date ranges. Sending for_month switches the backend
-  // to the monthly employee cohort, so this action reuses the weekly period
-  // selector from "Chuyển lô" without exposing the monthly toggle.
-  const handleChuyenOnePay = () => {
-    setOnePayDialogOpen(true);
-  };
-
-  const handleChuyenOnePaySubmit = async (params: BulkTransferExportParams) => {
-    try {
-      await exportOnePayMutation.mutateAsync(params);
-      setOnePayDialogOpen(false);
-    } catch {
-      // Error + toast handled by useExportOnePayBulk onError.
-      // Keep the selected period in place so the admin can retry.
-    }
-  };
-
-  const onePayProjectIds = useMemo(() => {
-    if (timesheetManagement.selectedProject === 'all') return [];
-    const projectId = parseInt(timesheetManagement.selectedProject, 10);
-    return Number.isNaN(projectId) ? [] : [projectId];
-  }, [timesheetManagement.selectedProject]);
-
   const handleApprove = async (timesheet: Timesheet) => {
     await timesheetManagement.handleApprove(timesheet);
   };
@@ -243,42 +157,12 @@ const TimesheetPage = () => {
     await timesheetManagement.handleDelete(timesheet);
   };
 
-  const handleBulkTransferResultUpload = () => {
-    setBulkTransferResultDialogOpen(true);
-  };
-
-  const handleBulkTransferHistory = useCallback(() => {
-    setBulkTransferHistoryDialogOpen(true);
-    setSelectedHistoryId(null);
-    setShouldLoadBulkTransferHistory(true);
-  }, []);
-
   const handleBccHistory = useCallback(() => {
     setBccHistoryOpen(true);
   }, []);
 
   const handleCloseBccHistory = useCallback(() => {
     setBccHistoryOpen(false);
-  }, []);
-
-  const handleSelectHistory = useCallback((id: number, filename: string, uploadedAt: string) => {
-    setSelectedHistoryId(id);
-    setSelectedHistoryFilename(filename);
-    setSelectedHistoryUploadedAt(uploadedAt);
-  }, []);
-
-  const handleBackToHistoryList = useCallback(() => {
-    setSelectedHistoryId(null);
-    setSelectedHistoryFilename('');
-    setSelectedHistoryUploadedAt(null);
-  }, []);
-
-  const handleCloseHistory = useCallback(() => {
-    setBulkTransferHistoryDialogOpen(false);
-    setSelectedHistoryId(null);
-    setSelectedHistoryFilename('');
-    setSelectedHistoryUploadedAt(null);
-    setShouldLoadBulkTransferHistory(false);
   }, []);
 
 
@@ -346,13 +230,6 @@ const TimesheetPage = () => {
             <RefreshCw05 className="h-4 w-4 shrink-0" aria-hidden="true" />
             Bỏ duyệt
           </button>
-          <button
-            onClick={handleChuyenLo}
-            className="inline-flex items-center gap-1.5 h-9 px-3 bg-primary text-primary-foreground text-sm font-medium whitespace-nowrap hover:bg-primary/90 transition-colors border-r border-border"
-          >
-            <Send01 className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Chuyển lô
-          </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -368,33 +245,11 @@ const TimesheetPage = () => {
                 <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
                 Nhập công
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBulkTransferResultUpload}>
-                <Upload01 className="w-4 h-4 mr-2" aria-hidden="true" />
-                Nhập KQ chuyển lô
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBulkTransferKQDialogOpen(true)}>
-                <FileCheck02 className="w-4 h-4 mr-2" aria-hidden="true" />
-                Tạo KQ CK
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Group 2: Import / Upload */}
               <DropdownMenuItem onClick={() => setBccUploadOpen(true)}>
                 <UploadCloud01 className="w-4 h-4 mr-2" aria-hidden="true" />
                 Tải lên BCC
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {/* Group 3: Báo cáo / Reports */}
-              <DropdownMenuItem onClick={handleChuyenOnePay} disabled={exportOnePayMutation.isPending}>
-                <Wallet01 className="w-4 h-4 mr-2" aria-hidden="true" />
-                {exportOnePayMutation.isPending ? 'Đang xuất...' : 'Chuyển OnePay'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleApprovedTimesheetsExport} disabled={exportApprovedTimesheetsMutation.isPending}>
-                <FileDownload01 className="w-4 h-4 mr-2" aria-hidden="true" />
-                {exportApprovedTimesheetsMutation.isPending ? 'Đang xuất...' : 'Xuất bảng công'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBulkTransferHistory}>
-                <ClockStopwatch className="w-4 h-4 mr-2" aria-hidden="true" />
-                Lịch sử chuyển lô
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleBccHistory}>
                 <Grid01 className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -438,31 +293,7 @@ const TimesheetPage = () => {
         onDelete={handleDelete}
         onAddTimesheet={handleAddTimesheet}
         onBulkApprove={handleBulkApprove}
-        bulkTransferPercentage={bulkTransferPercentage}
-        showEditRequestTable={true}
         userRole="admin"
-        onEditRequestRowClick={handleEditRequestRowClick}
-      />
-
-      <ChuyenLoDialog
-        open={chuyenLoDialogOpen}
-        onOpenChange={setChuyenLoDialogOpen}
-      />
-
-      <BulkTransferExportDialog
-        open={onePayDialogOpen}
-        onOpenChange={setOnePayDialogOpen}
-        onExport={handleChuyenOnePaySubmit}
-        isLoading={exportOnePayMutation.isPending}
-        mode="onepay"
-        preselectedProjectIds={onePayProjectIds}
-      />
-
-      <TimesheetsExportDialog
-        open={approvedTimesheetsDialogOpen}
-        onOpenChange={setApprovedTimesheetsDialogOpen}
-        onExport={handleApprovedTimesheetsExportSubmit}
-        isLoading={exportApprovedTimesheetsMutation.isPending}
       />
 
       <ConfirmDialog
@@ -511,36 +342,6 @@ const TimesheetPage = () => {
         onConfirm={handleConfirmResetAll}
         loading={resetAllMutation.isPending}
         disabled={(globalSummary?.approvedEntries ?? 0) === 0}
-      />
-
-      {/* Bulk Transfer Result Upload Dialog */}
-      <BulkTransferResultUploadDialog
-        open={bulkTransferResultDialogOpen}
-        onOpenChange={setBulkTransferResultDialogOpen}
-      />
-
-      {/* Tạo KQ CK — convert a chuyển-lô file into a bank result file */}
-      <BulkTransferKQDialog
-        open={bulkTransferKQDialogOpen}
-        onOpenChange={setBulkTransferKQDialogOpen}
-      />
-
-      {/* Bulk Transfer History List Dialog */}
-      <BulkTransferHistoryDialog
-        open={bulkTransferHistoryDialogOpen && selectedHistoryId === null}
-        onOpenChange={handleCloseHistory}
-        onSelectHistory={handleSelectHistory}
-        shouldFetchHistories={shouldLoadBulkTransferHistory}
-      />
-
-      {/* Bulk Transfer History Detail Dialog */}
-      <BulkTransferHistoryDetailDialog
-        open={bulkTransferHistoryDialogOpen && selectedHistoryId !== null}
-        historyId={selectedHistoryId}
-        filename={selectedHistoryFilename}
-        uploadedAt={selectedHistoryUploadedAt || undefined}
-        onOpenChange={handleCloseHistory}
-        onBack={handleBackToHistoryList}
       />
 
       {/* BCC Upload */}

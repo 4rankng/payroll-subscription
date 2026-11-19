@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BankSelector } from "@/components/ui/bank-selector";
 import { formatVietnameseName } from "@/lib/validation";
-import { User, CreditCard, AlertCircle } from "lucide-react";
+import { User, AlertCircle } from "lucide-react";
 import type { EmployeeFormProps } from "../types";
 
 function FieldGroup({ children }: { children: React.ReactNode }) {
@@ -48,13 +47,9 @@ function hasInvalidNameChars(value: string): boolean {
 
 export function EmployeeEditForm({
   formData,
-  selectedBank,
   onInputChange,
-  onBankChange,
-  canCreateBank = true,
 }: EmployeeFormProps) {
   const [nameWarning, setNameWarning] = useState(false);
-  const [bankAccountNameWarning, setBankAccountNameWarning] = useState(false);
 
   return (
     <div className="space-y-3">
@@ -134,52 +129,6 @@ export function EmployeeEditForm({
             onChange={(e) => onInputChange("address", e.target.value)}
           />
         </Field>
-      </FieldGroup>
-
-      {/* Bank info card */}
-      <FieldGroup>
-        <SectionTitle icon={CreditCard} label="Thông tin ngân hàng" />
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Field label="Ngân hàng">
-            <BankSelector
-              value={selectedBank}
-              onSelect={onBankChange}
-              placeholder="Chọn ngân hàng..."
-              canCreateBank={canCreateBank}
-            />
-          </Field>
-          <Field id="bank_account_number" label="Số tài khoản">
-            <Input
-              id="bank_account_number"
-              className="h-11 text-sm sm:h-9 font-mono"
-              value={formData.bank_account_number || ''}
-              onChange={(e) => onInputChange("bank_account_number", e.target.value)}
-            />
-          </Field>
-          <Field
-            id="bank_account_name"
-            label="Chủ tài khoản"
-            warning={bankAccountNameWarning ? "Tên chủ tài khoản không được chứa số hoặc ký tự đặc biệt" : undefined}
-          >
-            <Input
-              id="bank_account_name"
-              className={`h-11 text-sm sm:h-9 ${bankAccountNameWarning ? "border-warning focus-visible:ring-warning" : ""}`}
-              value={formData.bank_account_name || ''}
-              onChange={(e) => {
-                onInputChange("bank_account_name", e.target.value);
-                setBankAccountNameWarning(hasInvalidNameChars(e.target.value));
-              }}
-              onBlur={(e) => {
-                const formatted = formatVietnameseName(e.target.value);
-                if (formatted !== e.target.value) {
-                  onInputChange("bank_account_name", formatted);
-                }
-                setBankAccountNameWarning(false);
-              }}
-            />
-          </Field>
-        </div>
       </FieldGroup>
     </div>
   );

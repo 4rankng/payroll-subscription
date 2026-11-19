@@ -3,11 +3,10 @@ import { useChangePaymentSchedule, useUpdateEmployeeProjectAssignment } from "@/
 import { validateFullname, validateMobileNotCCCD } from "@/lib/validation";
 import { toast } from "@/components/ui/sonner";
 import type { Employee } from "@/types/api/employee.types";
-import type { Bank } from "@/types/api/bank.types";
 
 interface UseEmployeeFormProps {
   employee: Employee | null;
-  onUpdate: (employeeId: number, employeeData: Partial<Employee>, bankObject?: Bank | null) => Promise<void> | void;
+  onUpdate: (employeeId: number, employeeData: Partial<Employee>) => Promise<void> | void;
 }
 
 type AssignmentChange = {
@@ -57,7 +56,6 @@ const buildProjectUpdateData = (
 
 export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [projectChanges, setProjectChanges] = useState<Record<number, AssignmentChange>>({});
   const updateEmployeeProjectMutation = useUpdateEmployeeProjectAssignment();
   const changeScheduleMutation = useChangePaymentSchedule();
@@ -68,9 +66,6 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
     cccd: "",
     address: "",
     mobile: "",
-    bank: null,
-    bank_account_number: "",
-    bank_account_name: "",
     date_of_birth: "",
   });
 
@@ -82,12 +77,8 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
         cccd: employee.cccd || "",
         address: employee.address || "",
         mobile: employee.mobile || "",
-        bank: employee.bank || null,
-        bank_account_number: employee.bank_account_number || "",
-        bank_account_name: employee.bank_account_name || "",
         date_of_birth: employee.date_of_birth || "",
       });
-      setSelectedBank(employee.bank || null);
       setProjectChanges({});
     }
   }, [employee, isEditing]);
@@ -97,11 +88,6 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleBankChange = (bank: Bank | null) => {
-    setSelectedBank(bank);
-    setFormData(prev => ({ ...prev, bank }));
   };
 
   const handleProjectChange = (projectId: number, changes: AssignmentChange | null) => {
@@ -226,23 +212,16 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
         }
 
         // Save employee data
-        const { bank, ...restData } = formData;
-
         // Filter out empty or undefined fields to avoid backend validation errors
         const updateData: Record<string, unknown> = {};
 
-        Object.entries(restData).forEach(([key, value]) => {
+        Object.entries(formData).forEach(([key, value]) => {
           if (value !== "" && value !== null && value !== undefined) {
             updateData[key] = value;
           }
         });
 
-        // Only include bank_id if a bank is selected
-        if (bank?.id) {
-          updateData.bank_id = bank.id;
-        }
-
-        await onUpdate(employee.id, updateData, bank);
+        await onUpdate(employee.id, updateData);
 
         // Save project changes
         for (const [projectIdStr, changes] of Object.entries(projectChanges)) {
@@ -288,12 +267,8 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
         cccd: employee.cccd || "",
         address: employee.address || "",
         mobile: employee.mobile || "",
-        bank: employee.bank || null,
-        bank_account_number: employee.bank_account_number || "",
-        bank_account_name: employee.bank_account_name || "",
         date_of_birth: employee.date_of_birth || "",
       });
-      setSelectedBank(employee.bank || null);
       setProjectChanges({});
     }
   };
@@ -307,28 +282,23 @@ export const useEmployeeForm = ({ employee, onUpdate }: UseEmployeeFormProps) =>
     if (!employee) return false;
 
     const fields: (keyof typeof formData)[] = [
-      'fullname', 'email', 'cccd', 'address', 'mobile',
-      'bank_account_number', 'bank_account_name', 'date_of_birth',
+      'fullname', 'email', 'cccd', 'address', 'mobile', 'date_of_birth',
     ];
 
     for (const f of fields) {
       if ((formData[f] ?? '') !== (employee[f] ?? '')) return true;
     }
 
-    if ((selectedBank?.id ?? null) !== (employee.bank?.id ?? null)) return true;
-
     if (Object.keys(projectChanges).length > 0) return true;
 
     return false;
-  }, [employee, formData, selectedBank, projectChanges]);
+  }, [employee, formData, projectChanges]);
 
   return {
     isEditing,
     setIsEditing,
     formData,
-    selectedBank,
     handleInputChange,
-    handleBankChange,
     handleSave,
     handleCancel,
     resetFormData,

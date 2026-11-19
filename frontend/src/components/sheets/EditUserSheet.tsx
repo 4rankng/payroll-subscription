@@ -103,7 +103,7 @@ function EditUserSheet({
     try {
       await userService.updateUser(user.id, {
         email: formData.email,
-        ...((user.role === "admin" || user.role === "partner") && { mobile: formData.mobile }),
+        ...((user.role === "admin" || user.role === "quanly") && { mobile: formData.mobile }),
         username: formData.username,
         fullname: formData.fullname,
       });
@@ -196,7 +196,7 @@ function EditUserSheet({
             {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
           </div>
 
-          {(user?.role === "admin" || user?.role === "partner") && (
+          {(user?.role === "admin" || user?.role === "quanly") && (
             <div className="space-y-2">
               <Label htmlFor="edit-mobile">Số điện thoại</Label>
               <Input
@@ -256,7 +256,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: "update",
     subject: "User",
-    roles: ["admin", "partner", "adv_partner"],
+    roles: ["admin", "quanly"],
   },
   deeplink: {
     enabled: true,

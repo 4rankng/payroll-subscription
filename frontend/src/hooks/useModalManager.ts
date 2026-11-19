@@ -186,10 +186,6 @@ export function useLedgerModals() {
   const { openModal } = useModalManager();
 
   return {
-    openLedgerDetails: useCallback((entryId: string | number, tab?: string) => {
-      return openModal('ledger_entry_details', { id: entryId, ...(tab && { tab }) });
-    }, [openModal]),
-
     openAddLedgerEntry: useCallback(() => {
       return openModal('add_ledger_entry');
     }, [openModal]),
