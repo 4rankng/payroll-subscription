@@ -15,21 +15,12 @@ func TestNewService(t *testing.T) {
 		nil, // ProjectRepo
 		nil, // EmployeeRepo
 		nil, // TimesheetRepo
-		nil, // TimesheetQueryRepo
 		nil, // TimesheetAnalyticsRepo
-		nil, // LedgerRepo
 		nil, // NotificationRepo
 		nil, // AuditLogRepo
 		nil, // ProjectEmployeeRepo
-		nil, // BulkTransferHistoryRepo
-		nil, // AdvancePaymentRequestRepo
-		nil, // AdvancePaymentRepo
-		nil, // AttendanceRepo
-		nil, // AttendanceFailedAttemptRepo
 		nil, // SettingsConfigSvc
 		nil, // CacheService
-		nil, // SalaryCalculationSvc
-		nil, // db (PartnerScopeResolver is constructed lazily; nil is fine for this wiring test)
 		slog.Default(),
 	)
 

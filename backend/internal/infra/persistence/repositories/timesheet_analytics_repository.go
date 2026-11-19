@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"api-server/internal/pkg/clock"
-	"api-server/internal/pkg/timeutil"
 	"context"
 	"time"
 

@@ -101,7 +101,7 @@ func validResetFixture() *domain.User {
 		ID:       40,
 		Username: "ab",
 		Fullname: "",
-		Role:     domain.RoleEmployee,
+		Role:     domain.RoleNhanvien,
 	}
 }
 

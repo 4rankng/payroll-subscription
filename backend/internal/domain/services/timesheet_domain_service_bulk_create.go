@@ -369,7 +369,7 @@ func (s *TimesheetDomainService) BulkCreateTimesheets(ctx context.Context, reque
 				}
 
 				// Partners cannot delete approved timesheets
-				if existingTimesheet.IsApproved() && userRole == "partner" {
+				if existingTimesheet.IsApproved() && userRole == "quanly" {
 					failedEntries = append(failedEntries, BulkCreateFailure{
 						Index:   i,
 						Error:   "Không thể xóa bảng chấm công đã được phê duyệt",
@@ -404,7 +404,7 @@ func (s *TimesheetDomainService) BulkCreateTimesheets(ctx context.Context, reque
 			}
 
 			// Partners cannot edit approved timesheets
-			if existingTimesheet.IsApproved() && userRole == "partner" {
+			if existingTimesheet.IsApproved() && userRole == "quanly" {
 				failedEntries = append(failedEntries, BulkCreateFailure{
 					Index:   i,
 					Error:   "Không thể chỉnh sửa bảng chấm công đã được phê duyệt",

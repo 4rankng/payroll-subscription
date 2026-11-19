@@ -15,7 +15,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"api-server/internal/app/services/attendance"
 	"api-server/internal/app/services/payroll"
 	"api-server/internal/app/services/project"
 	"api-server/internal/app/services/timesheet"
@@ -23,97 +22,37 @@ import (
 	"api-server/internal/pkg/timeutil"
 )
 
-func validateSalaryPeriodDay(field string, value *int) error {
-	if value == nil {
-		return nil
-	}
-	// 0 = default boundary (1st / last day); 1-31 are literal day numbers. A day
-	// missing in a short month (e.g. Feb 29) is resolved by rolling forward when
-	// the window is computed, so it must be accepted here.
-	if *value < 0 || *value > 31 {
-		return fmt.Errorf("%s phải nằm trong khoảng 0-31", field)
-	}
-	return nil
-}
-
-// Helper function to convert domain geofence gates to DTO
-func geofenceGatesToDTO(gates []domain.GeofenceGate) []dto.GeofenceGateRequest {
-	result := make([]dto.GeofenceGateRequest, len(gates))
-	for i, g := range gates {
-		result[i] = dto.GeofenceGateRequest{Name: g.Name, Lat: g.Lat, Lng: g.Lng}
-	}
-	return result
-}
-
-// Helper function to convert domain shift names to DTO
-func shiftNamesToDTO(names []domain.ShiftName) []dto.ShiftNameRequest {
-	if len(names) == 0 {
-		return []dto.ShiftNameRequest{}
-	}
-	result := make([]dto.ShiftNameRequest, len(names))
-	for i, n := range names {
-		result[i] = dto.ShiftNameRequest{Range: n.Range, Name: n.Name}
-	}
-	return result
-}
-
-// Helper function to convert DTO shift names to domain
-func shiftNamesFromDTO(req []dto.ShiftNameRequest) []domain.ShiftName {
-	if len(req) == 0 {
-		return nil
-	}
-	result := make([]domain.ShiftName, len(req))
-	for i, n := range req {
-		result[i] = domain.ShiftName{Range: n.Range, Name: n.Name}
-	}
-	return result
-}
-
 // Helper function to convert ProjectWithEmployeeCount to ProjectResponse
 func projectWithEmployeeCountToResponse(project *domain.ProjectWithEmployeeCount) dto.ProjectResponse {
 	return dto.ProjectResponse{
-		ID:                         project.ID,
-		ClientName:                 project.ClientName,
-		Name:                       project.Name,
-		Code:                       project.Code,
-		SalaryPeriodFrom:           project.SalaryPeriodFrom,
-		SalaryPeriodTo:             project.SalaryPeriodTo,
-		OffDays:                    project.OffDays,
-		EmployeeCount:              project.EmployeeCount,
-		WeeklySalaryEmployeeCount:  project.WeeklySalaryEmployeeCount,
-		MonthlySalaryEmployeeCount: project.MonthlySalaryEmployeeCount,
-		Status:                     string(project.ProjectStatus),
-		IsFlexible:                 project.IsFlexible,
-		GeofenceGates:              geofenceGatesToDTO(project.GeofenceGates),
-		GeofenceRadiusMeters:       project.GeofenceRadiusMeters,
-		ShiftNames:                 shiftNamesToDTO(project.ShiftNames),
-		CreatedBy:                  project.CreatedBy,
-		CreatedAt:                  project.CreatedAt,
-		UpdatedAt:                  project.UpdatedAt,
+		ID:            project.ID,
+		ClientName:    project.ClientName,
+		Name:          project.Name,
+		Code:          project.Code,
+		Description:   project.Description,
+		OffDays:       project.OffDays,
+		EmployeeCount: project.EmployeeCount,
+		Status:        string(project.ProjectStatus),
+		CreatedBy:     project.CreatedBy,
+		CreatedAt:     project.CreatedAt,
+		UpdatedAt:     project.UpdatedAt,
 	}
 }
 
 // Helper function to convert Project to ProjectResponse with zero employee count
 func projectToResponse(project *domain.Project) dto.ProjectResponse {
 	return dto.ProjectResponse{
-		ID:                         project.ID,
-		ClientName:                 project.ClientName,
-		Name:                       project.Name,
-		Code:                       project.Code,
-		SalaryPeriodFrom:           project.SalaryPeriodFrom,
-		SalaryPeriodTo:             project.SalaryPeriodTo,
-		OffDays:                    project.OffDays,
-		EmployeeCount:              0, // Default to 0 when not calculated
-		WeeklySalaryEmployeeCount:  0, // Default to 0 when not calculated
-		MonthlySalaryEmployeeCount: 0, // Default to 0 when not calculated
-		Status:                     string(project.ProjectStatus),
-		IsFlexible:                 project.IsFlexible,
-		GeofenceGates:              geofenceGatesToDTO(project.GeofenceGates),
-		GeofenceRadiusMeters:       project.GeofenceRadiusMeters,
-		ShiftNames:                 shiftNamesToDTO(project.ShiftNames),
-		CreatedBy:                  project.CreatedBy,
-		CreatedAt:                  project.CreatedAt,
-		UpdatedAt:                  project.UpdatedAt,
+		ID:            project.ID,
+		ClientName:    project.ClientName,
+		Name:          project.Name,
+		Code:          project.Code,
+		Description:   project.Description,
+		OffDays:       project.OffDays,
+		EmployeeCount: 0, // Default to 0 when not calculated
+		Status:        string(project.ProjectStatus),
+		CreatedBy:     project.CreatedBy,
+		CreatedAt:     project.CreatedAt,
+		UpdatedAt:     project.UpdatedAt,
 	}
 }
 
@@ -152,18 +91,13 @@ func NewHandlerWithServices(
 // Helper function to build comprehensive project response with related data
 func (h *Handler) buildDetailedProjectResponse(ctx context.Context, project *domain.Project) (*dto.ProjectDetailedResponse, error) {
 	response := &dto.ProjectDetailedResponse{
-		ID:                   project.ID,
-		ClientName:           project.ClientName,
-		Name:                 project.Name,
-		Code:                 project.Code,
-		SalaryPeriodFrom:     project.SalaryPeriodFrom,
-		SalaryPeriodTo:       project.SalaryPeriodTo,
-		OffDays:              project.OffDays,
-		Status:               string(project.ProjectStatus),
-		IsFlexible:           project.IsFlexible,
-		GeofenceGates:        geofenceGatesToDTO(project.GeofenceGates),
-		GeofenceRadiusMeters: project.GeofenceRadiusMeters,
-		ShiftNames:           shiftNamesToDTO(project.ShiftNames),
+		ID:          project.ID,
+		ClientName:  project.ClientName,
+		Name:        project.Name,
+		Code:        project.Code,
+		Description: project.Description,
+		OffDays:     project.OffDays,
+		Status:      string(project.ProjectStatus),
 
 		CreatedBy: project.CreatedBy,
 		CreatedAt: project.CreatedAt,
@@ -173,8 +107,7 @@ func (h *Handler) buildDetailedProjectResponse(ctx context.Context, project *dom
 	// Get employee assignments if service is available
 	if h.projectEmployeeService != nil {
 		activeFilters := domain.ProjectEmployeeFilters{
-			ProjectID:  &project.ID,
-			ActiveOnly: true,
+			ProjectID: &project.ID,
 		}
 
 		// Use CountAssignments for accurate total (no Limit cap)
@@ -182,12 +115,11 @@ func (h *Handler) buildDetailedProjectResponse(ctx context.Context, project *dom
 
 		// Fetch assignments for position counts and recent employees
 		listFilters := domain.ProjectEmployeeFilters{
-			ProjectID:  &project.ID,
-			ActiveOnly: true,
-			Limit:      1000,
-			Offset:     0,
-			SortBy:     "created_at",
-			SortOrder:  "desc",
+			ProjectID: &project.ID,
+			Limit:     1000,
+			Offset:    0,
+			SortBy:    "created_at",
+			SortOrder: "desc",
 		}
 
 		if assignments, err := h.projectEmployeeService.ListAssignments(ctx, listFilters); err == nil && countErr == nil {
@@ -246,11 +178,10 @@ func (h *Handler) buildDetailedProjectResponse(ctx context.Context, project *dom
 
 	// Get timesheet summary if service is available
 	if h.timesheetService != nil && h.projectEmployeeService != nil {
-		// First get list of currently working employees
+		// Get the project's employees (assignments are open-ended now)
 		activeFilters := domain.ProjectEmployeeFilters{
-			ProjectID:  &project.ID,
-			ActiveOnly: true, // Show only active assignments (LastDate is null)
-			Limit:      1000,
+			ProjectID: &project.ID,
+			Limit:     1000,
 		}
 
 		activeEmployees, err := h.projectEmployeeService.ListAssignments(ctx, activeFilters)
@@ -323,24 +254,11 @@ func (h *Handler) buildDetailedProjectResponse(ctx context.Context, project *dom
 		}
 	}
 
-	// Enhanced financial summary
-	totalRevenue := project.TotalReceivedVND + project.PendingReceivableVND
-	totalExpenses := project.TotalPayoutVND + project.PendingPayableVND
-	netProfit := totalRevenue - totalExpenses
-	profitMargin := 0.0
-	if totalRevenue > 0 {
-		profitMargin = (netProfit / totalRevenue) * 100
-	}
-
+	// Financial summary: payout aggregates recomputed from the project's
+	// timesheets. Receivables were removed with the customer-billing model.
 	response.FinancialSummary = &dto.ProjectFinancialSummary{
-		TotalPayoutVND:       project.TotalPayoutVND,
-		PendingPayableVND:    project.PendingPayableVND,
-		PendingReceivableVND: project.PendingReceivableVND,
-		TotalReceivedVND:     project.TotalReceivedVND,
-		TotalRevenueVND:      totalRevenue,
-		TotalExpensesVND:     totalExpenses,
-		NetProfitVND:         netProfit,
-		ProfitMarginPercent:  profitMargin,
+		TotalPayoutVND:    project.TotalPayoutVND,
+		PendingPayableVND: project.PendingPayableVND,
 	}
 
 	// Add recent activity (simplified - could be enhanced with audit logs)
@@ -383,19 +301,6 @@ func (h *Handler) CreateProject(c *gin.Context) {
 		return
 	}
 
-	// Policy: partners may set the salary period on CreateProject (relaxed from
-	// admin-only on 2026-06-10). UpdateProject still gates salary-period changes
-	// to admins; if a partner PATCH sends a salary-period field, the whole
-	// request is rejected with 403.
-	if err := validateSalaryPeriodDay("salary_period_from", req.SalaryPeriodFrom); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-	if err := validateSalaryPeriodDay("salary_period_to", req.SalaryPeriodTo); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
 	// Set project status - default to draft if not provided
 	projectStatus := domain.ProjectStatusDraft
 	if req.Status != nil {
@@ -404,52 +309,16 @@ func (h *Handler) CreateProject(c *gin.Context) {
 
 	// Create project model
 	project := &domain.Project{
-		ClientName:       req.ClientName,
-		Name:             req.Name,
-		Code:             req.Code,
-		SalaryPeriodFrom: domain.NormalizeSalaryPeriodDay(req.SalaryPeriodFrom),
-		SalaryPeriodTo:   domain.NormalizeSalaryPeriodDay(req.SalaryPeriodTo),
-		ProjectStatus:    projectStatus,
-		CreatedBy:        userID.(uint),
+		ClientName:    req.ClientName,
+		Name:          req.Name,
+		Code:          req.Code,
+		ProjectStatus: projectStatus,
+		CreatedBy:     userID.(uint),
 	}
 	if req.OffDays != nil {
 		project.OffDays = *req.OffDays
 	} else {
 		project.OffDays = 0 // default: no fixed off days
-	}
-
-	// Flexible project configuration
-	if req.IsFlexible != nil {
-		project.IsFlexible = *req.IsFlexible
-	}
-	if req.GeofenceGates != nil {
-		gates := make([]domain.GeofenceGate, len(req.GeofenceGates))
-		for i, g := range req.GeofenceGates {
-			gates[i] = domain.GeofenceGate{Name: g.Name, Lat: g.Lat, Lng: g.Lng}
-		}
-		project.GeofenceGates = gates
-	}
-	if req.GeofenceRadiusMeters != nil {
-		project.GeofenceRadiusMeters = *req.GeofenceRadiusMeters
-	} else if project.IsFlexible {
-		project.GeofenceRadiusMeters = 100 // sensible default
-	}
-	if project.IsFlexible {
-		if err := project.ValidateGeofenceGates(); err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
-	}
-
-	// Admin-named shifts (labels for payrate shifts). On create we accept the
-	// shape only; the range↔payrate match is validated on update once the
-	// payrate exists.
-	if req.ShiftNames != nil {
-		project.ShiftNames = shiftNamesFromDTO(req.ShiftNames)
-		if err := project.ValidateShiftNames(nil); err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
 	}
 
 	createdProject, err := h.projectService.CreateProject(c.Request.Context(), project, userID.(uint))
@@ -618,7 +487,7 @@ func (h *Handler) ListProjects(c *gin.Context) {
 
 	// Apply partner role filtering - show both created and shared projects
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get(constants.CtxUserID)
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -719,7 +588,7 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 	// Access control handled by middleware (ProjectPermissionService.CanUserAccessProject)
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		response.BadRequest(c, constants.MsgCannotModifyProjectWithStatusVN+": "+string(project.ProjectStatus))
 		return
 	}
@@ -740,80 +609,8 @@ func (h *Handler) UpdateProject(c *gin.Context) {
 	if req.Status != nil {
 		project.ProjectStatus = domain.ProjectStatus(*req.Status)
 	}
-	// Only admin can change salary period
-	if req.SalaryPeriodFrom != nil || req.SalaryPeriodTo != nil {
-		userRole := c.GetString(constants.CtxUserRole)
-		if userRole != string(domain.RoleAdmin) {
-			response.Forbidden(c, "Chỉ quản trị viên mới được thay đổi kỳ lương")
-			return
-		}
-	}
-
-	if req.SalaryPeriodFrom != nil {
-		if err := validateSalaryPeriodDay("salary_period_from", req.SalaryPeriodFrom); err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
-		project.SalaryPeriodFrom = domain.NormalizeSalaryPeriodDay(req.SalaryPeriodFrom)
-	}
-	if req.SalaryPeriodTo != nil {
-		if err := validateSalaryPeriodDay("salary_period_to", req.SalaryPeriodTo); err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
-		project.SalaryPeriodTo = domain.NormalizeSalaryPeriodDay(req.SalaryPeriodTo)
-	}
 	if req.OffDays != nil {
 		project.OffDays = *req.OffDays
-	}
-
-	// Flexible project configuration
-	if req.IsFlexible != nil {
-		project.IsFlexible = *req.IsFlexible
-	}
-
-	// Geofence fields
-	if req.GeofenceGates != nil {
-		gates := make([]domain.GeofenceGate, len(req.GeofenceGates))
-		for i, g := range req.GeofenceGates {
-			gates[i] = domain.GeofenceGate{Name: g.Name, Lat: g.Lat, Lng: g.Lng}
-		}
-		project.GeofenceGates = gates
-	}
-	if req.GeofenceRadiusMeters != nil {
-		project.GeofenceRadiusMeters = *req.GeofenceRadiusMeters
-	}
-	// Validate geofence when gates/radius are provided, or when IsFlexible is toggled on
-	if req.GeofenceGates != nil || req.GeofenceRadiusMeters != nil || (req.IsFlexible != nil && *req.IsFlexible) {
-		if project.IsFlexible {
-			// Apply default radius if still zero (GORM sends Go zero value overriding DB default)
-			if project.GeofenceRadiusMeters == 0 {
-				project.GeofenceRadiusMeters = 100
-			}
-			if err := project.ValidateGeofenceGates(); err != nil {
-				response.BadRequest(c, err.Error())
-				return
-			}
-		}
-	}
-
-	// Admin-named shifts (labels for payrate shifts). When the request carries
-	// shift_names, map them onto the project and validate against the payrate's
-	// configured shift ranges so admins cannot name shifts the payrate lacks.
-	if req.ShiftNames != nil {
-		project.ShiftNames = shiftNamesFromDTO(req.ShiftNames)
-		var payrateRanges []string
-		if project.IsFlexible && len(project.ShiftNames) > 0 && h.payrateService != nil {
-			if payrate, err := h.payrateService.GetActivePayrateByProjectAndDate(c.Request.Context(), project.ID, h.clock.Now()); err == nil && payrate != nil {
-				if flattened, err := payrate.Payrate.Flatten(); err == nil {
-					payrateRanges = attendance.ExtractShiftRanges(flattened)
-				}
-			}
-		}
-		if err := project.ValidateShiftNames(payrateRanges); err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
 	}
 
 	if err := h.projectService.UpdateProject(c.Request.Context(), project, userID.(uint)); err != nil {

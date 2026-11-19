@@ -61,7 +61,7 @@ func userWithMobile(repo *fakeUsers, id uint, role domain.UserRole, mobile strin
 
 // employeeWithUser registers an employee record linked to an account.
 func employeeWithUser(repo *fakeUsers, employees *fakeEmployees, userID uint, mobile string) *domain.Employee {
-	u := &domain.User{ID: userID, Username: "emp" + mobile, Role: domain.RoleEmployee}
+	u := &domain.User{ID: userID, Username: "emp" + mobile, Role: domain.RoleNhanvien}
 	repo.byID[userID] = u
 	emp := &domain.Employee{ID: userID, UserID: &u.ID, Mobile: mobile}
 	employees.byMobile[mobile] = append(employees.byMobile[mobile], emp)
@@ -119,7 +119,7 @@ func TestResolveUserByMobile_UsersMobileBeatsEmployeeRecord(t *testing.T) {
 }
 
 func TestResolveUserByMobile_RolesWithUserRowMobile(t *testing.T) {
-	for _, role := range []domain.UserRole{domain.RoleAdmin, domain.RolePartner, domain.RoleAdvPartner} {
+	for _, role := range []domain.UserRole{domain.RoleAdmin, domain.RoleQuanly} {
 		t.Run(string(role), func(t *testing.T) {
 			users, employees := newFakeUsers(), newFakeEmployees()
 			want := userWithMobile(users, 11, role, "0901234567")
@@ -144,7 +144,7 @@ func TestResolveUserByMobile_EmployeeViaEmployeesMobile(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ResolveUserByMobile(%q) error = %v", input, err)
 		}
-		if got.ID != 5 || got.Role != domain.RoleEmployee {
+		if got.ID != 5 || got.Role != domain.RoleNhanvien {
 			t.Errorf("ResolveUserByMobile(%q) = user %d role %q, want employee 5", input, got.ID, got.Role)
 		}
 	}
@@ -255,7 +255,7 @@ func TestResolveUserByMobile_UserRowWithEmployeeRoleIsSkipped(t *testing.T) {
 	// A legacy copy of an employee number inside users.mobile must not shadow
 	// the employee record that owns it.
 	users, employees := newFakeUsers(), newFakeEmployees()
-	userWithMobile(users, 50, domain.RoleEmployee, "0900000003")
+	userWithMobile(users, 50, domain.RoleNhanvien, "0900000003")
 	employeeWithUser(users, employees, 51, "0900000003")
 
 	got, err := New(users, employees).ResolveUserByMobile(context.Background(), "0900000003")

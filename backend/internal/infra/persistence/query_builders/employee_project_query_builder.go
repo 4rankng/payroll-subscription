@@ -28,39 +28,30 @@ func NewEmployeeProjectQueryBuilder(db *gorm.DB) *EmployeeProjectQueryBuilder {
 
 // ProjectAssignment represents a project assignment for an employee
 type ProjectAssignment struct {
-	EmployeeID        uint       `gorm:"column:employee_id"`
-	ProjectID         uint       `gorm:"column:project_id"`
-	ProjectName       string     `gorm:"column:project_name"`
-	ProjectCode       string     `gorm:"column:project_code"`
-	ProjectClientName string     `gorm:"column:project_client_name"`
-	Position          string     `gorm:"column:position"`
-	StartDate         time.Time  `gorm:"column:start_date"`
-	LastDate          *time.Time `gorm:"column:last_date"`
+	EmployeeID        uint      `gorm:"column:employee_id"`
+	ProjectID         uint      `gorm:"column:project_id"`
+	ProjectName       string    `gorm:"column:project_name"`
+	ProjectCode       string    `gorm:"column:project_code"`
+	ProjectClientName string    `gorm:"column:project_client_name"`
+	Position          string    `gorm:"column:position"`
+	StartDate         time.Time `gorm:"column:start_date"`
 }
 
-// ProjectAssignmentWithPayment represents a project assignment with payment schedule info
+// ProjectAssignmentWithPayment represents a project assignment with payment info
 type ProjectAssignmentWithPayment struct {
-	EmployeeID             uint       `gorm:"column:employee_id"`
-	ProjectEmployeeID      uint       `gorm:"column:project_employee_id"`
-	ProjectID              uint       `gorm:"column:project_id"`
-	ProjectName            string     `gorm:"column:project_name"`
-	ProjectCode            string     `gorm:"column:project_code"`
-	ProjectClientName      string     `gorm:"column:project_client_name"`
-	Position               string     `gorm:"column:position"`
-	StartDate              time.Time  `gorm:"column:start_date"`
-	LastDate               *time.Time `gorm:"column:last_date"`
-	PaymentSchedule        string     `gorm:"column:payment_schedule"`
-	PendingPaymentSchedule *string    `gorm:"column:pending_payment_schedule"`
-	ScheduleEffectiveFrom  *time.Time `gorm:"column:schedule_effective_from"`
-	IsFlexible             bool       `gorm:"column:is_flexible"`
-	CheckInEnabled         bool       `gorm:"column:check_in_enabled"`
-	PendingCheckInEnabled  *bool      `gorm:"column:pending_check_in_enabled"`
-	CheckInEffectiveFrom   *time.Time `gorm:"column:check_in_effective_from"`
+	EmployeeID        uint      `gorm:"column:employee_id"`
+	ProjectEmployeeID uint      `gorm:"column:project_employee_id"`
+	ProjectID         uint      `gorm:"column:project_id"`
+	ProjectName       string    `gorm:"column:project_name"`
+	ProjectCode       string    `gorm:"column:project_code"`
+	ProjectClientName string    `gorm:"column:project_client_name"`
+	Position          string    `gorm:"column:position"`
+	StartDate         time.Time `gorm:"column:start_date"`
 }
 
 // BuildListWithProjectsQuery builds the employee query for ListWithProjects
 func (b *EmployeeProjectQueryBuilder) BuildListWithProjectsQuery(filters domain.EmployeeFilters) *gorm.DB {
-	query := b.db.Model(&domain.Employee{}).Preload("Bank").Preload("User").Preload("Creator")
+	query := b.db.Model(&domain.Employee{}).Preload("User").Preload("Creator")
 
 	// Apply filters for employee selection
 	query = b.applyFilters(query, filters)
@@ -99,9 +90,9 @@ func (b *EmployeeProjectQueryBuilder) BuildProjectAssignmentsQuery(ctx context.C
 	return b.db.WithContext(ctx).
 		Model(&domain.ProjectEmployee{}).
 		Select(`project_employees.employee_id, project_employees.project_id, p.name as project_name, p.code as project_code,
-			p.client_name as project_client_name, project_employees.position, project_employees.start_date, project_employees.last_date`).
+			p.client_name as project_client_name, project_employees.position, project_employees.start_date`).
 		Joins("INNER JOIN projects p ON project_employees.project_id = p.id").
-		Where("project_employees.employee_id IN ? AND project_employees.last_date IS NULL AND project_employees.start_date <= CURDATE()", employeeIDs)
+		Where("project_employees.employee_id IN ? AND project_employees.start_date <= CURDATE()", employeeIDs)
 }
 
 // BuildProjectAssignmentsWithPaymentQuery builds a query to fetch project assignments with payment info
@@ -109,12 +100,9 @@ func (b *EmployeeProjectQueryBuilder) BuildProjectAssignmentsWithPaymentQuery(ct
 	return b.db.WithContext(ctx).
 		Model(&domain.ProjectEmployee{}).
 		Select(`project_employees.id as project_employee_id, project_employees.employee_id, project_employees.project_id, p.name as project_name, p.code as project_code,
-			p.client_name as project_client_name, project_employees.position, project_employees.start_date, project_employees.last_date,
-			project_employees.payment_schedule, project_employees.pending_payment_schedule, project_employees.schedule_effective_from,
-			p.is_flexible, project_employees.check_in_enabled,
-		project_employees.pending_check_in_enabled, project_employees.check_in_effective_from`).
+			p.client_name as project_client_name, project_employees.position, project_employees.start_date`).
 		Joins("INNER JOIN projects p ON project_employees.project_id = p.id").
-		Where("project_employees.employee_id IN ? AND project_employees.last_date IS NULL AND project_employees.start_date <= CURDATE()", employeeIDs)
+		Where("project_employees.employee_id IN ? AND project_employees.start_date <= CURDATE()", employeeIDs)
 }
 
 // FetchProjectAssignments fetches project assignments for the given employee IDs
@@ -167,7 +155,6 @@ func (b *EmployeeProjectQueryBuilder) MapToEmployeeWithProject(employees []*doma
 			empWithProject.ProjectClientName = &firstProject.ProjectClientName
 			empWithProject.Position = &firstProject.Position
 			empWithProject.StartDate = &firstProject.StartDate
-			empWithProject.LastDate = firstProject.LastDate
 		}
 
 		empWithProjects = append(empWithProjects, empWithProject)
@@ -190,21 +177,13 @@ func (b *EmployeeProjectQueryBuilder) MapToEmployeeWithProjects(employees []*dom
 		if assignments, exists := projectsByEmployee[emp.ID]; exists {
 			for _, assignment := range assignments {
 				project := domain.CurrentProject{
-					ProjectID:              assignment.ProjectID,
-					ProjectEmployeeID:      assignment.ProjectEmployeeID,
-					Name:                   assignment.ProjectName,
-					Code:                   assignment.ProjectCode,
-					ClientName:             assignment.ProjectClientName,
-					Position:               assignment.Position,
-					StartDate:              assignment.StartDate,
-					LastDate:               assignment.LastDate,
-					PaymentSchedule:        assignment.PaymentSchedule,
-					PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-					ScheduleEffectiveFrom:  assignment.ScheduleEffectiveFrom,
-					IsFlexible:             assignment.IsFlexible,
-					CheckInEnabled:         assignment.CheckInEnabled,
-					PendingCheckInEnabled:  assignment.PendingCheckInEnabled,
-					CheckInEffectiveFrom:   assignment.CheckInEffectiveFrom,
+					ProjectID:         assignment.ProjectID,
+					ProjectEmployeeID: assignment.ProjectEmployeeID,
+					Name:              assignment.ProjectName,
+					Code:              assignment.ProjectCode,
+					ClientName:        assignment.ProjectClientName,
+					Position:          assignment.Position,
+					StartDate:         assignment.StartDate,
 				}
 				empWithAllProjects.CurrentProjects = append(empWithAllProjects.CurrentProjects, project)
 			}
@@ -220,8 +199,8 @@ func (b *EmployeeProjectQueryBuilder) MapToEmployeeWithProjects(employees []*dom
 func (b *EmployeeProjectQueryBuilder) BuildGetByProjectQuery(projectID uint, createdBy *uint) *gorm.DB {
 	query := b.db.Model(&domain.Employee{}).
 		Select("employees.*").
-		Joins("INNER JOIN project_employees pe ON employees.id = pe.employee_id AND pe.deleted_at IS NULL").
-		Where("pe.project_id = ? AND pe.last_date IS NULL", projectID)
+		Joins("INNER JOIN project_employees pe ON employees.id = pe.employee_id").
+		Where("pe.project_id = ?", projectID)
 
 	// Apply creator filter if provided
 	if createdBy != nil {
@@ -231,108 +210,21 @@ func (b *EmployeeProjectQueryBuilder) BuildGetByProjectQuery(projectID uint, cre
 	return query.Preload("Creator")
 }
 
-// missingBankFieldsPredicate matches employees with incomplete banking
-// information. A confirmed-invalid status is handled separately (see
-// buildMissingBankDetailsBaseQuery) so invalid rows are not gated on
-// pending work the way missing-info rows are.
-const missingBankFieldsPredicate = `(
-	employees.bank_id IS NULL
-	OR COALESCE(TRIM(employees.bank_account_number), '') = ''
-	OR COALESCE(TRIM(employees.bank_account_name), '') = ''
-)`
-
-// buildMissingBankDetailsBaseQuery builds the shared base query for missing bank details queries.
-// Filters employees who either:
-//   - Have a confirmed-invalid bank account (bank_account_status = 'invalid'):
-//     listed unconditionally, subject only to current active-project assignment,
-//     so admins/partners are always reminded to fix the info.
-//   - Have missing banking information (no bank or empty account details):
-//     additionally require at least one pending timesheet or pending advance
-//     payment request (unchanged gating).
-//
-// `unverified` is deliberately excluded in both branches so OnePay outages
-// don't flood admins with false alarms.
-func (b *EmployeeProjectQueryBuilder) buildMissingBankDetailsBaseQuery(filters domain.EmployeeFilters) *gorm.DB {
-	activeProjectSubquery := b.db.Model(&domain.ProjectEmployee{}).
-		Select("DISTINCT project_employees.employee_id").
-		Joins("INNER JOIN projects p ON project_employees.project_id = p.id").
-		Where("project_employees.last_date IS NULL AND project_employees.start_date <= CURDATE()")
-
-	query := b.db.Model(&domain.Employee{})
-
-	query = b.applyFilters(query, filters)
-
-	// Single grouped OR: branch A (confirmed-invalid → always listed while
-	// assigned to an active project) OR branch B (missing fields → also needs
-	// pending work). Both branches keep the active-project requirement.
-	query = query.Where(`(
-		(
-			employees.bank_account_status = 'invalid'
-			AND employees.id IN (?)
-		)
-		OR
-		(
-			`+missingBankFieldsPredicate+`
-			AND employees.id IN (?)
-			AND (
-				EXISTS (SELECT 1 FROM timesheets t WHERE t.employee_id = employees.id AND t.timesheet_status = 'pending_approval')
-				OR
-				EXISTS (SELECT 1 FROM advance_payment_requests apr WHERE apr.employee_id = employees.id AND apr.status = 'PENDING')
-			)
-		)
-	)`, activeProjectSubquery, activeProjectSubquery)
-
-	return query
-}
-
-// BuildMissingBankDetailsQuery builds a query for getting employees with missing banking details
-func (b *EmployeeProjectQueryBuilder) BuildMissingBankDetailsQuery(filters domain.EmployeeFilters) *gorm.DB {
-	query := b.buildMissingBankDetailsBaseQuery(filters).Preload("Bank")
-
-	// Apply sorting
-	sortBy := "created_at"
-	if filters.SortBy != "" {
-		sortBy = filters.SortBy
-	}
-
-	sortOrder := "DESC"
-	if filters.SortOrder != "" {
-		sortOrder = filters.SortOrder
-	}
-
-	query = query.Order(fmt.Sprintf("%s %s", common.SanitizeSortColumn(sortBy, "created_at"), common.SanitizeSortOrder(sortOrder, "DESC")))
-
-	// Apply pagination
-	if filters.Limit > 0 {
-		query = query.Limit(filters.Limit)
-	}
-	if filters.Offset > 0 {
-		query = query.Offset(filters.Offset)
-	}
-
-	return query
-}
-
-// BuildMissingBankDetailsCountQuery builds a query for counting employees with missing bank details
-func (b *EmployeeProjectQueryBuilder) BuildMissingBankDetailsCountQuery(filters domain.EmployeeFilters) *gorm.DB {
-	return b.buildMissingBankDetailsBaseQuery(filters)
-}
-
 // missingMobilePredicate matches employees with no usable phone number on
-// file. COALESCE+TRIM mirrors the bank predicate: legacy rows may hold NULL or
-// whitespace even though the column default is ”.
+// file. COALESCE+TRIM: legacy rows may hold NULL or whitespace even though
+// the column default is ”.
 const missingMobilePredicate = `COALESCE(TRIM(employees.mobile), '') = ''`
 
-// BuildMissingMobileQuery lists employees with no mobile number on file. Unlike
-// the missing-bank list there is no pending-work gating: phone login, Zalo OTP
-// password reset and self check-in all key off the number regardless of payroll
-// activity, so every gap the caller can fix must surface.
+// BuildMissingMobileQuery lists employees with no mobile number on file.
+// There is no pending-work gating: phone login, Zalo OTP password reset and
+// self check-in all key off the number regardless of payroll activity, so
+// every gap the caller can fix must surface.
 func (b *EmployeeProjectQueryBuilder) BuildMissingMobileQuery(filters domain.EmployeeFilters) *gorm.DB {
 	query := b.db.Model(&domain.Employee{})
 	query = b.applyFilters(query, filters)
 	query = query.Where(missingMobilePredicate)
 
-	// Sorting/pagination share the BuildMissingBankDetailsQuery contract.
+	// Sorting/pagination follow the shared list contract.
 	sortBy := "created_at"
 	if filters.SortBy != "" {
 		sortBy = filters.SortBy
@@ -377,10 +269,8 @@ func (b *EmployeeProjectQueryBuilder) BuildUnassignedAtDateQuery(atDate time.Tim
 	query = query.Where(`NOT EXISTS (
 		SELECT 1 FROM project_employees pe
 		WHERE pe.employee_id = employees.id
-		AND pe.deleted_at IS NULL
 		AND pe.start_date <= ?
-		AND (pe.last_date IS NULL OR pe.last_date > ?)
-	)`, atDate, atDate)
+	)`, atDate)
 
 	// Apply sorting
 	sortBy := "created_at"
@@ -420,10 +310,8 @@ func (b *EmployeeProjectQueryBuilder) BuildUnassignedAtDateCountQuery(atDate tim
 	query = query.Where(`NOT EXISTS (
 		SELECT 1 FROM project_employees pe
 		WHERE pe.employee_id = employees.id
-		AND pe.deleted_at IS NULL
 		AND pe.start_date <= ?
-		AND (pe.last_date IS NULL OR pe.last_date > ?)
-	)`, atDate, atDate)
+	)`, atDate)
 
 	return query
 }
@@ -446,7 +334,7 @@ func (b *EmployeeProjectQueryBuilder) applyFilters(query *gorm.DB, filters domai
 				// scoped rows.
 				slog.Warn("employee_access_resolution_failed", "error", err, "user_id", userID)
 				query = query.Where(
-					"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+					"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 					userID, userID, userID,
 				)
 			} else if len(ids) == 0 {
@@ -461,7 +349,7 @@ func (b *EmployeeProjectQueryBuilder) applyFilters(query *gorm.DB, filters domai
 	if filters.ProjectID != nil {
 		subQuery := b.db.Model(&domain.ProjectEmployee{}).
 			Select("employee_id").
-			Where("project_id = ? AND last_date IS NULL AND deleted_at IS NULL", *filters.ProjectID)
+			Where("project_id = ?", *filters.ProjectID)
 		query = query.Where("employees.id IN (?)", subQuery)
 	}
 
@@ -469,7 +357,7 @@ func (b *EmployeeProjectQueryBuilder) applyFilters(query *gorm.DB, filters domai
 	if len(filters.ProjectIDs) > 0 {
 		subQuery := b.db.Model(&domain.ProjectEmployee{}).
 			Select("employee_id").
-			Where("project_id IN ? AND last_date IS NULL AND deleted_at IS NULL", filters.ProjectIDs)
+			Where("project_id IN ?", filters.ProjectIDs)
 		query = query.Where("employees.id IN (?)", subQuery)
 	}
 
@@ -480,18 +368,14 @@ func (b *EmployeeProjectQueryBuilder) applyFilters(query *gorm.DB, filters domai
 		query = query.Where(`EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 	case "unassigned":
 		// Employees NOT assigned to any project
 		query = query.Where(`NOT EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 	}
 

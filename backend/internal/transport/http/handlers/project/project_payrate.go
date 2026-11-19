@@ -159,7 +159,7 @@ func (h *Handler) CreateProjectPayrate(c *gin.Context) {
 	}
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		logger.Warn("Attempted to create payrate for project with restricted status",
 			"project_id", projectID,
 			"project_status", project.ProjectStatus,
@@ -208,7 +208,7 @@ func (h *Handler) CreateProjectPayrate(c *gin.Context) {
 		response.Forbidden(c, constants.MsgUserRoleNotFoundInContextVN)
 		return
 	}
-	if userRole.(string) == string(domain.RolePartner) {
+	if userRole.(string) == string(domain.RoleQuanly) {
 		canModify, err := h.projectPermissionService.CanUserModifyProject(c.Request.Context(), uint(projectID), userID.(uint))
 		if err != nil {
 			response.InternalServerError(c, constants.MsgFailedToCheckProjectAccessVN)

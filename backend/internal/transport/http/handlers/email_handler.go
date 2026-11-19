@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -11,7 +10,6 @@ import (
 	"api-server/internal/app/dto"
 	"api-server/internal/constants"
 	"api-server/internal/domain"
-	asynqinfra "api-server/internal/infra/asynq"
 	"api-server/internal/transport/http/helpers"
 	"api-server/internal/transport/http/response"
 
@@ -23,12 +21,11 @@ import (
 // EmailHandler exposes email-related endpoints for administrators.
 type EmailHandler struct {
 	emailService *notification.EmailService
-	asynqClient  *asynqinfra.Client
 }
 
 // NewEmailHandler constructs a new EmailHandler.
-func NewEmailHandler(emailService *notification.EmailService, asynqClient *asynqinfra.Client) *EmailHandler {
-	return &EmailHandler{emailService: emailService, asynqClient: asynqClient}
+func NewEmailHandler(emailService *notification.EmailService) *EmailHandler {
+	return &EmailHandler{emailService: emailService}
 }
 
 // SendGenericEmail handles POST /email/send for manual emails with optional attachments.
@@ -162,60 +159,6 @@ func validateEmailAttachmentType(filename string) error {
 	}
 
 	return nil
-}
-
-// SendPayrollReportEmail handles POST /timesheets/payroll/report/send-email.
-func (h *EmailHandler) SendPayrollReportEmail(c *gin.Context) {
-	if !isAdmin(c) {
-		response.Forbidden(c, constants.MsgForbiddenVN)
-		return
-	}
-
-	var req dto.SendPayrollReportEmailRequest
-	if !helpers.BindJSON(c, &req) {
-		return
-	}
-
-	if _, err := req.ParseReportAtDate(); err != nil {
-		response.BadRequest(c, err.Error())
-		return
-	}
-
-	userID, ok := helpers.GetUserIDOrRespond(c)
-	if !ok {
-		return
-	}
-
-	if h.asynqClient == nil {
-		response.InternalServerError(c, constants.MsgInternalServerErrorVN)
-		return
-	}
-
-	// Reject a period with no eligible payroll rows before queueing: once the
-	// task is queued this endpoint has already answered 202, so the worker's
-	// failure would be invisible (no email, no history row) and the admin would
-	// believe the statement was sent.
-	if err := h.emailService.PayrollReportUnavailableError(c.Request.Context(), &req); err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
-
-	taskID, duplicate, err := h.asynqClient.EnqueuePayrollReportEmail(req, userID, c.GetHeader("Idempotency-Key"))
-	if err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusAccepted, response.SuccessResponse{
-		Status: "success",
-		Data: gin.H{
-			"taskId":          taskID,
-			"idempotencyKey":  taskID,
-			"alreadyQueued":   duplicate,
-			"processingAsync": true,
-		},
-		Message: constants.MsgPayrollEmailQueuedSuccessfullyVN,
-	})
 }
 
 // GetEmailHistory handles GET /email/history to provide paginated delivery logs.

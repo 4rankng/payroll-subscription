@@ -187,8 +187,8 @@ func TestBuildMultiPositionEntriesResolvesRatesPerWorkDate(t *testing.T) {
 		}}},
 	}}
 	byCCCDAndPosition := map[string]*domain.ProjectEmployee{
-		"012345678901|phổ thông": {EmployeeID: 1, EmployeeCCCD: "012345678901", EmployeeName: "NV Thường", Position: "Phổ thông", PaymentSchedule: string(domain.PaymentScheduleWeekly)},
-		"012345678902|ca đêm":    {EmployeeID: 2, EmployeeCCCD: "012345678902", EmployeeName: "NV Đêm", Position: "Ca đêm", PaymentSchedule: string(domain.PaymentScheduleWeekly)},
+		"012345678901|phổ thông": {EmployeeID: 1, EmployeeCCCD: "012345678901", EmployeeName: "NV Thường", Position: "Phổ thông"},
+		"012345678902|ca đêm":    {EmployeeID: 2, EmployeeCCCD: "012345678902", EmployeeName: "NV Đêm", Position: "Ca đêm"},
 	}
 
 	entries, _, totalRows, errs := (&BCCImportService{}).buildMultiPositionEntries(

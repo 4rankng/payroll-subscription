@@ -8,29 +8,23 @@ import (
 	"api-server/internal/domain"
 )
 
-// projectFinancialAggregateSQL aggregates the four denormalised project financial
-// totals from the project's non-deleted timesheets, which are the authoritative
-// per-project money record (transactions carry no project dimension; partner
-// receipts are tracked by timesheets.revenue_paid, set when a settlement covers
-// the timesheet).
+// projectFinancialAggregateSQL aggregates the denormalised project payout totals
+// from the project's timesheets, which are the authoritative per-project money
+// record. `total_payout_vnd` covers timesheets the customer has paid (verified
+// from an uploaded transfer result, D11); `pending_payable_vnd` covers approved
+// timesheets not yet covered by a verified upload.
 //
-// Placeholder order: paid status, approved status, pending status, failed status,
-// revenue-paid flag true (collected), revenue-paid flag false (outstanding),
-// project ID.
+// Placeholder order: paid status, approved status, pending status, project ID.
 const projectFinancialAggregateSQL = `
 	SELECT
 		COALESCE(SUM(CASE WHEN payment_status = ? THEN COALESCE(paid_amount, 0) ELSE 0 END), 0) AS total_payout_vnd,
-		COALESCE(SUM(CASE WHEN timesheet_status = ? AND payment_status IN (?, ?) THEN COALESCE(amount, 0) ELSE 0 END), 0) AS pending_payable_vnd,
-		-- revenue the partner has already settled
-		COALESCE(SUM(CASE WHEN revenue_paid = ? THEN COALESCE(revenue_receivable, 0) ELSE 0 END), 0) AS total_received_vnd,
-		-- revenue billed to the partner but not settled yet
-		COALESCE(SUM(CASE WHEN revenue_paid = ? THEN COALESCE(revenue_receivable, 0) ELSE 0 END), 0) AS pending_receivable_vnd
+		COALESCE(SUM(CASE WHEN timesheet_status = ? AND payment_status = ? THEN COALESCE(amount, 0) ELSE 0 END), 0) AS pending_payable_vnd
 	FROM timesheets
-	WHERE project_id = ? AND deleted_at IS NULL
+	WHERE project_id = ?
 `
 
-// GetProjectFinancialAggregate aggregates the four denormalised project financial
-// totals for one project. The meaning of each total is documented on domain.Project.
+// GetProjectFinancialAggregate aggregates the denormalised project payout totals
+// for one project. The meaning of each total is documented on domain.Project.
 func (r *ProjectRepository) GetProjectFinancialAggregate(ctx context.Context, projectID uint) (*domain.ProjectFinancialAggregate, error) {
 	var aggregate domain.ProjectFinancialAggregate
 
@@ -39,9 +33,6 @@ func (r *ProjectRepository) GetProjectFinancialAggregate(ctx context.Context, pr
 			domain.PaymentStatusPaid,
 			domain.TimesheetStatusApproved,
 			domain.PaymentStatusPending,
-			domain.PaymentStatusFailed,
-			true,
-			false,
 			projectID,
 		).
 		Scan(&aggregate).Error
@@ -53,12 +44,12 @@ func (r *ProjectRepository) GetProjectFinancialAggregate(ctx context.Context, pr
 	return &aggregate, nil
 }
 
-// UpdateProjectFinancialAggregate writes all four denormalised totals in a single
-// UPDATE statement and stamps updated_at with the caller's business time.
+// UpdateProjectFinancialAggregate writes the denormalised payout totals in a
+// single UPDATE statement and stamps updated_at with the caller's business time.
 //
-// It is a no-op when projectID does not exist or is soft-deleted: the statement
-// simply matches no row. Unknown/deleted IDs are deliberately not an error, so
-// repeating the recompute is always safe.
+// It is a no-op when projectID does not exist: the statement simply matches no
+// row. Unknown IDs are deliberately not an error, so repeating the recompute is
+// always safe.
 func (r *ProjectRepository) UpdateProjectFinancialAggregate(
 	ctx context.Context,
 	projectID uint,
@@ -69,11 +60,9 @@ func (r *ProjectRepository) UpdateProjectFinancialAggregate(
 		Model(&domain.Project{}).
 		Where("id = ?", projectID).
 		Updates(map[string]any{
-			"total_payout_vnd":       aggregate.TotalPayoutVND,
-			"pending_payable_vnd":    aggregate.PendingPayableVND,
-			"total_received_vnd":     aggregate.TotalReceivedVND,
-			"pending_receivable_vnd": aggregate.PendingReceivableVND,
-			"updated_at":             updatedAt,
+			"total_payout_vnd":    aggregate.TotalPayoutVND,
+			"pending_payable_vnd": aggregate.PendingPayableVND,
+			"updated_at":          updatedAt,
 		})
 
 	if result.Error != nil {

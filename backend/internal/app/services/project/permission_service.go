@@ -49,7 +49,7 @@ func (s *ProjectPermissionService) canManageProjectAccess(ctx context.Context, p
 	if actorRole == string(domain.RoleAdmin) {
 		return true, nil
 	}
-	if actorRole != string(domain.RolePartner) {
+	if actorRole != string(domain.RoleQuanly) {
 		return false, nil
 	}
 	if project.CreatedBy == actorID && project.OwnerRevokedAt == nil {
@@ -85,7 +85,7 @@ func (s *ProjectPermissionService) GrantProjectAccess(ctx context.Context, proje
 	// Only partner-role users may hold project management rights. A partner
 	// admin targeting any other role is a company-side elevation attempt
 	// (admin/accountant/...) and is forbidden, not a validation slip.
-	if user.Role != domain.RolePartner {
+	if user.Role != domain.RoleQuanly {
 		if granterRole != string(domain.RoleAdmin) {
 			return domain.NewForbiddenError(constants.MsgCannotGrantProjectAccessToNonPartnerVN)
 		}

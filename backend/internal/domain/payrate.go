@@ -460,10 +460,9 @@ type Payrate struct {
 	// No ToDate: migration 138 dropped payrates.to_date. A config runs until
 	// its successor's fromDate; anything that needs an end date derives it
 	// from the timeline, never from this struct.
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	CreatedBy uint           `json:"created_by" gorm:"not null;type:bigint unsigned;comment:'User who created the payrate'"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	CreatedBy uint      `json:"created_by" gorm:"not null;type:bigint unsigned;comment:'User who created the payrate'"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
 	// Relationships
 	Project     Project `json:"project" gorm:"foreignKey:ProjectID;references:ID"`

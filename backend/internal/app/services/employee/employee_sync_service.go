@@ -70,14 +70,7 @@ func (s *EmployeeSyncService) SyncEmployeeIdentityToAssignments(ctx context.Cont
 			return fmt.Errorf("failed to get employee assignments: %w", err)
 		}
 
-		// Filter for active and upcoming assignments
-		now := clock.Now()
 		for _, assignment := range assignments {
-			// Skip assignments that ended in the past
-			if assignment.LastDate != nil && assignment.LastDate.Before(now) {
-				continue
-			}
-
 			nameDelta := assignment.EmployeeName != newFullName
 			cccdDelta := assignment.EmployeeCCCD != newCCCD
 			if !nameDelta && !cccdDelta {
@@ -212,7 +205,6 @@ func (s *EmployeeSyncService) ValidateEmployeeNameConsistency(ctx context.Contex
 			CorrectName:  employee.Fullname,
 			CurrentCCCD:  assignment.EmployeeCCCD,
 			CorrectCCCD:  employee.CCCD,
-			LastDate:     assignment.LastDate,
 		})
 	}
 
@@ -272,5 +264,4 @@ type InconsistentAssignment struct {
 	CorrectName  string
 	CurrentCCCD  string
 	CorrectCCCD  string
-	LastDate     *time.Time
 }

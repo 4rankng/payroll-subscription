@@ -6,28 +6,18 @@ import (
 
 // CreateEmployeeRequest represents the request to create a new employee
 type CreateEmployeeRequest struct {
-	Fullname          string  `json:"fullname" binding:"required"`
-	Email             *string `json:"email,omitempty" binding:"omitempty,email"`
-	CCCD              string  `json:"cccd" binding:"required"`
-	Address           string  `json:"address,omitempty"`
-	Mobile            string  `json:"mobile,omitempty"`
-	BankID            *uint   `json:"bank_id,omitempty"`
-	BankAccountNumber string  `json:"bank_account_number,omitempty"`
-	BankAccountName   string  `json:"bank_account_name,omitempty"`
-	DateOfBirth       string  `json:"date_of_birth,omitempty"`
+	Fullname string  `json:"fullname" binding:"required"`
+	Email    *string `json:"email,omitempty" binding:"omitempty,email"`
+	CCCD     string  `json:"cccd" binding:"required"`
+	Mobile   string  `json:"mobile,omitempty"`
 }
 
 // UpdateEmployeeRequest represents the request to update an employee
 type UpdateEmployeeRequest struct {
-	Fullname          *string `json:"fullname,omitempty"`
-	Email             *string `json:"email,omitempty" binding:"omitempty,email"`
-	CCCD              *string `json:"cccd,omitempty"`
-	Address           *string `json:"address,omitempty"`
-	Mobile            *string `json:"mobile,omitempty"`
-	BankID            *uint   `json:"bank_id,omitempty"`
-	BankAccountNumber *string `json:"bank_account_number,omitempty"`
-	BankAccountName   *string `json:"bank_account_name,omitempty"`
-	DateOfBirth       *string `json:"date_of_birth,omitempty"`
+	Fullname *string `json:"fullname,omitempty"`
+	Email    *string `json:"email,omitempty" binding:"omitempty,email"`
+	CCCD     *string `json:"cccd,omitempty"`
+	Mobile   *string `json:"mobile,omitempty"`
 }
 
 // ChangeEmployeePasswordRequest represents the request to change an employee's password
@@ -35,36 +25,19 @@ type ChangeEmployeePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
-// EmployeeBankInfo represents bank information in employee responses
-type EmployeeBankInfo struct {
-	ID         uint   `json:"id"`
-	BranchName string `json:"branch_name"`
-}
-
 // EmployeeResponse represents the response containing employee data
 type EmployeeResponse struct {
-	ID                uint              `json:"id"`
-	Username          *string           `json:"username,omitempty"`
-	Fullname          string            `json:"fullname"`
-	Email             *string           `json:"email"`
-	CCCD              string            `json:"cccd"`
-	Address           string            `json:"address"`
-	Mobile            string            `json:"mobile"`
-	Bank              *EmployeeBankInfo `json:"bank,omitempty"`
-	BankAccountNumber string            `json:"bank_account_number"`
-	BankAccountName   string            `json:"bank_account_name"`
-	// BankAccountStatus / InvalidReason / ValidatedAt surface the OnePay
-	// verification outcome so the warning-list UI can show why an account
-	// is flagged. status is "valid" by default (also for pre-existing rows).
-	BankAccountStatus        string                `json:"bank_account_status"`
-	BankAccountInvalidReason *string               `json:"bank_account_invalid_reason,omitempty"`
-	BankAccountValidatedAt   *string               `json:"bank_account_validated_at,omitempty"`
-	DateOfBirth              *string               `json:"date_of_birth"`
-	CreatedBy                uint                  `json:"created_by"`
-	CreatedAt                time.Time             `json:"created_at"`
-	UpdatedAt                time.Time             `json:"updated_at"`
-	CanDelete                bool                  `json:"can_delete"`
-	CurrentProjects          []EmployeeProjectInfo `json:"current_projects"`
+	ID              uint                  `json:"id"`
+	Username        *string               `json:"username,omitempty"`
+	Fullname        string                `json:"fullname"`
+	Email           *string               `json:"email"`
+	CCCD            string                `json:"cccd"`
+	Mobile          string                `json:"mobile"`
+	CreatedBy       uint                  `json:"created_by"`
+	CreatedAt       time.Time             `json:"created_at"`
+	UpdatedAt       time.Time             `json:"updated_at"`
+	CanDelete       bool                  `json:"can_delete"`
+	CurrentProjects []EmployeeProjectInfo `json:"current_projects"`
 	// IsAccessible indicates whether the requesting partner already manages this
 	// employee (created/shared/project-assigned). Only set on global-pool listings
 	// (scope=global, partner role); omitted elsewhere.
@@ -76,22 +49,13 @@ type EmployeeResponse struct {
 
 // EmployeeProjectInfo represents project information for an employee
 type EmployeeProjectInfo struct {
-	ProjectID              uint    `json:"project_id"`
-	ProjectEmployeeID      uint    `json:"project_employee_id"`
-	Name                   string  `json:"name"`
-	Code                   string  `json:"code"`
-	ClientName             string  `json:"client_name"`
-	Position               string  `json:"position"`
-	StartDate              string  `json:"start_date"`
-	LastDate               *string `json:"last_date"`
-	PaymentSchedule        string  `json:"payment_schedule"`
-	PendingPaymentSchedule *string `json:"pending_payment_schedule"`
-	ScheduleEffectiveFrom  *string `json:"schedule_effective_from"`
-	IsFlexible             bool    `json:"is_flexible"`
-	CheckInEnabled         bool    `json:"check_in_enabled"`
-	// Deferred check-in activation: enable is pending until day 1 of next month.
-	PendingCheckInEnabled *bool   `json:"pending_check_in_enabled,omitempty"`
-	CheckInEffectiveFrom  *string `json:"check_in_effective_from,omitempty"`
+	ProjectID         uint   `json:"project_id"`
+	ProjectEmployeeID uint   `json:"project_employee_id"`
+	Name              string `json:"name"`
+	Code              string `json:"code"`
+	ClientName        string `json:"client_name"`
+	Position          string `json:"position"`
+	StartDate         string `json:"start_date"`
 }
 
 // ListEmployeesResponse represents the response for listing employees
@@ -194,22 +158,13 @@ type EmployeeTimesheetSummary struct {
 
 // EmployeeCurrentProject represents current active project for an employee
 type EmployeeCurrentProject struct {
-	ProjectID              uint    `json:"project_id"`
-	ProjectEmployeeID      uint    `json:"project_employee_id"`
-	Name                   string  `json:"name"`
-	Code                   string  `json:"code"`
-	ClientName             string  `json:"client_name"`
-	Position               string  `json:"position"`
-	StartDate              string  `json:"start_date"`
-	LastDate               *string `json:"last_date"`
-	PaymentSchedule        string  `json:"payment_schedule"`
-	PendingPaymentSchedule *string `json:"pending_payment_schedule"`
-	ScheduleEffectiveFrom  *string `json:"schedule_effective_from"`
-	IsFlexible             bool    `json:"is_flexible"`
-	CheckInEnabled         bool    `json:"check_in_enabled"`
-	// Deferred check-in activation: enable is pending until day 1 of next month.
-	PendingCheckInEnabled *bool   `json:"pending_check_in_enabled,omitempty"`
-	CheckInEffectiveFrom  *string `json:"check_in_effective_from,omitempty"`
+	ProjectID         uint   `json:"project_id"`
+	ProjectEmployeeID uint   `json:"project_employee_id"`
+	Name              string `json:"name"`
+	Code              string `json:"code"`
+	ClientName        string `json:"client_name"`
+	Position          string `json:"position"`
+	StartDate         string `json:"start_date"`
 }
 
 // EmployeeCurrentProjectTimesheet represents a timesheet entry for current projects endpoint
@@ -239,7 +194,6 @@ type EmployeeCurrentProjectWithTimesheets struct {
 	ClientName  string                            `json:"client_name"`
 	Position    string                            `json:"position"`
 	StartDate   string                            `json:"start_date"`
-	LastDate    *string                           `json:"last_date"`
 	Timesheets  []EmployeeCurrentProjectTimesheet `json:"timesheets"`
 }
 
@@ -249,25 +203,15 @@ type EmployeeCurrentProjectsResponse []EmployeeCurrentProjectWithTimesheets
 // EmployeeDetailedResponse represents comprehensive employee information
 type EmployeeDetailedResponse struct {
 	// Basic employee information
-	ID                uint              `json:"id"`
-	Username          *string           `json:"username,omitempty"`
-	Fullname          string            `json:"fullname"`
-	Email             *string           `json:"email"`
-	CCCD              string            `json:"cccd"`
-	Address           string            `json:"address"`
-	Mobile            string            `json:"mobile"`
-	Bank              *EmployeeBankInfo `json:"bank,omitempty"`
-	BankAccountNumber string            `json:"bank_account_number"`
-	BankAccountName   string            `json:"bank_account_name"`
-	DateOfBirth       *string           `json:"date_of_birth"`
-	CreatedBy         uint              `json:"created_by"`
-	CreatedAt         time.Time         `json:"created_at"`
-	UpdatedAt         time.Time         `json:"updated_at"`
-
-	// Bank account validation outcome (mirrors EmployeeResponse).
-	BankAccountStatus        string  `json:"bank_account_status"`
-	BankAccountInvalidReason *string `json:"bank_account_invalid_reason,omitempty"`
-	BankAccountValidatedAt   *string `json:"bank_account_validated_at,omitempty"`
+	ID        uint      `json:"id"`
+	Username  *string   `json:"username,omitempty"`
+	Fullname  string    `json:"fullname"`
+	Email     *string   `json:"email"`
+	CCCD      string    `json:"cccd"`
+	Mobile    string    `json:"mobile"`
+	CreatedBy uint      `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
 	// Current project assignments
 	CurrentProjects []EmployeeCurrentProject `json:"current_projects"`
@@ -279,8 +223,8 @@ type EmployeeDetailedResponse struct {
 	PayrollSummary *EmployeeSummaryResponse `json:"payroll_summary,omitempty"`
 
 	// True when the requesting partner already manages this employee
-	// (created/shared/project-assigned). When false, bank/address are masked
-	// and edit actions should be hidden. Only meaningful for partner callers.
+	// (created/shared/project-assigned). When false, edit actions should be
+	// hidden. Only meaningful for partner callers.
 	IsAccessible *bool `json:"is_accessible,omitempty"`
 }
 
@@ -301,23 +245,20 @@ type EmployeeUserResponse struct {
 
 // EmployeePayrollHistoryItem represents a single payroll entry for an employee
 type EmployeePayrollHistoryItem struct {
-	ID               uint       `json:"id"`
-	TimesheetID      uint       `json:"timesheet_id"`
-	ProjectID        uint       `json:"project_id"`
-	ProjectName      string     `json:"project_name"`
-	Date             string     `json:"date"`
-	HoursWorked      float64    `json:"hours_worked"`
-	PayType          string     `json:"paytype"`
-	PayRate          float64    `json:"payrate"`
-	Amount           float64    `json:"amount"`
-	PaymentStatus    string     `json:"payment_status"`
-	PaymentReference *string    `json:"payment_reference,omitempty"`
-	PaymentDate      *string    `json:"payment_date,omitempty"`
-	PeriodStart      *string    `json:"period_start,omitempty"`
-	PeriodEnd        *string    `json:"period_end,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	PaidAmount       float64    `json:"paid_amount"`
-	PaidAt           *time.Time `json:"paid_at,omitempty"`
+	ID            uint       `json:"id"`
+	TimesheetID   uint       `json:"timesheet_id"`
+	ProjectID     uint       `json:"project_id"`
+	ProjectName   string     `json:"project_name"`
+	Date          string     `json:"date"`
+	HoursWorked   float64    `json:"hours_worked"`
+	PayType       string     `json:"paytype"`
+	PayRate       float64    `json:"payrate"`
+	Amount        float64    `json:"amount"`
+	PaymentStatus string     `json:"payment_status"`
+	PaymentDate   *string    `json:"payment_date,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+	PaidAmount    float64    `json:"paid_amount"`
+	PaidAt        *time.Time `json:"paid_at,omitempty"`
 }
 
 // EmployeePayrollHistoryResponse represents the response for employee payroll history

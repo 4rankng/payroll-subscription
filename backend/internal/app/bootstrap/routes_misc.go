@@ -37,15 +37,6 @@ func setupCacheRoutes(v1 *gin.RouterGroup, container *Container) {
 	}
 }
 
-func setupMobileRoutes(v1 *gin.RouterGroup, container *Container) {
-	mobile := v1.Group("/mobile")
-	mobile.Use(container.Middleware.Auth.Authenticate())
-	if container.Middleware.Authorization != nil {
-		mobile.Use(container.Middleware.Authorization.Authorize())
-	}
-
-}
-
 func setupNotificationRoutes(protected *gin.RouterGroup, container *Container) {
 	// Admin-only endpoint for sending custom notifications
 	protected.POST("/notification", container.Handlers.Notification.CreateCustomNotification)

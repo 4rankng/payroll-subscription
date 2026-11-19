@@ -66,7 +66,6 @@ var validAuditActionsForHandler = []interface{}{
 	domain.AuditActionView,
 	domain.AuditActionExport,
 	domain.AuditActionImport,
-	domain.AuditActionSettle,
 }
 
 // validEntityTypesForHandler lists all valid EntityType constants.
@@ -77,16 +76,10 @@ var validEntityTypesForHandler = []interface{}{
 	domain.EntityTypeProjectEmployee,
 	domain.EntityTypeProjectUser,
 	domain.EntityTypeEmployeeUser,
-	domain.EntityTypeBank,
 	domain.EntityTypePayrate,
 	domain.EntityTypeTimesheet,
-	domain.EntityTypePayroll,
-	domain.EntityTypeLedgerEntry,
 	domain.EntityTypeSettings,
 	domain.EntityTypeAsset,
-	domain.EntityTypeTransaction,
-	domain.EntityTypeLoan,
-	domain.EntityTypeLender,
 }
 
 func genHandlerAuditAction() gopter.Gen {
@@ -323,126 +316,4 @@ func TestHandler_DropsEmitsWithUserIDZero_ExceptLogin(t *testing.T) {
 			t.Fatalf("expected 1 enqueued payload for non-zero user_id event, got %d", len(enqueuer.payloads))
 		}
 	})
-}
-
-// TestProperty13_BulkTransferMetadataCompleteness verifies that when a
-// BulkTransferResultParsedEvent is handled, the enqueued payload metadata
-// contains all five required keys with matching values.
-//
-// Validates: Requirements 9.1
-func TestProperty13_BulkTransferMetadataCompleteness(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(13131)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
-
-	// Constrain int values to [0, 1<<53) so they round-trip through float64 without precision loss.
-	genSafeInt := gen.Int().Map(func(v int) int {
-		if v < 0 {
-			v = -v
-		}
-		const maxSafeFloat64Int = 1 << 53
-		return v % maxSafeFloat64Int
-	})
-	genSafeInt64 := gen.Int64().Map(func(v int64) int64 {
-		if v < 0 {
-			v = -v
-		}
-		const maxSafeFloat64Int64 = int64(1) << 53
-		return v % maxSafeFloat64Int64
-	})
-
-	genBulkTransferEvent := gopter.CombineGens(
-		genNonEmptyAlphaString(), // filename
-		genSafeInt,               // total
-		genSafeInt,               // completed
-		genSafeInt,               // failed
-		genSafeInt64,             // total_amount
-	).Map(func(values []interface{}) domain.BulkTransferResultParsedEvent {
-		return domain.BulkTransferResultParsedEvent{
-			BaseEvent: domain.BaseEvent{
-				EventName:    "BulkTransferResultParsed",
-				ActorUserID:  1,
-				AuditMessage: "đã xử lý chuyển khoản hàng loạt",
-				Action:       domain.AuditActionBulkCreate,
-				EntityType:   domain.EntityTypeTransaction,
-			},
-			Filename:       values[0].(string),
-			TotalTransfers: values[1].(int),
-			CompletedCount: values[2].(int),
-			FailedCount:    values[3].(int),
-			TotalAmount:    values[4].(int64),
-		}
-	})
-
-	properties.Property("BulkTransfer metadata contains all five required keys with matching values", prop.ForAll(
-		func(event domain.BulkTransferResultParsedEvent) bool {
-			enqueuer := &mockAuditEnqueuer{}
-			handler := NewAuditEventHandler(enqueuer)
-
-			if err := handler.Handle(context.Background(), event); err != nil {
-				return false
-			}
-
-			if len(enqueuer.payloads) != 1 {
-				return false
-			}
-
-			p := enqueuer.payloads[0]
-			if p.MetadataJSON == "" {
-				return false
-			}
-
-			var meta map[string]interface{}
-			if err := json.Unmarshal([]byte(p.MetadataJSON), &meta); err != nil {
-				return false
-			}
-
-			// Check "filename"
-			filenameVal, ok := meta["filename"]
-			if !ok || filenameVal != event.Filename {
-				return false
-			}
-
-			// Check "total" — JSON numbers unmarshal as float64
-			totalVal, ok := meta["total"]
-			if !ok {
-				return false
-			}
-			if int(totalVal.(float64)) != event.TotalTransfers {
-				return false
-			}
-
-			// Check "completed"
-			completedVal, ok := meta["completed"]
-			if !ok {
-				return false
-			}
-			if int(completedVal.(float64)) != event.CompletedCount {
-				return false
-			}
-
-			// Check "failed"
-			failedVal, ok := meta["failed"]
-			if !ok {
-				return false
-			}
-			if int(failedVal.(float64)) != event.FailedCount {
-				return false
-			}
-
-			// Check "total_amount"
-			totalAmountVal, ok := meta["total_amount"]
-			if !ok {
-				return false
-			}
-			if int64(totalAmountVal.(float64)) != event.TotalAmount {
-				return false
-			}
-
-			return true
-		},
-		genBulkTransferEvent,
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
 }

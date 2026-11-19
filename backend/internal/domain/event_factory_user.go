@@ -89,7 +89,7 @@ func NewUserLoginEvent(ctx context.Context, userID uint, username, userFullName,
 		loginMessage = "đăng nhập thất bại"
 	} else {
 		// Use template matrix for successful login
-		loginMessage = BuildAuditMessageFromMatrix(AuditActionLogin, EntityTypeUser, actorName)
+		loginMessage = BuildEventAuditMessage(AuditActionLogin, EntityTypeUser, actorName)
 	}
 
 	base := newBaseEventWithAudit(ctx, "UserLogin", userID, AuditActionLogin, EntityTypeUser, loginMessage)
@@ -128,7 +128,7 @@ func NewUserLogoutEvent(ctx context.Context, userID uint, username, userFullName
 	}
 
 	// Use template matrix for logout message
-	logoutMessage := BuildAuditMessageFromMatrix(AuditActionLogout, EntityTypeUser, actorName)
+	logoutMessage := BuildEventAuditMessage(AuditActionLogout, EntityTypeUser, actorName)
 
 	base := newBaseEventWithAudit(ctx, "UserLogout", userID, AuditActionLogout, EntityTypeUser, logoutMessage)
 	// Ensure ActorUserID is set to the actual user ID in case context lacks it

@@ -68,9 +68,3 @@ func EnsureAdminUser(ctx context.Context, db *gorm.DB, cfg *config.Config) error
 	fmt.Println("admin user upserted (updated)")
 	return nil
 }
-
-// EnsureAccounts creates or updates the standard chart of accounts.
-func EnsureAccounts(ctx context.Context, db *gorm.DB) error {
-	seeder := NewSeeder(db)
-	return seeder.seedAccounts(ctx, db)
-}

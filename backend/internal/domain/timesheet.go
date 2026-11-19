@@ -6,8 +6,6 @@ import (
 
 	"api-server/internal/constants"
 	"api-server/internal/pkg/clock"
-
-	"gorm.io/gorm"
 )
 
 // TimesheetStatus represents timesheet entry status
@@ -25,7 +23,6 @@ type PaymentStatus string
 const (
 	PaymentStatusPending   PaymentStatus = "pending"
 	PaymentStatusPaid      PaymentStatus = "paid"
-	PaymentStatusFailed    PaymentStatus = "failed"
 	PaymentStatusCancelled PaymentStatus = "cancelled"
 )
 
@@ -38,34 +35,27 @@ type EmployeeDateCombo struct {
 
 // Timesheet represents a timesheet entry in the domain
 type Timesheet struct {
-	ID                uint            `json:"id" gorm:"primarykey;type:bigint unsigned"`
-	ProjectID         uint            `json:"project_id" gorm:"not null;type:bigint unsigned"`
-	EmployeeID        uint            `json:"employee_id" gorm:"not null;type:bigint unsigned"`
-	PayrateID         uint            `json:"payrate_id" gorm:"column:payrate_id;not null;type:bigint unsigned;comment:'Reference to payrate config used'"`
-	Date              time.Time       `json:"date" gorm:"type:date;not null"`
-	HoursWorked       float64         `json:"hours_worked" gorm:"type:decimal(4,2);not null;default:0;comment:'Hours worked (0.00-99.99)'"`
-	PayType           string          `json:"paytype" gorm:"column:paytype;type:varchar(100);not null;comment:'Flexible paytype from payrate config'"`
-	PayRate           int64           `json:"payrate" gorm:"column:payrate;type:bigint;not null;comment:'VND amount from payrates config'"`
-	Amount            int64           `json:"amount" gorm:"type:bigint;not null;default:0"`
-	Status            TimesheetStatus `json:"status" gorm:"column:timesheet_status;type:enum('pending_approval','approved','rejected');not null;default:'pending_approval'"`
-	PaymentStatus     PaymentStatus   `json:"payment_status" gorm:"type:enum('pending','paid','failed','cancelled');not null;default:'pending'"`
-	AllowedEdit       bool            `json:"allowed_edit" gorm:"column:allowed_edit;type:tinyint(1);not null;default:0;comment:'Flag indicating if timesheet is allowed to be edited after approval'"`
-	RequestEditID     *uint           `json:"request_edit_id" gorm:"column:request_edit_id;type:bigint unsigned;comment:'Pending edit request id'"`
-	PaymentReference  *string         `json:"payment_reference" gorm:"type:varchar(255);comment:'Bank transaction reference'"`
-	PaymentDate       *time.Time      `json:"payment_date" gorm:"type:date"`
-	PaidAmount        int64           `json:"paid_amount" gorm:"type:bigint;default:0;comment:'Total amount paid for this timesheet'"`
-	PaidAt            *time.Time      `json:"paid_at" gorm:"type:datetime(3)"`
-	RevenueReceivable int64           `json:"revenue_receivable" gorm:"type:bigint unsigned;default:0;comment:'Revenue to receive from client for advance cash service fee'"`
-	RevenuePaid       bool            `json:"revenue_paid" gorm:"type:tinyint(1);default:0;comment:'Whether revenue has been received from client'"`
-	TransactionID     *uint           `json:"transaction_id,omitempty" gorm:"column:transaction_id;type:bigint unsigned;index:idx_timesheets_transaction_id;comment:'Linked revenue transaction for this timesheet'"`
-	DeletedAt         gorm.DeletedAt  `json:"-" gorm:"index"`
-	CreatedBy         uint            `json:"created_by" gorm:"not null;type:bigint unsigned"`
-	ApprovedBy        *uint           `json:"approved_by" gorm:"type:bigint unsigned;comment:'Admin who approved the timesheet'"`
-	ApprovedAt        *time.Time      `json:"approved_at"`
-	RejectionReason   string          `json:"rejection_reason" gorm:"type:text"`
-	CreatedAt         time.Time       `json:"created_at"`
-	UpdatedAt         time.Time       `json:"updated_at"`
-	ForcePayroll      bool            `json:"force_payroll" gorm:"column:force_payroll;type:tinyint(1);not null;default:0"`
+	ID               uint            `json:"id" gorm:"primarykey;type:bigint unsigned"`
+	ProjectID        uint            `json:"project_id" gorm:"not null;type:bigint unsigned"`
+	EmployeeID       uint            `json:"employee_id" gorm:"not null;type:bigint unsigned"`
+	PayrateID        uint            `json:"payrate_id" gorm:"column:payrate_id;not null;type:bigint unsigned;comment:'Reference to payrate config used'"`
+	Date             time.Time       `json:"date" gorm:"type:date;not null"`
+	HoursWorked      float64         `json:"hours_worked" gorm:"type:decimal(4,2);not null;default:0;comment:'Hours worked (0.00-99.99)'"`
+	PayType          string          `json:"paytype" gorm:"column:paytype;type:varchar(100);not null;comment:'Flexible paytype from payrate config'"`
+	PayRate          int64           `json:"payrate" gorm:"column:payrate;type:bigint;not null;comment:'VND amount from payrates config'"`
+	Amount           int64           `json:"amount" gorm:"type:bigint;not null;default:0"`
+	Status           TimesheetStatus `json:"status" gorm:"column:timesheet_status;type:enum('pending_approval','approved','rejected');not null;default:'pending_approval'"`
+	PaymentStatus    PaymentStatus   `json:"payment_status" gorm:"type:enum('pending','paid','cancelled');not null;default:'pending'"`
+	PaymentReference *string         `json:"payment_reference" gorm:"type:varchar(255);comment:'Bank transaction reference'"`
+	PaymentDate      *time.Time      `json:"payment_date" gorm:"type:date"`
+	PaidAmount       int64           `json:"paid_amount" gorm:"type:bigint;default:0;comment:'Total amount paid for this timesheet'"`
+	PaidAt           *time.Time      `json:"paid_at" gorm:"type:datetime(3)"`
+	CreatedBy        uint            `json:"created_by" gorm:"not null;type:bigint unsigned"`
+	ApprovedBy       *uint           `json:"approved_by" gorm:"type:bigint unsigned;comment:'Admin who approved the timesheet'"`
+	ApprovedAt       *time.Time      `json:"approved_at"`
+	RejectionReason  string          `json:"rejection_reason" gorm:"type:text"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
 
 	// Relationships
 	Project      *Project  `json:"project,omitempty" gorm:"foreignKey:ProjectID;references:ID"`
@@ -201,20 +191,15 @@ func (t *Timesheet) IsRejected() bool {
 	return t.Status == TimesheetStatusRejected
 }
 
-// IsPaid returns true if the timesheet has been paid, failed, or cancelled
+// IsPaid returns true if the timesheet has been paid or cancelled
 // Timesheets with these payment statuses cannot be edited
 func (t *Timesheet) IsPaid() bool {
 	return t.PaymentStatus == PaymentStatusPaid ||
-		t.PaymentStatus == PaymentStatusFailed ||
 		t.PaymentStatus == PaymentStatusCancelled
 }
 
 // CanBeEdited returns true if timesheet can be edited
 func (t *Timesheet) CanBeEdited() bool {
-	if t.AllowedEdit {
-		return true
-	}
-
 	return !t.IsApproved()
 }
 
@@ -225,18 +210,13 @@ func (t *Timesheet) CanBeEditedByUser(userRole UserRole) bool {
 		return false
 	}
 
-	// Explicitly allowed edits override status-based restrictions
-	if t.AllowedEdit {
-		return true
-	}
-
 	// Admin can edit approved (but not paid) timesheets
 	if userRole == RoleAdmin {
 		return true
 	}
 
-	// Partner cannot edit approved timesheet
-	if userRole == RolePartner && t.IsApproved() {
+	// Quanly cannot edit approved timesheet
+	if userRole == RoleQuanly && t.IsApproved() {
 		return false
 	}
 
@@ -297,8 +277,6 @@ func (t *Timesheet) Approve(approvedBy uint) error {
 	t.ApprovedBy = &approvedBy
 	t.ApprovedAt = &now
 	t.RejectionReason = "" // Clear any previous rejection reason
-	t.AllowedEdit = false
-	t.RequestEditID = nil
 
 	return nil
 }
@@ -317,8 +295,6 @@ func (t *Timesheet) Reject(rejectionReason string) error {
 	t.RejectionReason = rejectionReason
 	t.ApprovedBy = nil
 	t.ApprovedAt = nil
-	t.AllowedEdit = false
-	t.RequestEditID = nil
 
 	return nil
 }
@@ -336,20 +312,16 @@ func (t *Timesheet) SubmitForApproval() error {
 }
 
 // ComputeTimesheetAmount is the single pricing rule for timesheet amounts:
-// flexible projects price per shift (the rate is the amount, hours ignored);
-// standard projects price hours x rate. Every amount write — creation,
-// re-pricing, payroll — must go through here so a save can never disagree
-// with what a later recalculation would produce.
-func ComputeTimesheetAmount(isFlexible bool, hoursWorked float64, rate int64) int64 {
-	if isFlexible {
-		return rate
-	}
+// hours x rate. Every amount write — creation, re-pricing, payroll — must go
+// through here so a save can never disagree with what a later recalculation
+// would produce.
+func ComputeTimesheetAmount(hoursWorked float64, rate int64) int64 {
 	return int64(hoursWorked * float64(rate))
 }
 
 // CalculateAmount calculates the amount based on hours worked and pay rate
-func (t *Timesheet) CalculateAmount(isFlexible bool) int64 {
-	return ComputeTimesheetAmount(isFlexible, t.HoursWorked, t.PayRate)
+func (t *Timesheet) CalculateAmount() int64 {
+	return ComputeTimesheetAmount(t.HoursWorked, t.PayRate)
 }
 
 // RequiresApproval checks if this timesheet requires approval
@@ -405,9 +377,4 @@ func (t *Timesheet) SetPayRateFromConfig(payrate *Payrate, skillLevel string) er
 	t.PayrateID = payrate.ID
 	t.PayRate = int64(vndAmount)
 	return nil
-}
-
-// CalculateRevenueReceivable calculates the revenue receivable based on paid amount and fee percentage
-func (t *Timesheet) CalculateRevenueReceivable(feePercentage float64) int64 {
-	return int64(float64(t.PaidAmount) * feePercentage)
 }

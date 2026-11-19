@@ -36,7 +36,7 @@ func TestGetUsernamesByPrefix_SeesUncommittedTxWrites(t *testing.T) {
 		if err := repo.Create(txCtx, &domain.User{
 			Username: base,
 			Fullname: "Lù Văn Quyến",
-			Role:     domain.RoleEmployee,
+			Role:     domain.RoleNhanvien,
 			Password: "not-a-real-login",
 		}); err != nil {
 			t.Fatalf("setup: create user inside tx: %v", err)

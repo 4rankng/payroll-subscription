@@ -151,12 +151,9 @@ func (r *Resolver) ResolveUserByMobile(ctx context.Context, raw string) (*domain
 // users.mobile. Employees do not: their number belongs to the employee record
 // (see the package comment), so a users row that also carries one — a legacy
 // copy — must not shadow the authoritative employee record.
-//
-// Adv-partner accounts are accepted for symmetry with their role; the user
-// write paths currently only allow admin/partner to set users.mobile.
 func storesMobileInUserRow(role domain.UserRole) bool {
 	switch role {
-	case domain.RoleAdmin, domain.RolePartner, domain.RoleAdvPartner:
+	case domain.RoleAdmin, domain.RoleQuanly:
 		return true
 	default:
 		return false

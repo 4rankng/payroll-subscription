@@ -42,9 +42,6 @@ func (s *TimesheetResponseService) BuildTimesheetResponse(timesheet *domain.Time
 		Status:           string(timesheet.Status),
 		PaymentStatus:    string(timesheet.PaymentStatus),
 		PaymentReference: timesheet.PaymentReference,
-		ForcePayroll:     timesheet.ForcePayroll,
-		AllowedEdit:      timesheet.AllowedEdit,
-		RequestEditID:    timesheet.RequestEditID,
 		PaidAmount:       timesheet.PaidAmount,
 		PaidAt:           timesheet.PaidAt,
 		CreatedBy:        timesheet.CreatedBy,
@@ -65,7 +62,6 @@ func (s *TimesheetResponseService) BuildTimesheetWithDetailsResponse(timesheet *
 	// Add project and employee details if available from preloaded relationships
 	if timesheet.Project.ID != 0 {
 		response.ProjectName = timesheet.Project.Name
-		response.ProjectIsFlexible = timesheet.Project.IsFlexible
 	}
 	if timesheet.Employee.ID != 0 {
 		response.EmployeeName = timesheet.Employee.Fullname
@@ -129,8 +125,6 @@ func (s *TimesheetResponseService) ParseTimesheetFilters(ctx context.Context, pa
 				timesheetStatuses = append(timesheetStatuses, domain.TimesheetStatusRejected)
 			case "paid":
 				paymentStatuses = append(paymentStatuses, domain.PaymentStatusPaid)
-			case "failed":
-				paymentStatuses = append(paymentStatuses, domain.PaymentStatusFailed)
 			case "cancelled":
 				paymentStatuses = append(paymentStatuses, domain.PaymentStatusCancelled)
 			}
@@ -179,18 +173,6 @@ func (s *TimesheetResponseService) ParseTimesheetFilters(ctx context.Context, pa
 
 	if toDate, ok := params["toDate"].(*time.Time); ok && toDate != nil {
 		filters.ToDate = toDate
-	}
-
-	if allowedEdit, ok := params["allowedEdit"].(*bool); ok && allowedEdit != nil {
-		filters.AllowedEdit = allowedEdit
-	}
-
-	if requestEditID, ok := params["requestEditID"].(*uint); ok && requestEditID != nil {
-		filters.RequestEditID = requestEditID
-	}
-
-	if hasRequestEdit, ok := params["hasRequestEdit"].(*bool); ok && hasRequestEdit != nil {
-		filters.HasRequestEdit = hasRequestEdit
 	}
 
 	if search, ok := params["search"].(string); ok && search != "" {

@@ -1,13 +1,23 @@
 package persistence
 
 import (
+	"context"
 	"testing"
 	"time"
+
+	"api-server/internal/domain"
 
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// transactionContextForTest attaches the given transaction the way the async
+// import transaction manager does, so repository reads route through it.
+func transactionContextForTest(tx *gorm.DB) context.Context {
+	return domain.WithTransactionContext(context.Background(),
+		&domain.TransactionContext{TX: tx, IsTransactional: true})
+}
 
 // Async imports create employees and assignments in one transaction. Coverage
 // backdating and bulk validation must see those rows before the import commits.

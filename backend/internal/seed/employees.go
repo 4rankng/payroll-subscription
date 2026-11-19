@@ -1,10 +1,8 @@
 package seed
 
 import (
-	"api-server/internal/pkg/clock"
 	"context"
 	"fmt"
-	mathrand "math/rand/v2"
 
 	"api-server/internal/domain"
 	"api-server/internal/infra/persistence"
@@ -18,11 +16,6 @@ func (s *Seeder) seedEmployees(ctx context.Context, db *gorm.DB) error {
 	var adminUser domain.User
 	if err := db.Where("username = ?", "admin").First(&adminUser).Error; err != nil {
 		return fmt.Errorf("find admin user: %w", err)
-	}
-
-	var banks []domain.Bank
-	if err := db.Find(&banks).Error; err != nil {
-		return fmt.Errorf("find banks: %w", err)
 	}
 
 	// Track existing emails, usernames and CCCD numbers to avoid duplicates
@@ -64,37 +57,19 @@ func (s *Seeder) seedEmployees(ctx context.Context, db *gorm.DB) error {
 		employeeProfiles = append(employeeProfiles, profile)
 	}
 
-	// Create employees with realistic age distribution based on their experience
+	// Create employees with realistic profiles
 	for _, profile := range employeeProfiles {
-		// Calculate realistic date of birth based on seniority
-		age := 22 + profile.Seniority + mathrand.IntN(8) // Add some age variation
-		if age > 65 {
-			age = 55 + mathrand.IntN(10) // Cap maximum age
-		}
-
-		dob := clock.Now().AddDate(-age, -mathrand.IntN(12), -mathrand.IntN(28))
-
 		var email *string
 		if profile.Email != "" {
 			email = &profile.Email
 		}
 
 		employee := &domain.Employee{
-			Fullname:    profile.FullName,
-			Email:       email,
-			CCCD:        profile.CCCD,
-			Address:     profile.Address,
-			Mobile:      profile.Phone,
-			DateOfBirth: &dob,
-			CreatedBy:   adminUser.ID,
-		}
-
-		// 90% of employees have bank accounts (realistic for Vietnamese workforce)
-		if mathrand.Float64() < 0.90 {
-			bankID := banks[mathrand.IntN(len(banks))].ID
-			employee.BankID = &bankID
-			employee.BankAccountNumber = profile.BankAccount
-			employee.BankAccountName = profile.FullName
+			Fullname:  profile.FullName,
+			Email:     email,
+			CCCD:      profile.CCCD,
+			Mobile:    profile.Phone,
+			CreatedBy: adminUser.ID,
 		}
 
 		if err := employeeRepo.Create(ctx, employee); err != nil {

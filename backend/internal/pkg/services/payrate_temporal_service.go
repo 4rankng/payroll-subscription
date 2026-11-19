@@ -473,11 +473,6 @@ func (s *PayrateTemporalService) getLatestPaidTimesheetDate(ctx context.Context,
 // effective payrate. It keeps paid and approved records immutable, including
 // when either state changes concurrently with this operation.
 func (s *PayrateTemporalService) recalculateMutableTimesheets(ctx context.Context, tx *gorm.DB, payrate *domain.Payrate) error {
-	var project domain.Project
-	if err := tx.WithContext(ctx).Select("id", "is_flexible").First(&project, payrate.ProjectID).Error; err != nil {
-		return fmt.Errorf("failed to load project for timesheet recalculation: %w", err)
-	}
-
 	var timesheets []*domain.Timesheet
 	if err := tx.WithContext(ctx).
 		Where("project_id = ? AND date >= ? AND payment_status <> ? AND timesheet_status <> ?",
@@ -502,7 +497,7 @@ func (s *PayrateTemporalService) recalculateMutableTimesheets(ctx context.Contex
 			return domain.NewValidationError(fmt.Sprintf("bảng công %d có loại lương không tồn tại trong cấu hình mới", timesheet.ID))
 		}
 
-		amount := domain.ComputeTimesheetAmount(project.IsFlexible, timesheet.HoursWorked, int64(rate))
+		amount := domain.ComputeTimesheetAmount(timesheet.HoursWorked, int64(rate))
 
 		result := tx.WithContext(ctx).
 			Model(&domain.Timesheet{}).

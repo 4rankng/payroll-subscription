@@ -497,38 +497,6 @@ func (r *TimesheetQueryRepository) GetPaidEmployeesByDateRange(ctx context.Conte
 	return results, nil
 }
 
-// GetWeeklyPayByPeriod retrieves weekly pay totals grouped by payroll period end dates.
-// Uses range-based grouping (FLOOR((DAY(date)-1)/7)) so MySQL can use the date index
-// for the WHERE range filter before applying the GROUP BY computation.
-func (r *TimesheetQueryRepository) GetWeeklyPayByPeriod(ctx context.Context, startDate, endDate time.Time) ([]map[string]interface{}, error) {
-	var results []map[string]interface{}
-
-	query := `
-		SELECT
-			DATE_FORMAT(date, '%Y-%m-01') + INTERVAL (FLOOR((DAY(date)-1)/7) * 7 + 6) DAY as period_date,
-			COALESCE(SUM(paid_amount), 0) as total_amount,
-			COUNT(DISTINCT employee_id) as paid_employees
-		FROM timesheets
-		WHERE payment_status = 'paid'
-			AND deleted_at IS NULL
-			AND date >= ?
-			AND date < DATE_ADD(?, INTERVAL 1 DAY)
-		GROUP BY period_date
-		ORDER BY period_date
-	`
-
-	err := r.db.WithContext(ctx).Raw(query,
-		startDate.Format("2006-01-02"),
-		endDate.Format("2006-01-02")).
-		Scan(&results).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
 // ListGroupedByEmployee retrieves timesheets grouped by employee with server-side pagination
 // This ensures consistent pagination by employee (not by individual timesheet entries)
 // Returns employee groups, all timesheets for those employees, total count, and error.
@@ -713,30 +681,6 @@ func (r *TimesheetQueryRepository) buildGroupedQuery(filters domain.TimesheetFil
 		query = query.Where("timesheets.approved_by = ?", *filters.ApprovedBy)
 	}
 
-	// Apply force payroll filter
-	if filters.ForcePayroll != nil {
-		query = query.Where("timesheets.force_payroll = ?", *filters.ForcePayroll)
-	}
-
-	// Apply allowed edit filter
-	if filters.AllowedEdit != nil {
-		query = query.Where("timesheets.allowed_edit = ?", *filters.AllowedEdit)
-	}
-
-	// Apply request edit ID filter
-	if filters.RequestEditID != nil {
-		query = query.Where("timesheets.request_edit_id = ?", *filters.RequestEditID)
-	}
-
-	// Apply has request edit filter
-	if filters.HasRequestEdit != nil {
-		if *filters.HasRequestEdit {
-			query = query.Where("timesheets.request_edit_id IS NOT NULL")
-		} else {
-			query = query.Where("timesheets.request_edit_id IS NULL")
-		}
-	}
-
 	return query
 }
 
@@ -789,36 +733,18 @@ func (r *TimesheetQueryRepository) applyDataFilters(query *gorm.DB, filters doma
 		query = query.Where("timesheets.approved_by = ?", *filters.ApprovedBy)
 	}
 
-	if filters.ForcePayroll != nil {
-		query = query.Where("timesheets.force_payroll = ?", *filters.ForcePayroll)
-	}
-
-	if filters.AllowedEdit != nil {
-		query = query.Where("timesheets.allowed_edit = ?", *filters.AllowedEdit)
-	}
-
-	if filters.RequestEditID != nil {
-		query = query.Where("timesheets.request_edit_id = ?", *filters.RequestEditID)
-	}
-
-	if filters.HasRequestEdit != nil {
-		if *filters.HasRequestEdit {
-			query = query.Where("timesheets.request_edit_id IS NOT NULL")
-		} else {
-			query = query.Where("timesheets.request_edit_id IS NULL")
-		}
-	}
-
 	return query
 }
 
-// CountUnsettledPaidTimesheets counts timesheets that are paid but revenue not yet received
+// CountUnsettledPaidTimesheets counts timesheets that are paid but not yet
+// covered by a verified customer transfer upload (D11) — i.e. paid rows still
+// awaiting settlement in the billing read model.
 func (r *TimesheetQueryRepository) CountUnsettledPaidTimesheets(ctx context.Context, projectID uint) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
 		Model(&domain.Timesheet{}).
-		Where("project_id = ? AND payment_status = ? AND revenue_paid = ? AND deleted_at IS NULL",
-			projectID, domain.PaymentStatusPaid, false).
+		Where("project_id = ? AND payment_status = ?",
+			projectID, domain.PaymentStatusPaid).
 		Count(&count).Error
 	return count, err
 }

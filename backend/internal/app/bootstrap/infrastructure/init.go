@@ -1,8 +1,6 @@
 package infrastructure
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -10,7 +8,6 @@ import (
 	"api-server/internal/infra/observability"
 	"api-server/internal/infra/persistence"
 	"api-server/internal/pkg/retry"
-	"api-server/migrations"
 )
 
 // Components holds all infrastructure components
@@ -69,21 +66,6 @@ func initDatabase(cfg *appConfig.Config, logger *slog.Logger) (*persistence.Data
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	// Apply pending SQL migrations at boot (DB_AUTO_MIGRATE=false pins the
-	// schema during an incident). This is the safety net for the manual
-	// flows: deploys only rebuild containers, so a new migration otherwise
-	// reaches prod only if someone remembers to run it by hand.
-	if cfg.DB.AutoMigrate {
-		if err := persistence.RunPendingSQLMigrations(
-			context.Background(),
-			db.DB,
-			migrations.UpSQLFiles,
-			logger,
-		); err != nil {
-			return nil, fmt.Errorf("sql migrations: %w", err)
-		}
 	}
 
 	logger.Info("Successfully connected to database")

@@ -19,7 +19,6 @@ func TestParseTimesheetFiltersPendingPaymentUsesPayrollEligibleCohort(t *testing
 	assert.Equal(t, []domain.TimesheetStatus{domain.TimesheetStatusApproved}, filters.TimesheetStatus)
 	assert.Equal(t, []domain.PaymentStatus{
 		domain.PaymentStatusPending,
-		domain.PaymentStatusFailed,
 	}, filters.PaymentStatus)
 }
 
@@ -33,6 +32,5 @@ func TestParseTimesheetFiltersPendingPaymentCannotBeBroadenedByOtherStatuses(t *
 	assert.Equal(t, []domain.TimesheetStatus{domain.TimesheetStatusApproved}, filters.TimesheetStatus)
 	assert.Equal(t, []domain.PaymentStatus{
 		domain.PaymentStatusPending,
-		domain.PaymentStatusFailed,
 	}, filters.PaymentStatus)
 }

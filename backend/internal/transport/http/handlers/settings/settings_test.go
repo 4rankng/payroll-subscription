@@ -53,7 +53,7 @@ func newSettingsTestHarness(t *testing.T) (*Handler, *config.SettingsService, *g
 	}
 
 	repo := persistence.NewSettingsRepositoryWithCipher(&persistence.Database{DB: db}, cipher)
-	settingsService := config.NewSettingsService(repo, nil, nil, nil, nil, nil, nil)
+	settingsService := config.NewSettingsService(repo, nil, nil, nil)
 	handler := NewHandler(settingsService)
 	return handler, settingsService, db
 }
@@ -137,7 +137,7 @@ func assertMasked(t *testing.T, entry map[string]any, rawBody string) {
 func TestSettingsGetShapesMaskProtectedKeys(t *testing.T) {
 	handler, settingsService, _ := newSettingsTestHarness(t)
 	keyID := seedSetting(t, settingsService, secret.ZaloCredentialsKey, fakeSealedSecret, domain.ValueTypeString)
-	seedSetting(t, settingsService, config.SettingKeyPartnerCompany, "CONG TY TEST", domain.ValueTypeString)
+	seedSetting(t, settingsService, config.SettingKeySubscriptionFeePerEmployeePerKyVnd, "10000", domain.ValueTypeString)
 	router := newSettingsRouter(handler)
 
 	// 1. List
@@ -151,7 +151,7 @@ func TestSettingsGetShapesMaskProtectedKeys(t *testing.T) {
 		if entry["key"] == secret.ZaloCredentialsKey {
 			sealedEntry = entry
 		}
-		if entry["key"] == config.SettingKeyPartnerCompany && entry["value"] != "CONG TY TEST" {
+		if entry["key"] == config.SettingKeySubscriptionFeePerEmployeePerKyVnd && entry["value"] != "10000" {
 			t.Fatalf("plain setting value = %v, want it untouched", entry["value"])
 		}
 	}

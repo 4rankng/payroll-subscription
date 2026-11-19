@@ -87,15 +87,6 @@ func (r *exportUserRepo) CountByRole(context.Context, domain.UserRole) (int64, e
 func (r *exportUserRepo) CountRecentLogins(context.Context, time.Time) (int64, error) {
 	panic("not impl")
 }
-func (r *exportUserRepo) CountActiveEmployeesBySchedule(context.Context, time.Time, time.Time) (int, int, int, error) {
-	panic("not impl")
-}
-func (r *exportUserRepo) CountActiveEmployeesByProject(context.Context, time.Time, time.Time) ([]*domain.ProjectActiveCount, error) {
-	panic("not impl")
-}
-func (r *exportUserRepo) GetActiveEmployeesBySchedule(context.Context, time.Time, time.Time, string) ([]*domain.ActiveEmployeeUser, error) {
-	panic("not impl")
-}
 func (r *exportUserRepo) FindUsersWithNullLastLogin(context.Context, int, int) ([]*domain.User, error) {
 	panic("not impl")
 }
@@ -135,7 +126,7 @@ func TestExportUsers(t *testing.T) {
 			Username:  "tinghire.bot",
 			Fullname:  "TingHire",
 			Email:     &opsEmail,
-			Role:      domain.RolePartner,
+			Role:      domain.RoleQuanly,
 			LastLogin: &lastLogin,
 			CreatedAt: createdAt,
 		},
@@ -144,7 +135,7 @@ func TestExportUsers(t *testing.T) {
 			Username:  "new.user",
 			Fullname:  "Người Mới",
 			Email:     &newEmail,
-			Role:      domain.RoleEmployee,
+			Role:      domain.RoleNhanvien,
 			CreatedAt: createdAt,
 		},
 	}

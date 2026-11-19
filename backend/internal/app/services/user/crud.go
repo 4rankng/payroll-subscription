@@ -49,13 +49,13 @@ func (s *UserService) CreateUser(ctx context.Context, req dto.CreateUserRequest)
 	// Set default role if not provided
 	role := domain.UserRole(req.Role)
 	if role == "" {
-		role = domain.RolePartner
+		role = domain.RoleQuanly
 		s.logger.Info("Using default role for new user", "role", role)
 	}
 
 	var normalizedMobile string
 	if req.Mobile != "" {
-		if role != domain.RoleAdmin && role != domain.RolePartner {
+		if role != domain.RoleAdmin && role != domain.RoleQuanly {
 			return nil, domain.NewValidationError(constants.MsgUserMobileRoleRestrictedVN)
 		}
 		normalizedMobile, err = phone.NormalizeVietnameseMobile(req.Mobile)
@@ -211,7 +211,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uint, req dto.UpdateUse
 		user.Role = domain.UserRole(*req.Role)
 	}
 
-	if user.Role != domain.RoleAdmin && user.Role != domain.RolePartner {
+	if user.Role != domain.RoleAdmin && user.Role != domain.RoleQuanly {
 		if req.Mobile != nil && *req.Mobile != "" {
 			return nil, domain.NewValidationError(constants.MsgUserMobileRoleRestrictedVN)
 		}
@@ -301,20 +301,6 @@ func (s *UserService) DeleteUser(ctx context.Context, id uint) error {
 		"email", logEmail,
 		"username", user.Username)
 
-	return nil
-}
-
-// RestoreUser restores a soft-deleted user
-func (s *UserService) RestoreUser(ctx context.Context, id uint) error {
-	s.logger.Info("Restoring user", "user_id", id)
-
-	// Perform restoration
-	if err := s.UserRepo.Restore(ctx, id); err != nil {
-		s.logger.Error("Failed to restore user", "error", err, "user_id", id)
-		return err
-	}
-
-	s.logger.Info("User restored successfully", "user_id", id)
 	return nil
 }
 

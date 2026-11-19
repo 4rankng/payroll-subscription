@@ -10,11 +10,6 @@ func MapNewEmployeeItems(employees []*domain.Employee, projects map[uint]*domain
 	employeeItems := make([]dto.NewEmployeeItem, 0, len(employees))
 
 	for _, emp := range employees {
-		var dateOfBirth string
-		if emp.DateOfBirth != nil && !emp.DateOfBirth.IsZero() {
-			dateOfBirth = emp.DateOfBirth.Format("2006-01-02")
-		}
-
 		createdByName := "System"
 		if emp.Creator.Fullname != "" {
 			createdByName = emp.Creator.Fullname
@@ -27,7 +22,6 @@ func MapNewEmployeeItems(employees []*domain.Employee, projects map[uint]*domain
 			Fullname:       emp.Fullname,
 			Email:          emp.Email,
 			CCCD:           emp.CCCD,
-			DateOfBirth:    dateOfBirth,
 			CreatedAt:      emp.CreatedAt,
 			CreatedByName:  createdByName,
 			Avatar:         nil,

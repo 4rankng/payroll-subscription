@@ -137,9 +137,6 @@ func (s *Seeder) seedTimesheets(ctx context.Context, db *gorm.DB) error {
 		}
 
 		actualEndDate := endDate
-		if projectEmployee.LastDate != nil && projectEmployee.LastDate.Before(endDate) {
-			actualEndDate = *projectEmployee.LastDate
-		}
 
 		for current := actualStartDate; current.Before(actualEndDate) || current.Equal(actualEndDate); current = current.AddDate(0, 0, 1) {
 			// Skip Sundays (Vietnamese work week is Monday-Saturday)

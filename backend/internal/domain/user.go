@@ -3,38 +3,34 @@ package domain
 import (
 	"context"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // UserRole represents user role enum
 type UserRole string
 
 const (
-	RoleAdmin      UserRole = "admin"
-	RolePartner    UserRole = "partner"
-	RoleEmployee   UserRole = "employee"
-	RoleAdvPartner UserRole = "adv_partner"
-	RoleAccountant UserRole = "accountant"
+	RoleAdmin    UserRole = "admin"
+	RoleQuanly   UserRole = "quanly"
+	RoleGiamdoc  UserRole = "giamdoc"
+	RoleNhanvien UserRole = "nhanvien"
 )
 
 // User represents a user entity in the domain
 type User struct {
-	ID                  uint           `json:"id" gorm:"primarykey;type:bigint unsigned"`
-	Username            string         `json:"username" gorm:"type:varchar(255);uniqueIndex;not null"`
-	Email               *string        `json:"email" gorm:"type:varchar(255);index"`
-	Password            string         `json:"-" gorm:"longtext;not null"` // Never expose password in JSON
-	Fullname            string         `json:"fullname" gorm:"type:varchar(255);not null"`
-	CCCD                *string        `json:"cccd,omitempty" gorm:"type:varchar(20);uniqueIndex:unique_user_cccd_deleted_at;comment:'Citizen ID for admin/partner login'"`
-	Mobile              *string        `json:"mobile,omitempty" gorm:"type:varchar(15);uniqueIndex:unique_user_mobile_deleted_at"`
-	Role                UserRole       `json:"role" gorm:"type:enum('admin','partner','employee','adv_partner','accountant');not null;default:'employee'"`
-	DeletedAt           gorm.DeletedAt `json:"-" gorm:"index;uniqueIndex:unique_user_cccd_deleted_at;uniqueIndex:unique_user_mobile_deleted_at"`
-	LastLogin           *time.Time     `json:"last_login" gorm:"type:datetime(3)"`
-	TokensInvalidBefore *time.Time     `json:"-" gorm:"type:datetime(3);comment:'When non-null, any JWT issued before this instant is rejected. Used by RevokeUserTokens.'"`
-	OTPFailedAttempts   int            `json:"-" gorm:"type:int;not null;default:0;comment:'consecutive failed OTP verifies; reset on success'"`
-	OTPLockedUntil      *time.Time     `json:"-" gorm:"type:datetime(3);comment:'when set, OTP-gated login is refused until this instant'"`
-	CreatedAt           time.Time      `json:"created_at"`
-	UpdatedAt           time.Time      `json:"updated_at"`
+	ID                  uint       `json:"id" gorm:"primarykey;type:bigint unsigned"`
+	Username            string     `json:"username" gorm:"type:varchar(255);uniqueIndex;not null"`
+	Email               *string    `json:"email" gorm:"type:varchar(255);index"`
+	Password            string     `json:"-" gorm:"longtext;not null"` // Never expose password in JSON
+	Fullname            string     `json:"fullname" gorm:"type:varchar(255);not null"`
+	CCCD                *string    `json:"cccd,omitempty" gorm:"type:varchar(20);comment:'Citizen ID for admin/quanly login'"`
+	Mobile              *string    `json:"mobile,omitempty" gorm:"type:varchar(15)"`
+	Role                UserRole   `json:"role" gorm:"type:enum('admin','quanly','giamdoc','nhanvien');not null;default:'nhanvien'"`
+	LastLogin           *time.Time `json:"last_login" gorm:"type:datetime(3)"`
+	TokensInvalidBefore *time.Time `json:"-" gorm:"type:datetime(3);comment:'When non-null, any JWT issued before this instant is rejected. Used by RevokeUserTokens.'"`
+	OTPFailedAttempts   int        `json:"-" gorm:"type:int;not null;default:0;comment:'consecutive failed OTP verifies; reset on success'"`
+	OTPLockedUntil      *time.Time `json:"-" gorm:"type:datetime(3);comment:'when set, OTP-gated login is refused until this instant'"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
 // GetAuditEntityType implements Auditable interface
@@ -47,30 +43,6 @@ func (u User) GetAuditEntityID() uint {
 	return u.ID
 }
 
-// IsActive returns true if the user is active (not soft deleted)
-func (u User) IsActive() bool {
-	return !u.DeletedAt.Valid
-}
-
-// ActiveEmployeeUser represents a user with their employee info for activity stats
-type ActiveEmployeeUser struct {
-	UserID     uint       `json:"user_id"`
-	EmployeeID uint       `json:"employee_id"`
-	Fullname   string     `json:"fullname"`
-	Username   string     `json:"username"`
-	LastLogin  *time.Time `json:"last_login"`
-}
-
-// ProjectActiveCount counts distinct employees who logged in within a window,
-// grouped by their active project assignment. Counts are distinct per project:
-// an employee active in several projects is counted once in each, so the
-// project counts do not sum to the schedule totals.
-type ProjectActiveCount struct {
-	ProjectID   uint   `json:"project_id"`
-	ProjectName string `json:"project_name"`
-	Count       int    `json:"count"`
-}
-
 // UserRepository defines the interface for user persistence operations
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error
@@ -78,7 +50,6 @@ type UserRepository interface {
 	GetByIDs(ctx context.Context, ids []uint) (map[uint]*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByUsername(ctx context.Context, username string) (*User, error)
-	GetByUsernameIncludingDeleted(ctx context.Context, username string) (*User, error)
 	GetUsernamesByPrefix(ctx context.Context, prefix string) ([]string, error)
 	GetByCCCD(ctx context.Context, cccd string) (*User, error)
 	GetByMobile(ctx context.Context, mobile string) (*User, error)
@@ -101,7 +72,6 @@ type UserRepository interface {
 	// (e.g. on successful verify, which also resets failedAttempts to 0).
 	UpdateOTPLockout(ctx context.Context, userID uint, failedAttempts int, lockedUntil *time.Time) error
 	Delete(ctx context.Context, id uint) error
-	Restore(ctx context.Context, id uint) error
 	List(ctx context.Context, limit, offset int) ([]*User, error)
 	ListByRole(ctx context.Context, role UserRole) ([]*User, error)
 	ListWithFilters(ctx context.Context, role *UserRole, search string, ids []uint, lastLoginToday bool, projectID *uint, sortBy string, sortOrder string, limit, offset int) ([]*User, int64, error)
@@ -112,9 +82,6 @@ type UserRepository interface {
 	Count(ctx context.Context) (int64, error)
 	CountByRole(ctx context.Context, role UserRole) (int64, error)
 	CountRecentLogins(ctx context.Context, since time.Time) (int64, error)
-	CountActiveEmployeesBySchedule(ctx context.Context, since, until time.Time) (weekly, monthly, flexible int, err error)
-	CountActiveEmployeesByProject(ctx context.Context, since, until time.Time) ([]*ProjectActiveCount, error)
-	GetActiveEmployeesBySchedule(ctx context.Context, since, until time.Time, schedule string) ([]*ActiveEmployeeUser, error)
 	FindUsersWithNullLastLogin(ctx context.Context, limit, offset int) ([]*User, error)
 	CountUsersWithNullLastLogin(ctx context.Context) (int64, error)
 }
@@ -146,10 +113,12 @@ func (u *User) ValidateFullname() error {
 
 // ValidateRole validates the user's role
 func (u *User) ValidateRole() error {
-	if u.Role != RoleAdmin && u.Role != RolePartner && u.Role != RoleEmployee && u.Role != RoleAdvPartner && u.Role != RoleAccountant {
-		return NewValidationError("role must be either 'admin', 'partner', 'employee', 'adv_partner', or 'accountant'")
+	switch u.Role {
+	case RoleAdmin, RoleQuanly, RoleGiamdoc, RoleNhanvien:
+		return nil
+	default:
+		return NewValidationError("role must be either 'admin', 'quanly', 'giamdoc', or 'nhanvien'")
 	}
-	return nil
 }
 
 // IsValid validates the entire user entity
@@ -174,24 +143,18 @@ func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
 }
 
-// IsPartner returns true if user role is partner
-func (u *User) IsPartner() bool {
-	return u.Role == RolePartner
+// IsQuanly returns true if user role is quanly (the paying company's manager).
+func (u *User) IsQuanly() bool {
+	return u.Role == RoleQuanly
 }
 
-// IsEmployee returns true if user role is employee
-func (u *User) IsEmployee() bool {
-	return u.Role == RoleEmployee
+// IsNhanvien returns true if user role is nhanvien (read-only employee portal).
+func (u *User) IsNhanvien() bool {
+	return u.Role == RoleNhanvien
 }
 
-// IsAdvPartner returns true if user role is adv_partner
-func (u *User) IsAdvPartner() bool {
-	return u.Role == RoleAdvPartner
-}
-
-// IsAccountant returns true if user role is accountant (kế toán). The
-// accountant workspace covers timesheet approval and the bulk-transfer / sao
-// ke pipeline only — enforced by Casbin, not by this predicate.
-func (u *User) IsAccountant() bool {
-	return u.Role == RoleAccountant
+// IsGiamdoc returns true if user role is giamdoc (director — owns the
+// billing-report export). Casbin, not this predicate, enforces routes.
+func (u *User) IsGiamdoc() bool {
+	return u.Role == RoleGiamdoc
 }

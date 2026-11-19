@@ -33,20 +33,14 @@ type RowError struct {
 
 // EmployeeImportRow represents a single row from the employee import Excel
 type EmployeeImportRow struct {
-	RowNumber       int
-	Fullname        string
-	CCCD            string
-	Email           *string
-	Mobile          string
-	Address         string
-	DateOfBirth     *string
-	BankAccount     string
-	BankAccountName string
-	BankName        string
-	ProjectCode     string
-	Position        string
-	StartDate       string
-	PaymentSchedule string
+	RowNumber   int
+	Fullname    string
+	CCCD        string
+	Email       *string
+	Mobile      string
+	ProjectCode string
+	Position    string
+	StartDate   string
 }
 
 // EmployeeImportProgress represents the progress data stored in Redis

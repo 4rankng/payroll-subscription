@@ -48,14 +48,6 @@ func NewHandlerWithServices(employeeService *employee.EmployeeService, timesheet
 	}
 }
 
-func formatOptionalDate(date *time.Time) *string {
-	if date == nil {
-		return nil
-	}
-	formatted := date.Format("2006-01-02")
-	return &formatted
-}
-
 // buildProjectInfoFromAssignment creates an EmployeeProjectInfo DTO from a domain assignment.
 // Shared by buildEmployeeResponse and buildDetailedEmployeeResponse to keep mapping in one place.
 func buildProjectInfoFromAssignment(assignment domain.ProjectEmployee) dto.EmployeeProjectInfo {
@@ -68,42 +60,18 @@ func buildProjectInfoFromAssignment(assignment domain.ProjectEmployee) dto.Emplo
 		clientName = assignment.Project.ClientName
 	}
 	return dto.EmployeeProjectInfo{
-		ProjectID:              assignment.ProjectID,
-		ProjectEmployeeID:      assignment.ID,
-		Name:                   projectName,
-		Code:                   projectCode,
-		ClientName:             clientName,
-		Position:               assignment.Position,
-		StartDate:              assignment.StartDate.Format("2006-01-02"),
-		LastDate:               formatOptionalDate(assignment.LastDate),
-		PaymentSchedule:        assignment.PaymentSchedule,
-		PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-		ScheduleEffectiveFrom:  formatOptionalDate(assignment.ScheduleEffectiveFrom),
-		IsFlexible:             assignment.Project.IsFlexible,
-		CheckInEnabled:         assignment.CheckInEnabled,
-		// Deferred activation: without these the client cannot distinguish
-		// "off" from "turns on 01/10" and renders the toggle as plain off.
-		PendingCheckInEnabled: assignment.PendingCheckInEnabled,
-		CheckInEffectiveFrom:  formatOptionalDate(assignment.CheckInEffectiveFrom),
+		ProjectID:         assignment.ProjectID,
+		ProjectEmployeeID: assignment.ID,
+		Name:              projectName,
+		Code:              projectCode,
+		ClientName:        clientName,
+		Position:          assignment.Position,
+		StartDate:         assignment.StartDate.Format("2006-01-02"),
 	}
 }
 
 // Helper function to convert employee to response DTO
 func (h *Handler) buildEmployeeResponse(ctx context.Context, employee *domain.Employee) dto.EmployeeResponse {
-	var dateOfBirthStr *string
-	if employee.DateOfBirth != nil {
-		dobStr := employee.DateOfBirth.Format("2006-01-02")
-		dateOfBirthStr = &dobStr
-	}
-
-	var bankInfo *dto.EmployeeBankInfo
-	if employee.Bank != nil {
-		bankInfo = &dto.EmployeeBankInfo{
-			ID:         employee.Bank.ID,
-			BranchName: employee.Bank.BranchName,
-		}
-	}
-
 	var username *string
 	if employee.User != nil {
 		u := employee.User.Username
@@ -111,30 +79,23 @@ func (h *Handler) buildEmployeeResponse(ctx context.Context, employee *domain.Em
 	}
 
 	response := dto.EmployeeResponse{
-		ID:                employee.ID,
-		Username:          username,
-		Fullname:          employee.Fullname,
-		Email:             employee.Email,
-		CCCD:              employee.CCCD,
-		Address:           employee.Address,
-		Mobile:            employee.Mobile,
-		Bank:              bankInfo,
-		BankAccountNumber: employee.BankAccountNumber,
-		BankAccountName:   employee.BankAccountName,
-		DateOfBirth:       dateOfBirthStr,
-		CreatedBy:         employee.CreatedBy,
-		CreatedAt:         employee.CreatedAt,
-		UpdatedAt:         employee.UpdatedAt,
-		CanDelete:         true,
-		CurrentProjects:   []dto.EmployeeProjectInfo{}, // Initialize empty array
+		ID:              employee.ID,
+		Username:        username,
+		Fullname:        employee.Fullname,
+		Email:           employee.Email,
+		CCCD:            employee.CCCD,
+		Mobile:          employee.Mobile,
+		CreatedBy:       employee.CreatedBy,
+		CreatedAt:       employee.CreatedAt,
+		UpdatedAt:       employee.UpdatedAt,
+		CanDelete:       true,
+		CurrentProjects: []dto.EmployeeProjectInfo{}, // Initialize empty array
 	}
-	response.BankAccountStatus, response.BankAccountInvalidReason, response.BankAccountValidatedAt = bankAccountStatusFields(employee)
 
 	// Get current project assignments if service is available
 	if h.projectEmployeeService != nil {
 		filters := domain.ProjectEmployeeFilters{
 			EmployeeID: &employee.ID,
-			ActiveOnly: true, // Only get active assignments
 			SortBy:     "created_at",
 			SortOrder:  "desc",
 		}
@@ -143,13 +104,7 @@ func (h *Handler) buildEmployeeResponse(ctx context.Context, employee *domain.Em
 			currentProjects := make([]dto.EmployeeProjectInfo, 0, len(assignments))
 
 			for _, assignment := range assignments {
-				// Only include active assignments (LastDate is nil)
-				if assignment.LastDate == nil {
-					if assignment.PaymentSchedule == string(domain.PaymentScheduleFlexible) {
-						response.CanDelete = false
-					}
-					currentProjects = append(currentProjects, buildProjectInfoFromAssignment(*assignment))
-				}
+				currentProjects = append(currentProjects, buildProjectInfoFromAssignment(*assignment))
 			}
 
 			response.CurrentProjects = currentProjects
@@ -161,20 +116,6 @@ func (h *Handler) buildEmployeeResponse(ctx context.Context, employee *domain.Em
 
 // Helper function to build comprehensive employee response with related data
 func (h *Handler) buildDetailedEmployeeResponse(ctx context.Context, emp *domain.Employee) (*dto.EmployeeDetailedResponse, error) {
-	var dateOfBirthStr *string
-	if emp.DateOfBirth != nil {
-		dobStr := emp.DateOfBirth.Format("2006-01-02")
-		dateOfBirthStr = &dobStr
-	}
-
-	var bankInfo *dto.EmployeeBankInfo
-	if emp.Bank != nil {
-		bankInfo = &dto.EmployeeBankInfo{
-			ID:         emp.Bank.ID,
-			BranchName: emp.Bank.BranchName,
-		}
-	}
-
 	log := observability.GetLogger()
 	var username *string
 	if emp.User != nil {
@@ -188,22 +129,16 @@ func (h *Handler) buildDetailedEmployeeResponse(ctx context.Context, emp *domain
 	}
 
 	resp := &dto.EmployeeDetailedResponse{
-		ID:                emp.ID,
-		Username:          username,
-		Fullname:          emp.Fullname,
-		Email:             emp.Email,
-		CCCD:              emp.CCCD,
-		Address:           emp.Address,
-		Mobile:            emp.Mobile,
-		Bank:              bankInfo,
-		BankAccountNumber: emp.BankAccountNumber,
-		BankAccountName:   emp.BankAccountName,
-		DateOfBirth:       dateOfBirthStr,
-		CreatedBy:         emp.CreatedBy,
-		CreatedAt:         emp.CreatedAt,
-		UpdatedAt:         emp.UpdatedAt,
+		ID:        emp.ID,
+		Username:  username,
+		Fullname:  emp.Fullname,
+		Email:     emp.Email,
+		CCCD:      emp.CCCD,
+		Mobile:    emp.Mobile,
+		CreatedBy: emp.CreatedBy,
+		CreatedAt: emp.CreatedAt,
+		UpdatedAt: emp.UpdatedAt,
 	}
-	resp.BankAccountStatus, resp.BankAccountInvalidReason, resp.BankAccountValidatedAt = bankAccountStatusFields(emp)
 
 	// Fetch payroll summary, timesheet summary, and project assignments concurrently.
 	type payrollResult struct {
@@ -244,7 +179,6 @@ func (h *Handler) buildDetailedEmployeeResponse(ctx context.Context, emp *domain
 		}
 		assignments, err := h.projectEmployeeService.ListAssignments(ctx, domain.ProjectEmployeeFilters{
 			EmployeeID: &emp.ID,
-			ActiveOnly: true,
 			SortBy:     "created_at",
 			SortOrder:  "desc",
 		})
@@ -290,25 +224,11 @@ func (h *Handler) buildDetailedEmployeeResponse(ctx context.Context, emp *domain
 	if ar := <-projectCh; ar.err == nil {
 		currentProjects := make([]dto.EmployeeCurrentProject, 0, len(ar.assignments))
 		for _, assignment := range ar.assignments {
-			if assignment.LastDate != nil {
-				continue // skip ended assignments
-			}
 			p := dto.EmployeeCurrentProject{
-				ProjectID:              assignment.ProjectID,
-				ProjectEmployeeID:      assignment.ID,
-				Position:               assignment.Position,
-				StartDate:              assignment.StartDate.Format("2006-01-02"),
-				LastDate:               nil,
-				PaymentSchedule:        assignment.PaymentSchedule,
-				PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-				ScheduleEffectiveFrom:  formatOptionalDate(assignment.ScheduleEffectiveFrom),
-				IsFlexible:             assignment.Project.IsFlexible,
-				CheckInEnabled:         assignment.CheckInEnabled,
-				// Same deferred-activation fields as buildProjectInfoFromAssignment:
-				// the employee detail sheet reads this list, and without them a
-				// pending enable renders as a plain "off" toggle.
-				PendingCheckInEnabled: assignment.PendingCheckInEnabled,
-				CheckInEffectiveFrom:  formatOptionalDate(assignment.CheckInEffectiveFrom),
+				ProjectID:         assignment.ProjectID,
+				ProjectEmployeeID: assignment.ID,
+				Position:          assignment.Position,
+				StartDate:         assignment.StartDate.Format("2006-01-02"),
 			}
 			if assignment.Project.ID > 0 {
 				p.Name = assignment.Project.Name
@@ -351,28 +271,12 @@ func (h *Handler) CreateEmployee(c *gin.Context) {
 		return
 	}
 
-	// 3. Parse optional date field (HTTP concern - date format conversion)
-	var dateOfBirth *time.Time
-	if req.DateOfBirth != "" {
-		if parsed, parseErr := time.Parse("2006-01-02", req.DateOfBirth); parseErr == nil {
-			dateOfBirth = &parsed
-		} else {
-			response.BadRequest(c, constants.MsgInvalidDateFormatVN)
-			return
-		}
-	}
-
-	// 4. Convert DTO to domain entity (HTTP concern - data transformation)
+	// 3. Convert DTO to domain entity (HTTP concern - data transformation)
 	employee := &domain.Employee{
-		Fullname:          req.Fullname,
-		Email:             req.Email,
-		CCCD:              req.CCCD,
-		Address:           req.Address,
-		Mobile:            req.Mobile,
-		BankID:            req.BankID,
-		BankAccountNumber: req.BankAccountNumber,
-		BankAccountName:   req.BankAccountName,
-		DateOfBirth:       dateOfBirth,
+		Fullname: req.Fullname,
+		Email:    req.Email,
+		CCCD:     req.CCCD,
+		Mobile:   req.Mobile,
 	}
 
 	// 5. Delegate to service layer (orchestration)
@@ -422,12 +326,11 @@ func (h *Handler) GetEmployee(c *gin.Context) {
 		return
 	}
 
-	// 4. Partner preview masking: scoped partners may view any employee
+	// Partner preview masking: scoped partners may view any employee
 	// (global pool preview before requesting management). For employees they
-	// don't manage, bank details and address are withheld and edit actions
-	// should be hidden (is_accessible=false).
+	// don't manage, edit actions should be hidden (is_accessible=false).
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) || userRole == string(domain.RoleAdvPartner) {
+	if userRole == string(domain.RoleQuanly) {
 		accessible := false
 		if h.employeePermissionService != nil {
 			userID := c.GetUint(constants.CtxUserID)
@@ -435,11 +338,6 @@ func (h *Handler) GetEmployee(c *gin.Context) {
 		}
 		employeeResponse.IsAccessible = &accessible
 		if !accessible {
-			employeeResponse.Bank = nil
-			employeeResponse.BankAccountNumber = ""
-			employeeResponse.BankAccountName = ""
-			employeeResponse.Address = ""
-			employeeResponse.DateOfBirth = nil
 			// Management data (earnings, work history) stays with the managing
 			// partner; a preview only needs identity + current projects.
 			employeeResponse.PayrollSummary = nil
@@ -498,27 +396,9 @@ func (h *Handler) UpdateEmployee(c *gin.Context) {
 	if req.CCCD != nil {
 		employee.CCCD = *req.CCCD
 	}
-	if req.Address != nil {
-		employee.Address = *req.Address
-	}
 	if req.Mobile != nil {
 		employee.Mobile = *req.Mobile
 	}
-	if req.BankID != nil {
-		employee.BankID = req.BankID
-	}
-	if req.BankAccountNumber != nil {
-		employee.BankAccountNumber = *req.BankAccountNumber
-	}
-	if req.BankAccountName != nil {
-		employee.BankAccountName = *req.BankAccountName
-	}
-	if req.DateOfBirth != nil && *req.DateOfBirth != "" {
-		if parsed, err := time.Parse("2006-01-02", *req.DateOfBirth); err == nil {
-			employee.DateOfBirth = &parsed
-		}
-	}
-	// Status field no longer exists on Employee - using soft-delete pattern instead
 
 	if err := h.employeeService.UpdateEmployee(c.Request.Context(), employee, userID.(uint)); err != nil {
 		logger := observability.GetLogger()
@@ -568,7 +448,7 @@ func (h *Handler) DeleteEmployee(c *gin.Context) {
 
 	// Role-based access control for partner users
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		// Get employee to check ownership
 		employee, err := h.employeeService.GetEmployee(c.Request.Context(), uint(id))
 		if err != nil {
@@ -806,25 +686,6 @@ func (h *Handler) UpdateEmployeeProject(c *gin.Context) {
 		}
 		assignment.StartDate = parsedDate
 	}
-	if req.EndDate != nil {
-		if *req.EndDate == "" {
-			assignment.LastDate = nil
-		} else {
-			parsedEndDate, err := time.Parse("2006-01-02", *req.EndDate)
-			if err != nil {
-				logger.ErrorContext(c.Request.Context(), "Invalid end date format",
-					"end_date", *req.EndDate,
-					"error", err,
-				)
-				response.BadRequest(c, constants.MsgInvalidEndDateFormatVN)
-				return
-			}
-			assignment.LastDate = &parsedEndDate
-		}
-	}
-	if req.PaymentSchedule != nil {
-		assignment.PaymentSchedule = *req.PaymentSchedule
-	}
 
 	// Update the assignment
 	if err := h.projectEmployeeService.UpdateAssignment(c.Request.Context(), assignment, userID.(uint)); err != nil {
@@ -840,19 +701,15 @@ func (h *Handler) UpdateEmployeeProject(c *gin.Context) {
 
 	// Return updated assignment
 	assignmentResponse := dto.ProjectEmployeeAssignmentResponse{
-		ID:                     assignment.ID,
-		ProjectID:              assignment.ProjectID,
-		EmployeeID:             assignment.EmployeeID,
-		EmployeeCode:           assignment.EmployeeCode,
-		Position:               assignment.Position,
-		StartDate:              assignment.StartDate,
-		LastDate:               assignment.LastDate,
-		PaymentSchedule:        assignment.PaymentSchedule,
-		PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-		ScheduleEffectiveFrom:  assignment.ScheduleEffectiveFrom,
-		CreatedBy:              assignment.CreatedBy,
-		CreatedAt:              assignment.CreatedAt,
-		UpdatedAt:              assignment.UpdatedAt,
+		ID:           assignment.ID,
+		ProjectID:    assignment.ProjectID,
+		EmployeeID:   assignment.EmployeeID,
+		EmployeeCode: assignment.EmployeeCode,
+		Position:     assignment.Position,
+		StartDate:    assignment.StartDate,
+		CreatedBy:    assignment.CreatedBy,
+		CreatedAt:    assignment.CreatedAt,
+		UpdatedAt:    assignment.UpdatedAt,
 	}
 
 	logger.InfoContext(c.Request.Context(), "Successfully updated employee project assignment",
@@ -943,12 +800,6 @@ func (h *Handler) GetEmployeeCurrentProjects(c *gin.Context) {
 
 	for _, assignment := range assignments {
 
-		var lastDateStr *string
-		if assignment.LastDate != nil {
-			dateStr := assignment.LastDate.Format("2006-01-02")
-			lastDateStr = &dateStr
-		}
-
 		// Get project details from preloaded relationship
 		var projectName, projectCode, clientName string
 		if assignment.Project.ID != 0 {
@@ -964,7 +815,6 @@ func (h *Handler) GetEmployeeCurrentProjects(c *gin.Context) {
 			ClientName:  clientName,
 			Position:    assignment.Position,
 			StartDate:   assignment.StartDate.Format("2006-01-02"),
-			LastDate:    lastDateStr,
 			Timesheets:  []dto.EmployeeCurrentProjectTimesheet{},
 		}
 

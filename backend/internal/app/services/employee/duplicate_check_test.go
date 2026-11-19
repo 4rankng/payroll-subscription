@@ -33,8 +33,8 @@ func TestCheckDuplicatesByCCCD(t *testing.T) {
 
 	employeeRepo.EXPECT().GetByCCCD(gomock.Any(), "031086019743").Return(employee, nil)
 	projectEmployeeRepo.EXPECT().GetByEmployee(gomock.Any(), uint(31)).Return([]*domain.ProjectEmployee{
-		{ProjectID: 5, LastDate: nil, Project: domain.Project{ID: 5, Name: "Sản xuất xà phòng"}},
-		{ProjectID: 6, LastDate: &created, Project: domain.Project{ID: 6, Name: "Đã kết thúc"}},
+		{ProjectID: 5, Project: domain.Project{ID: 5, Name: "Sản xuất xà phòng"}},
+		{ProjectID: 6, Project: domain.Project{ID: 6, Name: "Đã kết thúc"}},
 	}, nil)
 
 	matches, err := service.CheckDuplicates(context.Background(), DuplicateCheckParams{CCCD: "031086019743"})
@@ -48,7 +48,7 @@ func TestCheckDuplicatesByCCCD(t *testing.T) {
 	require.Empty(t, m.MobileMasked, "mobile must not be revealed when matched via CCCD only")
 	require.Empty(t, m.EmailMasked, "email must not be revealed when matched via CCCD only")
 	require.Equal(t, []string{"cccd"}, m.MatchedOn)
-	require.Equal(t, []string{"Sản xuất xà phòng"}, m.CurrentProjectNames, "ended assignments excluded")
+	require.Equal(t, []string{"Sản xuất xà phòng", "Đã kết thúc"}, m.CurrentProjectNames, "every assignment's project is listed")
 	require.Equal(t, "Quản lý A", m.CreatedByName)
 }
 

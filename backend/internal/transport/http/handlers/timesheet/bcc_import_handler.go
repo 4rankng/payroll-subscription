@@ -125,7 +125,7 @@ func (h *BCCImportHandler) UploadBCC(c *gin.Context) {
 	}
 
 	// Partner users must have write access to the target project.
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		canModify, err := h.projectPermissionSvc.CanUserModifyProject(c.Request.Context(), projectID, userID)
 		if err != nil || !canModify {
 			response.Forbidden(c, "Bạn không có quyền import cho dự án này")
@@ -227,7 +227,7 @@ func (h *BCCImportHandler) ListPartnerImports(c *gin.Context) {
 	filters.GroupByProject = c.Query("sort") == "project"
 
 	// Partners only see their own uploads; admin sees all.
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		filters.UploadedBy = &userID
 	}
 
@@ -301,7 +301,7 @@ func (h *BCCImportHandler) GetPartnerImport(c *gin.Context) {
 		return
 	}
 
-	if userRole == string(domain.RolePartner) && asset.UploadedBy != userID {
+	if userRole == string(domain.RoleQuanly) && asset.UploadedBy != userID {
 		response.Forbidden(c, "Bạn không có quyền truy cập file import này")
 		return
 	}
@@ -340,7 +340,7 @@ func (h *BCCImportHandler) DownloadPartnerImport(c *gin.Context) {
 		return
 	}
 
-	if userRole == string(domain.RolePartner) && asset.UploadedBy != userID {
+	if userRole == string(domain.RoleQuanly) && asset.UploadedBy != userID {
 		response.Forbidden(c, "Bạn không có quyền tải file import này")
 		return
 	}

@@ -20,12 +20,6 @@ func (s *UserService) VerifyPassword(ctx context.Context, email, password string
 		return nil, domain.NewUnauthorizedError(constants.MsgInvalidCredentialsVN)
 	}
 
-	// Check if user account is active
-	if !user.IsActive() {
-		s.logger.Info("Login attempt on inactive account", "email", email, "user_id", user.ID)
-		return nil, domain.NewUnauthorizedError(constants.MsgAccountDisabledVN)
-	}
-
 	// Verify password
 	if !s.VerifyPasswordHash(password, user.Password) {
 		s.logger.Info("Invalid password attempt", "email", email, "user_id", user.ID)

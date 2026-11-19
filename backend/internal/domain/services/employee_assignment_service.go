@@ -46,8 +46,8 @@ func (s *EmployeeAssignmentService) ValidateAssignment(ctx context.Context, assi
 		return domain.NewNotFoundError(constants.MsgProjectNotFoundVN)
 	}
 
-	// Check for date overlaps with existing assignments
-	return s.ValidateDateOverlap(ctx, assignment.EmployeeID, assignment.ProjectID, assignment.StartDate, assignment.LastDate)
+	// Check for date overlaps with existing assignments (assignments are open-ended rows)
+	return s.ValidateDateOverlap(ctx, assignment.EmployeeID, assignment.ProjectID, assignment.StartDate)
 }
 
 // ValidateAssignmentForUpdate validates business rules for updating an existing assignment
@@ -76,8 +76,9 @@ func (s *EmployeeAssignmentService) ValidateAssignmentForUpdate(ctx context.Cont
 		return err
 	}
 
-	// Load overlapping assignments
-	overlapping, err := s.projectEmployeeRepo.GetOverlappingAssignments(ctx, assignment.EmployeeID, &assignment.StartDate, assignment.LastDate)
+	// Load overlapping assignments (assignments are open-ended rows: only the
+	// new start date can bound the overlap window)
+	overlapping, err := s.projectEmployeeRepo.GetOverlappingAssignments(ctx, assignment.EmployeeID, &assignment.StartDate, nil)
 	if err != nil {
 		return err
 	}
@@ -94,16 +95,10 @@ func (s *EmployeeAssignmentService) ValidateAssignmentForUpdate(ctx context.Cont
 		}
 	}
 
-	// The update may not leave an approved or paid timesheet outside the
-	// resulting [start_date, last_date] window:
-	//   - moving start later drops the strip [oldStart, newStart-1], which must
-	//     hold no approved or paid timesheet;
-	//   - keeping or setting a finite end date means any approved or paid
-	//     timesheet after it falls outside the window — that also blocks an
-	//     insufficient extension, since the timesheet stays uncovered;
-	//   - clearing the end date (open-ended) always covers every existing
-	//     timesheet, so it never blocks.
-	var hasPaidBeforeNewStart, hasPaidAfterNewEnd bool
+	// Moving the start later drops the strip [oldStart, newStart-1], which must
+	// hold no approved or paid timesheet. Assignments are open-ended rows, so
+	// there is no end-side boundary to guard.
+	var hasPaidBeforeNewStart bool
 	if assignment.StartDate.After(current.StartDate) {
 		windowEnd := assignment.StartDate.AddDate(0, 0, -1)
 		hasPaidBeforeNewStart, err = s.timesheetChecker.HasNonEditableTimesheetsInRange(ctx, assignment.ProjectID, assignment.EmployeeID, &current.StartDate, &windowEnd)
@@ -111,16 +106,9 @@ func (s *EmployeeAssignmentService) ValidateAssignmentForUpdate(ctx context.Cont
 			return err
 		}
 	}
-	if assignment.LastDate != nil {
-		windowStart := assignment.LastDate.AddDate(0, 0, 1)
-		hasPaidAfterNewEnd, err = s.timesheetChecker.HasNonEditableTimesheetsInRange(ctx, assignment.ProjectID, assignment.EmployeeID, &windowStart, nil)
-		if err != nil {
-			return err
-		}
-	}
 
 	// Delegate to pure validation method
-	return s.ValidateAssignmentUpdateWithData(assignment, overlapping, overlappingCounts, hasPaidBeforeNewStart, hasPaidAfterNewEnd)
+	return s.ValidateAssignmentUpdateWithData(assignment, overlapping, overlappingCounts, hasPaidBeforeNewStart)
 }
 
 // ValidateAssignmentUpdateWithData performs pure domain validation with pre-loaded data
@@ -130,7 +118,6 @@ func (s *EmployeeAssignmentService) ValidateAssignmentUpdateWithData(
 	overlappingAssignments []*domain.ProjectEmployee,
 	overlappingTimesheetCounts map[uint]int64,
 	hasPaidBeforeNewStart bool,
-	hasPaidAfterNewEnd bool,
 ) error {
 	// Check for overlaps with OTHER assignments for the same project
 	for _, other := range overlappingAssignments {
@@ -148,11 +135,10 @@ func (s *EmployeeAssignmentService) ValidateAssignmentUpdateWithData(
 		}
 	}
 
-	// The update may not leave an approved or paid timesheet outside the
-	// resulting window: paid work before the new start or after the new finite
-	// end stays uncovered, which blocks the update. Clearing the end date is
-	// open-ended and always covers existing work.
-	if hasPaidBeforeNewStart || hasPaidAfterNewEnd {
+	// Moving the start later may not leave an approved or paid timesheet
+	// outside the resulting window: paid work before the new start stays
+	// uncovered, which blocks the update.
+	if hasPaidBeforeNewStart {
 		return domain.NewValidationError(constants.MsgAssignmentUpdateExcludesPaidTimesheetsVN)
 	}
 
@@ -160,8 +146,8 @@ func (s *EmployeeAssignmentService) ValidateAssignmentUpdateWithData(
 }
 
 // ValidateDateOverlap validates that new assignment doesn't overlap with existing ones for the same project
-func (s *EmployeeAssignmentService) ValidateDateOverlap(ctx context.Context, employeeID, projectID uint, startDate time.Time, endDate *time.Time) error {
-	overlapping, err := s.projectEmployeeRepo.GetOverlappingAssignments(ctx, employeeID, &startDate, endDate)
+func (s *EmployeeAssignmentService) ValidateDateOverlap(ctx context.Context, employeeID, projectID uint, startDate time.Time) error {
+	overlapping, err := s.projectEmployeeRepo.GetOverlappingAssignments(ctx, employeeID, &startDate, nil)
 	if err != nil {
 		return err
 	}
@@ -177,28 +163,17 @@ func (s *EmployeeAssignmentService) ValidateDateOverlap(ctx context.Context, emp
 
 			// Only reject overlap if there are timesheets attached
 			if timesheetCount > 0 {
-				// Calculate suggested next available start date (day after existing assignment ends)
-				var suggestedDate string
-				if assignment.LastDate != nil {
-					suggestedDate = assignment.LastDate.AddDate(0, 0, 1).Format("2006-01-02")
-				} else {
-					// If existing assignment has no end date, suggest tomorrow
-					suggestedDate = clock.Now().AddDate(0, 0, 1).Format("2006-01-02")
-				}
+				// Existing assignments are open-ended rows, so the next free
+				// start is simply tomorrow.
+				suggestedDate := clock.Now().AddDate(0, 0, 1).Format("2006-01-02")
 
 				// Build helpful error message with context
-				existingPeriod := assignment.StartDate.Format("2006-01-02")
-				if assignment.LastDate != nil {
-					existingPeriod += " đến " + assignment.LastDate.Format("2006-01-02")
-				} else {
-					existingPeriod += " (không có ngày kết thúc)"
-				}
+				existingPeriod := assignment.StartDate.Format("2006-01-02") + " (không có ngày kết thúc)"
 
 				message := constants.MsgAssignmentOverlapVN + ". Phân công hiện tại: " + existingPeriod + ". Vui lòng chọn ngày bắt đầu từ " + suggestedDate + " trở đi."
 
 				return domain.NewConflictError(message).
 					WithContext("existing_start_date", assignment.StartDate.Format("2006-01-02")).
-					WithContext("existing_end_date", assignment.LastDate).
 					WithContext("suggested_start_date", suggestedDate).
 					WithContext("timesheet_count", timesheetCount)
 			}

@@ -35,13 +35,11 @@ func NewAuthorizationMiddleware(authorizationService *authservice.AuthorizationS
 
 // isScopedPartnerRole reports whether the role is an external/partner-facing
 // role that must be constrained to project- and employee-level ownership
-// scoping. Both partner and adv_partner are external roles and must pass
-// CanUserAccessProject / CanUserAccessEmployee before reaching per-record
-// endpoints; without this gate, adv_partner bypasses per-record authorization.
-// Admins are omniscient and employees reach only their own data via other
-// checks, so neither is scoped here.
+// scoping. A quanly must pass CanUserAccessProject / CanUserAccessEmployee
+// before reaching per-record endpoints. Admins are omniscient and employees
+// reach only their own data via other checks, so neither is scoped here.
 func isScopedPartnerRole(userRole string) bool {
-	return userRole == string(domain.RolePartner) || userRole == string(domain.RoleAdvPartner)
+	return userRole == string(domain.RoleQuanly)
 }
 
 func (m *AuthorizationMiddleware) Authorize() gin.HandlerFunc {
@@ -75,7 +73,7 @@ func (m *AuthorizationMiddleware) Authorize() gin.HandlerFunc {
 		action := c.Request.Method
 
 		// Special handling for timesheet modifications - check if approved
-		if strings.Contains(resource, "/timesheets/") && (action == "PUT" || action == "DELETE") && userRole == "partner" {
+		if strings.Contains(resource, "/timesheets/") && (action == "PUT" || action == "DELETE") && userRole == "quanly" {
 			timesheetID := extractTimesheetID(resource)
 			if !m.authorizationService.CanAccessTimesheet(c.Request.Context(), userRole, resource, action, timesheetID) {
 				m.logAuthorizationDenied(userID, userRole, resource, action, "approved timesheet modification")
@@ -101,7 +99,7 @@ func (m *AuthorizationMiddleware) Authorize() gin.HandlerFunc {
 		// otp_verified=true (set only after a successful /auth/login/verify).
 		// Flag off → no-op. Keep this role set in sync with
 		// AuthService.requiresOTP.
-		if m.otpConfig.Enabled && (userRole == string(domain.RoleAdmin) || userRole == string(domain.RolePartner) || userRole == string(domain.RoleAccountant)) {
+		if m.otpConfig.Enabled && (userRole == string(domain.RoleAdmin) || userRole == string(domain.RoleQuanly) || userRole == string(domain.RoleGiamdoc)) {
 			otpVerified, _ := c.Get("otp_verified")
 			verified, _ := otpVerified.(bool)
 			if !verified {

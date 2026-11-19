@@ -534,25 +534,108 @@ CREATE TABLE `billing_reports` (
   UNIQUE KEY `uq_billing_reports_work_month` (`work_month`),
   CONSTRAINT `fk_billing_reports_generator` FOREIGN KEY (`generated_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+CREATE DATABASE IF NOT EXISTS `payroll_db` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE `payroll_db`;
 
 CREATE TABLE `billing_report_lines` (
+CREATE TABLE `users` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `report_id` bigint unsigned NOT NULL,
   `ky` tinyint unsigned NOT NULL,
   `distinct_count` int NOT NULL DEFAULT '0',
   `amount_vnd` bigint NOT NULL DEFAULT '0',
+  `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `password` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `fullname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `last_login` datetime(3) DEFAULT NULL,
+  `tokens_invalid_before` datetime(3) DEFAULT NULL COMMENT 'when set, any JWT issued before this instant is rejected on validate; used by RevokeUserTokens',
+  `otp_failed_attempts` int NOT NULL DEFAULT '0' COMMENT 'consecutive failed OTP verifies; reset on success',
+  `otp_locked_until` datetime(3) DEFAULT NULL COMMENT 'when set, OTP-gated login is refused until this instant',
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `mobile` varchar(15) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_billing_report_line` (`report_id`,`ky`),
   CONSTRAINT `fk_billing_report_lines_report` FOREIGN KEY (`report_id`) REFERENCES `billing_reports` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `idx_users_username` (`username`),
+  KEY `idx_users_email_nonunique` (`email`),
+  KEY `idx_users_email` (`email`),
+  KEY `idx_users_last_login` (`last_login`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Seed settings (subscription fee)
 INSERT INTO `settings` (`key`,`value`,`value_type`) VALUES
   ('subscription_fee_per_employee_per_ky_vnd','10000','number');
+CREATE TABLE `employees` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `fullname` varchar(255) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `cccd` varchar(255) NOT NULL COMMENT '''Citizen ID - Can cong cong dan (12 digits)''',
+  `address` text,
+  `mobile` varchar(15) DEFAULT NULL,
+  `date_of_birth` date DEFAULT NULL,
+  `created_by` bigint unsigned NOT NULL,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `search_normalized` varchar(1000) GENERATED ALWAYS AS (lower(concat(coalesce(`fullname`,_utf8mb4''),_utf8mb4' ',coalesce(`email`,_utf8mb4''),_utf8mb4' ',coalesce(`cccd`,_utf8mb4''),_utf8mb4' ',coalesce(`mobile`,_utf8mb4'')))) VIRTUAL,
+  `user_id` bigint unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_employees_creator` (`created_by`),
+  KEY `idx_employees_user_id` (`user_id`),
+  KEY `idx_employees_created_at` (`created_at`),
+  KEY `idx_employees_search` (`fullname`,`cccd`),
+  KEY `idx_employees_mobile` (`mobile`),
+  KEY `idx_employees_search_normalized` (`search_normalized`(255)),
+  CONSTRAINT `fk_employees_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_employees_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 
+CREATE TABLE `projects` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `client_name` varchar(255) DEFAULT NULL COMMENT '''e.g. Nha may san xuat hoa my pham VERICO''',
+  `name` varchar(255) NOT NULL COMMENT '''e.g. San xuat xa phong''',
+  `code` varchar(255) DEFAULT NULL COMMENT '''Initials of client_name and YYMM of created_at date or manually input by users''',
+  `description` text COMMENT '''Rich text format supported''',
+  `total_payout_vnd` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT '''Total paid to employees to date''',
+  `pending_payable_vnd` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT '''Pending payment to employees to date''',
+  `project_status` enum('draft','active','paused','completed','cancelled') NOT NULL DEFAULT 'draft',
+  `created_by` bigint unsigned NOT NULL,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  `off_days` tinyint unsigned NOT NULL DEFAULT '0' COMMENT '''Bitmask of weekly off days: bit0=Sun,bit1=Mon,...,bit6=Sat. Default 0 = no fixed off days''',
+  `owner_revoked_at` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_projects_code` (`code`),
+  KEY `fk_projects_creator` (`created_by`),
+  KEY `idx_projects_created_at` (`created_at`),
+  KEY `idx_projects_search_name` (`name`),
+  KEY `idx_projects_search_code` (`code`),
+  KEY `idx_projects_search_client` (`client_name`),
+  KEY `idx_projects_status_created_by` (`project_status`,`created_by`),
+  KEY `idx_projects_created_by_dates` (`created_by`,`created_at`,`updated_at`),
+  CONSTRAINT `fk_projects_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
 
 SET FOREIGN_KEY_CHECKS=1;
 ```
+CREATE TABLE `project_employees` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `project_id` bigint unsigned NOT NULL,
+  `employee_id` bigint unsigned NOT NULL,
+  `employee_name` varchar(255) NOT NULL,
+  `employee_cccd` varchar(255) NOT NULL COMMENT '''Citizen ID - Can cong cong dan (12 digits)''',
+  `employee_code` varchar(255) DEFAULT NULL COMMENT '''Factory-assigned code, optional''',
+  `start_date` date NOT NULL,
+  `created_by` bigint unsigned NOT NULL,
+  `created_at` datetime(3) DEFAULT NULL,
+  `updated_at` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_project_employees_creator` (`created_by`),
+  KEY `fk_project_employees_project` (`project_id`),
+  KEY `fk_project_employees_employee` (`employee_id`),
+  CONSTRAINT `fk_project_employees_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_project_employees_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
+  CONSTRAINT `fk_project_employees_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
 
 ## 4. Track A — Build the New Model (PAYSUB-2…6)
 
@@ -562,8 +645,11 @@ SET FOREIGN_KEY_CHECKS=1;
 | A2 Upload pipeline | Format: the existing weekly-payment **result Excel** — rows keyed by CCCD (donor matching: `bcc_import_weekly_payment.go:58-98` — CCCD first, then STK-by-name, then name fallback). Job-based ingest: `POST /api/v1/billing/uploads` (multipart) → job row → parse → verify. Job states, locks, result/audit copied from the bcc_import file family; FileHash idempotency from `domain/settlement_upload.go` (identical hash → return prior result) | bcc_import lifecycle files |
 | A3 Verification | **Per-row processing (current donor behaviour)**: each parsed row (CCCD + amount) is processed independently against approved timesheets whose `KyFromWorkDay(Date)` = upload's Kỳ and month. Matched row → same-tx `timesheets SET payment_status='paid', payment_date=…` + upsert `ky_paid_records` (amount summed per employee-Kỳ). Failed row (unknown CCCD, no timesheet) → per-row error, upload continues; upload status `verified` when ≥1 row processed, `rejected` only when every row failed → then all-admin push (D10) via the `WalletBalanceAlertService` fan-out mechanism (keep the push util, delete the alert job). Timesheets not in the file stay `pending` | clock/pay_cycle, bcc validation style, settlement per-row iteration |
 | A4 Kỳ read model | **One row per employee per Kỳ** (founder: the billing atom): `UNIQUE(employee_id, ky, work_month)`; `paid_amount` = SUM of the employee's customer-paid timesheet amounts across all projects in that Kỳ. Monthly billing = rows of the month × fee; distinct-CCCD is the row count | — |
+| A3 Verification | **Per-row processing (current donor behaviour)**: each parsed row (CCCD + amount) is processed independently against approved timesheets whose `KyFromWorkDay(Date)` = upload's Kỳ and month. Matched row → same-tx `timesheets SET payment_status='paid', payment_date=…` + upsert `employee_pay_cycles` (amount summed per employee-Kỳ). Failed row (unknown CCCD, no timesheet) → per-row error, upload continues; upload status `verified` when ≥1 row processed, `rejected` only when every row failed → then all-admin push (D10) via the `WalletBalanceAlertService` fan-out mechanism (keep the push util, delete the alert job). Timesheets not in the file stay `pending` | clock/pay_cycle, bcc validation style, settlement per-row iteration |
+| A4 Kỳ read model | **One row per employee per Kỳ** (founder: the billing atom): `UNIQUE(employee_id, cycle, work_month)`; `paid_amount` = SUM of the employee's customer-paid timesheet amounts across all projects in that Kỳ. Monthly billing = rows of the month × fee; distinct-CCCD is the row count | — |
 | A5 Billing report | Scheduler job `generate_monthly_billing_report` (cron `0 9 1 * *`, replaces the removed `daily_receivable_reconciliation` slot): builds `billing_reports` + lines with fee snapshot → renders Excel via `app/services/excel/` with the D24 layout — **Summary sheet** (per-Kỳ distinct × fee + total) + **one sheet per project** listing that project's payment history (employee, CCCD, Kỳ, amount, payment date/reference) → stores file → push/portal notice. Manual regenerate endpoint for admin | excel exporters, scheduler pattern |
 | A6 UI | Quanly portal: Upload page (Kỳ selector + file + status/history) and Report page (month list → Excel download) — replaces `PaymentHistoryPage` content. Admin: fee field in reduced Settings `general` tab | quanly portal pages (`pages/partner/` legacy dir) |
+| A7 Tổng quan dashboard (FR-6) | Endpoints: GET /billing/dashboard/paid-series?project_id=&from=&to= (per-day paid-employee count per project, from customer-paid timesheets) and paid-amount-series (same substrate, SUM(amount)); per-month view reuses GET /billing/ky-paid-records summary + fee setting (BR-1). UI replaces the removed FinancialChart widgets on the Tổng quan page (desktop + mobile) | timesheet repo + clock.KyFromWorkDay + existing chart components |
 
 Track A gates (repo rules): new integration tests in `backend/tests/integration` (upload → verify → count → report happy path + mismatch rejection + idempotent re-upload); UI parity desktop 1280 / mobile 390 for admin + quanly; `make api-test`, `pnpm lint && pnpm type-check`.
 

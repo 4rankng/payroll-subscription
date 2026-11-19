@@ -12,7 +12,6 @@ import (
 	"api-server/internal/domain"
 	"api-server/internal/infra/persistence/common"
 	"api-server/internal/infra/persistence/repositories"
-	"api-server/internal/pkg/utils"
 
 	"gorm.io/gorm"
 )
@@ -55,15 +54,6 @@ func (r *TimesheetRepository) GetByIDsWithoutRelations(ctx context.Context, ids 
 
 func (r *TimesheetRepository) GetTimesheetDatesByIDs(ctx context.Context, ids []uint) (map[uint]time.Time, error) {
 	return r.queryRepo.GetTimesheetDatesByIDs(ctx, ids)
-}
-
-func (r *TimesheetRepository) GetByTransactionID(ctx context.Context, transactionID uint) ([]*domain.Timesheet, error) {
-	var timesheets []*domain.Timesheet
-	db := r.getDB(ctx)
-	if err := db.Where("transaction_id = ?", transactionID).Find(&timesheets).Error; err != nil {
-		return nil, err
-	}
-	return timesheets, nil
 }
 
 func (r *TimesheetRepository) Update(ctx context.Context, timesheet *domain.Timesheet) error {
@@ -126,21 +116,6 @@ func (r *TimesheetRepository) BulkReject(ctx context.Context, ids []uint, reject
 	return r.commandRepo.BulkReject(ctx, ids, rejectionReason)
 }
 
-func (r *TimesheetRepository) RejectUnpaidByProjectDateRange(
-	ctx context.Context,
-	projectID uint,
-	fromDate time.Time,
-	toDate time.Time,
-	rejectionReason string,
-	rejectedBy uint,
-) (int64, error) {
-	return r.commandRepo.RejectUnpaidByProjectDateRange(ctx, projectID, fromDate, toDate, rejectionReason, rejectedBy)
-}
-
-func (r *TimesheetRepository) ResetForApprovedEditRequest(ctx context.Context, timesheetID, requestID uint) error {
-	return r.commandRepo.ResetForApprovedEditRequest(ctx, timesheetID, requestID)
-}
-
 func (r *TimesheetRepository) Reject(ctx context.Context, id uint, rejectionReason string) error {
 	return r.commandRepo.Reject(ctx, id, rejectionReason)
 }
@@ -155,10 +130,6 @@ func (r *TimesheetRepository) ResetAllApproved(ctx context.Context) (int64, erro
 
 func (r *TimesheetRepository) GetSummaryStats(ctx context.Context, filters domain.TimesheetFilters) (*domain.TimesheetSummaryStats, error) {
 	return r.analyticsRepo.GetSummaryStats(ctx, filters)
-}
-
-func (r *TimesheetRepository) GetAccrualCohort(ctx context.Context, filters domain.TimesheetFilters) ([]domain.TimesheetAccrualDailyRow, error) {
-	return r.analyticsRepo.GetAccrualCohort(ctx, filters)
 }
 
 func (r *TimesheetRepository) GetByProjectEmployeeDatePaytype(ctx context.Context, projectID, employeeID uint, date time.Time, paytype string) (*domain.Timesheet, error) {
@@ -182,13 +153,6 @@ func (r *TimesheetRepository) GetSummaryByProject(ctx context.Context, projectID
 }
 
 // Note: applyFilters method has been moved to TimesheetQueryBuilder
-
-func (r *TimesheetRepository) SetForcePayroll(ctx context.Context, id uint, flag bool) error {
-	return r.DB.WithContext(ctx).
-		Model(&domain.Timesheet{}).
-		Where("id = ?", id).
-		Update("force_payroll", flag).Error
-}
 
 // GetPendingApprovalCount returns count of timesheets pending approval within date range
 func (r *TimesheetRepository) GetPendingApprovalCount(ctx context.Context, startDate, endDate time.Time) (int, error) {
@@ -267,7 +231,7 @@ func (r *TimesheetRepository) BulkUpdatePaymentStatus(ctx context.Context, updat
 		for i, u := range updates {
 			ids[i] = u.TimesheetID
 			switch u.PaymentStatus {
-			case domain.PaymentStatusPaid, domain.PaymentStatusFailed, domain.PaymentStatusCancelled:
+			case domain.PaymentStatusPaid, domain.PaymentStatusCancelled:
 				settlementIDs = append(settlementIDs, u.TimesheetID)
 			default:
 				approvalRequiredIDs = append(approvalRequiredIDs, u.TimesheetID)
@@ -460,7 +424,6 @@ func (r *TimesheetRepository) HasProtectedTimesheetsByEmployeeID(ctx context.Con
 			"payment_status IN ? OR timesheet_status IN ?",
 			[]domain.PaymentStatus{
 				domain.PaymentStatusPaid,
-				domain.PaymentStatusFailed,
 				domain.PaymentStatusCancelled,
 			},
 			[]domain.TimesheetStatus{
@@ -550,121 +513,6 @@ func (r *TimesheetRepository) HasTimesheetsForAssignment(ctx context.Context, pr
 	return count > 0, nil
 }
 
-// GetPaymentHistories retrieves payment histories by aggregating paid timesheets using SQL.
-// Returns one record per employee per payment date per project to show all payment occurrences.
-func (r *TimesheetRepository) GetPaymentHistories(ctx context.Context, filters domain.PaymentHistoryFilters) ([]*domain.PaymentHistory, int64, error) {
-	// Build base aggregation query with all filters pushed to SQL
-	baseQuery := r.DB.WithContext(ctx).
-		Table("timesheets t").
-		Select(`t.employee_id, t.project_id, DATE(t.paid_at) as paid_date, MAX(t.paid_at) as paid_at, SUM(t.paid_amount) as total_paid`).
-		Where("t.payment_status = ?", domain.PaymentStatusPaid).
-		Where("t.paid_at IS NOT NULL").
-		Where("t.deleted_at IS NULL")
-
-	// Apply project filter
-	if len(filters.ProjectIDs) > 0 {
-		baseQuery = baseQuery.Where("t.project_id IN ?", filters.ProjectIDs)
-	}
-
-	// Apply employee filter
-	if len(filters.EmployeeIDs) > 0 {
-		baseQuery = baseQuery.Where("t.employee_id IN ?", filters.EmployeeIDs)
-	}
-
-	// Apply paid_at date range
-	if filters.FromDate != nil {
-		baseQuery = baseQuery.Where("t.paid_at >= ?", *filters.FromDate)
-	}
-	if filters.ToDate != nil {
-		endOfDay := filters.ToDate.Add(24*time.Hour - time.Nanosecond)
-		baseQuery = baseQuery.Where("t.paid_at <= ?", endOfDay)
-	}
-
-	// Apply partner access control via JOINs
-	if filters.EmployeeCreatedBy != nil {
-		baseQuery = baseQuery.Joins("JOIN employees e ON e.id = t.employee_id AND e.created_by = ? AND e.deleted_at IS NULL", *filters.EmployeeCreatedBy)
-	}
-	if filters.EmployeeAssignedByPartner != nil {
-		baseQuery = baseQuery.Joins("JOIN project_employees pe ON pe.employee_id = t.employee_id AND pe.project_id = t.project_id AND pe.created_by = ? AND pe.deleted_at IS NULL", *filters.EmployeeAssignedByPartner)
-	}
-
-	baseQuery = baseQuery.Group("t.employee_id, t.project_id, DATE(t.paid_at)")
-
-	// Apply position filter via subquery
-	if filters.Position != "" {
-		baseQuery = baseQuery.Where(`EXISTS (
-			SELECT 1 FROM project_employees pe2
-			WHERE pe2.employee_id = t.employee_id
-				AND pe2.project_id = t.project_id
-				AND pe2.position = ?
-				AND pe2.deleted_at IS NULL
-		)`, filters.Position)
-	}
-
-	// Apply search filter on employee fullname/CCCD
-	if filters.Search != "" {
-		normalizedSearch := utils.NormalizeVietnameseForSearch(filters.Search)
-		baseQuery = baseQuery.Where(`EXISTS (
-			SELECT 1 FROM employees e2
-			WHERE e2.id = t.employee_id
-				AND (e2.search_normalized LIKE ? OR e2.cccd LIKE ?)
-				AND e2.deleted_at IS NULL
-		)`, normalizedSearch, "%"+filters.Search+"%")
-	}
-
-	// Count total aggregated records
-	countQuery := r.DB.WithContext(ctx).Table("(?) as agg", baseQuery)
-	var totalCount int64
-	if err := countQuery.Count(&totalCount).Error; err != nil {
-		return nil, 0, r.errorHandler.HandleListError(err, "payment histories")
-	}
-
-	// Determine sort column
-	sortBy := "paid_at"
-	switch filters.SortBy {
-	case "employee_name":
-		sortBy = "e3.fullname"
-	case "amount":
-		sortBy = "total_paid"
-	case "project_name":
-		sortBy = "p.name"
-	}
-	// Defensive: constrain to a safe identifier + ASC/DESC even though the
-	// switch above already maps to fixed literals.
-	sortBy = common.SanitizeSortColumn(sortBy, "paid_at")
-	sortOrder := common.SanitizeSortOrder(filters.SortOrder, "DESC")
-
-	// Fetch paginated results with employee/project names and position
-	selectQuery := r.DB.WithContext(ctx).
-		Table("(?) as agg", baseQuery).
-		Select(`agg.employee_id, agg.project_id, agg.paid_at, agg.total_paid as total_paid_amount,
-			e3.fullname as employee_name, e3.cccd as employee_cccd,
-			p.name as project_name,
-			(SELECT pe3.position FROM project_employees pe3
-				WHERE pe3.employee_id = agg.employee_id
-					AND pe3.project_id = agg.project_id
-					AND pe3.deleted_at IS NULL
-				ORDER BY pe3.created_at DESC LIMIT 1) as position`).
-		Joins("JOIN employees e3 ON e3.id = agg.employee_id AND e3.deleted_at IS NULL").
-		Joins("JOIN projects p ON p.id = agg.project_id AND p.deleted_at IS NULL").
-		Order(sortBy + " " + sortOrder)
-
-	// Handle special case: return all results
-	if filters.Limit != -1 && filters.Limit > 0 {
-		selectQuery = selectQuery.Limit(filters.Limit)
-	}
-	if filters.Offset > 0 {
-		selectQuery = selectQuery.Offset(filters.Offset)
-	}
-
-	var results []*domain.PaymentHistory
-	if err := selectQuery.Scan(&results).Error; err != nil {
-		return nil, 0, r.errorHandler.HandleListError(err, "payment histories")
-	}
-
-	return results, totalCount, nil
-}
-
 // GetTotalPaidSalary returns the total paid salary of all time
 func (r *TimesheetRepository) GetTotalPaidSalary(ctx context.Context) (int64, error) {
 	var total int64
@@ -693,72 +541,6 @@ func (r *TimesheetRepository) GetPendingSalaryForMonth(ctx context.Context, star
 		Scan(&total).Error
 
 	return total, err
-}
-
-// GetPendingSalaryForMonthBySchedule computes pending salary by payment schedule.
-// Weekly: use caller date range directly.
-// Monthly: derive the actual salary window from project's salary_period_from/to.
-func (r *TimesheetRepository) GetPendingSalaryForMonthBySchedule(
-	ctx context.Context,
-	startDate, endDate time.Time,
-	schedule domain.PaymentSchedule,
-) (int64, error) {
-
-	if schedule == domain.PaymentScheduleWeekly {
-		return r.sumPendingWeekly(ctx, startDate, endDate)
-	}
-
-	// Monthly: resolve real range once, not in SQL
-	// Example: salary_period_from/to = 26 → 25 means 26 previous month to 25 this month
-	// Resolve using helper
-	periodStart, periodEnd := deriveMonthlySalaryWindow(startDate)
-
-	return r.sumPendingMonthly(ctx, periodStart, periodEnd)
-}
-
-// deriveMonthlySalaryWindow calculates the salary period window for monthly schedules
-// Returns the start and end dates for the salary period that includes the reference date
-func deriveMonthlySalaryWindow(ref time.Time) (time.Time, time.Time) {
-	// ref is any date inside the target month
-	year, month, _ := ref.Date()
-	loc := ref.Location()
-
-	// Get previous month
-	prev := ref.AddDate(0, -1, 0)
-	py, pm, _ := prev.Date()
-
-	return time.Date(py, pm, 26, 0, 0, 0, 0, loc), // inclusive start: 26th of previous month
-		time.Date(year, month, 25, 23, 59, 59, 999000000, loc) // inclusive end: 25th of current month
-}
-
-// sumPendingBySchedule calculates pending salary for a given payment schedule.
-func (r *TimesheetRepository) sumPendingBySchedule(
-	ctx context.Context,
-	start, end time.Time,
-	schedule domain.PaymentSchedule,
-) (int64, error) {
-	var total int64
-	err := r.DB.WithContext(ctx).
-		Table("timesheets t").
-		Joins("JOIN project_employees pe ON t.employee_id = pe.employee_id AND t.project_id = pe.project_id").
-		Where("t.date BETWEEN ? AND ?", start, end).
-		Where("t.timesheet_status IN ?", []domain.TimesheetStatus{
-			domain.TimesheetStatusApproved,
-			domain.TimesheetStatusPendingApproval,
-		}).
-		Where("t.payment_status <> ?", domain.PaymentStatusPaid).
-		Where("pe.payment_schedule = ?", schedule).
-		Select("COALESCE(SUM(t.amount), 0)").
-		Scan(&total).Error
-	return total, err
-}
-
-func (r *TimesheetRepository) sumPendingWeekly(ctx context.Context, start, end time.Time) (int64, error) {
-	return r.sumPendingBySchedule(ctx, start, end, domain.PaymentScheduleWeekly)
-}
-
-func (r *TimesheetRepository) sumPendingMonthly(ctx context.Context, start, end time.Time) (int64, error) {
-	return r.sumPendingBySchedule(ctx, start, end, domain.PaymentScheduleMonthly)
 }
 
 // GetPaidSalaryForMonth returns paid salary for timesheets with work date in the given month
@@ -834,98 +616,6 @@ func (r *TimesheetRepository) GetPaidSalaryByEmployee(ctx context.Context, start
 		salaryMap[r.EmployeeID] = r.TotalPaid
 	}
 	return salaryMap, nil
-}
-
-// BatchUpdatePaymentStatusToFailed marks timesheets as failed
-// Must be called within a transaction
-func (r *TimesheetRepository) BatchUpdatePaymentStatusToFailed(ctx context.Context, tx interface{}, timesheetIDs []uint) error {
-	db, err := common.ExtractDB(tx)
-	if err != nil {
-		return fmt.Errorf("invalid transaction: %w", err)
-	}
-
-	if len(timesheetIDs) == 0 {
-		return nil
-	}
-
-	return db.WithContext(ctx).
-		Model(&domain.Timesheet{}).
-		Where("id IN ?", timesheetIDs).
-		Update("payment_status", domain.PaymentStatusFailed).Error
-}
-
-// BulkUpdateRevenuePaid marks revenue as paid for specified timesheets
-func (r *TimesheetRepository) BulkUpdateRevenuePaid(ctx context.Context, timesheetIDs []uint) error {
-	if len(timesheetIDs) == 0 {
-		return nil
-	}
-
-	// Process in batches to avoid hitting MySQL's IN clause limit
-	const batchSize = 1000
-	for i := 0; i < len(timesheetIDs); i += batchSize {
-		end := i + batchSize
-		if end > len(timesheetIDs) {
-			end = len(timesheetIDs)
-		}
-
-		batch := timesheetIDs[i:end]
-		if err := r.getDB(ctx).
-			Model(&domain.Timesheet{}).
-			Where("id IN ?", batch).
-			Update("revenue_paid", true).Error; err != nil {
-			return fmt.Errorf("failed to update revenue_paid for batch %d-%d: %w", i, end, err)
-		}
-	}
-
-	return nil
-}
-
-// BulkUpdateRevenueReceivable updates revenue_receivable for specified timesheets using batch CASE WHEN.
-func (r *TimesheetRepository) BulkUpdateRevenueReceivable(ctx context.Context, updates map[uint]int64) error {
-	if len(updates) == 0 {
-		return nil
-	}
-
-	ids := make([]uint, 0, len(updates))
-	caseClauses := make([]string, 0, len(updates))
-	for id, val := range updates {
-		ids = append(ids, id)
-		caseClauses = append(caseClauses, fmt.Sprintf("WHEN %d THEN %d", id, val))
-	}
-
-	caseExpr := "CASE id " + strings.Join(caseClauses, " ") + " END"
-	return r.getDB(ctx).
-		Model(&domain.Timesheet{}).
-		Where("id IN ?", ids).
-		Update("revenue_receivable", gorm.Expr(caseExpr)).Error
-}
-
-// BulkUpdateTransactionID links timesheets to a single transaction
-func (r *TimesheetRepository) BulkUpdateTransactionID(ctx context.Context, transactionID uint, timesheetIDs []uint) error {
-	if len(timesheetIDs) == 0 {
-		return nil
-	}
-
-	// Get DB connection (respect existing transaction context)
-	db := r.getDB(ctx)
-
-	// Process in batches to avoid hitting MySQL's IN clause limit
-	const batchSize = 1000
-	for i := 0; i < len(timesheetIDs); i += batchSize {
-		end := i + batchSize
-		if end > len(timesheetIDs) {
-			end = len(timesheetIDs)
-		}
-
-		batch := timesheetIDs[i:end]
-		if err := db.Model(&domain.Timesheet{}).
-			Where("id IN ?", batch).
-			Update("transaction_id", transactionID).Error; err != nil {
-			return fmt.Errorf("failed to update transaction_id for batch %d-%d: %w", i, end, err)
-		}
-	}
-
-	return nil
 }
 
 // GetEmployeeTimesheetSummaryAggregated returns aggregated summary data using SQL aggregation

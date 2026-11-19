@@ -77,7 +77,7 @@ func (b *EmployeeStatisticsBuilder) BuildSummaryForCreatorQuery(createdBy uint) 
 	var sharedEmployeeIDs []uint
 	_ = b.db.Model(&domain.EmployeeUser{}).
 		Select("employee_id").
-		Where("user_id = ? AND deleted_at IS NULL", createdBy).
+		Where("user_id = ?", createdBy).
 		Pluck("employee_id", &sharedEmployeeIDs)
 
 	// Build query for accessible employees (owned, shared, or assigned)
@@ -87,13 +87,13 @@ func (b *EmployeeStatisticsBuilder) BuildSummaryForCreatorQuery(createdBy uint) 
 	if len(sharedEmployeeIDs) > 0 {
 		// Include owned, shared, and assigned employees
 		query = query.Where(
-			"employees.created_by = ? OR employees.id IN (?) OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+			"employees.created_by = ? OR employees.id IN (?) OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 			createdBy, sharedEmployeeIDs, createdBy, createdBy,
 		)
 	} else {
 		// Include owned and assigned employees if no shared employees found
 		query = query.Where(
-			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 			createdBy, createdBy, createdBy,
 		)
 	}
@@ -143,7 +143,7 @@ func (b *EmployeeStatisticsBuilder) BuildSummaryForCreatorProjectStatsQuery(acce
 
 	return b.db.Model(&domain.Employee{}).
 		Select(`
-			COUNT(DISTINCT CASE WHEN deleted_at IS NULL AND created_at BETWEEN ? AND ? THEN id END) as employees_hired_this_month
+			COUNT(DISTINCT CASE WHEN created_at BETWEEN ? AND ? THEN id END) as employees_hired_this_month
 		`, startOfMonth, endOfMonth).
 		Where("id IN ?", accessibleEmployeeIDs)
 }
@@ -156,12 +156,10 @@ func (b *EmployeeStatisticsBuilder) BuildSummaryForCreatorWorkingCountQuery(acce
 
 	return b.db.Model(&domain.Employee{}).
 		Where("id IN ?", accessibleEmployeeIDs).
-		Where(`deleted_at IS NULL AND EXISTS (
+		Where(`EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 }
 
@@ -169,17 +167,14 @@ func (b *EmployeeStatisticsBuilder) BuildSummaryForCreatorWorkingCountQuery(acce
 func (b *EmployeeStatisticsBuilder) BuildStatisticsQuery() *gorm.DB {
 	return b.db.Model(&domain.Employee{}).
 		Select(`
-			COUNT(*) as total_employees,
-			COUNT(CASE WHEN bank_account_number != '' AND bank_account_name != '' THEN 1 END) as with_banking_info
+			COUNT(*) as total_employees
 		`)
 }
 
 // BuildStatisticsAssignedQuery builds a query to count employees assigned to projects
 func (b *EmployeeStatisticsBuilder) BuildStatisticsAssignedQuery() *gorm.DB {
 	subQuery := b.db.Model(&domain.ProjectEmployee{}).
-		Select("DISTINCT employee_id").
-		Where("deleted_at IS NULL").
-		Where("(last_date IS NULL OR last_date > NOW())")
+		Select("DISTINCT employee_id")
 
 	return b.db.Model(&domain.Employee{}).
 		Where("id IN (?)", subQuery)
@@ -190,7 +185,6 @@ func (b *EmployeeStatisticsBuilder) BuildRecentEmployeesQuery(startDate, endDate
 	query := b.db.Model(&domain.Employee{}).
 		Where("created_at BETWEEN ? AND ?", startDate, endDate).
 		Preload("Creator").
-		Preload("Bank").
 		Order("created_at DESC")
 
 	if limit > 0 {
@@ -226,20 +220,20 @@ func (b *EmployeeStatisticsBuilder) BuildGetAccessibleEmployeeIDsQuery(createdBy
 	var sharedEmployeeIDs []uint
 	_ = b.db.Model(&domain.EmployeeUser{}).
 		Select("employee_id").
-		Where("user_id = ? AND deleted_at IS NULL", createdBy).
+		Where("user_id = ?", createdBy).
 		Pluck("employee_id", &sharedEmployeeIDs)
 
 	// Apply the same accessibility logic used in the List method
 	if len(sharedEmployeeIDs) > 0 {
 		// Include owned, shared, and assigned employees
 		query = query.Where(
-			"employees.created_by = ? OR employees.id IN (?) OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+			"employees.created_by = ? OR employees.id IN (?) OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 			createdBy, sharedEmployeeIDs, createdBy, createdBy,
 		)
 	} else {
 		// Include owned and assigned employees if no shared employees found
 		query = query.Where(
-			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 			createdBy, createdBy, createdBy,
 		)
 	}
@@ -312,18 +306,6 @@ func (b *EmployeeStatisticsBuilder) applyFilters(query *gorm.DB, filters domain.
 		// Include the entire day by adding 23:59:59
 		endOfDay := timeutil.EndOfDay(*filters.ToDate)
 		query = query.Where("employees.created_at <= ?", endOfDay)
-	}
-
-	// Filter by payment schedule (via project_employees join)
-	if filters.PaymentSchedule != "" {
-		query = query.Where(`EXISTS (
-			SELECT 1 FROM project_employees pe
-			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
-			AND pe.last_date IS NULL
-			AND pe.start_date <= NOW()
-			AND pe.payment_schedule = ?
-		)`, filters.PaymentSchedule)
 	}
 
 	// Search functionality with Vietnamese normalization using virtual column

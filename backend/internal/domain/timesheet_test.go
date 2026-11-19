@@ -123,25 +123,19 @@ func TestTimesheet_IsValid(t *testing.T) {
 
 func TestTimesheet_CanBeEdited(t *testing.T) {
 	ts := &Timesheet{
-		Status:      TimesheetStatusPendingApproval,
-		AllowedEdit: false,
+		Status: TimesheetStatusPendingApproval,
 	}
 
 	// Should be editable when pending
 	assert.True(t, ts.CanBeEdited())
 
-	// Should not be editable when approved (unless explicitly allowed)
+	// Should not be editable when approved
 	ts.Status = TimesheetStatusApproved
 	assert.False(t, ts.CanBeEdited())
 
-	// Should be editable if allowed_edit flag is true
-	ts.AllowedEdit = true
-	assert.True(t, ts.CanBeEdited())
-
-	// Should not be editable when rejected
+	// Should be editable when rejected
 	ts.Status = TimesheetStatusRejected
-	ts.AllowedEdit = false
-	assert.True(t, ts.CanBeEdited()) // rejected timesheets can be edited by default
+	assert.True(t, ts.CanBeEdited())
 }
 
 func TestTimesheet_CalculateAmount(t *testing.T) {
@@ -150,19 +144,15 @@ func TestTimesheet_CalculateAmount(t *testing.T) {
 		PayRate:     100000,
 	}
 
-	// Standard projects price hours x rate.
-	assert.Equal(t, int64(8*100000), ts.CalculateAmount(false))
-	// Flexible projects price per shift: the rate is the amount.
-	assert.Equal(t, int64(100000), ts.CalculateAmount(true))
+	// Amounts price hours x rate.
+	assert.Equal(t, int64(8*100000), ts.CalculateAmount())
 }
 
 func TestComputeTimesheetAmount(t *testing.T) {
-	// Standard: hours x rate
-	assert.Equal(t, int64(800000), ComputeTimesheetAmount(false, 8.0, 100000))
-	assert.Equal(t, int64(150000), ComputeTimesheetAmount(false, 1.5, 100000))
-	// Flexible: the rate is the amount, hours ignored
-	assert.Equal(t, int64(100000), ComputeTimesheetAmount(true, 8.0, 100000))
-	assert.Equal(t, int64(100000), ComputeTimesheetAmount(true, 0, 100000))
+	// hours x rate
+	assert.Equal(t, int64(800000), ComputeTimesheetAmount(8.0, 100000))
+	assert.Equal(t, int64(150000), ComputeTimesheetAmount(1.5, 100000))
+	assert.Equal(t, int64(0), ComputeTimesheetAmount(0, 100000))
 }
 
 func TestTimesheet_IsWeekend(t *testing.T) {
@@ -219,9 +209,6 @@ func TestTimesheet_IsPaid(t *testing.T) {
 
 	ts.PaymentStatus = PaymentStatusPending
 	assert.False(t, ts.IsPaid())
-
-	ts.PaymentStatus = PaymentStatusFailed
-	assert.True(t, ts.IsPaid())
 
 	ts.PaymentStatus = PaymentStatusCancelled
 	assert.True(t, ts.IsPaid())

@@ -31,7 +31,7 @@ func NewBillingHandler(uploads *billing.TransferUploadService, reports *billing.
 // processable rows) already fired the D10 all-admin push inside the service.
 func (h *BillingHandler) Upload(c *gin.Context) {
 	ky, err := strconv.Atoi(c.PostForm("ky"))
-	if err != nil || ky < 1 || ky > 4 {
+	if err != nil || cycle < 1 || cycle > 4 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ky phải là số 1..4"})
 		return
 	}

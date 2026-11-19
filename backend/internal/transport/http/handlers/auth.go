@@ -10,8 +10,8 @@ import (
 	"api-server/internal/app/services/employee"
 	passwordreset "api-server/internal/app/services/passwordreset"
 	"api-server/internal/app/services/user"
-	"api-server/internal/app/services/zaloreset"
 	"api-server/internal/constants"
+	"api-server/internal/domain"
 	"api-server/internal/transport/http/helpers"
 	"api-server/internal/transport/http/middleware"
 	"api-server/internal/transport/http/response"
@@ -23,19 +23,17 @@ type AuthHandler struct {
 	authService          *auth.AuthService
 	userService          *user.UserService
 	passwordResetService *passwordreset.Service
-	zaloResetService     *zaloreset.Service
 	// Session cookie parameters (PAYR-37B item 4): Max-Age for freshly minted
 	// tokens and the Secure flag (on in production, off in dev).
 	cookieTTL    time.Duration
 	cookieSecure bool
 }
 
-func NewAuthHandler(authService *auth.AuthService, userService *user.UserService, passwordResetService *passwordreset.Service, zaloResetService *zaloreset.Service, cookieTTL time.Duration, cookieSecure bool) *AuthHandler {
+func NewAuthHandler(authService *auth.AuthService, userService *user.UserService, passwordResetService *passwordreset.Service, cookieTTL time.Duration, cookieSecure bool) *AuthHandler {
 	return &AuthHandler{
 		authService:          authService,
 		userService:          userService,
 		passwordResetService: passwordResetService,
-		zaloResetService:     zaloResetService,
 		cookieTTL:            cookieTTL,
 		cookieSecure:         cookieSecure,
 	}
@@ -333,7 +331,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	// Employees who haven't changed their auto-assigned default password must
 	// be forced to set a real one — checked here (not in ToUserResponse) so
 	// list/admin views of many users never pay for a per-row hash compare.
-	if user.IsEmployee() {
+	if user.Role == domain.RoleNhanvien {
 		userResponse.MustChangePassword = h.userService.VerifyPasswordHash(employee.DefaultEmployeePassword, user.Password)
 	}
 	response.Success(c, userResponse, "User profile retrieved successfully")

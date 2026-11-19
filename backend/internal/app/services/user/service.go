@@ -109,7 +109,7 @@ func (s *UserService) GetUserSummary(ctx context.Context) (*dto.UserSummaryRespo
 	}
 
 	// Get partner count
-	totalPartners, err := s.UserRepo.CountByRole(ctx, domain.RolePartner)
+	totalPartners, err := s.UserRepo.CountByRole(ctx, domain.RoleQuanly)
 	if err != nil {
 		s.logger.Error("Failed to count partner users", "error", err)
 		return nil, err
@@ -124,7 +124,7 @@ func (s *UserService) GetUserSummary(ctx context.Context) (*dto.UserSummaryRespo
 	}
 
 	// Get total employees (users with role 'employee')
-	totalEmployees, err := s.UserRepo.CountByRole(ctx, domain.RoleEmployee)
+	totalEmployees, err := s.UserRepo.CountByRole(ctx, domain.RoleNhanvien)
 	if err != nil {
 		s.logger.Error("Failed to count employee users", "error", err)
 		return nil, err

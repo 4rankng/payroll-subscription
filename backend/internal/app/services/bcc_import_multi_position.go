@@ -214,24 +214,11 @@ func (s *BCCImportService) autoCreateMultiPositionSTK(
 	sort.Strings(availablePositions)
 
 	stkErr = s.transactionManager.WithTransaction(ctx, func(txCtx context.Context) error {
-		bankCache := make(map[string]*uint)
-
 		for _, row := range stkRows {
 			cccd := row.CCCD
 			fullName := row.FullName
 			if cccd == "" || fullName == "" {
 				continue
-			}
-
-			// Resolve bank ID.
-			var bankID *uint
-			if row.BankName != "" {
-				if cached, ok := bankCache[row.BankName]; ok {
-					bankID = cached
-				} else {
-					bankID = s.employeeService.ResolveBankID(txCtx, row.BankName)
-					bankCache[row.BankName] = bankID
-				}
 			}
 
 			// Check if employee exists.
@@ -252,10 +239,6 @@ func (s *BCCImportService) autoCreateMultiPositionSTK(
 					Mobile:    row.Mobile,
 					CreatedBy: uploaderID,
 				}
-				// Attach bank fields only when STK provides enough info to
-				// build a complete record; otherwise the profile is created
-				// without banking info and can be filled in later.
-				applySTKBankFields(emp, row, bankID, fullName)
 				createdEmp, createErr := s.employeeService.CreateEmployeeFromImport(txCtx, emp, uploaderID)
 				if createErr != nil {
 					importErrors = append(importErrors, domain.ImportError{
@@ -267,24 +250,7 @@ func (s *BCCImportService) autoCreateMultiPositionSTK(
 				emp = createdEmp
 			} else {
 				emp = existingEmp
-				if bankUpdates := buildSTKBankUpdates(emp, row, bankID, fullName); bankUpdates != nil {
-					if updateErr := s.employeeService.UpdateBankInfo(txCtx, emp.ID, bankUpdates); updateErr != nil {
-						slog.Error("BCCImport(MP): failed to update bank info for employee",
-							"employee_id", emp.ID, "error", updateErr)
-						importErrors = append(importErrors, domain.ImportError{
-							Employee: fullName,
-							Reason:   "Không thể cập nhật thông tin ngân hàng",
-						})
-					}
-				}
 
-				// Fill missing mobile from STK when employee has none.
-				if row.Mobile != "" && emp.Mobile == "" {
-					if err := s.employeeService.UpdateMobile(txCtx, emp.ID, row.Mobile); err != nil {
-						slog.Error("BCCImport(MP): failed to fill mobile for existing employee",
-							"employee_id", emp.ID, "error", err)
-					}
-				}
 				if emp.UserID == nil {
 					if err := s.ensureEmployeeUserAccount(txCtx, emp.ID); err != nil {
 						importErrors = append(importErrors, domain.ImportError{
@@ -322,17 +288,13 @@ func (s *BCCImportService) autoCreateMultiPositionSTK(
 					continue
 				}
 				assignment := &domain.ProjectEmployee{
-					ProjectID:       projectID,
-					EmployeeID:      emp.ID,
-					EmployeeName:    emp.Fullname,
-					EmployeeCCCD:    emp.CCCD,
-					Position:        empPosition,
-					StartDate:       startDate,
-					PaymentSchedule: string(domain.PaymentScheduleWeekly),
-					// New assignments start advance-request enabled (explicit;
-					// guards later full-row Saves from persisting the zero value).
-					AdvanceRequestEnabled: true,
-					CreatedBy:             uploaderID,
+					ProjectID:    projectID,
+					EmployeeID:   emp.ID,
+					EmployeeName: emp.Fullname,
+					EmployeeCCCD: emp.CCCD,
+					Position:     empPosition,
+					StartDate:    startDate,
+					CreatedBy:    uploaderID,
 				}
 				if createErr := s.employeeService.CreateAssignment(txCtx, assignment); createErr != nil {
 					importErrors = append(importErrors, domain.ImportError{
@@ -480,17 +442,6 @@ func (s *BCCImportService) buildMultiPositionEntries(
 					// Update lookup maps so subsequent sheets find the corrected position.
 					byCCCDAndPosition[assignment.EmployeeCCCD+"|"+strings.ToLower(sheet.Position)] = assignment
 				}
-			}
-
-			if assignment.PaymentSchedule == string(domain.PaymentScheduleFlexible) {
-				if !includeFlexibleEmployees {
-					importErrors = append(importErrors, domain.ImportError{
-						Employee: emp.FullName,
-						Reason:   "nhân viên lương linh hoạt không áp dụng BCC import",
-					})
-					continue
-				}
-				flexibleEmployeeIDs[assignment.EmployeeID] = struct{}{}
 			}
 
 			for _, entry := range emp.Entries {

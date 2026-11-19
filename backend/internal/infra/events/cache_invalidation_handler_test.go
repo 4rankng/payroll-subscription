@@ -45,44 +45,6 @@ func (m *mockCacheInvalidator) patterns() []string {
 	return append([]string(nil), m.calledPatterns...)
 }
 
-func TestCacheInvalidationHandler_HandlesLedgerEvents(t *testing.T) {
-	mockCache := newMockCacheInvalidator()
-	handler := NewCacheInvalidationHandler(mockCache)
-
-	event := domain.LedgerEntryCreatedEvent{
-		BaseEvent: domain.BaseEvent{
-			EventName: "LedgerEntryCreated",
-		},
-	}
-
-	if !handler.CanHandle(event.EventType()) {
-		t.Fatalf("expected handler to be able to handle Ledger events")
-	}
-
-	if err := handler.Handle(context.Background(), event); err != nil {
-		t.Fatalf("handler returned error: %v", err)
-	}
-
-	// Handler invalidates cache asynchronously; wait briefly for it to run.
-	select {
-	case <-mockCache.called:
-	case <-time.After(500 * time.Millisecond):
-		t.Fatalf("expected cache invalidation to be triggered for Ledger events")
-	}
-
-	foundDashboardPattern := false
-	for _, p := range mockCache.patterns() {
-		if p == "dashboard:*" {
-			foundDashboardPattern = true
-			break
-		}
-	}
-
-	if !foundDashboardPattern {
-		t.Fatalf("expected dashboard:* cache pattern to be invalidated, got %v", mockCache.patterns())
-	}
-}
-
 func TestCacheInvalidationHandler_HandlesTimesheetEvents(t *testing.T) {
 	mockCache := newMockCacheInvalidator()
 	handler := NewCacheInvalidationHandler(mockCache)

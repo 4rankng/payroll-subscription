@@ -118,7 +118,6 @@ func (s *EmployeeDomainService) CanDeleteEmployee(ctx context.Context, employeeI
 func (s *EmployeeDomainService) hasActiveProjectAssignment(ctx context.Context, employeeID uint) (bool, error) {
 	filters := domain.ProjectEmployeeFilters{
 		EmployeeID: &employeeID,
-		ActiveOnly: true,
 	}
 
 	assignments, err := s.projectEmployeeRepo.List(ctx, filters)
@@ -131,10 +130,8 @@ func (s *EmployeeDomainService) hasActiveProjectAssignment(ctx context.Context, 
 
 // GetUnassignedEmployeesAtDate gets employees who are not assigned to any project at the specified date
 func (s *EmployeeDomainService) GetUnassignedEmployeesAtDate(ctx context.Context, date time.Time, page, pageSize int) ([]*domain.Employee, error) {
-	// Get all active project assignments (active means LastDate is null or after the given date)
-	assignmentFilters := domain.ProjectEmployeeFilters{
-		ActiveOnly: true,
-	}
+	// Get all active project assignments (assignment rows are active by definition)
+	assignmentFilters := domain.ProjectEmployeeFilters{}
 
 	assignments, err := s.projectEmployeeRepo.List(ctx, assignmentFilters)
 	if err != nil {
@@ -144,11 +141,9 @@ func (s *EmployeeDomainService) GetUnassignedEmployeesAtDate(ctx context.Context
 	// Filter assignments that are active on the given date
 	assignedEmployeeIDs := make(map[uint]bool)
 	for _, assignment := range assignments {
-		// Assignment is active if start date <= given date and (end date is null or end date >= given date)
+		// Assignment is active if start date <= given date (rows are open-ended)
 		if assignment.StartDate.Before(date) || assignment.StartDate.Equal(date) {
-			if assignment.LastDate == nil || assignment.LastDate.After(date) || assignment.LastDate.Equal(date) {
-				assignedEmployeeIDs[assignment.EmployeeID] = true
-			}
+			assignedEmployeeIDs[assignment.EmployeeID] = true
 		}
 	}
 
@@ -176,10 +171,8 @@ func (s *EmployeeDomainService) GetUnassignedEmployeesAtDate(ctx context.Context
 
 // CountUnassignedEmployeesAtDate counts employees who are not assigned to any project at the specified date
 func (s *EmployeeDomainService) CountUnassignedEmployeesAtDate(ctx context.Context, date time.Time) (int64, error) {
-	// Get all active project assignments (active means LastDate is null or after the given date)
-	assignmentFilters := domain.ProjectEmployeeFilters{
-		ActiveOnly: true,
-	}
+	// Get all active project assignments (assignment rows are active by definition)
+	assignmentFilters := domain.ProjectEmployeeFilters{}
 
 	assignments, err := s.projectEmployeeRepo.List(ctx, assignmentFilters)
 	if err != nil {
@@ -189,11 +182,9 @@ func (s *EmployeeDomainService) CountUnassignedEmployeesAtDate(ctx context.Conte
 	// Filter assignments that are active on the given date
 	assignedEmployeeIDs := make(map[uint]bool)
 	for _, assignment := range assignments {
-		// Assignment is active if start date <= given date and (end date is null or end date >= given date)
+		// Assignment is active if start date <= given date (rows are open-ended)
 		if assignment.StartDate.Before(date) || assignment.StartDate.Equal(date) {
-			if assignment.LastDate == nil || assignment.LastDate.After(date) || assignment.LastDate.Equal(date) {
-				assignedEmployeeIDs[assignment.EmployeeID] = true
-			}
+			assignedEmployeeIDs[assignment.EmployeeID] = true
 		}
 	}
 

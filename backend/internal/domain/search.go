@@ -47,7 +47,6 @@ type SearchService interface {
 	Search(ctx context.Context, query string, filters SearchFilters) (*SearchResults, error)
 	SearchEmployees(ctx context.Context, query string, limit int) ([]*EmployeeWithProject, error)
 	SearchProjects(ctx context.Context, query string, limit int) ([]*Project, error)
-	SearchLedgerEntries(ctx context.Context, query string, limit int) ([]*LedgerEntry, error)
 	GlobalSearch(ctx context.Context, query string, filters SearchFilters) (*SearchResults, error)
 }
 

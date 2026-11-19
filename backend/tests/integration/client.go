@@ -252,9 +252,6 @@ func (c *APIClient) doRequest(method, path string, body any) (*http.Response, er
 	for name, value := range c.Headers {
 		req.Header.Set(name, value)
 	}
-	// Tag test traffic so the backend excludes it from api_metrics;
-	// System Health dashboards then reflect real usage only.
-	req.Header.Set(middleware.ClientSourceHeader, middleware.ClientSourceIntegrationTest)
 	if c.CookieToken != "" {
 		// Cookie channel: no Authorization header — the session cookie is
 		// the credential, exactly like the browser client.
@@ -478,7 +475,6 @@ func (c *APIClient) UploadBytes(path, fileField, filename string, data []byte) (
 		return nil, 0, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set(middleware.ClientSourceHeader, middleware.ClientSourceIntegrationTest)
 	if strings.HasSuffix(path, "/timesheets/partner-import") {
 		req.Header.Set("Idempotency-Key", fmt.Sprintf("integration-%d", time.Now().UnixNano()))
 	}
@@ -533,7 +529,6 @@ func (c *APIClient) UploadFile(path, fileField, filePath string, fields map[stri
 		return nil, 0, fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set(middleware.ClientSourceHeader, middleware.ClientSourceIntegrationTest)
 	if strings.HasSuffix(path, "/timesheets/partner-import") {
 		req.Header.Set("Idempotency-Key", fmt.Sprintf("integration-%d", time.Now().UnixNano()))
 	}

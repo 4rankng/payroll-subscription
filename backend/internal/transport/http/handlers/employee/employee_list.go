@@ -13,49 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// buildBankInfo creates bank info for employee responses
-func buildBankInfo(bank *domain.Bank) *dto.EmployeeBankInfo {
-	if bank == nil {
-		return nil
-	}
-	return &dto.EmployeeBankInfo{
-		ID:         bank.ID,
-		BranchName: bank.BranchName,
-	}
-}
-
-func formatDatePointer(t *time.Time) *string {
-	if t == nil {
-		return nil
-	}
-	formatted := t.Format("2006-01-02")
-	return &formatted
-}
-
-// formatDateTimePointer formats a *time.Time as RFC3339 for response DTOs.
-// Used for timestamps like bank_account_validated_at where the time-of-day
-// component matters (not just the date).
-func formatDateTimePointer(t *time.Time) *string {
-	if t == nil {
-		return nil
-	}
-	formatted := t.Format(time.RFC3339)
-	return &formatted
-}
-
-// bankAccountStatusFields builds the three validation-outcome fields for an
-// EmployeeResponse from a domain.Employee. Centralised so every mapper
-// (list, detail, etc.) emits identical JSON.
-func bankAccountStatusFields(e *domain.Employee) (status string, reason *string, validatedAt *string) {
-	status = e.BankAccountStatus
-	if status == "" {
-		status = domain.BankAccountStatusValid
-	}
-	reason = e.BankAccountInvalidReason
-	validatedAt = formatDateTimePointer(e.BankAccountValidatedAt)
-	return
-}
-
 func buildProjectInfo(project domain.CurrentProject) dto.EmployeeProjectInfo {
 	startDate := ""
 	if !project.StartDate.IsZero() {
@@ -63,37 +20,20 @@ func buildProjectInfo(project domain.CurrentProject) dto.EmployeeProjectInfo {
 	}
 
 	return dto.EmployeeProjectInfo{
-		ProjectID:              project.ProjectID,
-		ProjectEmployeeID:      project.ProjectEmployeeID,
-		Name:                   project.Name,
-		Code:                   project.Code,
-		ClientName:             project.ClientName,
-		Position:               project.Position,
-		StartDate:              startDate,
-		LastDate:               formatDatePointer(project.LastDate),
-		PaymentSchedule:        project.PaymentSchedule,
-		PendingPaymentSchedule: project.PendingPaymentSchedule,
-		ScheduleEffectiveFrom:  formatDatePointer(project.ScheduleEffectiveFrom),
-		IsFlexible:             project.IsFlexible,
-		CheckInEnabled:         project.CheckInEnabled,
-		PendingCheckInEnabled:  project.PendingCheckInEnabled,
-		CheckInEffectiveFrom:   formatDatePointer(project.CheckInEffectiveFrom),
+		ProjectID:         project.ProjectID,
+		ProjectEmployeeID: project.ProjectEmployeeID,
+		Name:              project.Name,
+		Code:              project.Code,
+		ClientName:        project.ClientName,
+		Position:          project.Position,
+		StartDate:         startDate,
 	}
-}
-
-func hasFlexiblePaymentSchedule(projects []domain.CurrentProject) bool {
-	for _, project := range projects {
-		if project.PaymentSchedule == string(domain.PaymentScheduleFlexible) {
-			return true
-		}
-	}
-	return false
 }
 
 // allowedEmployeeSortFields is a set of valid sort fields to prevent SQL injection.
 var allowedEmployeeSortFields = map[string]struct{}{
 	"created_at": {}, "updated_at": {}, "fullname": {}, "email": {}, "cccd": {},
-	"mobile": {}, "address": {}, "bank_account_number": {}, "bank_account_name": {},
+	"mobile": {},
 }
 
 // parseEmployeeFilters builds EmployeeFilters from query params, applying pagination,
@@ -151,7 +91,7 @@ func (h *Handler) parseEmployeeFilters(c *gin.Context) (domain.EmployeeFilters, 
 
 	// Role-based access control for partner users
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get("user_id")
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -170,48 +110,30 @@ func (h *Handler) parseEmployeeFilters(c *gin.Context) (domain.EmployeeFilters, 
 
 // buildEmployeeListResponse converts a slice of EmployeeWithProjects to response DTOs.
 // When maskInaccessible is true (global-pool listing for a partner), rows outside
-// the requester's accessible set get bank details withheld and is_accessible=false.
+// the requester's accessible set are annotated is_accessible=false.
 func buildEmployeeListResponse(employees []*domain.EmployeeWithProjects, accessibleIDs map[uint]bool, maskInaccessible bool) []dto.EmployeeResponse {
 	result := make([]dto.EmployeeResponse, 0, len(employees))
 	for _, emp := range employees {
-		var dobStr *string
-		if emp.DateOfBirth != nil {
-			s := emp.DateOfBirth.Format("2006-01-02")
-			dobStr = &s
-		}
 		r := dto.EmployeeResponse{
-			ID:                emp.ID,
-			Fullname:          emp.Fullname,
-			Email:             emp.Email,
-			CCCD:              emp.CCCD,
-			Address:           emp.Address,
-			Mobile:            emp.Mobile,
-			Bank:              buildBankInfo(emp.Bank),
-			BankAccountNumber: emp.BankAccountNumber,
-			BankAccountName:   emp.BankAccountName,
-			DateOfBirth:       dobStr,
-			CreatedBy:         emp.CreatedBy,
-			CreatedAt:         emp.CreatedAt,
-			UpdatedAt:         emp.UpdatedAt,
-			CanDelete:         !hasFlexiblePaymentSchedule(emp.CurrentProjects),
-			CurrentProjects:   make([]dto.EmployeeProjectInfo, 0, len(emp.CurrentProjects)),
+			ID:              emp.ID,
+			Fullname:        emp.Fullname,
+			Email:           emp.Email,
+			CCCD:            emp.CCCD,
+			Mobile:          emp.Mobile,
+			CreatedBy:       emp.CreatedBy,
+			CreatedAt:       emp.CreatedAt,
+			UpdatedAt:       emp.UpdatedAt,
+			CanDelete:       true,
+			CurrentProjects: make([]dto.EmployeeProjectInfo, 0, len(emp.CurrentProjects)),
 		}
-		// emp is *domain.EmployeeWithProjects which embeds domain.Employee.
-		r.BankAccountStatus, r.BankAccountInvalidReason, r.BankAccountValidatedAt = bankAccountStatusFields(&emp.Employee)
 
-		// Global-pool annotation: flag accessibility and, for rows the partner does
-		// not manage, withhold bank details (cross-partner PII guard).
+		// Global-pool annotation: flag accessibility for rows the partner does
+		// not manage (cross-partner guard).
 		if maskInaccessible {
 			accessible := accessibleIDs[emp.ID]
 			r.IsAccessible = &accessible
 			creatorName := emp.Creator.Fullname
 			r.CreatorName = &creatorName
-			if !accessible {
-				r.Bank = nil
-				r.BankAccountNumber = ""
-				r.BankAccountName = ""
-				r.Address = ""
-			}
 		}
 
 		for _, p := range emp.CurrentProjects {
@@ -253,7 +175,7 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 	// and with bank/address withheld for rows the partner does not manage.
 	// Only this endpoint honors scope=global — export/unassigned/summary stay scoped.
 	globalPool := false
-	if c.Query("scope") == "global" && c.GetString(constants.CtxUserRole) == string(domain.RolePartner) {
+	if c.Query("scope") == "global" && c.GetString(constants.CtxUserRole) == string(domain.RoleQuanly) {
 		globalPool = true
 		filters.AccessibleBy = nil
 	}
@@ -270,16 +192,6 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 		if id, err := strconv.ParseUint(projectID, 10, 64); err == nil {
 			uid := uint(id)
 			filters.ProjectID = &uid
-		}
-	}
-
-	if schedule := c.Query("paymentSchedule"); schedule != "" {
-		switch schedule {
-		case "weekly", "monthly", "flexible":
-			filters.PaymentSchedule = schedule
-		default:
-			response.BadRequest(c, "paymentSchedule phải là weekly, monthly hoặc flexible")
-			return
 		}
 	}
 
@@ -324,55 +236,6 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 	message := constants.MsgEmployeesRetrievedSuccessfully
 	if page > 1 {
 		message = "Page " + strconv.Itoa(page) + " of employees retrieved successfully"
-	}
-	response.SuccessWithPagination(c, employeeResponses, message, pagination)
-}
-
-// GetEmployeesMissingBankDetails retrieves employees with missing banking information
-// @Summary Get employees with missing bank details
-// @Description Get employees who have incomplete banking information (missing bank account details)
-// @Tags employees
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number, starts from 1" default(1)
-// @Param pageSize query int false "Items per page (max: 100)" default(100)
-// @Param sortBy query string false "Field to sort by" default(created_at)
-// @Param sortOrder query string false "Sort direction asc or desc" default(desc)
-// @Param search query string false "Search by name, email, or CCCD"
-// @Success 200 {object} dto.ListEmployeesResponse
-// @Failure 400 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
-// @Router /employees/missing-bank-details [get]
-func (h *Handler) GetEmployeesMissingBankDetails(c *gin.Context) {
-	filters, page, pageSize, ok := h.parseEmployeeFilters(c)
-	if !ok {
-		return
-	}
-
-	employees, err := h.employeeService.GetEmployeesWithMissingBankDetails(c.Request.Context(), filters)
-	if err != nil {
-		response.InternalServerError(c, constants.MsgFailedToListEmployeesVN)
-		return
-	}
-
-	total, err := h.employeeService.CountEmployeesWithMissingBankDetails(c.Request.Context(), filters)
-	if err != nil {
-		response.InternalServerError(c, constants.MsgFailedToCountEmployeesVN)
-		return
-	}
-
-	employeeResponses := buildEmployeeListResponse(employees, nil, false)
-	pagination := helpers.CalculatePagination(page, pageSize, total)
-
-	if len(employeeResponses) == 0 {
-		response.SuccessEmptyWithPagination(c, "No records found", pagination)
-		return
-	}
-
-	message := "Employees with missing bank details retrieved successfully"
-	if page > 1 {
-		message = "Page " + strconv.Itoa(page) + " of employees with missing bank details retrieved successfully"
 	}
 	response.SuccessWithPagination(c, employeeResponses, message, pagination)
 }

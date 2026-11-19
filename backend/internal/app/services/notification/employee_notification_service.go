@@ -12,11 +12,6 @@ import (
 // EmployeeNotifier sends push notifications to employees about status changes.
 type EmployeeNotifier interface {
 	NotifyTimesheetPaid(ctx context.Context, timesheets []*domain.Timesheet)
-	NotifyAdvancePaymentStatusChanged(ctx context.Context, employeeID uint, status domain.AdvancePaymentRequestStatus, amount uint64)
-	// NotifyAdvancePaymentFailed tells the employee their advance transfer failed
-	// permanently and why, so they can fix the cause (e.g. wrong bank account
-	// holder name) and submit a new request.
-	NotifyAdvancePaymentFailed(ctx context.Context, employeeID uint, amount uint64, detail string)
 }
 
 // EmployeeNotificationService sends push notifications to employees about status changes.
@@ -75,66 +70,5 @@ func (s *EmployeeNotificationService) NotifyTimesheetPaid(ctx context.Context, t
 		if err := s.notificationService.CreateNotification(ctx, *e.userID, domain.NotificationTypeTimesheetPaid, title, message); err != nil {
 			s.logger.Error("failed to send timesheet paid notification", "employee_id", employeeID, "error", err)
 		}
-	}
-}
-
-// NotifyAdvancePaymentStatusChanged notifies an employee about advance payment status change.
-// Employees only care about: completed (paid), failed, cancelled.
-func (s *EmployeeNotificationService) NotifyAdvancePaymentStatusChanged(ctx context.Context, employeeID uint, status domain.AdvancePaymentRequestStatus, amount uint64) {
-	emp, err := s.employeeRepo.GetByID(ctx, employeeID)
-	if err != nil {
-		s.logger.Error("failed to get employee for advance payment notification", "employee_id", employeeID, "error", err)
-		return
-	}
-
-	if emp.UserID == nil {
-		return
-	}
-
-	var title, message string
-	amountStr := utils.FormatVND(int64(amount))
-
-	switch status {
-	case domain.AdvancePaymentStatusCompleted:
-		title = "Tiền ứng lương đã được chuyển"
-		message = fmt.Sprintf("Số tiền ứng %s đã được chuyển vào tài khoản của bạn.", amountStr)
-	case domain.AdvancePaymentStatusFailed:
-		title = "Chuyển tiền ứng lương thất bại"
-		message = fmt.Sprintf("Việc chuyển số tiền ứng %s đã thất bại. Vui lòng liên hệ quản lý.", amountStr)
-	case domain.AdvancePaymentStatusCancelled:
-		title = "Yêu cầu ứng lương đã bị hủy"
-		message = fmt.Sprintf("Yêu cầu ứng số tiền %s đã bị hủy.", amountStr)
-	default:
-		return
-	}
-
-	if err := s.notificationService.CreateNotification(ctx, *emp.UserID, domain.NotificationTypeAdvancePaymentStatusChanged, title, message); err != nil {
-		s.logger.Error("failed to send advance payment status notification", "employee_id", employeeID, "status", status, "error", err)
-	}
-}
-
-// NotifyAdvancePaymentFailed notifies an employee that their advance transfer
-// failed permanently, including the provider's reason (detail) and what to do
-// next. Used for data errors the employee can fix themselves, e.g. the bank
-// account holder name not matching their registered account.
-func (s *EmployeeNotificationService) NotifyAdvancePaymentFailed(ctx context.Context, employeeID uint, amount uint64, detail string) {
-	emp, err := s.employeeRepo.GetByID(ctx, employeeID)
-	if err != nil {
-		s.logger.Error("failed to get employee for advance payment failure notification", "employee_id", employeeID, "error", err)
-		return
-	}
-
-	if emp.UserID == nil {
-		return
-	}
-
-	title := "Chuyển tiền ứng lương thất bại"
-	message := fmt.Sprintf(
-		"Số tiền ứng %s không thể chuyển: %s. Vui lòng kiểm tra và cập nhật lại thông tin ngân hàng (số tài khoản, chủ tài khoản) rồi tạo yêu cầu mới.",
-		utils.FormatVND(int64(amount)), detail,
-	)
-
-	if err := s.notificationService.CreateNotification(ctx, *emp.UserID, domain.NotificationTypeAdvancePaymentStatusChanged, title, message); err != nil {
-		s.logger.Error("failed to send advance payment failure notification", "employee_id", employeeID, "error", err)
 	}
 }

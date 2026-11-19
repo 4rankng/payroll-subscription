@@ -10,14 +10,12 @@ import (
 	"api-server/internal/pkg/clock"
 )
 
-// AggregateRecomputeService keeps the four denormalised project financial totals
-// (projects.total_payout_vnd, pending_payable_vnd, total_received_vnd,
-// pending_receivable_vnd) in sync with the timesheets that summarise them. The
-// meaning of each total is documented on domain.Project.
+// AggregateRecomputeService keeps the two denormalised project financial totals
+// (projects.total_payout_vnd, pending_payable_vnd) in sync with the timesheets
+// that summarise them. The meaning of each total is documented on domain.Project.
 //
 // The columns are derived data and have no HTTP writer — the project create/update
 // DTOs deliberately omit them — so every writer goes through this service:
-//   - the bulk transfer worker after a payment cycle settles timesheets;
 //   - RecomputeAllProjects as a one-shot backfill or scheduled reconciliation.
 type AggregateRecomputeService struct {
 	projects domain.ProjectRepository
@@ -41,12 +39,12 @@ func NewAggregateRecomputeService(projects domain.ProjectRepository, clk clock.C
 	}
 }
 
-// RecomputeProject recomputes one project's four totals from its timesheets and
+// RecomputeProject recomputes one project's two totals from its timesheets and
 // persists them in a single statement. It returns the freshly computed totals so
 // callers can log or compare them.
 //
 // The call is idempotent: the values are a pure function of the timesheet rows, so
-// repeating it writes the same numbers. Unknown or soft-deleted projects are a
+// repeating it writes the same numbers. Unknown projects are a
 // silent no-op (the UPDATE matches no row) — projects with nothing to report
 // legitimately reconcile to all zeroes.
 func (s *AggregateRecomputeService) RecomputeProject(ctx context.Context, projectID uint) (*domain.ProjectFinancialAggregate, error) {
@@ -67,8 +65,6 @@ func (s *AggregateRecomputeService) RecomputeProject(ctx context.Context, projec
 		"project_id", projectID,
 		"total_payout", aggregate.TotalPayoutVND,
 		"pending_payable", aggregate.PendingPayableVND,
-		"total_received", aggregate.TotalReceivedVND,
-		"pending_receivable", aggregate.PendingReceivableVND,
 	)
 
 	return aggregate, nil

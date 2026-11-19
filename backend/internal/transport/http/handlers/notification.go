@@ -347,15 +347,12 @@ func (h *NotificationHandler) CreateCustomNotification(c *gin.Context) {
 		return
 	}
 
-	targetRoles := make([]domain.UserRole, 0, 3)
+	targetRoles := make([]domain.UserRole, 0, 2)
 	if req.ToAllAdmins {
 		targetRoles = append(targetRoles, domain.RoleAdmin)
 	}
-	if req.ToAllPartners {
-		targetRoles = append(targetRoles, domain.RolePartner)
-	}
 	if req.ToAllEmployees {
-		targetRoles = append(targetRoles, domain.RoleEmployee)
+		targetRoles = append(targetRoles, domain.RoleNhanvien)
 	}
 
 	err := h.notificationService.SendCustomNotifications(

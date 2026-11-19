@@ -28,12 +28,10 @@ func setupAPIRoutes(router *gin.Engine, container *Container) {
 	v1 := api.Group("/v1")
 
 	v1.Use(container.Middleware.APIRateLimit)
-	v1.Use(container.Middleware.APIMetrics)
 
 	setupAuthRoutes(v1, container)
 	setupUserRoutes(v1, container)
 	setupProtectedRoutes(v1, container)
-	setupMobileRoutes(v1, container)
 	setupCacheRoutes(v1, container)
 	setupClockRoutes(v1, container)
 	setupTestRoutes(v1)
@@ -54,7 +52,6 @@ func setupProtectedRoutes(v1 *gin.RouterGroup, container *Container) {
 	setupDashboardRoutes(protected, container)
 	setupProjectRoutes(protected, container)
 	setupEmployeeRoutes(protected, container)
-	setupProjectEmployeeRoutes(protected, container)
 	setupTimesheetRoutes(protected, container)
 	setupPayrateRoutes(protected, container)
 	setupNotificationRoutes(protected, container)
@@ -66,5 +63,4 @@ func setupProtectedRoutes(v1 *gin.RouterGroup, container *Container) {
 	setupSettingsRoutes(v1, container) // Admin-only routes, use v1 directly
 	setupBillingRoutes(v1, container)
 	setupDBExportRoutes(protected, container)
-	setupApprovalRoutes(protected, container)
 }

@@ -207,7 +207,6 @@ func (h *Handler) GetEmployeeTimesheet(c *gin.Context) {
 			Amount:          utils.RoundToTwoDecimals(float64(timesheet.Amount)),
 			Status:          string(timesheet.Status),
 			PaymentStatus:   string(timesheet.PaymentStatus),
-			ForcePayroll:    timesheet.ForcePayroll,
 			PaidAmount:      timesheet.PaidAmount,
 			PaidAt:          timesheet.PaidAt,
 			CreatedBy:       timesheet.CreatedBy,
@@ -241,7 +240,6 @@ func (h *Handler) GetEmployeeTimesheet(c *gin.Context) {
 		timesheetResponses = append(timesheetResponses, dto.TimesheetWithDetailsResponse{
 			TimesheetResponse: timesheetResponse,
 			ProjectName:       projectName,
-			ProjectIsFlexible: timesheet.Project != nil && timesheet.Project.IsFlexible,
 			EmployeeName:      employeeName,
 			EmployeeCode:      employeeCode,
 			SubmittedBy:       submittedBy,

@@ -9,7 +9,7 @@ import (
 
 // Phase 0 characterization (excel-parsing-refactor): the employee import
 // parser had zero coverage. These tests lock CURRENT behavior — including
-// quirks (blind first sheet, fixed B..I offsets, silent row skipping) that
+// quirks (blind first sheet, fixed B..F offsets, silent row skipping) that
 // later phases must preserve while adopting shared primitives.
 
 func newEmployeeImportWorkbook(t *testing.T) *excelize.File {
@@ -18,7 +18,7 @@ func newEmployeeImportWorkbook(t *testing.T) *excelize.File {
 	const sheet = "Sheet1"
 
 	// Header row (blindly skipped by the parser).
-	headers := []string{"STT", "CCCD", "Dự án", "Vị trí", "SĐT", "Họ và tên", "Chủ tài khoản", "Số TK", "Ngân hàng"}
+	headers := []string{"STT", "CCCD", "Dự án", "Vị trí", "SĐT", "Họ và tên"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		if err := f.SetCellValue(sheet, cell, h); err != nil {
@@ -28,17 +28,17 @@ func newEmployeeImportWorkbook(t *testing.T) *excelize.File {
 
 	rows := [][]any{
 		// Valid full row.
-		{1, "012345678901", "EVA", "Công nhân", "0901234567", "Nguyễn Văn A", "NGUYEN VAN A", "1234567890", "MB Bank"},
+		{1, "012345678901", "EVA", "Công nhân", "0901234567", "Nguyễn Văn A"},
 		// Missing CCCD → silently skipped (current behavior, locked).
-		{2, "", "EVA", "Công nhân", "0912345678", "Nguyễn Văn B", "", "", ""},
+		{2, "", "EVA", "Công nhân", "0912345678", "Nguyễn Văn B"},
 		// Missing Fullname → silently skipped (current behavior, locked).
-		{3, "022233344455", "EVA", "", "0923456789", "", "", "", ""},
+		{3, "022233344455", "EVA", "", "0923456789", ""},
 		// Sparse row: defaults position to "phổ thông", empty optionals.
-		{4, "033344455566", "", "", "", "Trần Thị C", "", "", ""},
+		{4, "033344455566", "", "", "", "Trần Thị C"},
 		// 16-char mobile is truncated to 15 (current behavior, locked).
-		{5, "044455566677", "", "", "0901234567890123", "Lê Văn D", "", "", ""},
+		{5, "044455566677", "", "", "0901234567890123", "Lê Văn D"},
 		// Column A empty → row skipped before parse.
-		{"", "055566677788", "EVA", "", "", "Phạm Văn E", "", "", ""},
+		{"", "055566677788", "EVA", "", "", "Phạm Văn E"},
 	}
 	for r, row := range rows {
 		for c, v := range row {
@@ -69,8 +69,7 @@ func TestCharacterization_EmployeeImportParse(t *testing.T) {
 	full := got[0]
 	if full.CCCD != "012345678901" || full.Fullname != "Nguyễn Văn A" ||
 		full.ProjectCode != "EVA" || full.Position != "Công nhân" ||
-		full.Mobile != "0901234567" || full.BankAccountName != "NGUYEN VAN A" ||
-		full.BankAccount != "1234567890" || full.BankName != "MB Bank" {
+		full.Mobile != "0901234567" {
 		t.Fatalf("full row mismatch: %+v", full)
 	}
 
@@ -78,7 +77,7 @@ func TestCharacterization_EmployeeImportParse(t *testing.T) {
 	if sparse.Position != "phổ thông" {
 		t.Fatalf("sparse row position = %q, want default %q", sparse.Position, "phổ thông")
 	}
-	if sparse.Mobile != "" || sparse.BankAccount != "" {
+	if sparse.Mobile != "" {
 		t.Fatalf("sparse row should have empty optionals: %+v", sparse)
 	}
 

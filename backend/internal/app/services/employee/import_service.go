@@ -26,15 +26,6 @@ type ImportService struct {
 	logger              *slog.Logger
 }
 
-// bankAccountValidator returns the validator from the underlying
-// EmployeeService, if any. Returns nil when validation is disabled
-// (no provider configured).
-func (s *ImportService) bankAccountValidator() *BankAccountValidator {
-	if s.employeeService == nil {
-		return nil
-	}
-	return s.employeeService.BankAccountValidator()
-}
 func NewImportService(
 	employeeService *EmployeeService,
 	employeeRepo domain.EmployeeRepository,
@@ -99,33 +90,8 @@ func (s *ImportService) ParseEmployeeExcel(ctx context.Context, file *excelize.F
 	return employeeRows, len(employeeRows), nil
 }
 
-// parseDateOfBirth parses a date string and returns a time.Time pointer
-// Supports formats: "2006-01-02", "02/01/2006", "2006/01/02"
-func parseDateOfBirth(dateStr string) *time.Time {
-	if dateStr == "" {
-		return nil
-	}
-
-	// Try different date formats
-	formats := []string{
-		"2006-01-02",
-		"02/01/2006",
-		"2006/01/02",
-		"02-01-2006",
-	}
-
-	for _, format := range formats {
-		if t, err := time.Parse(format, dateStr); err == nil {
-			return &t
-		}
-	}
-
-	// If all formats fail, return nil
-	return nil
-}
-
 // parseRow parses a single Excel row into an EmployeeImportRow
-// Excel format: B=CCCD, C=Project, D=Position, E=Mobile, F=Fullname, G=BankAcctName, H=BankAcctNum, I=BankName
+// Excel format: B=CCCD, C=Project, D=Position, E=Mobile, F=Fullname
 func (s *ImportService) parseRow(row []string, rowNumber int) (dto.EmployeeImportRow, error) {
 	importRow := dto.EmployeeImportRow{
 		RowNumber: rowNumber,
@@ -133,7 +99,7 @@ func (s *ImportService) parseRow(row []string, rowNumber int) (dto.EmployeeImpor
 
 	// Excel columns (0-indexed, where 0=Column A):
 	// 1: CCCD (B) | 2: Project Code (C) | 3: Position (D) | 4: Mobile (E)
-	// 5: Fullname (F) | 6: Bank Account Name (G) | 7: Bank Account Number (H) | 8: Bank Name (I)
+	// 5: Fullname (F)
 
 	if len(row) > 1 {
 		importRow.CCCD = strings.TrimSpace(row[1])
@@ -161,15 +127,6 @@ func (s *ImportService) parseRow(row []string, rowNumber int) (dto.EmployeeImpor
 	}
 	if len(row) > 5 {
 		importRow.Fullname = strings.TrimSpace(row[5])
-	}
-	if len(row) > 6 {
-		importRow.BankAccountName = strings.TrimSpace(row[6])
-	}
-	if len(row) > 7 {
-		importRow.BankAccount = strings.TrimSpace(row[7])
-	}
-	if len(row) > 8 {
-		importRow.BankName = strings.TrimSpace(row[8])
 	}
 
 	// Default position if not provided
@@ -310,12 +267,6 @@ func (s *ImportService) getOrCreateEmployee(ctx context.Context, row dto.Employe
 
 		if needsUpdate {
 			s.updateEmployeeFields(employee, row)
-			// Re-validate bank account if bank fields were touched by the
-			// update (parallel to the manual UpdateEmployee path, which
-			// only re-validates on bank-field change).
-			if rowBankFieldsPresent(row) {
-				applyBankAccountValidation(ctx, s.bankAccountValidator(), employee)
-			}
 			if err := s.employeeRepo.Update(ctx, employee); err != nil {
 				return nil, false, false, fmt.Errorf("failed to update employee: %w", err)
 			}
@@ -335,23 +286,12 @@ func (s *ImportService) getOrCreateEmployee(ctx context.Context, row dto.Employe
 	}
 
 	// Create new employee
-	bankID := s.resolveBankID(ctx, row.BankName)
-	var dateOfBirth *time.Time
-	if row.DateOfBirth != nil {
-		dateOfBirth = parseDateOfBirth(*row.DateOfBirth)
-	}
-
 	employee = &domain.Employee{
-		Fullname:          row.Fullname,
-		CCCD:              row.CCCD,
-		BankAccountNumber: row.BankAccount,
-		BankAccountName:   row.BankAccountName,
-		BankID:            bankID,
-		Mobile:            row.Mobile,
-		Address:           row.Address,
-		Email:             row.Email,
-		DateOfBirth:       dateOfBirth,
-		CreatedBy:         createdBy,
+		Fullname:  row.Fullname,
+		CCCD:      row.CCCD,
+		Mobile:    row.Mobile,
+		Email:     row.Email,
+		CreatedBy: createdBy,
 	}
 
 	createdEmployee, err := s.employeeService.CreateEmployeeFromImport(ctx, employee, createdBy)
@@ -374,34 +314,6 @@ func (s *ImportService) shouldUpdateEmployee(employee *domain.Employee, row dto.
 	if row.Mobile != "" && employee.Mobile != row.Mobile {
 		return true
 	}
-	if row.Address != "" && employee.Address != row.Address {
-		return true
-	}
-	if row.BankAccount != "" && employee.BankAccountNumber != row.BankAccount {
-		return true
-	}
-	if row.BankAccountName != "" && employee.BankAccountName != row.BankAccountName {
-		return true
-	}
-	// Check if bank name has changed
-	if row.BankName != "" {
-		bankID := s.resolveBankID(context.Background(), row.BankName)
-		if employee.BankID == nil && bankID != nil {
-			return true
-		}
-		if employee.BankID != nil && bankID == nil {
-			return true
-		}
-		if employee.BankID != nil && bankID != nil && *employee.BankID != *bankID {
-			return true
-		}
-	}
-	if row.DateOfBirth != nil {
-		rowDateOfBirth := parseDateOfBirth(*row.DateOfBirth)
-		if employee.DateOfBirth == nil || (rowDateOfBirth != nil && *employee.DateOfBirth != *rowDateOfBirth) {
-			return true
-		}
-	}
 	return false
 }
 
@@ -415,22 +327,6 @@ func (s *ImportService) updateEmployeeFields(employee *domain.Employee, row dto.
 	}
 	if row.Mobile != "" {
 		employee.Mobile = row.Mobile
-	}
-	if row.Address != "" {
-		employee.Address = row.Address
-	}
-	if row.BankAccount != "" {
-		employee.BankAccountNumber = row.BankAccount
-	}
-	if row.BankAccountName != "" {
-		employee.BankAccountName = row.BankAccountName
-	}
-	if row.BankName != "" {
-		bankID := s.resolveBankID(context.Background(), row.BankName)
-		employee.BankID = bankID
-	}
-	if row.DateOfBirth != nil {
-		employee.DateOfBirth = parseDateOfBirth(*row.DateOfBirth)
 	}
 }
 
@@ -465,23 +361,14 @@ func (s *ImportService) getOrCreateAssignment(ctx context.Context, projectID, em
 		position = "phổ thông"
 	}
 
-	paymentSchedule := string(domain.PaymentScheduleFlexible)
-	if row.PaymentSchedule != "" {
-		paymentSchedule = row.PaymentSchedule
-	}
-
 	assignment := &domain.ProjectEmployee{
-		ProjectID:       projectID,
-		EmployeeID:      employeeID,
-		EmployeeName:    row.Fullname,
-		EmployeeCCCD:    row.CCCD,
-		Position:        position,
-		StartDate:       startDate,
-		PaymentSchedule: paymentSchedule,
-		// New assignments start advance-request enabled; explicit so a later
-		// full-row Save cannot persist the Go zero value as paused.
-		AdvanceRequestEnabled: true,
-		CreatedBy:             createdBy,
+		ProjectID:    projectID,
+		EmployeeID:   employeeID,
+		EmployeeName: row.Fullname,
+		EmployeeCCCD: row.CCCD,
+		Position:     position,
+		StartDate:    startDate,
+		CreatedBy:    createdBy,
 	}
 
 	if err := s.projectEmployeeRepo.Create(ctx, assignment); err != nil {
@@ -490,11 +377,6 @@ func (s *ImportService) getOrCreateAssignment(ctx context.Context, projectID, em
 
 	s.logger.Info("created assignment from import", "project_id", projectID, "employee_id", employeeID)
 	return true, nil
-}
-
-// resolveBankID resolves a bank name to a bank ID
-func (s *ImportService) resolveBankID(ctx context.Context, bankName string) *uint {
-	return s.employeeService.ResolveBankID(ctx, bankName)
 }
 
 // GetProgress retrieves the current import progress

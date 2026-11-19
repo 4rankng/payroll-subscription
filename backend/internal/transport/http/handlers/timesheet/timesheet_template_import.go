@@ -68,7 +68,7 @@ func (h *Handler) UploadTimesheetEntries(c *gin.Context) {
 	}
 
 	// For partners, validate they have access to all employees in the upload
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		// Check if partner has full project access
 		canModify, err := h.projectPermissionService.CanUserModifyProject(c.Request.Context(), importData.ProjectID, userID)
 		if err != nil {

@@ -212,30 +212,8 @@ func (r *EmployeeRepository) ExistsByEmail(ctx context.Context, email string) (b
 	return count > 0, nil
 }
 
-func (r *EmployeeRepository) GetByBankAccountNumber(ctx context.Context, bankAccountNumber string) (*domain.Employee, error) {
-	var employee domain.Employee
-	err := r.queryBuilder.BuildGetByFieldWithoutUserQuery("bank_account_number", bankAccountNumber).
-		Where("TRIM(bank_account_number) = ?", bankAccountNumber).
-		First(&employee).Error
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, domain.NewNotFoundError("employee not found")
-		}
-		return nil, err
-	}
-
-	return &employee, nil
-}
-
-// Update persists the full employee row. The BankID column is authoritative:
-// callers resolve a bank and set BankID, so any preloaded Bank association is
-// stale by construction and must not influence the write. GORM's Save would
-// otherwise re-sync the bank_id FK from that stale association, silently
-// reverting the change — a FlexPay upload with "MB BANK" kept saving the
-// employee's old MSB bank while the account number updated normally.
+// Update persists the full employee row.
 func (r *EmployeeRepository) Update(ctx context.Context, employee *domain.Employee) error {
-	employee.Bank = nil
 	return r.SafeUpdate(ctx, employee)
 }
 

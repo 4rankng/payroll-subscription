@@ -120,9 +120,9 @@ func newTestPermissionService(activeManagers ...uint) (*ProjectPermissionService
 		&stubProjectEmployeeRepo{},
 		nil,
 		&stubUserRepo{users: map[uint]*domain.User{
-			ptTargetID: {ID: ptTargetID, Role: domain.RolePartner},
+			ptTargetID: {ID: ptTargetID, Role: domain.RoleQuanly},
 			admUserID:  {ID: admUserID, Role: domain.RoleAdmin},
-			empUserID:  {ID: empUserID, Role: domain.RoleEmployee},
+			empUserID:  {ID: empUserID, Role: domain.RoleNhanvien},
 		}},
 		nil,
 	)
@@ -156,9 +156,9 @@ func newOwnerRevocationService(ownerRevoked bool, activeManagers ...uint) (*Proj
 		&stubProjectEmployeeRepo{},
 		nil,
 		&stubUserRepo{users: map[uint]*domain.User{
-			ptCreatorID: {ID: ptCreatorID, Role: domain.RolePartner},
-			ptManagerID: {ID: ptManagerID, Role: domain.RolePartner},
-			ptTargetID:  {ID: ptTargetID, Role: domain.RolePartner},
+			ptCreatorID: {ID: ptCreatorID, Role: domain.RoleQuanly},
+			ptManagerID: {ID: ptManagerID, Role: domain.RoleQuanly},
+			ptTargetID:  {ID: ptTargetID, Role: domain.RoleQuanly},
 			admUserID:   {ID: admUserID, Role: domain.RoleAdmin},
 		}},
 		nil,
@@ -171,7 +171,7 @@ func newOwnerRevocationService(ownerRevoked bool, activeManagers ...uint) (*Proj
 func TestGrantProjectAccess_PartnerManager_SameProject_Allowed(t *testing.T) {
 	svc, puRepo := newTestPermissionService(ptManagerID)
 
-	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RolePartner))
+	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RoleQuanly))
 
 	require.NoError(t, err)
 	require.Len(t, puRepo.created, 1)
@@ -181,7 +181,7 @@ func TestGrantProjectAccess_PartnerManager_SameProject_Allowed(t *testing.T) {
 func TestGrantProjectAccess_PartnerManager_OtherProject_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService() // no manager grant on this project
 
-	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RolePartner))
+	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.created)
@@ -190,7 +190,7 @@ func TestGrantProjectAccess_PartnerManager_OtherProject_Forbidden(t *testing.T) 
 func TestGrantProjectAccess_PartnerCreator_ElevationToAdminTarget_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService()
 
-	err := svc.GrantProjectAccess(context.Background(), testProjectID, admUserID, ptCreatorID, string(domain.RolePartner))
+	err := svc.GrantProjectAccess(context.Background(), testProjectID, admUserID, ptCreatorID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.created)
@@ -199,7 +199,7 @@ func TestGrantProjectAccess_PartnerCreator_ElevationToAdminTarget_Forbidden(t *t
 func TestGrantProjectAccess_PartnerCreator_ElevationToEmployeeTarget_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService()
 
-	err := svc.GrantProjectAccess(context.Background(), testProjectID, empUserID, ptCreatorID, string(domain.RolePartner))
+	err := svc.GrantProjectAccess(context.Background(), testProjectID, empUserID, ptCreatorID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.created)
@@ -228,7 +228,7 @@ func TestGrantProjectAccess_Admin_NonPartnerTarget_Validation(t *testing.T) {
 func TestRevokeProjectAccess_PartnerManager_SameProject_Allowed(t *testing.T) {
 	svc, puRepo := newTestPermissionService(ptManagerID, ptTargetID)
 
-	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RolePartner))
+	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RoleQuanly))
 
 	require.NoError(t, err)
 	assert.Equal(t, []uint{ptTargetID}, puRepo.deleted)
@@ -237,7 +237,7 @@ func TestRevokeProjectAccess_PartnerManager_SameProject_Allowed(t *testing.T) {
 func TestRevokeProjectAccess_PartnerManager_OtherProject_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService(ptTargetID)
 
-	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RolePartner))
+	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptTargetID, ptManagerID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.deleted)
@@ -246,7 +246,7 @@ func TestRevokeProjectAccess_PartnerManager_OtherProject_Forbidden(t *testing.T)
 func TestRevokeProjectAccess_PartnerCreator_CreatorTarget_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService()
 
-	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptCreatorID, ptCreatorID, string(domain.RolePartner))
+	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptCreatorID, ptCreatorID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.deleted)
@@ -255,7 +255,7 @@ func TestRevokeProjectAccess_PartnerCreator_CreatorTarget_Forbidden(t *testing.T
 func TestRevokeProjectAccess_PartnerManager_CreatorTarget_Forbidden(t *testing.T) {
 	svc, puRepo := newTestPermissionService(ptManagerID)
 
-	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptCreatorID, ptManagerID, string(domain.RolePartner))
+	err := svc.RevokeProjectAccess(context.Background(), testProjectID, ptCreatorID, ptManagerID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.deleted)
@@ -317,7 +317,7 @@ func TestCanUserAccessProject_RevokedOwner_WithGrant_Access(t *testing.T) {
 func TestGrantProjectAccess_RevokedOwner_WithoutGrant_Forbidden(t *testing.T) {
 	svc, _, puRepo := newOwnerRevocationService(true)
 
-	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptCreatorID, string(domain.RolePartner))
+	err := svc.GrantProjectAccess(context.Background(), testProjectID, ptTargetID, ptCreatorID, string(domain.RoleQuanly))
 
 	requireDomainErrorType(t, err, "FORBIDDEN")
 	assert.Empty(t, puRepo.created)

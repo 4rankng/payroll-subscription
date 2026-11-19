@@ -98,7 +98,7 @@ func (s *EmployeeUserService) InitializeEmployeeUsers(ctx context.Context) (*Ini
 	// Batch-fetch all users (including deleted) whose username starts with any base — 1 query per unique prefix
 	// Build a set of prefixes to avoid duplicate queries
 	prefixSeen := make(map[string]bool)
-	// userByUsername holds all fetched users (active + deleted) keyed by username
+	// userByUsername holds all fetched users keyed by username
 	userByUsername := make(map[string]*domain.User)
 
 	for _, prefix := range baseUsernames {
@@ -114,8 +114,8 @@ func (s *EmployeeUserService) InitializeEmployeeUsers(ctx context.Context) (*Ini
 			if _, already := userByUsername[uname]; already {
 				continue
 			}
-			// Fetch the full user record (including deleted)
-			u, err := s.UserService.UserRepo.GetByUsernameIncludingDeleted(ctx, uname)
+			// Fetch the full user record
+			u, err := s.UserService.UserRepo.GetByUsername(ctx, uname)
 			if err == nil && u != nil {
 				userByUsername[uname] = u
 			}
@@ -133,7 +133,7 @@ func (s *EmployeeUserService) InitializeEmployeeUsers(ctx context.Context) (*Ini
 		log.Info("Checking if user exists", "baseUsername", baseUsername)
 
 		// Check active user first (in-memory)
-		if existing, ok := userByUsername[baseUsername]; ok && !existing.DeletedAt.Valid {
+		if existing, ok := userByUsername[baseUsername]; ok {
 			log.Info("User check result", "username", baseUsername, "err", false, "existingUser", true)
 			employee.UserID = &existing.ID
 			if err := s.EmployeeRepo.Update(ctx, employee); err != nil {
@@ -151,28 +151,6 @@ func (s *EmployeeUserService) InitializeEmployeeUsers(ctx context.Context) (*Ini
 		}
 
 		log.Info("User check result", "username", baseUsername, "err", false, "existingUser", false)
-
-		// Check soft-deleted user (in-memory)
-		if deleted, ok := userByUsername[baseUsername]; ok && deleted.DeletedAt.Valid {
-			log.Info("Found deleted user, restoring", "username", deleted.Username, "deleted_at", deleted.DeletedAt)
-			if err := s.UserService.RestoreUser(ctx, deleted.ID); err != nil {
-				result.Errors = append(result.Errors, fmt.Sprintf("Failed to restore user for employee ID %d: %v", employee.ID, err))
-				continue
-			}
-			employee.UserID = &deleted.ID
-			if err := s.EmployeeRepo.Update(ctx, employee); err != nil {
-				result.Errors = append(result.Errors, fmt.Sprintf("Failed to link restored user to employee ID %d: %v", employee.ID, err))
-				continue
-			}
-			result.CreatedUsers = append(result.CreatedUsers, CreatedUserInfo{
-				EmployeeID:      employee.ID,
-				EmployeeName:    employee.Fullname,
-				Username:        deleted.Username,
-				DefaultPassword: "Restored from deleted account",
-			})
-			result.UsersCreated++
-			continue
-		}
 
 		// Resolve unique username in-memory using the pre-fetched map
 		username := s.ensureUniqueUsernameFromMap(baseUsername, userByUsername)
@@ -233,7 +211,7 @@ func (s *EmployeeUserService) createUserForEmployee(ctx context.Context, employe
 		Email:    email,
 		Password: DefaultEmployeePassword,
 		Fullname: employee.Fullname,
-		Role:     string(domain.RoleEmployee),
+		Role:     string(domain.RoleNhanvien),
 	}
 
 	userResp, err := s.UserService.CreateUser(ctx, req)

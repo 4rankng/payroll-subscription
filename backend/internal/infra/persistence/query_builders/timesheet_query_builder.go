@@ -76,7 +76,6 @@ func (b *TimesheetQueryBuilder) ApplyPartnerAccessControl(query *gorm.DB, filter
 				UNION ALL
 				SELECT DISTINCT employee_id, user_id as partner_id, 'user' as access_type
 				FROM employee_users
-				WHERE deleted_at IS NULL
 			) access ON access.employee_id = e.id AND (access.partner_id = ? OR e.created_by = ?)
 		`, partnerID, partnerID, partnerID).
 			Where("e.created_by = ? OR access.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ? AND pu.deleted_at IS NULL)", partnerID, partnerID)
@@ -86,7 +85,6 @@ func (b *TimesheetQueryBuilder) ApplyPartnerAccessControl(query *gorm.DB, filter
 			LEFT JOIN employee_users eu
 			ON eu.employee_id = e.id
 			AND eu.user_id = ?
-			AND eu.deleted_at IS NULL
 		`, partnerID).
 			Where("e.created_by = ? OR eu.employee_id IS NOT NULL OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.project_id = timesheets.project_id AND pu.user_id = ? AND pu.deleted_at IS NULL)", partnerID, partnerID)
 	} else if filters.EmployeeAssignedByPartner != nil {
@@ -168,35 +166,6 @@ func (b *TimesheetQueryBuilder) applyFilters(query *gorm.DB, filters domain.Time
 	if filters.Search != "" {
 		search := "%" + strings.ToLower(filters.Search) + "%"
 		query = query.Where("LOWER(e.fullname) LIKE ? OR LOWER(e.code) LIKE ?", search, search)
-	}
-
-	// Boolean filters (timesheet-specific)
-	if filters.ForcePayroll != nil {
-		if *filters.ForcePayroll {
-			query = query.Where("timesheets.force_payroll = 1")
-		} else {
-			query = query.Where("timesheets.force_payroll = 0")
-		}
-	}
-
-	if filters.AllowedEdit != nil {
-		if *filters.AllowedEdit {
-			query = query.Where("timesheets.allowed_edit = 1")
-		} else {
-			query = query.Where("timesheets.allowed_edit = 0")
-		}
-	}
-
-	if filters.RequestEditID != nil {
-		query = query.Where("timesheets.request_edit_id = ?", *filters.RequestEditID)
-	}
-
-	if filters.HasRequestEdit != nil {
-		if *filters.HasRequestEdit {
-			query = query.Where("timesheets.allowed_edit = 1 OR timesheets.request_edit_id IS NOT NULL")
-		} else {
-			query = query.Where("timesheets.allowed_edit = 0 AND timesheets.request_edit_id IS NULL")
-		}
 	}
 
 	// Exact date filter - use direct date comparison for better index usage (timesheet-specific)

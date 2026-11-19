@@ -1,128 +1,53 @@
 package repositories
 
 import (
-	"fmt"
-
 	"api-server/internal/domain"
-	domaintx "api-server/internal/domain/transactions"
-	"api-server/internal/domain/wallet"
 	"api-server/internal/infra/persistence"
 )
 
 type Repositories struct {
-	User                      domain.UserRepository
-	BlacklistedToken          domain.BlacklistedTokenRepository
-	AuditLog                  domain.AuditLogRepository
-	Project                   domain.ProjectRepository
-	ProjectUser               domain.ProjectUserRepository
-	Employee                  domain.EmployeeRepository
-	EmployeeUser              domain.EmployeeUserRepository
-	ProjectEmployee           domain.ProjectEmployeeRepository
-	Bank                      domain.BankRepository
-	Payrate                   domain.PayrateRepository
-	Timesheet                 domain.TimesheetRepository
-	TimesheetEditRequest      domain.TimesheetEditRequestRepository
-	Ledger                    domain.LedgerEntryRepository
-	Transaction               domain.TransactionRepository
-	Settlement                domain.SettlementRepository
-	Notification              domain.NotificationRepository
-	Settings                  domain.SettingsRepository
-	APIKey                    domain.APIKeyRepository
-	Asset                     domain.AssetRepository
-	BulkTransferFile          domain.BulkTransferFileRepository
-	Lender                    domain.LenderRepository
-	Loan                      domain.LoanRepository
-	LoanRepaymentSchedule     domain.LoanRepaymentScheduleRepository
-	APIMetric                 domain.APIMetricRepository
-	AdvancePayment            domain.AdvancePaymentRepository
-	AdvancePaymentRequest     domain.AdvancePaymentRequestRepository
-	TransactionCode           domain.TransactionCodeRepository
-	PushSubscription          domain.PushSubscriptionRepository
-	CronJobStatus             *persistence.CronJobStatusRepository
-	TxWalletPayment           domaintx.WalletPaymentRepository
-	WalletTopup               wallet.WalletTopupRepository
-	WalletPayment             wallet.WalletPaymentRepository
-	WalletIPN                 wallet.WalletIPNRepository
-	WalletBalanceAlertState   wallet.BalanceAlertStateRepository
-	Attendance                domain.AttendanceRepository
-	AttendanceFailedAttempt   domain.AttendanceFailedAttemptRepository
-	SettlementUpload          domain.SettlementUploadRepository
-	TransferUpload            domain.TransferUploadRepository
-	KyPaidRecord              domain.KyPaidRecordRepository
-	BillingReport             domain.BillingReportRepository
-	CashForecastSnapshot      domain.CashForecastSnapshotRepository
-	BulkTransferBatch         domain.BulkTransferBatchRepository
-	TimesheetImportJob        domain.TimesheetImportJobRepository
-	FlexPaySalaryNotification domain.FlexPaySalaryNotificationRepository
-	ZnsMessage                domain.ZnsMessageRepository
-	AdBanner                  domain.AdBannerRepository
-	ApprovalRequest           domain.ApprovalRequestRepository
-	MCPAPIKey                 domain.MCPAPIKeyRepository
-	OpsAPIKey                 domain.OpsAPIKeyRepository
+	User               domain.UserRepository
+	Project            domain.ProjectRepository
+	ProjectUser        domain.ProjectUserRepository
+	Employee           domain.EmployeeRepository
+	EmployeeUser       domain.EmployeeUserRepository
+	ProjectEmployee    domain.ProjectEmployeeRepository
+	Payrate            domain.PayrateRepository
+	Timesheet          domain.TimesheetRepository
+	Notification       domain.NotificationRepository
+	Settings           domain.SettingsRepository
+	Asset              domain.AssetRepository
+	PushSubscription   domain.PushSubscriptionRepository
+	TransferUpload     domain.TransferUploadRepository
+	EmployeePayCycle   domain.EmployeePayCycleRepository
+	BillingReport      domain.BillingReportRepository
+	TimesheetImportJob domain.TimesheetImportJobRepository
+	AuditLog           domain.AuditLogRepository
+	BlacklistedToken   domain.BlacklistedTokenRepository
 }
 
 func Initialize(db *persistence.Database, eventBus domain.EventBus) *Repositories {
-	// Create TransactionCode repo first (needed by BulkTransferFile)
-	transactionCodeRepo := persistence.NewTransactionCodeRepository(db)
-
 	repos := &Repositories{
-		User:                      persistence.NewUserRepository(db),
-		BlacklistedToken:          persistence.NewBlacklistedTokenRepository(db),
-		AuditLog:                  persistence.NewAuditLogRepository(db),
-		Project:                   persistence.NewProjectRepository(db),
-		ProjectUser:               persistence.NewProjectUserRepository(db),
-		Employee:                  persistence.NewEmployeeRepository(db),
-		EmployeeUser:              persistence.NewEmployeeUserRepository(db),
-		ProjectEmployee:           persistence.NewProjectEmployeeRepository(db),
-		Bank:                      persistence.NewBankRepository(db),
-		Payrate:                   persistence.NewPayrateRepository(db),
-		TimesheetEditRequest:      persistence.NewTimesheetEditRequestRepository(db),
-		Ledger:                    persistence.NewLedgerEntryRepository(db),
-		Transaction:               persistence.NewTransactionRepository(db.DB),
-		Settlement:                persistence.NewSettlementRepository(db.DB),
-		Notification:              persistence.NewNotificationRepository(db),
-		Settings:                  persistence.NewSettingsRepository(db),
-		APIKey:                    persistence.NewAPIKeyRepository(db),
-		MCPAPIKey:                 persistence.NewMCPAPIKeyRepository(db),
-		OpsAPIKey:                 persistence.NewOpsAPIKeyRepository(db),
-		Asset:                     persistence.NewAssetRepository(db, eventBus),
-		BulkTransferFile:          persistence.NewBulkTransferFileRepository(db.DB, transactionCodeRepo),
-		Lender:                    persistence.NewLenderRepository(db),
-		Loan:                      persistence.NewLoanRepository(db),
-		LoanRepaymentSchedule:     persistence.NewLoanRepaymentScheduleRepository(db),
-		APIMetric:                 persistence.NewAPIMetricRepository(db),
-		AdvancePayment:            persistence.NewAdvancePaymentRepository(db),
-		AdvancePaymentRequest:     persistence.NewAdvancePaymentRequestRepository(db),
-		TransactionCode:           transactionCodeRepo,
-		PushSubscription:          persistence.NewPushSubscriptionRepository(db.DB),
-		CronJobStatus:             persistence.NewCronJobStatusRepository(db),
-		TxWalletPayment:           persistence.NewTxWalletPaymentRepository(db),
-		Attendance:                persistence.NewAttendanceRepository(db.DB),
-		AttendanceFailedAttempt:   persistence.NewAttendanceFailedAttemptRepository(db.DB),
-		SettlementUpload:          persistence.NewSettlementUploadRepository(db),
-		TransferUpload:            persistence.NewTransferUploadRepository(db),
-		KyPaidRecord:              persistence.NewKyPaidRecordRepository(db),
-		BillingReport:             persistence.NewBillingReportRepository(db),
-		CashForecastSnapshot:      persistence.NewCashForecastSnapshotRepository(db.DB),
-		BulkTransferBatch:         persistence.NewBulkTransferBatchRepository(db),
-		TimesheetImportJob:        persistence.NewTimesheetImportJobRepository(db),
-		FlexPaySalaryNotification: persistence.NewFlexPaySalaryNotificationRepository(db),
-		ZnsMessage:                persistence.NewZnsMessageRepository(db),
-		AdBanner:                  persistence.NewAdBannerRepository(db),
+		User:               persistence.NewUserRepository(db),
+		Project:            persistence.NewProjectRepository(db),
+		ProjectUser:        persistence.NewProjectUserRepository(db),
+		Employee:           persistence.NewEmployeeRepository(db),
+		EmployeeUser:       persistence.NewEmployeeUserRepository(db),
+		ProjectEmployee:    persistence.NewProjectEmployeeRepository(db),
+		Payrate:            persistence.NewPayrateRepository(db),
+		Notification:       persistence.NewNotificationRepository(db),
+		Settings:           persistence.NewSettingsRepository(db),
+		Asset:              persistence.NewAssetRepository(db, eventBus),
+		PushSubscription:   persistence.NewPushSubscriptionRepository(db.DB),
+		TransferUpload:     persistence.NewTransferUploadRepository(db),
+		EmployeePayCycle:   persistence.NewEmployeePayCycleRepository(db),
+		BillingReport:      persistence.NewBillingReportRepository(db),
+		TimesheetImportJob: persistence.NewTimesheetImportJobRepository(db),
+		AuditLog:           persistence.NewAuditLogRepository(db),
+		BlacklistedToken:   persistence.NewBlacklistedTokenRepository(db),
 	}
-
-	// Wallet repositories need *sql.DB for raw SQL queries
-	sqlDB, err := db.DB.DB()
-	if err != nil {
-		panic(fmt.Sprintf("failed to get underlying sql.DB: %v", err))
-	}
-	repos.WalletTopup = persistence.NewWalletTopupRepository(sqlDB)
-	repos.WalletPayment = persistence.NewWalletPaymentRepository(sqlDB)
-	repos.WalletIPN = persistence.NewWalletIPNRepository(db)
-	repos.WalletBalanceAlertState = persistence.NewWalletBalanceAlertStateRepository(sqlDB)
 
 	repos.Timesheet = persistence.NewTimesheetRepository(db, repos.ProjectEmployee)
 
-	repos.ApprovalRequest = persistence.NewApprovalRequestRepository(db)
 	return repos
 }

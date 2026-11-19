@@ -174,25 +174,6 @@ func (r *EventRegistry) registerAllEvents() {
 		return event, err
 	})
 
-	// Bank events
-	r.register("BankCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BankCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("BankUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BankUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("BankDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BankDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
 	// Payrate events
 	r.register("PayrateCreated", func(data []byte) (domain.DomainEvent, error) {
 		var event domain.PayrateCreatedEvent
@@ -212,68 +193,6 @@ func (r *EventRegistry) registerAllEvents() {
 		return event, err
 	})
 
-	// Transaction events
-	r.register("TransactionCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TransactionCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TransactionUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TransactionUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TransactionDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TransactionDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TransactionSettled", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TransactionSettledEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Loan events
-	r.register("LoanCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LoanUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LoanDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LoanApproved", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanApprovedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LoanRejected", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanRejectedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LoanDisbursed", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LoanDisbursedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
 	// Asset events
 	r.register("AssetCreated", func(data []byte) (domain.DomainEvent, error) {
 		var event domain.AssetCreatedEvent
@@ -283,44 +202,6 @@ func (r *EventRegistry) registerAllEvents() {
 
 	r.register("AssetDeleted", func(data []byte) (domain.DomainEvent, error) {
 		var event domain.AssetDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Lender events
-	r.register("LenderCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LenderCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LenderUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LenderUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LenderDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LenderDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// LedgerEntry events
-	r.register("LedgerEntryCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LedgerEntryCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LedgerEntryUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LedgerEntryUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("LedgerEntryDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.LedgerEntryDeletedEvent
 		err := json.Unmarshal(data, &event)
 		return event, err
 	})
@@ -357,55 +238,6 @@ func (r *EventRegistry) registerAllEvents() {
 		return event, err
 	})
 
-	// Bulk transfer events
-	r.register("BulkTransferFileExported", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BulkTransferFileExportedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("BulkTransferResultImported", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BulkTransferResultImportedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("BulkTransferResultParsed", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BulkTransferResultParsedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("BulkTransferFileDownloaded", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.BulkTransferFileDownloadedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("PayrollHistoriesExported", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.PayrollHistoriesExportedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Settlement events
-	r.register("SettlementCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.SettlementCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("SettlementUploadProcessed", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.SettlementUploadProcessedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetMarking", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetMarkingEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
 }
 
 // register adds a deserializer for an event type

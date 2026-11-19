@@ -196,8 +196,6 @@ func (s *BCCImportService) autoCreateWeeklyPaymentSTK(
 		"count", len(stkRows))
 
 	stkErr = s.transactionManager.WithTransaction(ctx, func(txCtx context.Context) error {
-		bankCache := make(map[string]*uint)
-
 		for _, row := range stkRows {
 			cccd := row.CCCD
 			fullName := row.FullName
@@ -208,16 +206,6 @@ func (s *BCCImportService) autoCreateWeeklyPaymentSTK(
 				continue
 			}
 			employeePosition := positionByCCCD[cccd]
-
-			var bankID *uint
-			if row.BankName != "" {
-				if cached, ok := bankCache[row.BankName]; ok {
-					bankID = cached
-				} else {
-					bankID = s.employeeService.ResolveBankID(txCtx, row.BankName)
-					bankCache[row.BankName] = bankID
-				}
-			}
 
 			existingEmp, empErr := s.employeeService.GetEmployeeByCCCD(txCtx, cccd)
 			if empErr != nil && !domain.IsNotFoundError(empErr) {
@@ -237,7 +225,6 @@ func (s *BCCImportService) autoCreateWeeklyPaymentSTK(
 					Mobile:    row.Mobile,
 					CreatedBy: uploaderID,
 				}
-				applySTKBankFields(emp, row, bankID, fullName)
 				createdEmp, createErr := s.employeeService.CreateEmployeeFromImport(txCtx, emp, uploaderID)
 				if createErr != nil {
 					blockedEmployeeCCCDs[cccd] = struct{}{}
@@ -250,22 +237,6 @@ func (s *BCCImportService) autoCreateWeeklyPaymentSTK(
 				emp = createdEmp
 			} else {
 				emp = existingEmp
-				if bankUpdates := buildSTKBankUpdates(emp, row, bankID, fullName); bankUpdates != nil {
-					if updateErr := s.employeeService.UpdateBankInfo(txCtx, emp.ID, bankUpdates); updateErr != nil {
-						slog.Error("BCCImport(WPayment): failed to update bank info",
-							"employee_id", emp.ID, "error", updateErr)
-						importErrors = append(importErrors, domain.ImportError{
-							Employee: fullName,
-							Reason:   "Không thể cập nhật thông tin ngân hàng",
-						})
-					}
-				}
-				if row.Mobile != "" && emp.Mobile == "" {
-					if err := s.employeeService.UpdateMobile(txCtx, emp.ID, row.Mobile); err != nil {
-						slog.Error("BCCImport(WPayment): failed to fill mobile",
-							"employee_id", emp.ID, "error", err)
-					}
-				}
 				if emp.UserID == nil {
 					if err := s.ensureEmployeeUserAccount(txCtx, emp.ID); err != nil {
 						blockedEmployeeCCCDs[cccd] = struct{}{}
@@ -309,17 +280,13 @@ func (s *BCCImportService) autoCreateWeeklyPaymentSTK(
 					continue
 				}
 				assignment := &domain.ProjectEmployee{
-					ProjectID:       projectID,
-					EmployeeID:      emp.ID,
-					EmployeeName:    emp.Fullname,
-					EmployeeCCCD:    emp.CCCD,
-					Position:        employeePosition,
-					StartDate:       startDate,
-					PaymentSchedule: string(domain.PaymentScheduleWeekly),
-					// New assignments start advance-request enabled (explicit;
-					// guards later full-row Saves from persisting the zero value).
-					AdvanceRequestEnabled: true,
-					CreatedBy:             uploaderID,
+					ProjectID:    projectID,
+					EmployeeID:   emp.ID,
+					EmployeeName: emp.Fullname,
+					EmployeeCCCD: emp.CCCD,
+					Position:     employeePosition,
+					StartDate:    startDate,
+					CreatedBy:    uploaderID,
 				}
 				if createErr := s.employeeService.CreateAssignment(txCtx, assignment); createErr != nil {
 					blockedEmployeeCCCDs[cccd] = struct{}{}
@@ -428,11 +395,6 @@ func (s *BCCImportService) autoCreateMissingWeeklyPaymentEmployees(
 					CreatedBy: uploaderID,
 				}
 				if stkRow := findSTKRow(stkRows, m.cccd); stkRow != nil {
-					var stkBankID *uint
-					if stkRow.BankName != "" {
-						stkBankID = s.employeeService.ResolveBankID(txCtx, stkRow.BankName)
-					}
-					applySTKBankFields(emp, *stkRow, stkBankID, m.fullName)
 					if stkRow.Mobile != "" {
 						emp.Mobile = stkRow.Mobile
 					}
@@ -449,24 +411,6 @@ func (s *BCCImportService) autoCreateMissingWeeklyPaymentEmployees(
 				emp = createdEmp
 			} else {
 				emp = existingEmp
-				if stkRow := findSTKRow(stkRows, m.cccd); stkRow != nil {
-					var stkBankID *uint
-					if stkRow.BankName != "" {
-						stkBankID = s.employeeService.ResolveBankID(txCtx, stkRow.BankName)
-					}
-					if bankUpdates := buildSTKBankUpdates(emp, *stkRow, stkBankID, m.fullName); bankUpdates != nil {
-						if updateErr := s.employeeService.UpdateBankInfo(txCtx, emp.ID, bankUpdates); updateErr != nil {
-							slog.Error("BCCImport(WPayment): failed to update bank info",
-								"employee_id", emp.ID, "error", updateErr)
-						}
-					}
-					if stkRow.Mobile != "" && emp.Mobile == "" {
-						if err := s.employeeService.UpdateMobile(txCtx, emp.ID, stkRow.Mobile); err != nil {
-							slog.Error("BCCImport(WPayment): failed to fill mobile",
-								"employee_id", emp.ID, "error", err)
-						}
-					}
-				}
 			}
 
 			if emp.UserID == nil {
@@ -493,17 +437,13 @@ func (s *BCCImportService) autoCreateMissingWeeklyPaymentEmployees(
 				continue
 			}
 			assignment := &domain.ProjectEmployee{
-				ProjectID:       projectID,
-				EmployeeID:      emp.ID,
-				EmployeeName:    emp.Fullname,
-				EmployeeCCCD:    emp.CCCD,
-				Position:        m.position,
-				StartDate:       startDate,
-				PaymentSchedule: string(domain.PaymentScheduleWeekly),
-				// New assignments start advance-request enabled (explicit;
-				// guards later full-row Saves from persisting the zero value).
-				AdvanceRequestEnabled: true,
-				CreatedBy:             uploaderID,
+				ProjectID:    projectID,
+				EmployeeID:   emp.ID,
+				EmployeeName: emp.Fullname,
+				EmployeeCCCD: emp.CCCD,
+				Position:     m.position,
+				StartDate:    startDate,
+				CreatedBy:    uploaderID,
 			}
 			if createErr := s.employeeService.CreateAssignment(txCtx, assignment); createErr != nil {
 				blockedEmployeeCCCDs[m.cccd] = struct{}{}
@@ -586,17 +526,6 @@ func (s *BCCImportService) buildWeeklyPaymentEntries(
 			if mismatch := weeklyCrossCheckSTKName(assignment.EmployeeCCCD, emp.FullName, stkNameByCCCD, ""); mismatch != nil {
 				importErrors = append(importErrors, *mismatch)
 				continue
-			}
-
-			if assignment.PaymentSchedule == string(domain.PaymentScheduleFlexible) {
-				if !includeFlexibleEmployees {
-					importErrors = append(importErrors, domain.ImportError{
-						Employee: emp.FullName,
-						Reason:   "nhân viên lương linh hoạt không áp dụng BCC import",
-					})
-					continue
-				}
-				flexibleEmployeeIDs[assignment.EmployeeID] = struct{}{}
 			}
 
 			for _, entry := range emp.Entries {

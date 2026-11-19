@@ -23,11 +23,6 @@ func (s *EmployeeService) CountUnassignedEmployeesAtDate(ctx context.Context, da
 	return s.EmployeeDomainService.CountUnassignedEmployeesAtDate(ctx, date)
 }
 
-// GetEmployeesWithMissingBankDetails returns employees with missing banking information
-func (s *EmployeeService) GetEmployeesWithMissingBankDetails(ctx context.Context, filters domain.EmployeeFilters) ([]*domain.EmployeeWithProjects, error) {
-	return s.EmployeeRepo.GetEmployeesWithMissingBankDetails(ctx, filters)
-}
-
 // GetEmployeesWithMissingMobile returns active employees with no mobile number
 // on file — the partner-facing data-quality nudge list. The filters carry the
 // caller's accessibility scope (parseEmployeeFilters sets AccessibleBy for
@@ -41,14 +36,9 @@ func (s *EmployeeService) CountEmployeesWithMissingMobile(ctx context.Context, f
 	return s.EmployeeRepo.CountEmployeesWithMissingMobile(ctx, filters)
 }
 
-// CountEmployeesWithMissingBankDetails returns count of employees with missing banking information
-func (s *EmployeeService) CountEmployeesWithMissingBankDetails(ctx context.Context, filters domain.EmployeeFilters) (int64, error) {
-	return s.EmployeeRepo.CountEmployeesWithMissingBankDetails(ctx, filters)
-}
-
 // ListEmployeesPaidWithoutMobile returns employees who received salary (paid
-// timesheets) or a completed FlexPay advance within [from, to] but have no
-// mobile number on file. Read-only pass-through to the repository read model.
+// timesheets) within [from, to] but have no mobile number on file. Read-only
+// pass-through to the repository read model.
 func (s *EmployeeService) ListEmployeesPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*domain.EmployeePaidActivity, error) {
 	return s.EmployeeRepo.GetPaidWithoutMobile(ctx, from, to)
 }
@@ -162,7 +152,7 @@ func (s *EmployeeService) ChangeEmployeePassword(ctx context.Context, employeeID
 	// (1) Partner created the employee
 	// (2) Partner is directly shared the employee (via employee_users table)
 	// (3) Partner is shared a project that the employee is assigned to
-	if actorRole == domain.RolePartner {
+	if actorRole == domain.RoleQuanly {
 		// Check if partner created the employee
 		isCreator := employee.CreatedBy == actorUserID
 

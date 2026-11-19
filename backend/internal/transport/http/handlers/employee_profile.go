@@ -103,104 +103,18 @@ func (h *EmployeeProfileHandler) UpdateMyProfile(c *gin.Context) {
 }
 
 func (h *EmployeeProfileHandler) mapEmployeeProfileResponse(c *gin.Context, employee *domain.Employee) *dto.EmployeeProfileResponse {
-	scheduleInfo := h.EmployeeProfileService.GetEmployeeScheduleInfo(c.Request.Context(), employee.ID)
 	resp := &dto.EmployeeProfileResponse{
-		ID:                          employee.ID,
-		Fullname:                    employee.Fullname,
-		Email:                       employee.Email,
-		Mobile:                      employee.Mobile,
-		Address:                     employee.Address,
-		DateOfBirth:                 employee.DateOfBirth,
-		BankAccountNumber:           employee.BankAccountNumber,
-		BankAccountName:             employee.BankAccountName,
-		PaymentSchedule:             scheduleInfo.PaymentSchedule,
-		CheckInEnabled:              scheduleInfo.CheckInEnabled,
-		PendingCheckInEnabled:       scheduleInfo.PendingCheckInEnabled,
-		PendingCheckInDisable:       scheduleInfo.PendingCheckInDisable,
-		CheckInEffectiveFrom:        scheduleInfo.CheckInEffectiveFrom,
-		CheckInTargetStatus:         string(scheduleInfo.CheckInTargetStatus),
-		CheckInTarget:               mapCheckInTarget(scheduleInfo.CheckInTarget),
-		CheckInGeofenceRadiusMeters: scheduleInfo.CheckInGeofenceRadiusMeters,
-		ScheduleWindows:             mapScheduleWindows(scheduleInfo.ScheduleWindows),
-		ActiveScheduleWindow:        mapScheduleWindow(scheduleInfo.ActiveScheduleWindow),
-	}
-	// Advisory shift window for the frontend check-in button gate.
-	if !scheduleInfo.ShiftStart.IsZero() {
-		shiftStart := scheduleInfo.ShiftStart
-		shiftEnd := scheduleInfo.ShiftEnd
-		checkInWindowStart := scheduleInfo.CheckInWindowStart
-		checkInWindowEnd := scheduleInfo.CheckInWindowEnd
-		checkOutWindowStart := scheduleInfo.CheckOutWindowStart
-		checkOutWindowEnd := scheduleInfo.CheckOutWindowEnd
-		resp.ShiftStart = &shiftStart
-		resp.ShiftEnd = &shiftEnd
-		resp.CheckInWindowStart = &checkInWindowStart
-		resp.CheckInWindowEnd = &checkInWindowEnd
-		resp.CheckOutWindowStart = &checkOutWindowStart
-		resp.CheckOutWindowEnd = &checkOutWindowEnd
-	}
-	if scheduleInfo.ShiftName != "" {
-		name := scheduleInfo.ShiftName
-		resp.ShiftName = &name
+		ID:       employee.ID,
+		Fullname: employee.Fullname,
+		Email:    employee.Email,
+		Mobile:   employee.Mobile,
 	}
 	resp.CreatedAt = employee.CreatedAt
 	resp.UpdatedAt = employee.UpdatedAt
 	if employee.User != nil {
 		resp.Username = employee.User.Username
 	}
-	if employee.Bank != nil {
-		resp.Bank = &dto.BankInfo{
-			ID:         employee.Bank.ID,
-			BranchName: employee.Bank.BranchName,
-		}
-	}
 	return resp
-}
-
-func mapScheduleWindows(windows []employee.ScheduleWindowInfo) []dto.ScheduleWindowInfo {
-	if len(windows) == 0 {
-		return nil
-	}
-	mapped := make([]dto.ScheduleWindowInfo, 0, len(windows))
-	for _, window := range windows {
-		mapped = append(mapped, *mapScheduleWindow(&window))
-	}
-	return mapped
-}
-
-func mapScheduleWindow(window *employee.ScheduleWindowInfo) *dto.ScheduleWindowInfo {
-	if window == nil {
-		return nil
-	}
-	return &dto.ScheduleWindowInfo{
-		ShiftStart:          window.ShiftStart,
-		ShiftEnd:            window.ShiftEnd,
-		CheckInWindowStart:  window.CheckInWindowStart,
-		CheckInWindowEnd:    window.CheckInWindowEnd,
-		CheckOutWindowStart: window.CheckOutWindowStart,
-		CheckOutWindowEnd:   window.CheckOutWindowEnd,
-		ShiftName:           window.ShiftName,
-	}
-}
-
-func mapCheckInTarget(target *employee.CheckInTargetInfo) *dto.CheckInTargetInfo {
-	if target == nil {
-		return nil
-	}
-	gates := make([]dto.GeofenceGateRequest, 0, len(target.Gates))
-	for _, gate := range target.Gates {
-		gates = append(gates, dto.GeofenceGateRequest{
-			Name: gate.Name,
-			Lat:  gate.Lat,
-			Lng:  gate.Lng,
-		})
-	}
-	return &dto.CheckInTargetInfo{
-		ProjectID:    target.ProjectID,
-		ProjectName:  target.ProjectName,
-		RadiusMeters: target.RadiusMeters,
-		Gates:        gates,
-	}
 }
 
 // UpdateMyPassword godoc
@@ -390,9 +304,6 @@ func (h *EmployeeProfileHandler) GetMySummary(c *gin.Context) {
 
 	// Convert to response DTO
 	resp := &dto.EmployeePortalSummaryResponse{
-		WeeklySalary:            summary.WeeklySalary,
-		WeeklyClockedHours:      summary.WeeklyClockedHours,
-		WeeklyPaidAmount:        summary.WeeklyPaidAmount,
 		TotalApprovedTimesheets: summary.TotalApprovedTimesheets,
 		TotalApprovedAmount:     summary.TotalApprovedAmount,
 		TotalPaidTimesheets:     summary.TotalPaidTimesheets,
@@ -400,14 +311,6 @@ func (h *EmployeeProfileHandler) GetMySummary(c *gin.Context) {
 		TotalPendingTimesheets:  summary.TotalPendingTimesheets,
 		TotalPendingAmount:      summary.TotalPendingAmount,
 		LastPaymentDate:         summary.LastPaymentDate,
-	}
-
-	if summary.CalculationPeriod != nil {
-		resp.CalculationPeriod = &dto.EmployeeCalculationPeriod{
-			Weeks:    summary.CalculationPeriod.Weeks,
-			FromDate: summary.CalculationPeriod.FromDate,
-			ToDate:   summary.CalculationPeriod.ToDate,
-		}
 	}
 
 	if summary.CurrentProjects != nil {

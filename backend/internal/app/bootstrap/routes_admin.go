@@ -6,25 +6,10 @@ func setupDashboardRoutes(protected *gin.RouterGroup, container *Container) {
 	dashboard := protected.Group("/dashboard")
 	{
 		dashboard.GET("/summary", container.Handlers.Dashboard.GetDashboardSummary)
-		dashboard.GET("/financial-overview", container.Handlers.Dashboard.GetFinancialOverview)
-		dashboard.GET("/financial", container.Handlers.Dashboard.GetFinancialChartData)
-		dashboard.GET("/salary-distribution", container.Handlers.Dashboard.GetSalaryDistribution)
 		dashboard.GET("/recent-activities", container.Handlers.Dashboard.GetRecentActivities)
 		dashboard.GET("/notifications", container.Handlers.Dashboard.GetSystemNotifications)
 		dashboard.GET("/new-employees", container.Handlers.Dashboard.GetNewEmployees)
-		dashboard.GET("/historical", container.Handlers.Dashboard.GetHistoricalData)
-		dashboard.GET("/monthly-financials", container.Handlers.Dashboard.GetMonthlyFinancials)
-		dashboard.GET("/employee-activity", container.Handlers.Dashboard.GetEmployeeActivityStats)
 		dashboard.GET("/top-paid-employees", container.Handlers.Dashboard.GetTopPaidEmployees)
-		dashboard.GET("/partner", container.Handlers.Dashboard.GetPartnerDashboard)
-		dashboard.GET("/partner/employees", container.Handlers.Dashboard.GetPartnerEmployeeList)
-		dashboard.GET("/bank-usage", container.Handlers.Dashboard.GetBankUsage)
-		dashboard.GET("/bank-usage/projects", container.Handlers.Dashboard.GetBankUsageAllProjects)
-		dashboard.GET("/employee-activity/users", container.Handlers.Dashboard.GetActiveEmployeesBySchedule)
-		dashboard.GET("/project-profitability", container.Handlers.Dashboard.GetProjectProfitability)
-		dashboard.GET("/project-weekly-profit", container.Handlers.Dashboard.GetProjectWeeklyProfit)
-		dashboard.GET("/check-in-health", container.Handlers.Dashboard.GetCheckInHealth)
-		dashboard.GET("/quota-anomalies", container.Handlers.Dashboard.GetQuotaAnomalies)
 	}
 }
 

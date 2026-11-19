@@ -69,14 +69,9 @@ func (s *PaytypeConstructionService) ConstructPaytype(ctx context.Context, proje
 		return "", domain.NewValidationError("nhân viên chưa được phân công vào dự án này")
 	}
 
-	lastDate := "nil"
-	if assignment.LastDate != nil {
-		lastDate = assignment.LastDate.Format("2006-01-02")
-	}
 	logger.Info("PaytypeConstruction: Employee assignment found",
 		"position", assignment.Position,
-		"start_date", assignment.StartDate.Format("2006-01-02"),
-		"last_date", lastDate)
+		"start_date", assignment.StartDate.Format("2006-01-02"))
 
 	// 2. Determine position (skill level) - use position from assignment or default
 	position := assignment.Position

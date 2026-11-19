@@ -56,7 +56,7 @@ func (s *EmployeePermissionService) GrantEmployeeAccess(ctx context.Context, emp
 	}
 
 	// Only allow granting to partner role users
-	if user.Role != domain.RolePartner {
+	if user.Role != domain.RoleQuanly {
 		return domain.NewValidationError(constants.MsgCanOnlyGrantEmployeeAccessToPartnerVN)
 	}
 
@@ -110,7 +110,7 @@ func (s *EmployeePermissionService) RequestEmployeeAccess(ctx context.Context, e
 	}
 
 	// Self-service claim is a partner feature; admins already see everything.
-	if requesterRole != string(domain.RolePartner) {
+	if requesterRole != string(domain.RoleQuanly) {
 		return false, domain.NewValidationError(constants.MsgOnlyPartnerCanRequestEmployeeAccessVN)
 	}
 

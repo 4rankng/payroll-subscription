@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-
-	"api-server/internal/app/services/zaloconnect"
 )
 
 func testCipher(t *testing.T, seed byte) *Cipher {
@@ -190,15 +188,6 @@ func TestIsProtectedKey(t *testing.T) {
 	}
 	if IsProtectedKey("zalo.enabled") || IsProtectedKey("ZALO.CREDENTIALS") {
 		t.Fatal("unprotected key reported as protected")
-	}
-}
-
-// TestProtectedKeysMatchZaloconnectCredentials pins the protected-key literal to
-// the constant the Zalo service actually writes: a rename there would silently
-// stop sealing the credential.
-func TestProtectedKeysMatchZaloconnectCredentials(t *testing.T) {
-	if ZaloCredentialsKey != zaloconnect.KeyCredentials {
-		t.Fatalf("secret.ZaloCredentialsKey = %q, zaloconnect.KeyCredentials = %q", ZaloCredentialsKey, zaloconnect.KeyCredentials)
 	}
 }
 

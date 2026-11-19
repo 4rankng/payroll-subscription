@@ -77,15 +77,11 @@ func NewProjectDeletedEvent(ctx context.Context, projectID uint, name, code stri
 func NewProjectEmployeeUpdatedEvent(ctx context.Context, assignment *ProjectEmployee) ProjectEmployeeUpdatedEvent {
 	projectName := ""
 	employeeName := ""
-	status := "active"
 	if assignment.Project.ID != 0 {
 		projectName = assignment.Project.Name
 	}
 	if assignment.Employee.ID != 0 {
 		employeeName = assignment.Employee.Fullname
-	}
-	if assignment.LastDate != nil {
-		status = "terminated"
 	}
 	actorName := auditctx.GetFullName(ctx)
 	auditMessage := BuildEventAuditMessage(AuditActionUpdate, EntityTypeProjectEmployee, actorName, employeeName, projectName)
@@ -95,7 +91,7 @@ func NewProjectEmployeeUpdatedEvent(ctx context.Context, assignment *ProjectEmpl
 		ProjectName:  projectName,
 		EmployeeID:   assignment.EmployeeID,
 		EmployeeName: employeeName,
-		Status:       status,
+		Status:       "active",
 	}
 }
 

@@ -78,7 +78,7 @@ func (s *TimesheetDomainService) BulkUpdateTimesheets(ctx context.Context, reque
 		}
 
 		// Validate role-based edit permissions
-		if timesheet.IsApproved() && userRole == "partner" {
+		if timesheet.IsApproved() && userRole == "quanly" {
 			// Partners can edit approved timesheets, but it resets to pending
 			timesheet.Status = domain.TimesheetStatusPendingApproval
 			timesheet.ApprovedBy = nil

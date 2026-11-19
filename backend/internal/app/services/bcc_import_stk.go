@@ -70,11 +70,8 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 	slog.Info("BCCImport: found STK sheet, processing employee auto-creation",
 		"count", len(stkRows), "position", position)
 
-	// Cache bank name → ID to avoid redundant DB queries per row.
 	// Wrap STK auto-creation in a transaction to prevent orphaned records.
 	stkErr := s.transactionManager.WithTransaction(ctx, func(txCtx context.Context) error {
-		bankCache := make(map[string]*uint)
-
 		for _, row := range stkRows {
 			cccd := row.CCCD
 			fullName := row.FullName
@@ -82,18 +79,7 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 				continue
 			}
 
-			// 1. Resolve Bank ID (cached)
-			var bankID *uint
-			if row.BankName != "" {
-				if cached, ok := bankCache[row.BankName]; ok {
-					bankID = cached
-				} else {
-					bankID = s.employeeService.ResolveBankID(txCtx, row.BankName)
-					bankCache[row.BankName] = bankID
-				}
-			}
-
-			// 2. Check if employee already exists by CCCD
+			// 1. Check if employee already exists by CCCD
 			existingEmp, empErr := s.employeeService.GetEmployeeByCCCD(txCtx, cccd)
 			if empErr != nil && !domain.IsNotFoundError(empErr) {
 				// Real DB error — don't conflate with "not found".
@@ -115,10 +101,6 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 					Mobile:    row.Mobile,
 					CreatedBy: uploaderID,
 				}
-				// Attach bank fields only when STK provides enough info to
-				// build a complete record; otherwise the profile is created
-				// without banking info and can be filled in later.
-				applySTKBankFields(emp, row, bankID, fullName)
 				createdEmp, createErr := s.employeeService.CreateEmployeeFromImport(txCtx, emp, uploaderID)
 				if createErr != nil {
 					slog.Error("BCCImport: failed to auto-create employee",
@@ -134,30 +116,6 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 					"cccd", cccd, "employee_id", emp.ID)
 			} else {
 				emp = existingEmp
-
-				// Apply changed bank info from STK using a targeted,
-				// atomically validated update.
-				if bankUpdates := buildSTKBankUpdates(emp, row, bankID, fullName); bankUpdates != nil {
-					if updateErr := s.employeeService.UpdateBankInfo(txCtx, emp.ID, bankUpdates); updateErr != nil {
-						slog.Error("BCCImport: failed to update bank info for employee",
-							"employee_id", emp.ID, "error", updateErr)
-						importErrors = append(importErrors, domain.ImportError{
-							Employee: fullName,
-							Reason:   "Không thể cập nhật thông tin ngân hàng",
-						})
-					} else {
-						slog.Info("BCCImport: updated bank info for existing employee",
-							"employee_id", emp.ID, "cccd", cccd)
-					}
-				}
-
-				// Fill missing mobile from STK when employee has none.
-				if row.Mobile != "" && emp.Mobile == "" {
-					if err := s.employeeService.UpdateMobile(txCtx, emp.ID, row.Mobile); err != nil {
-						slog.Error("BCCImport: failed to fill mobile for existing employee",
-							"employee_id", emp.ID, "error", err)
-					}
-				}
 
 				if emp.UserID == nil {
 					if err := s.ensureEmployeeUserAccount(txCtx, emp.ID); err != nil {
@@ -188,17 +146,13 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 				}
 
 				assignment := &domain.ProjectEmployee{
-					ProjectID:       projectID,
-					EmployeeID:      emp.ID,
-					EmployeeName:    emp.Fullname,
-					EmployeeCCCD:    emp.CCCD,
-					Position:        empPosition,
-					StartDate:       startDate,
-					PaymentSchedule: string(domain.PaymentScheduleWeekly),
-					// New assignments start advance-request enabled (explicit;
-					// guards later full-row Saves from persisting the zero value).
-					AdvanceRequestEnabled: true,
-					CreatedBy:             uploaderID,
+					ProjectID:    projectID,
+					EmployeeID:   emp.ID,
+					EmployeeName: emp.Fullname,
+					EmployeeCCCD: emp.CCCD,
+					Position:     empPosition,
+					StartDate:    startDate,
+					CreatedBy:    uploaderID,
 				}
 
 				if createErr := s.employeeService.CreateAssignment(txCtx, assignment); createErr != nil {

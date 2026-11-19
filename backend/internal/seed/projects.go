@@ -51,44 +51,36 @@ func (s *Seeder) seedProjects(ctx context.Context, db *gorm.DB) error {
 		}
 
 		// Calculate realistic financial amounts based on project scope
-		var totalPayout, pendingPayable, pendingReceivable, totalReceived float64
+		var totalPayout, pendingPayable float64
 
 		switch status {
 		case domain.ProjectStatusCompleted:
 			// Completed projects should have most payments settled
-			totalPayout = projectProfile.Budget * 0.85       // 85% of budget paid out
-			pendingPayable = projectProfile.Budget * 0.05    // 5% still pending to employees
-			totalReceived = projectProfile.Budget * 0.95     // 95% received from client
-			pendingReceivable = projectProfile.Budget * 0.05 // 5% still pending from client
+			totalPayout = projectProfile.Budget * 0.85    // 85% of budget paid out
+			pendingPayable = projectProfile.Budget * 0.05 // 5% still pending to employees
 		case domain.ProjectStatusRunning:
 			// Running projects have ongoing payments
 			progressRatio := mathrand.Float64()*0.6 + 0.2 // 20-80% progress
 			totalPayout = projectProfile.Budget * progressRatio * 0.8
 			pendingPayable = projectProfile.Budget * 0.15
-			totalReceived = projectProfile.Budget * progressRatio * 0.7
-			pendingReceivable = projectProfile.Budget * 0.3
 		case domain.ProjectStatusCancelled:
 			// Cancelled projects have limited financial activity
 			cancelRatio := mathrand.Float64() * 0.4 // up to 40% of original budget
 			totalPayout = projectProfile.Budget * cancelRatio * 0.6
 			pendingPayable = projectProfile.Budget * cancelRatio * 0.2
-			totalReceived = projectProfile.Budget * cancelRatio * 0.5
-			pendingReceivable = 0 // typically no more payments expected
 		default: // Draft
 			// No financial activity yet
-			totalPayout, pendingPayable, totalReceived, pendingReceivable = 0, 0, 0, 0
+			totalPayout, pendingPayable = 0, 0
 		}
 
 		project := &domain.Project{
-			ClientName:           projectProfile.ClientName,
-			Name:                 projectProfile.Name,
-			Code:                 projectProfile.Code,
-			ProjectStatus:        status,
-			TotalPayoutVND:       totalPayout,
-			PendingPayableVND:    pendingPayable,
-			PendingReceivableVND: pendingReceivable,
-			TotalReceivedVND:     totalReceived,
-			CreatedBy:            adminUser.ID,
+			ClientName:        projectProfile.ClientName,
+			Name:              projectProfile.Name,
+			Code:              projectProfile.Code,
+			ProjectStatus:     status,
+			TotalPayoutVND:    totalPayout,
+			PendingPayableVND: pendingPayable,
+			CreatedBy:         adminUser.ID,
 		}
 
 		if err := projectRepo.Create(ctx, project); err != nil {

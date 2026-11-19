@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Seeder) seedPartnerUsers(ctx context.Context, db *gorm.DB) error {
-	return s.seedUsersInBatches(ctx, db, 5, domain.RolePartner, "user")
+	return s.seedUsersInBatches(ctx, db, 5, domain.RoleQuanly, "user")
 }
 
 // seedUsersInBatches generates users in memory-efficient batches

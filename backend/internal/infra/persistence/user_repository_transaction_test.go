@@ -47,7 +47,7 @@ func TestUserRepositoryCreateUsesTransactionContext(t *testing.T) {
 		Username: "transactional-user",
 		Password: "hashed-password",
 		Fullname: "Transactional User",
-		Role:     domain.RoleEmployee,
+		Role:     domain.RoleNhanvien,
 	}
 	if err := repo.Create(transactionContextForTest(tx), user); err != nil {
 		_ = tx.Rollback()

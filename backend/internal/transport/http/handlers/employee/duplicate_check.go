@@ -125,7 +125,7 @@ func (h *Handler) GetDuplicateMobileGroups(c *gin.Context) {
 	// Restrict the visible members to the caller's accessible set so one
 	// partner never learns another partner's roster. Admins see all.
 	var scopeIDs []uint
-	if role := c.GetString(constants.CtxUserRole); role == string(domain.RolePartner) || role == string(domain.RoleAdvPartner) {
+	if role := c.GetString(constants.CtxUserRole); role == string(domain.RoleQuanly) {
 		ids, err := h.employeeService.ListAccessibleIDs(ctx, c.GetUint(constants.CtxUserID))
 		if err != nil {
 			response.InternalServerError(c, constants.MsgFailedToListEmployeesVN)

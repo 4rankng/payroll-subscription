@@ -109,7 +109,7 @@ func (s *EmployeeService) CheckDuplicates(ctx context.Context, params DuplicateC
 		if err == nil {
 			names := make([]string, 0, len(assignments))
 			for _, a := range assignments {
-				if a.LastDate == nil && a.Project.Name != "" {
+				if a.Project.Name != "" {
 					names = append(names, a.Project.Name)
 				}
 			}

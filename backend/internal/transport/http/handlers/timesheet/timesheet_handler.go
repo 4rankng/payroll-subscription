@@ -75,7 +75,7 @@ func (h *Handler) ListTimesheets(c *gin.Context) {
 
 	// Apply partner role filtering - show timesheets for employees created by, assigned by, or granted access to the partner
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get(constants.CtxUserID)
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -166,7 +166,7 @@ func (h *Handler) UpdateTimesheet(c *gin.Context) {
 	if userRole == string(domain.RoleAdmin) {
 		domainUserRole = domain.RoleAdmin
 	} else {
-		domainUserRole = domain.RolePartner
+		domainUserRole = domain.RoleQuanly
 	}
 
 	// Check if timesheet can be edited by this user
@@ -234,7 +234,7 @@ func (h *Handler) DeleteTimesheet(c *gin.Context) {
 	}
 
 	// Check user has ADMIN or PARTNER role
-	if userRole != string(domain.RoleAdmin) && userRole != string(domain.RolePartner) {
+	if userRole != string(domain.RoleAdmin) && userRole != string(domain.RoleQuanly) {
 		response.Forbidden(c, constants.MsgForbiddenVN)
 		return
 	}
@@ -253,7 +253,7 @@ func (h *Handler) DeleteTimesheet(c *gin.Context) {
 	}
 
 	// Apply role-specific deletion rules
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		// Partners can only delete timesheets in "pending_approval" or "rejected" status
 		if !timesheet.IsPendingApproval() && !timesheet.IsRejected() {
 			response.BadRequest(c, constants.MsgCanOnlyDeletePendingOrRejectedTimesheetVN)
@@ -370,7 +370,7 @@ func (h *Handler) GetTimesheetsByProjectAndDate(c *gin.Context) {
 	}
 
 	// If user is a partner, filter by employees created by, assigned by, or granted access to them
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		filters.EmployeeCreatedBy = &userID
 		filters.EmployeeAssignedByPartner = &userID
 	}
@@ -436,7 +436,7 @@ func (h *Handler) ListGroupedTimesheets(c *gin.Context) {
 
 	// Apply partner role filtering - show timesheets for employees created by, assigned by, or granted access to the partner
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get(constants.CtxUserID)
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)

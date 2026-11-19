@@ -11,8 +11,8 @@ import (
 )
 
 // TestBuildMissingMobileQueryMatchesOnlyEmptyMobile pins the nudge predicate:
-// only employees with a blank mobile match, whitespace/NULL count as blank,
-// and soft-deleted rows never surface.
+// only employees with a blank mobile match, whitespace/NULL count as blank
+// (deletes are hard DELETEs — D16 — so no soft-delete exclusion exists).
 func TestBuildMissingMobileQueryMatchesOnlyEmptyMobile(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
@@ -20,15 +20,13 @@ func TestBuildMissingMobileQueryMatchesOnlyEmptyMobile(t *testing.T) {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		fullname TEXT,
 		mobile TEXT,
-		created_at DATETIME,
-		deleted_at DATETIME
+		created_at DATETIME
 	)`).Error)
-	require.NoError(t, db.Exec(`INSERT INTO employees (id, fullname, mobile, created_at, deleted_at) VALUES
-		(1, 'Blank', '', '2026-01-01 00:00:00', NULL),
-		(2, 'Spaces', '   ', '2026-01-02 00:00:00', NULL),
-		(3, 'Null', NULL, '2026-01-03 00:00:00', NULL),
-		(4, 'HasMobile', '0912345678', '2026-01-04 00:00:00', NULL),
-		(5, 'Deleted', '', '2026-01-05 00:00:00', '2026-01-06 00:00:00')`).Error)
+	require.NoError(t, db.Exec(`INSERT INTO employees (id, fullname, mobile, created_at) VALUES
+		(1, 'Blank', '', '2026-01-01 00:00:00'),
+		(2, 'Spaces', '   ', '2026-01-02 00:00:00'),
+		(3, 'Null', NULL, '2026-01-03 00:00:00'),
+		(4, 'HasMobile', '0912345678', '2026-01-04 00:00:00')`).Error)
 
 	builder := NewEmployeeProjectQueryBuilder(db)
 

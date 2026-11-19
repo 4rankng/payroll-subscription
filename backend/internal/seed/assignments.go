@@ -96,17 +96,6 @@ func (s *Seeder) seedProjectEmployees(ctx context.Context, db *gorm.DB) error {
 				CreatedBy:    adminUser.ID,
 			}
 
-			// For completed or cancelled projects, some employees might have end dates
-			if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
-				if mathrand.Float64() < 0.2 { // 20% chance employee left before now
-					daysBeforeNow := mathrand.IntN(60) + 1 // 1-60 days back from today
-					lastDate := clock.Now().AddDate(0, 0, -daysBeforeNow)
-					if lastDate.After(startDate) {
-						projectEmployee.LastDate = &lastDate
-					}
-				}
-			}
-
 			if err := projectEmployeeRepo.Create(ctx, projectEmployee); err != nil {
 				return fmt.Errorf("create project employee assignment for %s: %w", employee.Fullname, err)
 			}

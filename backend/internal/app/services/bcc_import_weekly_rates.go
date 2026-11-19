@@ -214,9 +214,6 @@ func planWeeklyPaymentPositionCorrections(
 		if expectedPosition == "" || canonicalBCCRateKeySegment(assignment.Position) == canonicalBCCRateKeySegment(expectedPosition) {
 			continue
 		}
-		if assignment.PaymentSchedule == string(domain.PaymentScheduleFlexible) && !includeFlexibleEmployees {
-			continue
-		}
 		corrections[assignment.EmployeeID] = posCorrection{
 			assignmentID: assignment.ID,
 			employeeID:   assignment.EmployeeID,

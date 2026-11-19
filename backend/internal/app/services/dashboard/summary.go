@@ -26,7 +26,7 @@ func (s *Service) GetDashboardSummary(ctx context.Context, monthParam *string) (
 		// Parse YYYY-MM format
 		parsedMonth, err := time.Parse("2006-01", *monthParam)
 		if err != nil {
-			s.logger.Warn("Invalid month format", "month", *monthParam, "error", err)
+			s.logger.Warn("Invalid month format", "month", monthKey, "error", err)
 			return nil, domain.NewValidationError(constants.MsgInvalidFromDateFormatVN)
 		}
 		targetMonth = parsedMonth
@@ -54,9 +54,8 @@ func (s *Service) GetDashboardSummary(ctx context.Context, monthParam *string) (
 
 	// Variables to store results
 	var totalEmployees, employeesHiredThisMonth int64
-	var workingEmployees, weeklyEmployeesCount, monthlyEmployeesCount int
+	var workingEmployees int
 	var totalPaidSalary, pendingSalaryThisMonth, paidSalaryThisMonth int64
-	var avgWeeklySalary, avgMonthlySalary int64
 	var queryErrors []error
 
 	// Helper to track errors
@@ -83,28 +82,13 @@ func (s *Service) GetDashboardSummary(ctx context.Context, monthParam *string) (
 
 	go func() {
 		defer wg.Done()
-		// Use weekly period data to match historical endpoint's weekly_pay.paid_employees
-		endDate := clock.Now()
-		startDate := endDate.AddDate(-1, 0, 0) // Last 365 days to get latest period
-
-		results, err := s.TimesheetQueryRepo.GetWeeklyPayByPeriod(ctx, startDate, endDate)
+		// Distinct employees with a paid timesheet in the last 30 days.
+		count, err := s.TimesheetDashboard.CountEmployeesPaidInLast30Days(ctx)
 		if err != nil {
 			addError(domain.NewInternalError(constants.MsgFailedToCountWorkingEmployeesVN, err))
 			return
 		}
-
-		// Extract the most recent period's paid_employees count (last entry in results)
-		if len(results) > 0 {
-			lastResult := results[len(results)-1]
-			if count, ok := lastResult["paid_employees"]; ok {
-				switch v := count.(type) {
-				case int64:
-					workingEmployees = int(v)
-				case float64:
-					workingEmployees = int(v)
-				}
-			}
-		}
+		workingEmployees = count
 	}()
 
 	go func() {
@@ -157,81 +141,6 @@ func (s *Service) GetDashboardSummary(ctx context.Context, monthParam *string) (
 		paidSalaryThisMonth = salary
 	}()
 
-	// Group 3: All-time and monthly profit from timesheets (revenue_receivable - paid_amount where profit > 0)
-	// plus advance payment fees
-	wg.Add(4)
-	var allTimeTimesheetRevenue, allTimeTimesheetProfit int64
-	go func() {
-		defer wg.Done()
-		summary, err := s.TimesheetAnalyticsRepo.GetAllTimeProfitSummaryFromTimesheets(ctx)
-		if err != nil {
-			s.logger.Warn("Failed to get all-time timesheet profit", "error", err)
-			return
-		}
-		allTimeTimesheetRevenue = summary.TotalRevenue
-		allTimeTimesheetProfit = summary.TotalProfit
-	}()
-
-	// Monthly profit from timesheets
-	var monthlyTimesheetProfit int64
-	var monthlyTimesheetRevenue int64
-	go func() {
-		defer wg.Done()
-		summary, err := s.TimesheetAnalyticsRepo.GetProfitSummaryFromTimesheets(ctx, startOfMonth, startOfMonth.AddDate(0, 1, 0))
-		if err != nil {
-			s.logger.Warn("Failed to get monthly timesheet profit", "error", err)
-			return
-		}
-		monthlyTimesheetRevenue = summary.TotalRevenue
-		monthlyTimesheetProfit = summary.TotalProfit
-	}()
-
-	// Monthly advance payment fees (completed)
-	var monthlyAdvanceFeeEarned int64
-	go func() {
-		defer wg.Done()
-		stats, err := s.AdvancePaymentRequestRepo.GetStatsSummary(ctx, startOfMonth, startOfMonth.AddDate(0, 1, 0), "")
-		if err != nil {
-			s.logger.Warn("Failed to get monthly advance payment fee stats", "error", err)
-			return
-		}
-		monthlyAdvanceFeeEarned = int64(stats.TotalFeeEarned)
-	}()
-
-	// All-time advance payment fees (completed)
-	var allTimeAdvanceFeeEarned int64
-	go func() {
-		defer wg.Done()
-		stats, err := s.AdvancePaymentRequestRepo.GetStatsSummary(ctx, time.Time{}, time.Time{}, "")
-		if err != nil {
-			s.logger.Warn("Failed to get all-time advance payment fee stats", "error", err)
-			return
-		}
-		allTimeAdvanceFeeEarned = int64(stats.TotalFeeEarned)
-	}()
-
-	// Group 4: Payment schedule counts (2 queries in parallel)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		count, err := s.ProjectEmployeeRepo.CountActiveEmployeesByPaymentSchedule(ctx, domain.PaymentScheduleWeekly)
-		if err != nil {
-			s.logger.Warn("Failed to count weekly employees", "error", err)
-			return
-		}
-		weeklyEmployeesCount = count
-	}()
-
-	go func() {
-		defer wg.Done()
-		count, err := s.ProjectEmployeeRepo.CountActiveEmployeesByPaymentSchedule(ctx, domain.PaymentScheduleMonthly)
-		if err != nil {
-			s.logger.Warn("Failed to count monthly employees", "error", err)
-			return
-		}
-		monthlyEmployeesCount = count
-	}()
-
 	// Wait for all parallel queries to complete
 	wg.Wait()
 
@@ -240,34 +149,13 @@ func (s *Service) GetDashboardSummary(ctx context.Context, monthParam *string) (
 		return nil, queryErrors[0]
 	}
 
-	// Calculate totals: timesheet profit + advance payment fees
-	totalProfit := allTimeTimesheetProfit + allTimeAdvanceFeeEarned
-	totalProfitThisMonth := monthlyTimesheetProfit + monthlyAdvanceFeeEarned
-
-	// Calculate average salaries from actual transfer data (direct call — no goroutine needed)
-	weeklyAvg, monthlyAvg, err := s.SalaryCalculationSvc.CalculateAverageSalariesFromTransfers(ctx)
-	if err != nil {
-		s.logger.Warn("Failed to calculate average salaries from transfer data", "error", err)
-	} else {
-		avgWeeklySalary = weeklyAvg
-		avgMonthlySalary = monthlyAvg
-	}
-
 	response := &dto.DashboardSummaryResponse{
-		TotalEmployees:              int(totalEmployees),
-		TotalWorkingEmployees:       workingEmployees,
-		EmployeesHiredThisMonth:     int(employeesHiredThisMonth),
-		TotalPaidSalary:             totalPaidSalary,
-		PendingSalaryThisMonth:      pendingSalaryThisMonth,
-		PaidSalaryThisMonth:         paidSalaryThisMonth,
-		TotalRevenue:                allTimeTimesheetRevenue,
-		TotalRevenueThisMonth:       monthlyTimesheetRevenue,
-		TotalProfit:                 totalProfit,
-		TotalProfitThisMonth:        totalProfitThisMonth,
-		TotalWeeklySalaryEmployees:  weeklyEmployeesCount,
-		TotalMonthlySalaryEmployees: monthlyEmployeesCount,
-		AvgWeeklySalary:             avgWeeklySalary,
-		AvgMonthlySalary:            avgMonthlySalary,
+		TotalEmployees:          int(totalEmployees),
+		TotalWorkingEmployees:   workingEmployees,
+		EmployeesHiredThisMonth: int(employeesHiredThisMonth),
+		TotalPaidSalary:         totalPaidSalary,
+		PendingSalaryThisMonth:  pendingSalaryThisMonth,
+		PaidSalaryThisMonth:     paidSalaryThisMonth,
 	}
 
 	// Store in cache for future requests

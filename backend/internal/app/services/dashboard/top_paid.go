@@ -3,28 +3,11 @@ package dashboard
 import (
 	"api-server/internal/pkg/clock"
 	"context"
-	"fmt"
-	"math"
 	"time"
 
 	"api-server/internal/app/dto"
-	"api-server/internal/domain"
-	"api-server/internal/infra/persistence/repositories"
 	"api-server/internal/pkg/timeutil"
-
-	"golang.org/x/sync/errgroup"
 )
-
-func isActiveByCutoff(lastDate *string) bool {
-	if lastDate == nil {
-		return false
-	}
-	cutoff := clock.Now().AddDate(0, 0, -14)
-	if d, err := time.Parse("2006-01-02", *lastDate); err == nil {
-		return !d.Before(cutoff)
-	}
-	return false
-}
 
 func derefStr(s *string) string {
 	if s != nil {

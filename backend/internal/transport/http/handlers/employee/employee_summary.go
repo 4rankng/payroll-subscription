@@ -36,7 +36,7 @@ func (h *Handler) GetEmployeesSummary(c *gin.Context) {
 	var summary *domain.EmployeesSummary
 	var err error
 
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		if uid, ok := userID.(uint); ok {
 			summary, err = h.employeeService.GetEmployeesSummaryForCreator(c.Request.Context(), uid)
 		} else {

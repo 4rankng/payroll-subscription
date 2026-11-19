@@ -124,16 +124,6 @@ func (m *MockProjectEmployeeRepository) GetActiveAssignments(ctx context.Context
 	return args.Get(0).([]*domain.ProjectEmployee), args.Error(1)
 }
 
-func (m *MockProjectEmployeeRepository) EndAssignment(ctx context.Context, id uint, endDate time.Time) error {
-	args := m.Called(ctx, id, endDate)
-	return args.Error(0)
-}
-
-func (m *MockProjectEmployeeRepository) BulkUpdateLastDate(ctx context.Context, assignmentIDs []uint, lastDate time.Time) error {
-	args := m.Called(ctx, assignmentIDs, lastDate)
-	return args.Error(0)
-}
-
 func (m *MockProjectEmployeeRepository) GetCurrentProjectForEmployee(ctx context.Context, employeeID uint) (*domain.Project, error) {
 	args := m.Called(ctx, employeeID)
 	return args.Get(0).(*domain.Project), args.Error(1)
@@ -164,49 +154,8 @@ func (m *MockProjectEmployeeRepository) CountWorkingEmployees(ctx context.Contex
 	return args.Int(0), args.Error(1)
 }
 
-func (m *MockProjectEmployeeRepository) GetEmployeesByPaymentSchedule(ctx context.Context, schedule domain.PaymentSchedule) ([]*domain.ProjectEmployee, error) {
-	args := m.Called(ctx, schedule)
-	return args.Get(0).([]*domain.ProjectEmployee), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) CountActiveEmployeesByPaymentSchedule(ctx context.Context, schedule domain.PaymentSchedule) (int, error) {
-	args := m.Called(ctx, schedule)
-	return args.Int(0), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) GetEmployeesWithPendingScheduleChanges(ctx context.Context, effectiveDate time.Time) ([]*domain.ProjectEmployee, error) {
-	args := m.Called(ctx, effectiveDate)
-	return args.Get(0).([]*domain.ProjectEmployee), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) GetEmployeesWithPendingCheckInChange(ctx context.Context, effectiveDate time.Time) ([]*domain.ProjectEmployee, error) {
-	args := m.Called(ctx, effectiveDate)
-	return args.Get(0).([]*domain.ProjectEmployee), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) GetEmployeesWithPendingCheckInEnableEffective(ctx context.Context, effectiveDate time.Time) ([]*domain.ProjectEmployee, error) {
-	args := m.Called(ctx, effectiveDate)
-	return args.Get(0).([]*domain.ProjectEmployee), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) GetCheckInConfiguration(ctx context.Context, query domain.CheckInConfigurationQuery) (*domain.CheckInConfigurationResult, error) {
-	args := m.Called(ctx, query)
-	result, _ := args.Get(0).(*domain.CheckInConfigurationResult)
-	return result, args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) ApplyScheduleChanges(ctx context.Context, employeeIDs []uint) error {
-	args := m.Called(ctx, employeeIDs)
-	return args.Error(0)
-}
-
 func (m *MockProjectEmployeeRepository) HasAccessViaProject(ctx context.Context, employeeID, userID uint) (bool, error) {
 	args := m.Called(ctx, employeeID, userID)
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *MockProjectEmployeeRepository) HasFlexibleAssignment(ctx context.Context, employeeID uint) (bool, error) {
-	args := m.Called(ctx, employeeID)
 	return args.Bool(0), args.Error(1)
 }
 
@@ -280,22 +229,12 @@ func (m *MockEmployeeRepository) ExistsByEmail(ctx context.Context, email string
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockEmployeeRepository) GetByBankAccountNumber(ctx context.Context, bankAccountNumber string) (*domain.Employee, error) {
-	args := m.Called(ctx, bankAccountNumber)
-	return args.Get(0).(*domain.Employee), args.Error(1)
-}
-
 func (m *MockEmployeeRepository) Update(ctx context.Context, employee *domain.Employee) error {
 	args := m.Called(ctx, employee)
 	return args.Error(0)
 }
 
 func (m *MockEmployeeRepository) Delete(ctx context.Context, id uint) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockEmployeeRepository) HardDelete(ctx context.Context, id uint) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
@@ -472,28 +411,24 @@ func TestEmployeeSyncService_ValidateEmployeeNameConsistency(t *testing.T) {
 	}
 
 	// Setup assignments with mixed consistency
-	pastDate := time.Now().AddDate(-1, 0, 0)
 	assignments := []*domain.ProjectEmployee{
 		{
-			ID:            1,
-			EmployeeID:    employeeID,
-			EmployeeName:  correctName,      // Consistent
-			EmployeeCCCD:  "123456789012", // Consistent
-			LastDate:      nil,
+			ID:           1,
+			EmployeeID:   employeeID,
+			EmployeeName: correctName,    // Consistent
+			EmployeeCCCD: "123456789012", // Consistent
 		},
 		{
-			ID:            2,
-			EmployeeID:    employeeID,
-			EmployeeName:  "Wrong Name",     // Inconsistent
-			EmployeeCCCD:  "123456789012", // CCCD consistent
-			LastDate:      &pastDate,
+			ID:           2,
+			EmployeeID:   employeeID,
+			EmployeeName: "Wrong Name",   // Inconsistent
+			EmployeeCCCD: "123456789012", // CCCD consistent
 		},
 		{
-			ID:            3,
-			EmployeeID:    employeeID,
-			EmployeeName:  correctName,      // Consistent
-			EmployeeCCCD:  "123456789012", // Consistent
-			LastDate:      nil,
+			ID:           3,
+			EmployeeID:   employeeID,
+			EmployeeName: correctName,    // Consistent
+			EmployeeCCCD: "123456789012", // Consistent
 		},
 	}
 
@@ -538,7 +473,6 @@ func TestInconsistentAssignment_IsValid(t *testing.T) {
 				ProjectID:    1,
 				CurrentName:  "Wrong Name",
 				CorrectName:  "Correct Name",
-				LastDate:     nil,
 			},
 			expectValid: true,
 		},
@@ -556,7 +490,7 @@ func TestInconsistentAssignment_IsValid(t *testing.T) {
 
 // Regression: a profile CCCD fix must cascade into the assignment's denormalized
 // EmployeeCCCD copy (the weekly BCC import resolves rows by that copy), while
-// ended assignments stay untouched and consistent ones are not rewritten.
+// consistent assignments are not rewritten.
 func TestEmployeeSyncService_SyncEmployeeIdentityToAssignments_CCCDCascade(t *testing.T) {
 	ctx := context.Background()
 	employeeID := uint(7)
@@ -570,13 +504,12 @@ func TestEmployeeSyncService_SyncEmployeeIdentityToAssignments_CCCDCascade(t *te
 	mockProjectEmployeeRepo := &MockProjectEmployeeRepository{}
 
 	employee := &domain.Employee{ID: employeeID, Fullname: "Nguyen Van A", CCCD: canonicalCCCD}
-	past := time.Now().AddDate(-1, 0, 0)
-	staleActive := &domain.ProjectEmployee{ID: 11, EmployeeID: employeeID, EmployeeName: "Nguyen Van A", EmployeeCCCD: "011305000923"}
-	ended := &domain.ProjectEmployee{ID: 12, EmployeeID: employeeID, EmployeeName: "Nguyen Van A", EmployeeCCCD: "000", LastDate: &past}
+	staleCCCD := &domain.ProjectEmployee{ID: 11, EmployeeID: employeeID, EmployeeName: "Nguyen Van A", EmployeeCCCD: "011305000923"}
+	staleName := &domain.ProjectEmployee{ID: 12, EmployeeID: employeeID, EmployeeName: "Wrong Name", EmployeeCCCD: canonicalCCCD}
 	consistent := &domain.ProjectEmployee{ID: 13, EmployeeID: employeeID, EmployeeName: "Nguyen Van A", EmployeeCCCD: canonicalCCCD}
 
 	mockEmployeeRepo.On("GetByID", ctx, employeeID).Return(employee, nil)
-	mockProjectEmployeeRepo.On("GetByEmployee", ctx, employeeID).Return([]*domain.ProjectEmployee{staleActive, ended, consistent}, nil)
+	mockProjectEmployeeRepo.On("GetByEmployee", ctx, employeeID).Return([]*domain.ProjectEmployee{staleCCCD, staleName, consistent}, nil)
 	var updatedIDs []uint
 	mockProjectEmployeeRepo.On("Update", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -594,9 +527,9 @@ func TestEmployeeSyncService_SyncEmployeeIdentityToAssignments_CCCDCascade(t *te
 
 	assert.NoError(t, err)
 	assert.True(t, result.IsSuccess())
-	assert.Equal(t, []uint{11}, updatedIDs, "only the active assignment with a stale CCCD is rewritten")
-	assert.Equal(t, canonicalCCCD, staleActive.EmployeeCCCD)
-	assert.Equal(t, "000", ended.EmployeeCCCD, "ended assignments stay untouched")
+	assert.Equal(t, []uint{11, 12}, updatedIDs, "every assignment with a stale identity copy is rewritten")
+	assert.Equal(t, canonicalCCCD, staleCCCD.EmployeeCCCD)
+	assert.Equal(t, "Nguyen Van A", staleName.EmployeeName, "stale name copy is synced too")
 	assert.Equal(t, canonicalCCCD, consistent.EmployeeCCCD)
 	mockEmployeeRepo.AssertExpectations(t)
 	mockProjectEmployeeRepo.AssertExpectations(t)

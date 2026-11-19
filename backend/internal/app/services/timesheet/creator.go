@@ -53,9 +53,6 @@ func (c *Creator) CreateTimesheet(ctx context.Context, timesheet *domain.Timeshe
 	if assignment.Project.IsDraft() {
 		return nil, domain.NewValidationError(fmt.Sprintf("Không thể tạo bảng chấm công cho dự án '%s'. Dự án đang ở trạng thái nháp. Vui lòng kích hoạt dự án trước khi thêm mục chấm công", assignment.Project.Name))
 	}
-	if assignment.Project.IsPaused() {
-		return nil, domain.NewValidationError(fmt.Sprintf("Không thể tạo bảng chấm công cho dự án '%s'. Dự án hiện đang tạm dừng. Vui lòng kích hoạt dự án trước khi thêm mục chấm công", assignment.Project.Name))
-	}
 
 	// Determine day type based on date and rules
 	dayType, err := c.Validator.DetermineDayType(timesheet.Date, userDayType)
@@ -90,7 +87,7 @@ func (c *Creator) CreateTimesheet(ctx context.Context, timesheet *domain.Timeshe
 	isUpdate := err == nil && existing != nil
 
 	// Check if trying to update an approved timesheet as a partner
-	if isUpdate && userRole == "partner" && existing.Status == domain.TimesheetStatusApproved {
+	if isUpdate && userRole == "quanly" && existing.Status == domain.TimesheetStatusApproved {
 		return nil, fmt.Errorf("không thể sửa đổi bảng chấm công đã được phê duyệt")
 	}
 

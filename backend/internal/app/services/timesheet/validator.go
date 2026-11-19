@@ -168,9 +168,6 @@ func (v *Validator) ValidateEmployeeWorkPeriod(ctx context.Context, projectID, e
 		// Format date strings for the error message
 		startDateStr := assignment.StartDate.Format("2006-01-02")
 		endDateStr := "hiện tại"
-		if assignment.LastDate != nil {
-			endDateStr = assignment.LastDate.Format("2006-01-02")
-		}
 
 		return domain.NewValidationError(fmt.Sprintf(constants.MsgTimesheetDateOutsideWorkPeriodVN,
 			date.Format("2006-01-02"), employeeID, startDateStr, endDateStr))

@@ -173,7 +173,7 @@ func (h *PayrateHandler) ValidatePayrate(c *gin.Context) {
 	projectBlocked := false
 	if projectID > 0 {
 		project, err := h.projectService.GetProject(c.Request.Context(), projectID)
-		if err == nil && (project.IsCompleted() || project.IsCancelled()) {
+		if err == nil && (project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled) {
 			projectBlocked = true
 			// Lock all fields — nothing can be changed
 			fromResult.field.Status = FieldError

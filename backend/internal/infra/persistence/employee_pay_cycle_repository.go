@@ -33,7 +33,7 @@ func (r *KyPaidRecordRepository) UpsertAmount(ctx context.Context, record *domai
 		Clauses(clause.OnConflict{
 			Columns: []clause.Column{
 				{Name: "employee_id"},
-				{Name: "ky"},
+				{Name: "cycle"},
 				{Name: "work_month"},
 			},
 			DoUpdates: clause.Assignments(map[string]interface{}{
@@ -73,7 +73,7 @@ func (r *KyPaidRecordRepository) CountDistinctEmployeesByKy(ctx context.Context,
 		Model(&domain.KyPaidRecord{}).
 		Select("ky, COUNT(*) AS c").
 		Where("work_month = ?", workMonth).
-		Group("ky").
+		Group("cycle").
 		Scan(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("ky_paid_records: count distinct by ky: %w", err)

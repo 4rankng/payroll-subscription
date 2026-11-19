@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // SettingsValueType represents the type of setting value
@@ -25,7 +23,6 @@ type Settings struct {
 	Key       string            `json:"key" gorm:"type:varchar(100);uniqueIndex;not null"`
 	Value     *string           `json:"value" gorm:"type:text"`
 	ValueType SettingsValueType `json:"value_type" gorm:"type:enum('string','number','boolean','json');not null;default:'string'"`
-	DeletedAt gorm.DeletedAt    `json:"-" gorm:"index"`
 	UpdatedAt time.Time         `json:"updated_at" gorm:"type:timestamp;default:CURRENT_TIMESTAMP;autoUpdateTime"`
 }
 

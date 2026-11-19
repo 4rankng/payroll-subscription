@@ -498,7 +498,7 @@ func (h *Handler) ApproveAllTimesheets(c *gin.Context) {
 	}
 
 	// Apply partner role filtering - only show timesheets for employees created by the current user
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		filters.EmployeeCreatedBy = &userID
 	}
 

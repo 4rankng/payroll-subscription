@@ -21,7 +21,7 @@ func TestPayrateTemporalServiceUsesPaidCutoffAndRecalculatesOnlyMutableTimesheet
 	service := NewPayrateTemporalService(db, repository)
 
 	const projectID uint = 41
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 
 	paidDate := time.Date(2026, 8, 10, 0, 0, 0, 0, time.Local)
 	fromDate := paidDate.AddDate(0, 0, 1)
@@ -30,7 +30,7 @@ func TestPayrateTemporalServiceUsesPaidCutoffAndRecalculatesOnlyMutableTimesheet
 		newPayrateTemporalTimesheet(projectID, fromDate, domain.TimesheetStatusApproved, domain.PaymentStatusPending),
 		newPayrateTemporalTimesheet(projectID, fromDate.AddDate(0, 0, 1), domain.TimesheetStatusPendingApproval, domain.PaymentStatusPending),
 		newPayrateTemporalTimesheet(projectID, fromDate.AddDate(0, 0, 3), domain.TimesheetStatusPendingApproval, domain.PaymentStatusPending),
-		newPayrateTemporalTimesheet(projectID, fromDate.AddDate(0, 0, 2), domain.TimesheetStatusRejected, domain.PaymentStatusFailed),
+		newPayrateTemporalTimesheet(projectID, fromDate.AddDate(0, 0, 2), domain.TimesheetStatusRejected, domain.PaymentStatusPending),
 		newPayrateTemporalTimesheet(projectID, paidDate.AddDate(0, 0, -1), domain.TimesheetStatusPendingApproval, domain.PaymentStatusPending),
 	}
 	for _, timesheet := range timesheets {
@@ -73,7 +73,7 @@ func TestPayrateTemporalServiceUsesLatestPaidTimesheetWorkDateForEffectiveDate(t
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 48
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 
 	// Work on Aug 14 was paid on Aug 17. Its work date—not the later transfer
 	// timestamp—sets the new payrate boundary, so Aug 15 is allowed.
@@ -105,7 +105,7 @@ func TestPayrateTemporalServiceAllowsBackdatedCreateOverEmptyTimeline(t *testing
 	ctx := context.Background()
 
 	const projectID uint = 49
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	service := NewPayrateTemporalService(db, &payrateTemporalRepositoryStub{})
 
 	seedPayrateTemporalPayrate(t, db, &domain.Payrate{
@@ -128,7 +128,7 @@ func TestPayrateTemporalServiceRejectsBackdatedCreateOverMutableTimesheets(t *te
 	ctx := context.Background()
 
 	const projectID uint = 57
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	service := NewPayrateTemporalService(db, &payrateTemporalRepositoryStub{})
 
 	seedPayrateTemporalPayrate(t, db, &domain.Payrate{
@@ -159,7 +159,7 @@ func TestPayrateTemporalServicePaidFloorStillBlocksBackdatedCreate(t *testing.T)
 	ctx := context.Background()
 
 	const projectID uint = 58
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	service := NewPayrateTemporalService(db, &payrateTemporalRepositoryStub{})
 
 	seedPayrateTemporalPayrate(t, db, &domain.Payrate{
@@ -180,13 +180,13 @@ func TestPayrateTemporalServicePaidFloorStillBlocksBackdatedCreate(t *testing.T)
 	require.Error(t, err, "paid floor binds even when no mutable timesheet exists")
 }
 
-func TestPayrateTemporalServiceUsesConfiguredTotalForFlexibleProjects(t *testing.T) {
+func TestPayrateTemporalServiceRecalculatesAmountFromHoursAndRate(t *testing.T) {
 	db := newPayrateTemporalTestDB(t)
 	ctx := context.Background()
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 42
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, true).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	timesheet := newPayrateTemporalTimesheet(
 		projectID,
 		time.Date(2026, 8, 12, 0, 0, 0, 0, time.Local),
@@ -209,7 +209,7 @@ func TestPayrateTemporalServiceUsesConfiguredTotalForFlexibleProjects(t *testing
 
 	var persisted domain.Timesheet
 	require.NoError(t, db.First(&persisted, timesheet.ID).Error)
-	require.Equal(t, int64(250000), persisted.Amount)
+	require.Equal(t, int64(8*250000), persisted.Amount)
 }
 
 func TestPayrateTemporalServiceRollsBackMutableTimesheetsWhenNewConfigDoesNotCoverPayType(t *testing.T) {
@@ -219,7 +219,7 @@ func TestPayrateTemporalServiceRollsBackMutableTimesheetsWhenNewConfigDoesNotCov
 	service := NewPayrateTemporalService(db, repository)
 
 	const projectID uint = 43
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	fromDate := time.Date(2026, 8, 12, 0, 0, 0, 0, time.Local)
 	valid := newPayrateTemporalTimesheet(projectID, fromDate, domain.TimesheetStatusPendingApproval, domain.PaymentStatusPending)
 	unsupported := newPayrateTemporalTimesheet(projectID, fromDate.AddDate(0, 0, 1), domain.TimesheetStatusPendingApproval, domain.PaymentStatusPending)
@@ -246,7 +246,7 @@ func TestPayrateTemporalServiceMovesStartDateEarlierAndRecalculatesMutableTimesh
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 44
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 
 	// Sibling config still current; under from-date-only there is no stored
 	// end date (migration 138) — the row runs until the successor's fromDate.
@@ -290,7 +290,7 @@ func TestPayrateTemporalServiceMovesStartDateEarlierInPlace(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 50
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 
 	previous := &domain.Payrate{
 		ID: 13, ProjectID: projectID,
@@ -327,7 +327,7 @@ func TestPayrateTemporalServiceRejectsStartDateOnOrBeforeLatestPaidTimesheet(t *
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 45
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID: 9, ProjectID: projectID,
 		FromDate: time.Date(2026, 8, 10, 0, 0, 0, 0, time.Local),
@@ -348,7 +348,7 @@ func TestPayrateTemporalServiceRejectsUpdateWhenSiblingStartsLater(t *testing.T)
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 46
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	sibling := &domain.Payrate{ID: 10, ProjectID: projectID, FromDate: time.Date(2026, 8, 10, 0, 0, 0, 0, time.Local)}
 	target := &domain.Payrate{ID: 11, ProjectID: projectID, FromDate: time.Date(2026, 8, 14, 0, 0, 0, 0, time.Local)}
 	seedPayrateTemporalPayrate(t, db, sibling)
@@ -367,7 +367,7 @@ func TestPayrateTemporalServiceLaterRateChangeRequiresNewConfig(t *testing.T) {
 	service := NewPayrateTemporalService(db, repository)
 
 	const projectID uint = 47
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        12,
 		ProjectID: projectID,
@@ -425,7 +425,7 @@ func TestPayrateTemporalServiceMovesStartDateLaterWithNoLinkedTimesheets(t *test
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 52
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        16,
 		ProjectID: projectID,
@@ -451,7 +451,7 @@ func TestPayrateTemporalServiceRejectsUpdateOfReplacedConfig(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 51
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	replaced := &domain.Payrate{
 		ID:        15,
 		ProjectID: projectID,
@@ -486,7 +486,7 @@ func TestPayrateTemporalServiceLatestConfigWithStaleEndDateStaysEditable(t *test
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 54
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	lone := &domain.Payrate{
 		ID:        18,
 		ProjectID: projectID,
@@ -508,7 +508,7 @@ func TestPayrateTemporalServiceDeleteBlockedByAnyLinkedTimesheet(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 55
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        20,
 		ProjectID: projectID,
@@ -542,7 +542,7 @@ func TestPayrateTemporalServiceDeletesUnlinkedConfig(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 59
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        22,
 		ProjectID: projectID,
@@ -568,7 +568,7 @@ func TestPayrateTemporalServiceRejectsUpdateWhenTimesheetsLinked(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 60
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        23,
 		ProjectID: projectID,
@@ -592,8 +592,9 @@ func TestPayrateTemporalServiceRejectsUpdateWhenTimesheetsLinked(t *testing.T) {
 	require.NoError(t, db.First(&persisted, target.ID).Error)
 	require.Contains(t, string(persisted.PayrateJSON), "100000", "rates must stay untouched")
 
-	// Unlinking the timesheet restores editability.
-	require.NoError(t, db.Exec("UPDATE timesheets SET deleted_at = ? WHERE id = ?", time.Now(), pending.ID).Error)
+	// Unlinking the timesheet restores editability (deletes are hard DELETEs
+	// — D16; the service no longer honours deleted_at).
+	require.NoError(t, db.Exec("DELETE FROM timesheets WHERE id = ?", pending.ID).Error)
 	target.Payrate = domain.PayrateConfiguration(`{"Công nhân":{"ngày thường":{"08:00-18:00":250000}}}`)
 	require.NoError(t, service.UpdateEffectiveDatedPayrate(ctx, target))
 }
@@ -604,7 +605,7 @@ func TestPayrateTemporalServiceDeleteBlockedByApprovedTimesheets(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 56
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        21,
 		ProjectID: projectID,
@@ -634,7 +635,7 @@ func TestPayrateTemporalServiceDropsSuppliedEndDateOnUpdate(t *testing.T) {
 	service := NewPayrateTemporalService(db, nil)
 
 	const projectID uint = 53
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	target := &domain.Payrate{
 		ID:        16,
 		ProjectID: projectID,
@@ -685,7 +686,6 @@ func newPayrateTemporalTestDB(t *testing.T) *gorm.DB {
 	require.NoError(t, db.Exec(`
 		CREATE TABLE projects (
 			id INTEGER PRIMARY KEY,
-			is_flexible BOOLEAN NOT NULL DEFAULT FALSE,
 			deleted_at DATETIME
 		)
 	`).Error)
@@ -801,7 +801,7 @@ func TestPayrateTemporalServiceRejectsSameDayCreateEvenWhenEmpty(t *testing.T) {
 	ctx := context.Background()
 
 	const projectID uint = 61
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	service := NewPayrateTemporalService(db, &payrateTemporalRepositoryStub{})
 
 	seedPayrateTemporalPayrate(t, db, &domain.Payrate{
@@ -828,7 +828,7 @@ func TestPayrateTemporalServiceRejectsBackdatedCreateOntoOccupiedDate(t *testing
 	ctx := context.Background()
 
 	const projectID uint = 62
-	require.NoError(t, db.Exec("INSERT INTO projects (id, is_flexible) VALUES (?, ?)", projectID, false).Error)
+	require.NoError(t, db.Exec("INSERT INTO projects (id) VALUES (?)", projectID).Error)
 	service := NewPayrateTemporalService(db, &payrateTemporalRepositoryStub{})
 
 	for id, day := range map[uint]int{7: 1, 8: 5, 9: 10} {

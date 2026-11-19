@@ -21,8 +21,6 @@ type EmployeeService struct {
 	// Repositories - for data access only
 	EmployeeRepo        domain.EmployeeRepository
 	TimesheetRepo       domain.TimesheetRepository
-	AttendanceRepo      domain.AttendanceRepository
-	BankRepo            domain.BankRepository
 	ProjectEmployeeRepo domain.ProjectEmployeeRepository
 	EmployeeUserRepo    domain.EmployeeUserRepository
 	UserRepo            domain.UserRepository
@@ -38,10 +36,6 @@ type EmployeeService struct {
 	events             domain.EventBus
 	cache              domain.CacheServiceUseCase
 
-	// bankAccountValidator performs live OnePay account verification.
-	// May be nil when no disbursement provider is configured.
-	bankAccountValidator *BankAccountValidator
-
 	// isEmployeeMobileRequired reports the admin policy toggle that makes the
 	// phone number mandatory on create. Nil (tests, partial wiring) = off.
 	isEmployeeMobileRequired func(ctx context.Context) bool
@@ -51,8 +45,6 @@ func NewEmployeeService(cfg *Config) *EmployeeService {
 	return &EmployeeService{
 		EmployeeRepo:          cfg.EmployeeRepo,
 		TimesheetRepo:         cfg.TimesheetRepo,
-		AttendanceRepo:        cfg.AttendanceRepo,
-		BankRepo:              cfg.BankRepo,
 		ProjectEmployeeRepo:   cfg.ProjectEmployeeRepo,
 		EmployeeUserRepo:      cfg.EmployeeUserRepo,
 		UserRepo:              cfg.UserRepo,
@@ -61,31 +53,20 @@ func NewEmployeeService(cfg *Config) *EmployeeService {
 		TransactionManager:    cfg.TransactionManager,
 		events:                cfg.Events,
 		cache:                 cfg.Cache,
-		bankAccountValidator:  cfg.BankAccountValidator,
 
 		isEmployeeMobileRequired: cfg.IsEmployeeMobileRequired,
 	}
 }
 
-// BankAccountValidator exposes the validator so co-located services
-// (e.g. ImportService) that already depend on EmployeeService can perform
-// account validation without a separate constructor parameter. Returns
-// nil when validation is disabled.
-func (s *EmployeeService) BankAccountValidator() *BankAccountValidator {
-	return s.bankAccountValidator
-}
-
 // CreateEmployee orchestrates employee creation using domain services and transaction management
 func (s *EmployeeService) CreateEmployee(ctx context.Context, employee *domain.Employee, createdBy uint) (*domain.Employee, error) {
-	return s.createEmployee(ctx, employee, createdBy, false)
+	return s.createEmployee(ctx, employee, createdBy)
 }
 
 // CreateEmployeeFromImport creates an employee from a trusted bulk-import
-// workflow. Unlike a manual write, confirmed-invalid bank details are persisted
-// with their validation status so the import can continue and the employee can
-// be corrected from the unified bank-warning list.
+// workflow. It shares the transactional core with the manual write path.
 func (s *EmployeeService) CreateEmployeeFromImport(ctx context.Context, employee *domain.Employee, createdBy uint) (*domain.Employee, error) {
-	return s.createEmployee(ctx, employee, createdBy, true)
+	return s.createEmployee(ctx, employee, createdBy)
 }
 
 // EnsureEmployeeUserAccount creates and links a login account for an existing
@@ -120,13 +101,12 @@ func (s *EmployeeService) createEmployee(
 	ctx context.Context,
 	employee *domain.Employee,
 	createdBy uint,
-	allowInvalidBankAccount bool,
 ) (*domain.Employee, error) {
 	// Orchestrate employee creation within a transaction
 	result, err := s.TransactionManager.WithTransactionResult(ctx, func(txCtx context.Context) (any, error) {
 		// Set created by
 		employee.CreatedBy = createdBy
-		return s.createEmployeeCore(txCtx, employee, allowInvalidBankAccount)
+		return s.createEmployeeCore(txCtx, employee)
 	})
 
 	if err != nil {
@@ -156,7 +136,6 @@ func (s *EmployeeService) createEmployee(
 func (s *EmployeeService) createEmployeeCore(
 	ctx context.Context,
 	employee *domain.Employee,
-	allowInvalidBankAccount bool,
 ) (*domain.Employee, error) {
 	// Sanitize CCCD and email before persistence
 	// Sanitize identifiers and contact fields
@@ -173,11 +152,6 @@ func (s *EmployeeService) createEmployeeCore(
 
 	// Normalize employee fullname to Vietnamese title case
 	employee.Fullname = utils.ToVietnameseTitleCase(employee.Fullname)
-
-	// Normalize bank account name if provided
-	if employee.BankAccountName != "" {
-		employee.BankAccountName = utils.ToVietnameseTitleCase(employee.BankAccountName)
-	}
 
 	// 1. Validate employee data (domain entity validation)
 	if err := employee.IsValid(); err != nil {
@@ -204,46 +178,15 @@ func (s *EmployeeService) createEmployeeCore(
 		}
 	}
 
-	// 1c. Live account verification. Manual writes reject confirmed-invalid
-	// accounts before persistence; bulk imports persist the same verdict so the
-	// employee can be corrected without blocking timesheet ingestion.
-	if err := validateBankAccountForCreate(
-		ctx,
-		s.bankAccountValidator,
-		employee,
-		allowInvalidBankAccount,
-	); err != nil {
-		return nil, err
-	}
-
-	// 2. Validate bank reference if provided (infrastructure validation)
-	if employee.BankID != nil {
-		if _, err := s.BankRepo.GetByID(ctx, *employee.BankID); err != nil {
-			if domain.IsNotFoundError(err) {
-				return nil, domain.NewValidationError(constants.MsgSelectedBankNotExistVN)
-			}
-			return nil, fmt.Errorf("%s: %w", constants.MsgFailedToValidateBankVN, err)
-		}
-	}
-
-	// 3. Check for duplicate employee by CCCD before creating user account
+	// 1c. Check for duplicate employee by CCCD before creating user account
 	// This ensures we don't create a user if the employee already exists
-	existingEmployee, err := s.EmployeeRepo.GetByCCCD(ctx, employee.CCCD)
-	if err == nil && existingEmployee != nil {
-		// Employee exists - check if it's soft-deleted
+	if existingEmployee, err := s.EmployeeRepo.GetByCCCD(ctx, employee.CCCD); err == nil && existingEmployee != nil {
 		logger := observability.GetLogger()
-		if !existingEmployee.DeletedAt.Valid {
-			// Employee is active, this is a true duplicate
-			logger.Warn("Employee with CCCD already exists", "cccd", employee.CCCD, "existing_id", existingEmployee.ID)
-			return nil, domain.NewConflictError(fmt.Sprintf("Employee with CCCD '%s' already exists", employee.CCCD))
-		}
-		// Employee is soft-deleted, allow creation (the unique constraint includes deleted_at)
-		logger.Info("Employee with CCCD exists but is soft-deleted, allowing creation", "cccd", employee.CCCD, "deleted_id", existingEmployee.ID)
-		// Set employee to nil to indicate no active duplicate exists
-		existingEmployee = nil
+		logger.Warn("Employee with CCCD already exists", "cccd", employee.CCCD, "existing_id", existingEmployee.ID)
+		return nil, domain.NewConflictError(fmt.Sprintf("Employee with CCCD '%s' already exists", employee.CCCD))
 	}
 
-	// 4. Create user account for the employee
+	// 2. Create user account for the employee
 	userID, err := s.createUserForEmployee(ctx, employee)
 	if err != nil {
 		logger := observability.GetLogger()
@@ -253,10 +196,10 @@ func (s *EmployeeService) createEmployeeCore(
 		return nil, err
 	}
 
-	// 5. Link user to employee
+	// 3. Link user to employee
 	employee.UserID = &userID
 
-	// 6. Persist employee (repository operation)
+	// 4. Persist employee (repository operation)
 	if err := s.EmployeeRepo.Create(ctx, employee); err != nil {
 		logger := observability.GetLogger()
 		logger.Error("Failed to create employee", "cccd", employee.CCCD, "error", err)
@@ -300,11 +243,6 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, employee *domain.E
 		// Normalize employee fullname to Vietnamese title case
 		employee.Fullname = utils.ToVietnameseTitleCase(employee.Fullname)
 
-		// Normalize bank account name if provided
-		if employee.BankAccountName != "" {
-			employee.BankAccountName = utils.ToVietnameseTitleCase(employee.BankAccountName)
-		}
-
 		// Check if name changed after normalization
 		nameChanged = originalName != employee.Fullname
 
@@ -319,8 +257,6 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, employee *domain.E
 
 		// 1a. Duplicate mobile guard (self-excluded): only fires when the edit
 		// moves the employee onto a number another active employee holds.
-		// Legacy pairs that already share a number stay editable on unrelated
-		// fields — the partner-facing collision report drives those fixes.
 		if employee.Mobile != "" && employee.Mobile != originalEmployee.Mobile {
 			holders, err := s.EmployeeRepo.ListByMobile(txCtx, employee.Mobile)
 			if err != nil {
@@ -333,35 +269,7 @@ func (s *EmployeeService) UpdateEmployee(ctx context.Context, employee *domain.E
 			}
 		}
 
-		// 1b. Live OnePay account verification. Only re-validate when the
-		// bank fields actually changed, to avoid a redundant OnePay call
-		// on every unrelated profile edit.
-		if bankFieldsChanged(originalEmployee, employee) {
-			if err := validateManualBankAccount(txCtx, s.bankAccountValidator, employee); err != nil {
-				if domainErr, ok := err.(*domain.DomainError); ok {
-					return domainErr.WithContext("original_account_number", originalEmployee.BankAccountNumber)
-				}
-				return err
-			}
-		} else if originalEmployee != nil {
-			// Preserve the previous validation outcome on the entity so
-			// the repository Update doesn't clobber it with the zero value.
-			employee.BankAccountStatus = originalEmployee.BankAccountStatus
-			employee.BankAccountInvalidReason = originalEmployee.BankAccountInvalidReason
-			employee.BankAccountValidatedAt = originalEmployee.BankAccountValidatedAt
-		}
-
-		// 2. Validate bank reference if provided (infrastructure validation)
-		if employee.BankID != nil {
-			if _, err := s.BankRepo.GetByID(txCtx, *employee.BankID); err != nil {
-				if domain.IsNotFoundError(err) {
-					return domain.NewValidationError(constants.MsgSelectedBankNotExistVN)
-				}
-				return fmt.Errorf("%s: %w", constants.MsgFailedToValidateBankVN, err)
-			}
-		}
-
-		// 3. Update employee (repository operation)
+		// 2. Update employee (repository operation)
 		if err := s.EmployeeRepo.Update(txCtx, employee); err != nil {
 			logger := observability.GetLogger()
 			logger.Error("Failed to update employee", "employee_id", employee.ID, "error", err)
@@ -444,16 +352,6 @@ func (s *EmployeeService) DeleteEmployee(ctx context.Context, id uint, deletedBy
 			return fmt.Errorf("failed to get employee for deletion: %w", err)
 		}
 
-		// Active flexible-pay assignments have their own payment lifecycle and
-		// must be removed explicitly before the employee can be deleted.
-		hasActiveFlexiblePaymentSchedule, err := s.ProjectEmployeeRepo.HasActiveFlexiblePaymentScheduleByEmployeeID(txCtx, id)
-		if err != nil {
-			return fmt.Errorf("failed to check employee flexible payment schedule: %w", err)
-		}
-		if hasActiveFlexiblePaymentSchedule {
-			return domain.NewValidationError(constants.MsgCannotDeleteEmployeeFlexiblePaymentVN)
-		}
-
 		// Financial outcomes and approved payroll are immutable. An approved row
 		// can be settled asynchronously after its bank export is created, so keep
 		// the employee and only remove current project memberships in either case.
@@ -477,13 +375,7 @@ func (s *EmployeeService) DeleteEmployee(ctx context.Context, id uint, deletedBy
 		if err := s.TimesheetRepo.HardDeleteOperationalByEmployeeID(txCtx, id); err != nil {
 			return fmt.Errorf("failed to delete employee operational timesheets: %w", err)
 		}
-		if s.AttendanceRepo == nil {
-			return fmt.Errorf("attendance repository is required to hard delete employee")
-		}
-		if err := s.AttendanceRepo.HardDeleteByEmployeeID(txCtx, id); err != nil {
-			return fmt.Errorf("failed to delete employee attendance: %w", err)
-		}
-		if err := s.EmployeeRepo.HardDelete(txCtx, id); err != nil {
+		if err := s.EmployeeRepo.Delete(txCtx, id); err != nil {
 			return fmt.Errorf("%s: %w", constants.MsgFailedToDeleteEmployeeVN, err)
 		}
 
@@ -560,7 +452,7 @@ func (s *EmployeeService) createUserForEmployee(ctx context.Context, employee *d
 		Email:    userEmail,
 		Password: DefaultEmployeePassword,
 		Fullname: employee.Fullname,
-		Role:     string(domain.RoleEmployee),
+		Role:     string(domain.RoleNhanvien),
 	})
 	// Return error as-is to preserve the actual error message from the repository layer
 	// This avoids hiding the root cause (e.g., duplicate username) behind generic error wrapping

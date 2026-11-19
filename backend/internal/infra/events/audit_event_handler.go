@@ -257,16 +257,6 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 			"created_by": e.CreatedBy,
 		}
 
-	// --- Bank events ---
-	case domain.BankCreatedEvent:
-		return map[string]interface{}{"name": e.Name}
-	case domain.BankUpdatedEvent:
-		if len(e.ChangedFields) > 0 {
-			return map[string]interface{}{"changed_fields": e.ChangedFields}
-		}
-	case domain.BankDeletedEvent:
-		return map[string]interface{}{"name": e.Name}
-
 	// --- Payrate events ---
 	case domain.PayrateCreatedEvent:
 		return map[string]interface{}{
@@ -284,103 +274,11 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 			"project_name": e.ProjectName,
 		}
 
-	// --- Transaction events ---
-	case domain.TransactionCreatedEvent:
-		return map[string]interface{}{
-			"amount": e.Amount,
-			"type":   e.Type,
-		}
-	case domain.TransactionUpdatedEvent:
-		if len(e.ChangedFields) > 0 {
-			return map[string]interface{}{"changed_fields": e.ChangedFields}
-		}
-	case domain.TransactionDeletedEvent:
-		return map[string]interface{}{
-			"amount":        e.Amount,
-			"employee_name": e.EmployeeName,
-			"employee_id":   e.EmployeeID,
-		}
-	case domain.TransactionSettledEvent:
-		return map[string]interface{}{
-			"amount":           e.Amount,
-			"settlement_id":    e.SettlementID,
-			"transaction_desc": e.TransactionDesc,
-		}
-
-	// --- Settlement events ---
-	case domain.SettlementCreatedEvent:
-		return map[string]interface{}{
-			"transaction_id":   e.TransactionID,
-			"amount":           e.Amount,
-			"settlement_uuid":  e.SettlementUUID,
-			"transaction_code": e.TransactionCode,
-		}
-
-	// --- Loan events ---
-	case domain.LoanCreatedEvent:
-		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"amount":        e.Amount,
-		}
-	case domain.LoanUpdatedEvent:
-		if len(e.ChangedFields) > 0 {
-			return map[string]interface{}{"changed_fields": e.ChangedFields}
-		}
-	case domain.LoanDeletedEvent:
-		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"amount":        e.Amount,
-		}
-	case domain.LoanApprovedEvent:
-		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"amount":        e.Amount,
-		}
-	case domain.LoanRejectedEvent:
-		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"reason":        e.Reason,
-		}
-	case domain.LoanDisbursedEvent:
-		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"amount":        e.Amount,
-		}
-
 	// --- Asset events ---
 	case domain.AssetCreatedEvent:
 		return map[string]interface{}{"file_name": e.FileName}
 	case domain.AssetDeletedEvent:
 		return map[string]interface{}{"file_name": e.FileName}
-
-	// --- Lender events ---
-	case domain.LenderCreatedEvent:
-		return map[string]interface{}{"name": e.Name}
-	case domain.LenderUpdatedEvent:
-		if len(e.ChangedFields) > 0 {
-			return map[string]interface{}{"changed_fields": e.ChangedFields}
-		}
-	case domain.LenderDeletedEvent:
-		return map[string]interface{}{"name": e.Name}
-
-	// --- Ledger events ---
-	case domain.LedgerEntryCreatedEvent:
-		return map[string]interface{}{
-			"account": e.Account,
-			"amount":  e.Amount,
-		}
-	case domain.LedgerEntryUpdatedEvent:
-		return map[string]interface{}{
-			"account": e.Account,
-			"amount":  e.Amount,
-		}
-	case domain.LedgerEntryDeletedEvent:
-		return map[string]interface{}{"account": e.Account}
 
 	// --- Settings events ---
 	case domain.SettingsCreatedEvent:
@@ -389,26 +287,6 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 		return map[string]interface{}{"key": e.Key}
 	case domain.SettingsDeletedEvent:
 		return map[string]interface{}{"key": e.Key}
-
-	// --- Fee schedule events ---
-	case domain.AdvancePaymentFeeScheduleCreatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.AdvancePaymentFeeScheduleUpdatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.AdvancePaymentFeeScheduleDeletedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.DisbursementFeeScheduleCreatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.DisbursementFeeScheduleUpdatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.DisbursementFeeScheduleDeletedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.WeeklyPaymentFeeScheduleCreatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.WeeklyPaymentFeeScheduleUpdatedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
-	case domain.WeeklyPaymentFeeScheduleDeletedEvent:
-		return feeScheduleMetadata(e.ScheduleID, e.EffectiveDate, e.Summary)
 
 	// --- Import/Export events ---
 	case domain.DataImportedEvent:
@@ -422,84 +300,6 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 			"data_type":    e.DataType,
 			"record_count": e.RecordCount,
 			"file_name":    e.FileName,
-		}
-
-	// --- Bulk Transfer events ---
-	case domain.BulkTransferFileExportedEvent:
-		return map[string]interface{}{
-			"filename":           e.Filename,
-			"cycle":              e.Cycle,
-			"from_date":          e.FromDate,
-			"to_date":            e.ToDate,
-			"for_month":          e.ForMonth,
-			"transactions_count": e.TransactionsCount,
-			"total_amount":       e.TotalAmount,
-		}
-	case domain.BulkTransferResultImportedEvent:
-		return map[string]interface{}{
-			"asset_id":        e.AssetID,
-			"filename":        e.Filename,
-			"total_transfers": e.TotalTransfers,
-			"completed":       e.CompletedCount,
-			"failed":          e.FailedCount,
-			"total_amount":    e.TotalAmount,
-			"is_duplicate":    e.IsDuplicate,
-		}
-	case domain.BulkTransferFileDownloadedEvent:
-		return map[string]interface{}{
-			"bulk_transfer_file_id": e.BulkTransferFileID,
-			"asset_id":              e.AssetID,
-			"filename":              e.Filename,
-		}
-	case domain.PayrollHistoriesExportedEvent:
-		return map[string]interface{}{
-			"from_date": e.FromDate,
-			"to_date":   e.ToDate,
-			"filename":  e.Filename,
-		}
-	case domain.BulkTransferResultParsedEvent:
-		return map[string]interface{}{
-			"filename":     e.Filename,
-			"total":        e.TotalTransfers,
-			"completed":    e.CompletedCount,
-			"failed":       e.FailedCount,
-			"total_amount": e.TotalAmount,
-		}
-	case domain.BulkTransferPaymentStatusUpdatedEvent:
-		return map[string]interface{}{
-			"bulk_file_id":   e.BulkFileID,
-			"payment_status": e.PaymentStatus,
-			"total_updated":  e.TotalUpdated,
-		}
-	case domain.BulkTransferTransactionCreatedEvent:
-		return map[string]interface{}{
-			"bulk_file_id":   e.BulkFileID,
-			"transaction_id": e.TransactionID,
-			"amount":         e.Amount,
-			"asset_id":       e.AssetID,
-			"filename":       e.Filename,
-		}
-
-	// --- Settlement Upload events ---
-	case domain.SettlementUploadProcessedEvent:
-		return map[string]interface{}{
-			"asset_id":          e.AssetID,
-			"filename":          e.Filename,
-			"settlement_amount": e.SettlementAmount,
-			"processed_by":      e.ProcessedBy,
-		}
-	case domain.SettlementAppliedFromUploadEvent:
-		return map[string]interface{}{
-			"transaction_id": e.TransactionID,
-			"amount":         e.Amount,
-			"source":         e.Source,
-			"file_id":        e.FileID,
-			"filename":       e.Filename,
-		}
-	case domain.TimesheetsRevenuePaidFromInternalEvent:
-		return map[string]interface{}{
-			"file_id":  e.FileID,
-			"filename": e.Filename,
 		}
 
 	// --- Access events ---
@@ -546,44 +346,8 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 			"new_fullname":  e.NewFullName,
 			"updated_count": e.UpdatedCount,
 		}
-
-	// --- Timesheet Edit Request events ---
-	case domain.TimesheetEditRequestCreatedEvent:
-		return map[string]interface{}{
-			"timesheet_id": e.TimesheetID,
-			"requested_by": e.RequestedBy,
-			"reason":       e.Reason,
-		}
-	case domain.TimesheetEditRequestUpdatedEvent:
-		return map[string]interface{}{
-			"request_id":   e.RequestID,
-			"timesheet_id": e.TimesheetID,
-			"requested_by": e.RequestedBy,
-			"new_status":   e.NewStatus,
-			"reason":       e.Reason,
-		}
-
-	// --- Timesheet Marking ---
-	case domain.TimesheetMarkingEvent:
-		return map[string]interface{}{
-			"marked_as": e.MarkedAs,
-			"source":    e.Source,
-		}
-	case domain.TimesheetBulkExternallyPaidEvent:
-		return map[string]interface{}{
-			"count":     e.Count,
-			"reference": e.Reference,
-		}
 	}
 	return nil
-}
-
-func feeScheduleMetadata(scheduleID, effectiveDate, summary string) map[string]interface{} {
-	return map[string]interface{}{
-		"schedule_id":    scheduleID,
-		"effective_date": effectiveDate,
-		"summary":        summary,
-	}
 }
 
 // CanHandle returns true if this handler can process the given event type

@@ -96,39 +96,8 @@ func (r *EmployeeRepository) ListWithAllProjects(ctx context.Context, filters do
 	return r.projectQueryBuilder.MapToEmployeeWithProjects(employees, assignments), nil
 }
 
-// GetEmployeesWithMissingBankDetails returns employees with missing banking information
-func (r *EmployeeRepository) GetEmployeesWithMissingBankDetails(ctx context.Context, filters domain.EmployeeFilters) ([]*domain.EmployeeWithProjects, error) {
-	// Get employees with missing bank details
-	employeesQuery := r.projectQueryBuilder.BuildMissingBankDetailsQuery(filters)
-	var employees []*domain.Employee
-	err := employeesQuery.Find(&employees).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if len(employees) == 0 {
-		return []*domain.EmployeeWithProjects{}, nil
-	}
-
-	// Extract employee IDs for project lookup
-	employeeIDs := make([]uint, len(employees))
-	for i, emp := range employees {
-		employeeIDs[i] = emp.ID
-	}
-
-	// Get project assignments
-	assignments, err := r.projectQueryBuilder.FetchProjectAssignments(ctx, employeeIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to EmployeeWithProjects format
-	return r.mapEmployeesWithProjects(employees, assignments), nil
-}
-
 // GetDuplicateIdentities lists phone numbers and CCCDs carried by more than one
-// non-deleted employee record.
-//
+// employee record.
 // Only rows whose value actually collides are returned, and empty strings are
 // excluded: many legacy employee rows share a blank mobile, and a blank is never
 // a login identifier (identity.EmployeesByMobile skips empty candidates).
@@ -202,13 +171,6 @@ func (r *EmployeeRepository) GetDuplicateIdentities(ctx context.Context) ([]*dom
 	return groups, nil
 }
 
-// CountEmployeesWithMissingBankDetails returns count of employees with missing banking information
-func (r *EmployeeRepository) CountEmployeesWithMissingBankDetails(ctx context.Context, filters domain.EmployeeFilters) (int64, error) {
-	var count int64
-	err := r.projectQueryBuilder.BuildMissingBankDetailsCountQuery(filters).Count(&count).Error
-	return count, err
-}
-
 // mapEmployeesWithProjects attaches each employee's project assignments in the
 // EmployeeWithProjects shape shared by the list and data-quality queries.
 func (r *EmployeeRepository) mapEmployeesWithProjects(employees []*domain.Employee, assignments []query_builders.ProjectAssignment) []*domain.EmployeeWithProjects {
@@ -230,7 +192,6 @@ func (r *EmployeeRepository) mapEmployeesWithProjects(employees []*domain.Employ
 				ClientName: assignment.ProjectClientName,
 				Position:   assignment.Position,
 				StartDate:  assignment.StartDate,
-				LastDate:   assignment.LastDate,
 			})
 		}
 
@@ -274,21 +235,16 @@ func (r *EmployeeRepository) CountEmployeesWithMissingMobile(ctx context.Context
 }
 
 // GetPaidWithoutMobile returns one row per employee who received salary (paid
-// timesheets) or a completed FlexPay advance within [from, to] but has no
-// mobile number on file. The UNION of both payment sources drives the query so
-// an employee paid through either channel appears exactly once; per-source
-// aggregates are attached with LEFT JOINs. Payment recency (last_activity_at)
-// is the activity signal for the admin export.
+// timesheets) within [from, to] but has no mobile number on file. Salary
+// aggregates and the paid projects list are attached with LEFT JOINs; payment
+// recency (last_activity_at) is the activity signal for the admin export.
 func (r *EmployeeRepository) GetPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*domain.EmployeePaidActivity, error) {
-	ps, as := domain.PaymentStatusPaid, domain.AdvancePaymentStatusCompleted
+	ps := domain.PaymentStatusPaid
 	args := []any{
-		to, to, // working-status check evaluated at window end
-		ps, from, to, // activity union — salary branch
-		as, from, to, // activity union — advance branch
+		to,           // working-status check evaluated at window end
+		ps, from, to, // activity union
 		ps, from, to, // salary aggregate
-		as, from, to, // advance aggregate
-		ps, from, to, // projects union — salary branch
-		as, from, to, // projects union — advance branch
+		ps, from, to, // projects union
 	}
 
 	var rows []*domain.EmployeePaidActivity
@@ -300,56 +256,32 @@ SELECT
 	CASE WHEN EXISTS (
 		SELECT 1 FROM project_employees pe
 		WHERE pe.employee_id = e.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= ?
-			AND (pe.last_date IS NULL OR pe.last_date > ?)
 	) THEN 1 ELSE 0 END AS is_working,
 	COALESCE(sal.total_amount, 0) AS salary_total,
 	COALESCE(sal.payment_count, 0) AS salary_count,
 	sal.last_paid_at AS last_salary_paid_at,
-	COALESCE(adv.total_amount, 0) AS advance_total,
-	COALESCE(adv.payment_count, 0) AS advance_count,
-	adv.last_paid_at AS last_advance_paid_at,
-	CASE
-		WHEN sal.last_paid_at IS NULL AND adv.last_paid_at IS NULL THEN NULL
-		WHEN sal.last_paid_at IS NULL THEN adv.last_paid_at
-		WHEN adv.last_paid_at IS NULL THEN sal.last_paid_at
-		WHEN sal.last_paid_at >= adv.last_paid_at THEN sal.last_paid_at
-		ELSE adv.last_paid_at
-	END AS last_activity_at,
+	sal.last_paid_at AS last_activity_at,
 	COALESCE(pr.projects, '') AS projects
 FROM (
-	SELECT employee_id FROM timesheets
-	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ? AND deleted_at IS NULL
-	UNION
-	SELECT employee_id FROM advance_payment_requests
-	WHERE status = ? AND paid_at >= ? AND paid_at <= ?
+	SELECT DISTINCT employee_id FROM timesheets
+	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
 ) act
 JOIN employees e ON e.id = act.employee_id
-	AND e.deleted_at IS NULL
 	AND (e.mobile IS NULL OR e.mobile = '')
 LEFT JOIN (
 	SELECT employee_id, SUM(paid_amount) AS total_amount, COUNT(*) AS payment_count, MAX(paid_at) AS last_paid_at
 	FROM timesheets
-	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ? AND deleted_at IS NULL
+	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
 	GROUP BY employee_id
 ) sal ON sal.employee_id = e.id
 LEFT JOIN (
-	SELECT employee_id, SUM(net_amount) AS total_amount, COUNT(*) AS payment_count, MAX(paid_at) AS last_paid_at
-	FROM advance_payment_requests
-	WHERE status = ? AND paid_at >= ? AND paid_at <= ?
-	GROUP BY employee_id
-) adv ON adv.employee_id = e.id
-LEFT JOIN (
 	SELECT x.employee_id, GROUP_CONCAT(p.name) AS projects
 	FROM (
-		SELECT employee_id, project_id FROM timesheets
-		WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ? AND deleted_at IS NULL
-		UNION
-		SELECT employee_id, project_id FROM advance_payment_requests
-		WHERE status = ? AND paid_at >= ? AND paid_at <= ?
+		SELECT DISTINCT employee_id, project_id FROM timesheets
+		WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
 	) x
-	JOIN projects p ON p.id = x.project_id AND p.deleted_at IS NULL
+	JOIN projects p ON p.id = x.project_id
 	GROUP BY x.employee_id
 ) pr ON pr.employee_id = e.id
 ORDER BY last_activity_at DESC
@@ -556,44 +488,10 @@ func (r *EmployeeRepository) SearchEmployees(ctx context.Context, search string,
 
 	query := r.queryBuilder.BuildSearchQuery(search, limit)
 
-	rows, err := query.Rows()
-	if err != nil {
+	// GORM maps columns by name: employees.* fills the embedded Employee, the
+	// aliased project columns fill the project fields.
+	if err := query.Scan(&empWithProjects).Error; err != nil {
 		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	for rows.Next() {
-		var emp domain.EmployeeWithProject
-		var bankID, projectID *uint
-		var bankBranchName, projectName, projectCode, projectClientName, position *string
-
-		err := rows.Scan(
-			&emp.ID, &emp.Fullname, &emp.Email, &emp.CCCD, &emp.Address, &emp.Mobile,
-			&emp.BankID, &emp.BankAccountNumber, &emp.BankAccountName, &emp.DateOfBirth,
-			&emp.DeletedAt, &emp.CreatedBy, &emp.CreatedAt, &emp.UpdatedAt,
-			&projectID, &projectName, &projectCode, &projectClientName, &position,
-			&bankID, &bankBranchName,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		// Set bank information
-		if bankID != nil {
-			emp.Bank = &domain.Bank{
-				ID:         *bankID,
-				BranchName: *bankBranchName,
-			}
-		}
-
-		// Set project information
-		emp.ProjectID = projectID
-		emp.ProjectName = projectName
-		emp.ProjectCode = projectCode
-		emp.ProjectClientName = projectClientName
-		emp.Position = position
-
-		empWithProjects = append(empWithProjects, &emp)
 	}
 
 	return empWithProjects, nil

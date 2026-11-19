@@ -80,15 +80,15 @@ func NewAuthService(userService *user.UserService, employeeRepo domain.EmployeeR
 }
 
 // requiresOTP reports whether the email-OTP second factor applies to this user.
-// Gating conditions: feature flag on AND role is admin, partner, or accountant
-// (the accountant approves payroll and handles bank transfer files, so it is
-// as money-adjacent as a partner). Employees and adv_partner are never gated
-// in v1 (low-value accounts, see plan).
+// Gating conditions: feature flag on AND role is admin, quanly, or giamdoc
+// (the giamdoc approves payroll and handles bank transfer files, so it is
+// as money-adjacent as a quanly). Employees are never gated in v1
+// (low-value accounts, see plan).
 func (s *AuthService) requiresOTP(user *domain.User) bool {
 	if !s.otpConfig.Enabled || s.otpService == nil {
 		return false
 	}
-	return user.IsAdmin() || user.IsPartner() || user.IsAccountant()
+	return user.IsAdmin() || user.IsQuanly() || user.IsGiamdoc()
 }
 
 // CaptchaRequiredForUsername checks whether a CAPTCHA is needed for the next
@@ -813,7 +813,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uint, req dto.Up
 		if *req.Mobile == "" {
 			user.Mobile = nil
 		} else {
-			if user.Role != domain.RoleAdmin && user.Role != domain.RolePartner {
+			if user.Role != domain.RoleAdmin && user.Role != domain.RoleQuanly {
 				return nil, domain.NewValidationError(constants.MsgUserMobileRoleRestrictedVN)
 			}
 			normalizedMobile, err := phone.NormalizeVietnameseMobile(*req.Mobile)

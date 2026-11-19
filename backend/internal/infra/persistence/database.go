@@ -180,36 +180,20 @@ func (d *Database) Close() error {
 
 func (d *Database) warmUpSchemas(db *gorm.DB) {
 	models := []any{
-		&domain.LedgerEntry{},
 		&domain.Asset{},
-		&domain.Settlement{},
 		&domain.User{},
-		&domain.Transaction{},
 		&domain.Employee{},
-		&domain.Bank{},
 		&domain.Project{},
 		&domain.ProjectEmployee{},
 		&domain.ProjectUser{},
 		&domain.Payrate{},
 		&domain.Timesheet{},
-		&domain.TimesheetEditRequest{},
 		&domain.Notification{},
-		&domain.BulkTransferFile{},
-		&domain.AdvancePayment{},
-		&domain.AdvancePaymentRequest{},
-		&domain.Loan{},
-		&domain.LoanRepaymentSchedule{},
-		&domain.Lender{},
 		&domain.EmployeeUser{},
-		&domain.APIEndpoint{},
-		&domain.APIMetric{},
-		&domain.Account{},
 		&domain.BlacklistedToken{},
 		&domain.Settings{},
 		&domain.PushSubscription{},
-		&domain.CronJobStatus{},
 		&domain.AssetImportMetadata{},
-		&domain.FlexPaySalaryNotification{},
 	}
 
 	appLogger := observability.GetLogger()

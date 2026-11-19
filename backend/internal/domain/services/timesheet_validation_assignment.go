@@ -22,9 +22,6 @@ func (s *TimesheetValidationService) ValidateEmployeeAssignment(ctx context.Cont
 		if assignment.StartDate.After(date) {
 			return domain.NewValidationError("thời gian phân công nhân viên bắt đầu sau ngày chấm công")
 		}
-		if assignment.LastDate != nil && assignment.LastDate.Before(date) {
-			return domain.NewValidationError("thời gian phân công nhân viên kết thúc trước ngày chấm công")
-		}
 		return nil
 	}
 
@@ -45,10 +42,6 @@ func (s *TimesheetValidationService) ValidateEmployeeAssignment(ctx context.Cont
 	// Check if assignment covers the timesheet date
 	if assignmentPtr.StartDate.After(date) {
 		return domain.NewValidationError("thời gian phân công nhân viên bắt đầu sau ngày chấm công")
-	}
-
-	if assignmentPtr.LastDate != nil && assignmentPtr.LastDate.Before(date) {
-		return domain.NewValidationError("thời gian phân công nhân viên kết thúc trước ngày chấm công")
 	}
 
 	return nil

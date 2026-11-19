@@ -20,11 +20,6 @@ func (s *Seeder) GenerateTestData(ctx context.Context) error {
 	fmt.Println("Generating realistic test data...")
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		fmt.Println("  - Creating banks...")
-		if err := s.seedBanks(ctx, tx); err != nil {
-			return fmt.Errorf("seed banks: %w", err)
-		}
-
 		fmt.Println("  - Creating partner users...")
 		if err := s.seedPartnerUsers(ctx, tx); err != nil {
 			return fmt.Errorf("seed partner users: %w", err)
@@ -53,11 +48,6 @@ func (s *Seeder) GenerateTestData(ctx context.Context) error {
 		fmt.Println("  - Creating timesheets...")
 		if err := s.seedTimesheets(ctx, tx); err != nil {
 			return fmt.Errorf("seed timesheets: %w", err)
-		}
-
-		fmt.Println("  - Creating ledger entries...")
-		if err := s.seedLedgerEntries(ctx, tx); err != nil {
-			return fmt.Errorf("seed ledger entries: %w", err)
 		}
 
 		fmt.Println("  - Creating system settings...")

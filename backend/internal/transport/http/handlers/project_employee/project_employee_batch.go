@@ -9,7 +9,6 @@ import (
 	"api-server/internal/app/services/project"
 	"api-server/internal/constants"
 	"api-server/internal/domain"
-	pkgConstants "api-server/internal/pkg/constants"
 	"api-server/internal/transport/http/response"
 
 	"github.com/gin-gonic/gin"
@@ -51,7 +50,7 @@ func (h *Handler) AssignEmployee(c *gin.Context) {
 	}
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		h.logger.WarnContext(c.Request.Context(), "Attempted to assign employees to project with restricted status",
 			"project_id", projectID,
 			"project_status", project.ProjectStatus,
@@ -129,46 +128,19 @@ func (h *Handler) handleBatchAssignment(c *gin.Context, projectID uint, batchReq
 			startDate = suggested
 		}
 
-		// Parse end date if provided
-		var endDate *time.Time
-		if req.EndDate != nil && *req.EndDate != "" {
-			parsedEndDate, err := time.Parse("2006-01-02", *req.EndDate)
-			if err != nil {
-				h.logger.ErrorContext(c.Request.Context(), "Invalid end date format",
-					"end_date", *req.EndDate,
-					"employee_id", req.EmployeeID,
-					"error", err,
-				)
-				response.BadRequest(c, fmt.Sprintf("Định dạng ngày kết thúc không hợp lệ cho nhân viên %d: %s. Mong đợi YYYY-MM-DD", req.EmployeeID, *req.EndDate))
-				return
-			}
-			endDate = &parsedEndDate
-		}
-
 		// Position is now required - no default value needed
 		position := req.Position
 
 		// Set employee code, will use CCCD as fallback via BeforeCreate hook if empty
 		employeeCode := req.EmployeeCode
 
-		// Set payment schedule with default to "weekly" if not provided
-		paymentSchedule := pkgConstants.PaymentScheduleWeekly
-		if req.PaymentSchedule != nil && *req.PaymentSchedule != "" {
-			paymentSchedule = *req.PaymentSchedule
-		}
-
 		assignment := &domain.ProjectEmployee{
-			ProjectID:       projectID,
-			EmployeeID:      req.EmployeeID,
-			EmployeeCode:    employeeCode,
-			Position:        position,
-			StartDate:       startDate,
-			LastDate:        endDate,
-			PaymentSchedule: paymentSchedule,
-			// New assignments start advance-request enabled; explicit so a
-			// later full-row Save cannot persist the Go zero value as paused.
-			AdvanceRequestEnabled: true,
-			CreatedBy:             userID,
+			ProjectID:    projectID,
+			EmployeeID:   req.EmployeeID,
+			EmployeeCode: employeeCode,
+			Position:     position,
+			StartDate:    startDate,
+			CreatedBy:    userID,
 		}
 
 		assignments = append(assignments, assignment)
@@ -192,7 +164,6 @@ func (h *Handler) handleBatchAssignment(c *gin.Context, projectID uint, batchReq
 				"employee_id", assignment.EmployeeID,
 				"project_id", assignment.ProjectID,
 				"start_date", assignment.StartDate,
-				"end_date", assignment.LastDate,
 			)
 		}
 
@@ -203,19 +174,15 @@ func (h *Handler) handleBatchAssignment(c *gin.Context, projectID uint, batchReq
 	var assignmentResponses []dto.ProjectEmployeeAssignmentResponse
 	for _, assignment := range createdAssignments {
 		assignmentResponses = append(assignmentResponses, dto.ProjectEmployeeAssignmentResponse{
-			ID:                     assignment.ID,
-			ProjectID:              assignment.ProjectID,
-			EmployeeID:             assignment.EmployeeID,
-			EmployeeCode:           assignment.EmployeeCode,
-			Position:               assignment.Position,
-			StartDate:              assignment.StartDate,
-			LastDate:               assignment.LastDate,
-			PaymentSchedule:        assignment.PaymentSchedule,
-			PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-			ScheduleEffectiveFrom:  assignment.ScheduleEffectiveFrom,
-			CreatedBy:              assignment.CreatedBy,
-			CreatedAt:              assignment.CreatedAt,
-			UpdatedAt:              assignment.UpdatedAt,
+			ID:           assignment.ID,
+			ProjectID:    assignment.ProjectID,
+			EmployeeID:   assignment.EmployeeID,
+			EmployeeCode: assignment.EmployeeCode,
+			Position:     assignment.Position,
+			StartDate:    assignment.StartDate,
+			CreatedBy:    assignment.CreatedBy,
+			CreatedAt:    assignment.CreatedAt,
+			UpdatedAt:    assignment.UpdatedAt,
 		})
 	}
 
@@ -279,7 +246,7 @@ func (h *Handler) RemoveEmployeesFromProject(c *gin.Context) {
 	}
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		h.logger.WarnContext(c.Request.Context(), "Attempted to remove employees from project with restricted status",
 			"project_id", projectID,
 			"project_status", project.ProjectStatus,
@@ -320,25 +287,8 @@ func (h *Handler) handleBatchRemoval(c *gin.Context, projectID uint, batchReq dt
 	// Convert DTO removals to service requests
 	var removals []project.RemoveEmployeeRequest
 	for _, req := range batchReq {
-		// Parse last date if provided
-		var lastDate *time.Time
-		if req.LastDate != nil && *req.LastDate != "" {
-			parsedLastDate, err := time.Parse("2006-01-02", *req.LastDate)
-			if err != nil {
-				h.logger.ErrorContext(c.Request.Context(), "Invalid last date format",
-					"last_date", *req.LastDate,
-					"employee_id", req.EmployeeID,
-					"error", err,
-				)
-				response.BadRequest(c, fmt.Sprintf("Định dạng ngày kết thúc không hợp lệ cho nhân viên %d: %s. Mong đợi YYYY-MM-DD", req.EmployeeID, *req.LastDate))
-				return
-			}
-			lastDate = &parsedLastDate
-		}
-
 		removals = append(removals, project.RemoveEmployeeRequest{
 			EmployeeID: req.EmployeeID,
-			LastDate:   lastDate,
 		})
 	}
 
@@ -414,7 +364,7 @@ func (h *Handler) UpdateProjectEmployee(c *gin.Context) {
 	}
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		h.logger.WarnContext(c.Request.Context(), "Attempted to update employee assignment in project with restricted status",
 			"project_id", projectID,
 			"project_status", project.ProjectStatus,
@@ -473,25 +423,6 @@ func (h *Handler) UpdateProjectEmployee(c *gin.Context) {
 		}
 		assignment.StartDate = parsedDate
 	}
-	if req.EndDate != nil {
-		if *req.EndDate == "" {
-			assignment.LastDate = nil
-		} else {
-			parsedEndDate, err := time.Parse("2006-01-02", *req.EndDate)
-			if err != nil {
-				h.logger.ErrorContext(c.Request.Context(), "Invalid end date format",
-					"end_date", *req.EndDate,
-					"error", err,
-				)
-				response.BadRequest(c, fmt.Sprintf("%s: %s. Mong đợi YYYY-MM-DD", constants.MsgInvalidEndDateFormatVN, *req.EndDate))
-				return
-			}
-			assignment.LastDate = &parsedEndDate
-		}
-	}
-	if req.PaymentSchedule != nil {
-		assignment.PaymentSchedule = *req.PaymentSchedule
-	}
 
 	// Update the assignment
 	if err := h.projectEmployeeService.UpdateAssignment(c.Request.Context(), assignment, userID.(uint)); err != nil {
@@ -507,19 +438,15 @@ func (h *Handler) UpdateProjectEmployee(c *gin.Context) {
 
 	// Return updated assignment
 	assignmentResponse := dto.ProjectEmployeeAssignmentResponse{
-		ID:                     assignment.ID,
-		ProjectID:              assignment.ProjectID,
-		EmployeeID:             assignment.EmployeeID,
-		EmployeeCode:           assignment.EmployeeCode,
-		Position:               assignment.Position,
-		StartDate:              assignment.StartDate,
-		LastDate:               assignment.LastDate,
-		PaymentSchedule:        assignment.PaymentSchedule,
-		PendingPaymentSchedule: assignment.PendingPaymentSchedule,
-		ScheduleEffectiveFrom:  assignment.ScheduleEffectiveFrom,
-		CreatedBy:              assignment.CreatedBy,
-		CreatedAt:              assignment.CreatedAt,
-		UpdatedAt:              assignment.UpdatedAt,
+		ID:           assignment.ID,
+		ProjectID:    assignment.ProjectID,
+		EmployeeID:   assignment.EmployeeID,
+		EmployeeCode: assignment.EmployeeCode,
+		Position:     assignment.Position,
+		StartDate:    assignment.StartDate,
+		CreatedBy:    assignment.CreatedBy,
+		CreatedAt:    assignment.CreatedAt,
+		UpdatedAt:    assignment.UpdatedAt,
 	}
 
 	h.logger.InfoContext(c.Request.Context(), "Successfully updated project employee assignment",

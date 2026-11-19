@@ -138,5 +138,5 @@ func (s *PayrollCalculationService) CalculateTimesheetAmount(ctx context.Context
 	timesheet.PayrateID = payrate.ID
 	timesheet.PayRate = int64(rate)
 
-	return domain.ComputeTimesheetAmount(payrate.Project.IsFlexible, timesheet.HoursWorked, int64(rate)), nil
+	return domain.ComputeTimesheetAmount(timesheet.HoursWorked, int64(rate)), nil
 }

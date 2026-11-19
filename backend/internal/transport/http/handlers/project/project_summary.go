@@ -26,11 +26,9 @@ func (h *Handler) GetProjectSummary(c *gin.Context) {
 	}
 
 	summaryResponse := dto.ProjectSummaryResponse{
-		TotalActiveProjects:       summary.TotalActiveProjects,
-		TotalReceivedVND:          summary.TotalReceivedVND,
-		TotalPayoutVND:            summary.TotalPayoutVND,
-		TotalPendingPayableVND:    summary.TotalPendingPayableVND,
-		TotalPendingReceivableVND: summary.TotalPendingReceivableVND,
+		TotalActiveProjects:    summary.TotalActiveProjects,
+		TotalPayoutVND:         summary.TotalPayoutVND,
+		TotalPendingPayableVND: summary.TotalPendingPayableVND,
 	}
 
 	response.Success(c, summaryResponse, constants.MsgProjectSummaryRetrievedVN)

@@ -150,7 +150,6 @@ func TestTimesheetCommandRepositoryHardDeleteProtectsNonPendingRows(t *testing.T
 		{name: "approved", status: domain.TimesheetStatusApproved, paymentStatus: domain.PaymentStatusPending},
 		{name: "rejected", status: domain.TimesheetStatusRejected, paymentStatus: domain.PaymentStatusPending},
 		{name: "paid", status: domain.TimesheetStatusPendingApproval, paymentStatus: domain.PaymentStatusPaid},
-		{name: "failed payment", status: domain.TimesheetStatusPendingApproval, paymentStatus: domain.PaymentStatusFailed},
 		{name: "cancelled payment", status: domain.TimesheetStatusPendingApproval, paymentStatus: domain.PaymentStatusCancelled},
 	}
 

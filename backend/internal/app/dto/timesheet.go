@@ -57,9 +57,6 @@ type TimesheetResponse struct {
 	Status           string     `json:"status"`
 	PaymentStatus    string     `json:"payment_status"`
 	PaymentReference *string    `json:"payment_reference,omitempty"`
-	ForcePayroll     bool       `json:"force_payroll"`
-	AllowedEdit      bool       `json:"allowed_edit"`
-	RequestEditID    *uint      `json:"request_edit_id"`
 	PaidAmount       int64      `json:"paid_amount"`
 	PaidAt           *time.Time `json:"paid_at"`
 	CreatedBy        uint       `json:"created_by"`
@@ -214,13 +211,12 @@ type TimesheetImportResponse struct {
 // TimesheetWithDetailsResponse includes project/employee names
 type TimesheetWithDetailsResponse struct {
 	TimesheetResponse
-	ProjectName       string     `json:"projectName"`
-	ProjectIsFlexible bool       `json:"projectIsFlexible"`
-	EmployeeName      string     `json:"employeeName"`
-	EmployeeCode      string     `json:"employeeCode"`
-	SubmittedBy       *uint      `json:"submittedBy,omitempty"`
-	SubmittedByName   *string    `json:"submittedByName,omitempty"`
-	SubmittedAt       *time.Time `json:"submittedAt,omitempty"`
+	ProjectName     string     `json:"projectName"`
+	EmployeeName    string     `json:"employeeName"`
+	EmployeeCode    string     `json:"employeeCode"`
+	SubmittedBy     *uint      `json:"submittedBy,omitempty"`
+	SubmittedByName *string    `json:"submittedByName,omitempty"`
+	SubmittedAt     *time.Time `json:"submittedAt,omitempty"`
 }
 
 // EmployeeTimesheetSummaryResponse represents timesheet summary for an employee

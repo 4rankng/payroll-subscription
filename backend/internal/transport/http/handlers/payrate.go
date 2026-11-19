@@ -72,7 +72,7 @@ func (h *PayrateHandler) GetPayrate(c *gin.Context) {
 	// IDOR guard: partners may only read payrates for projects they own or have
 	// been granted access to. Admins bypass this check. Mirrors ListPayrates.
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get(constants.CtxUserID)
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -149,7 +149,7 @@ func (h *PayrateHandler) ListPayrates(c *gin.Context) {
 	//   of its payrates (no CreatedBy filter) so partners see admin-created rates.
 	// - For a global list (no project_id): fall back to payrates the partner created.
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get(constants.CtxUserID)
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -272,7 +272,7 @@ func (h *PayrateHandler) UpdatePayrate(c *gin.Context) {
 
 	// Role-based access control for partner users
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) && payrate.CreatedBy != userID {
+	if userRole == string(domain.RoleQuanly) && payrate.CreatedBy != userID {
 		response.Forbidden(c, constants.MsgForbiddenVN)
 		return
 	}
@@ -289,7 +289,7 @@ func (h *PayrateHandler) UpdatePayrate(c *gin.Context) {
 	}
 
 	// Check if project status allows modifications
-	if project.IsCompleted() || project.IsCancelled() {
+	if project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled {
 		logger.Warn("Attempted to update payrate for project with restricted status",
 			"payrate_id", uint(id),
 			"project_id", payrate.ProjectID,
@@ -410,7 +410,7 @@ func (h *PayrateHandler) DeletePayrate(c *gin.Context) {
 
 	// Role-based access control for partner users
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		// Get payrate to check ownership
 		payrate, err := h.payrateService.GetPayrate(c.Request.Context(), uint(id))
 		if err != nil {

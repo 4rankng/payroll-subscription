@@ -50,7 +50,7 @@ func (h *Handler) ExportEmployees(c *gin.Context) {
 
 	// Role-based access control for partner users
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		userID, exists := c.Get("user_id")
 		if !exists {
 			response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
@@ -116,22 +116,10 @@ func (h *Handler) ExportEmployees(c *gin.Context) {
 			username = emp.User.Username
 		}
 
-		// Format bank name
-		bankName := ""
-		if emp.Bank != nil {
-			bankName = emp.Bank.BranchName
-		}
-
 		// Format email
 		email := ""
 		if emp.Email != nil {
 			email = *emp.Email
-		}
-
-		// Format date of birth
-		dateOfBirth := ""
-		if emp.DateOfBirth != nil {
-			dateOfBirth = excelService.FormatDate(emp.DateOfBirth)
 		}
 
 		// Format current projects
@@ -149,11 +137,6 @@ func (h *Handler) ExportEmployees(c *gin.Context) {
 			email,
 			emp.CCCD,
 			emp.Mobile,
-			emp.Address,
-			bankName,
-			emp.BankAccountNumber,
-			emp.BankAccountName,
-			dateOfBirth,
 			currentProjects,
 			excelService.FormatDateValue(emp.CreatedAt),
 		}

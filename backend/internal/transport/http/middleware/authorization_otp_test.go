@@ -60,11 +60,11 @@ func TestAuthorize_OTPEnforcement_Admin(t *testing.T) {
 		{"admin unverified -> 403", string(domain.RoleAdmin), "/api/v1/wallet/balance", false, false, http.StatusForbidden},
 		{"admin otp_verified=false -> 403", string(domain.RoleAdmin), "/api/v1/wallet/balance", true, false, http.StatusForbidden},
 		{"admin otp_verified=true -> 200", string(domain.RoleAdmin), "/api/v1/wallet/balance", true, true, http.StatusOK},
-		// The accountant is money-adjacent (approves payroll, exports bank
-		// transfer files), so it is OTP-gated like admin/partner. Probed on a
-		// route the policy explicitly allows the accountant.
-		{"accountant unverified -> 403", string(domain.RoleAccountant), "/api/v1/timesheets/summary", false, false, http.StatusForbidden},
-		{"accountant otp_verified=true -> 200", string(domain.RoleAccountant), "/api/v1/timesheets/summary", true, true, http.StatusOK},
+		// Quanly is money-adjacent (approves payroll, exports bank transfer
+		// files), so it is OTP-gated like admin/giamdoc. Probed on a route
+		// the policy explicitly allows quanly.
+		{"quanly unverified -> 403", string(domain.RoleQuanly), "/api/v1/timesheets/summary", false, false, http.StatusForbidden},
+		{"quanly otp_verified=true -> 200", string(domain.RoleQuanly), "/api/v1/timesheets/summary", true, true, http.StatusOK},
 	}
 
 	for _, tc := range cases {

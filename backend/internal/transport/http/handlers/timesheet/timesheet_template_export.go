@@ -77,7 +77,7 @@ func (h *Handler) ExportTimesheetTemplate(c *gin.Context) {
 	}
 
 	// Check access permission - partners can only access their own projects
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		canAccess, err := h.projectPermissionService.CanUserAccessProject(c.Request.Context(), req.ProjectID, userID)
 		if err != nil {
 			response.InternalServerError(c, constants.MsgFailedToCheckProjectAccessVN)
@@ -91,17 +91,16 @@ func (h *Handler) ExportTimesheetTemplate(c *gin.Context) {
 
 	// Get employees based on role
 	filters := domain.ProjectEmployeeFilters{
-		ProjectID:  &req.ProjectID,
-		ActiveOnly: true, // Only active employees
-		Limit:      1000,
-		SortBy:     "employee_name",
-		SortOrder:  "asc",
+		ProjectID: &req.ProjectID,
+		Limit:     1000,
+		SortBy:    "employee_name",
+		SortOrder: "asc",
 	}
 
 	var employees []*domain.ProjectEmployee
 
 	// For partners, check if they have full project access or limited employee-based access
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		// Check if partner has full project access (creator or explicit project_users access)
 		canModify, err := h.projectPermissionService.CanUserModifyProject(c.Request.Context(), req.ProjectID, userID)
 		if err != nil {

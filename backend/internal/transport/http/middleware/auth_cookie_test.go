@@ -86,7 +86,7 @@ func newCookieTestRouter(svc *authservice.AuthService, m *AuthMiddleware) *gin.E
 func TestAuthenticateAcceptsSessionCookie(t *testing.T) {
 	svc := newCookieTestAuthService(t, 14*24*time.Hour)
 	token := newCookieTestToken(t, svc, time.Hour)
-	m := NewAuthMiddleware(svc, nil, nil, config.OpsMCPConfig{}, false)
+	m := NewAuthMiddleware(svc, false)
 	r := newCookieTestRouter(svc, m)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
@@ -103,7 +103,7 @@ func TestAuthenticateAcceptsSessionCookie(t *testing.T) {
 func TestAuthenticateBearerHeaderWinsOverCookie(t *testing.T) {
 	svc := newCookieTestAuthService(t, 14*24*time.Hour)
 	good := newCookieTestToken(t, svc, time.Hour)
-	m := NewAuthMiddleware(svc, nil, nil, config.OpsMCPConfig{}, false)
+	m := NewAuthMiddleware(svc, false)
 	r := newCookieTestRouter(svc, m)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
@@ -118,7 +118,7 @@ func TestAuthenticateBearerHeaderWinsOverCookie(t *testing.T) {
 // Pin: missing header AND cookie → 401 (unchanged contract).
 func TestAuthenticateMissingCredentialRejected(t *testing.T) {
 	svc := newCookieTestAuthService(t, 14*24*time.Hour)
-	m := NewAuthMiddleware(svc, nil, nil, config.OpsMCPConfig{}, false)
+	m := NewAuthMiddleware(svc, false)
 	r := newCookieTestRouter(svc, m)
 
 	rec := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestAuthenticateMissingCredentialRejected(t *testing.T) {
 func TestAuthenticateBearerAutoUpgradeSetsCookie(t *testing.T) {
 	svc := newCookieTestAuthService(t, 14*24*time.Hour)
 	token := newCookieTestToken(t, svc, time.Hour)
-	m := NewAuthMiddleware(svc, nil, nil, config.OpsMCPConfig{}, false)
+	m := NewAuthMiddleware(svc, false)
 	r := newCookieTestRouter(svc, m)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)

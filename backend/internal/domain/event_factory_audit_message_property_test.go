@@ -19,36 +19,6 @@ func genNonEmptyAlphaString() gopter.Gen {
 	})
 }
 
-// TestProperty11_BankAuditMessageContainsBranchName verifies that NewBankCreatedEvent
-// produces an AuditMessage containing the bank's BranchName, with Action=CREATE and
-// EntityType=bank.
-//
-// Validates: Requirements 6.2, 3.12
-func TestProperty11_BankAuditMessageContainsBranchName(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(11001)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
-
-	properties.Property("BankCreatedEvent AuditMessage contains BranchName", prop.ForAll(
-		func(branchName string) bool {
-			bank := &Bank{
-				ID:         1,
-				BranchName: branchName,
-			}
-			event := NewBankCreatedEvent(context.Background(), bank)
-
-			msg := event.GetAuditMessage()
-			return msg != "" &&
-				strings.Contains(msg, branchName) &&
-				event.GetAction() == AuditActionCreate &&
-				event.GetEntityType() == EntityTypeBank
-		},
-		genNonEmptyAlphaString(),
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
-}
-
 // TestProperty11_PayrateAuditMessageContainsProjectName verifies that NewPayrateCreatedEvent
 // produces an AuditMessage containing the project name, with Action=CREATE and
 // EntityType=payrate.
@@ -115,36 +85,6 @@ func TestProperty11_AssetAuditMessageContainsFilename(t *testing.T) {
 	properties.TestingRun(t, gopter.ConsoleReporter(false))
 }
 
-// TestProperty11_LenderAuditMessageContainsName verifies that NewLenderCreatedEvent
-// produces an AuditMessage containing the lender's Name, with Action=CREATE and
-// EntityType=lender.
-//
-// Validates: Requirements 6.8, 3.12
-func TestProperty11_LenderAuditMessageContainsName(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(11004)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
-
-	properties.Property("LenderCreatedEvent AuditMessage contains lender Name", prop.ForAll(
-		func(lenderName string) bool {
-			lender := &Lender{
-				ID:   1,
-				Name: lenderName,
-			}
-			event := NewLenderCreatedEvent(context.Background(), lender)
-
-			msg := event.GetAuditMessage()
-			return msg != "" &&
-				strings.Contains(msg, lenderName) &&
-				event.GetAction() == AuditActionCreate &&
-				event.GetEntityType() == EntityTypeLender
-		},
-		genNonEmptyAlphaString(),
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
-}
-
 // TestProperty11_SettingsAuditMessageContainsKey verifies that NewSettingsCreatedEvent
 // produces an AuditMessage containing the settings key, with Action=CREATE and
 // EntityType=settings.
@@ -166,44 +106,6 @@ func TestProperty11_SettingsAuditMessageContainsKey(t *testing.T) {
 				event.GetEntityType() == EntityTypeSettings
 		},
 		genNonEmptyAlphaString(),
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
-}
-
-// TestProperty11_LedgerEntryAuditMessageContainsAccount verifies that NewLedgerEntryCreatedEvent
-// produces an AuditMessage containing the account name, with Action=CREATE and
-// EntityType=ledger_entry.
-//
-// Validates: Requirements 6.9, 3.12
-func TestProperty11_LedgerEntryAuditMessageContainsAccount(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(11006)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
-
-	// Use valid LedgerAccount values since the factory uses string(entry.Account) directly
-	validAccounts := GetValidLedgerAccounts()
-
-	properties.Property("LedgerEntryCreatedEvent AuditMessage contains account name", prop.ForAll(
-		func(idx uint) bool {
-			account := validAccounts[int(idx)%len(validAccounts)]
-			entry := &LedgerEntry{
-				ID:      1,
-				Account: account,
-				Debit:   10000,
-				Credit:  0,
-				Date:    time.Now(),
-				Party:   "test-party",
-			}
-			event := NewLedgerEntryCreatedEvent(context.Background(), entry)
-
-			msg := event.GetAuditMessage()
-			return msg != "" &&
-				strings.Contains(msg, account) &&
-				event.GetAction() == AuditActionCreate &&
-				event.GetEntityType() == EntityTypeLedgerEntry
-		},
-		gen.UInt(),
 	))
 
 	properties.TestingRun(t, gopter.ConsoleReporter(false))

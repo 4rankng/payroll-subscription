@@ -11,9 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// TestUserListProjects covers the Du an dimension of the user list: the batch
-// current-project-names lookup and the project filter both respect the active
-// assignment window (started, not yet ended) and soft-deleted rows.
+// TestUserListProjects covers the Dự án dimension of the user list: the batch
+// current-project-names lookup and the project filter. Assignments are plain
+// rows gated only by start_date (no effective-to window — D17) and deletes are
+// hard DELETEs (D16), so every existing row is active.
 func TestUserListProjects(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open("file:"+uuid.NewString()+"?mode=memory&cache=shared"), &gorm.Config{})
 	if err != nil {
@@ -24,27 +25,21 @@ func TestUserListProjects(t *testing.T) {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT,
 			role TEXT NOT NULL,
-			deleted_at DATETIME,
 			last_login DATETIME
 		)`,
 		`CREATE TABLE employees (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			user_id INTEGER NOT NULL,
-			deleted_at DATETIME
+			user_id INTEGER NOT NULL
 		)`,
 		`CREATE TABLE project_employees (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			employee_id INTEGER NOT NULL,
 			project_id INTEGER NOT NULL,
-			payment_schedule TEXT,
-			start_date DATETIME,
-			last_date DATETIME,
-			deleted_at DATETIME
+			start_date DATETIME
 		)`,
 		`CREATE TABLE projects (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL,
-			deleted_at DATETIME
+			name TEXT NOT NULL
 		)`,
 	} {
 		if err := db.Exec(stmt).Error; err != nil {
@@ -54,9 +49,9 @@ func TestUserListProjects(t *testing.T) {
 
 	now := time.Now()
 	seed := []string{
-		`INSERT INTO users (id, username, role) VALUES (1, 'u1', 'employee'), (2, 'u2', 'employee')`,
+		`INSERT INTO users (id, username, role) VALUES (1, 'u1', 'quanly'), (2, 'u2', 'quanly')`,
 		`INSERT INTO employees (id, user_id) VALUES (1, 1), (2, 2)`,
-		`INSERT INTO projects (id, name) VALUES (1, 'LGD'), (2, 'Samsung SDS'), (3, 'Da xoa')`,
+		`INSERT INTO projects (id, name) VALUES (1, 'LGD'), (2, 'Samsung SDS')`,
 	}
 	for _, stmt := range seed {
 		if err := db.Exec(stmt).Error; err != nil {
@@ -68,25 +63,19 @@ func TestUserListProjects(t *testing.T) {
 		employeeID uint
 		projectID  uint
 		startDate  time.Time
-		lastDate   *time.Time
-		deletedAt  *time.Time
 	}{
-		{1, 1, 1, now.Add(-30 * 24 * time.Hour), nil, nil},
-		{2, 1, 2, now.Add(-30 * 24 * time.Hour), nil, nil},
-		{3, 2, 2, now.Add(-30 * 24 * time.Hour), new(time.Now().Add(-24 * time.Hour)), nil}, // ended
-		{4, 2, 3, now.Add(-30 * 24 * time.Hour), nil, nil},                                  // project deleted
+		{1, 1, 1, now.Add(-30 * 24 * time.Hour)},
+		{2, 1, 2, now.Add(-30 * 24 * time.Hour)},
+		{3, 2, 2, now.Add(-30 * 24 * time.Hour)},
 	}
 	for _, a := range assignments {
 		if err := db.Exec(
-			`INSERT INTO project_employees (id, employee_id, project_id, payment_schedule, start_date, last_date, deleted_at)
-			 VALUES (?, ?, ?, 'weekly', ?, ?, ?)`,
-			a.id, a.employeeID, a.projectID, a.startDate, a.lastDate, a.deletedAt,
+			`INSERT INTO project_employees (id, employee_id, project_id, start_date)
+			 VALUES (?, ?, ?, ?)`,
+			a.id, a.employeeID, a.projectID, a.startDate,
 		).Error; err != nil {
 			t.Fatalf("insert assignment %d: %v", a.id, err)
 		}
-	}
-	if err := db.Exec(`UPDATE projects SET deleted_at = ? WHERE id = 3`, now).Error; err != nil {
-		t.Fatalf("soft-delete project: %v", err)
 	}
 
 	repo := NewUserRepository(&Database{DB: db})
@@ -94,8 +83,8 @@ func TestUserListProjects(t *testing.T) {
 
 	names, err := repo.GetCurrentProjectNamesByUserIDs(ctx, []uint{1, 2})
 	assert.NoError(t, err)
-	assert.Equal(t, map[uint][]string{1: {"LGD", "Samsung SDS"}}, names,
-		"active assignments only; ended/deleted excluded; absent users omitted")
+	assert.Equal(t, map[uint][]string{1: {"LGD", "Samsung SDS"}, 2: {"Samsung SDS"}}, names,
+		"existing assignments count; absent users omitted")
 
 	all, total, err := repo.ListWithFilters(ctx, nil, "", nil, false, nil, "id", "asc", 50, 0)
 	assert.NoError(t, err)
@@ -112,12 +101,6 @@ func TestUserListProjects(t *testing.T) {
 	p2 := uint(2)
 	byProject, total, err = repo.ListWithFilters(ctx, nil, "", nil, false, &p2, "id", "asc", 50, 0)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), total, "user 2's Samsung assignment has ended")
-	assert.Equal(t, uint(1), byProject[0].ID)
-
-	p3 := uint(3)
-	byProject, total, err = repo.ListWithFilters(ctx, nil, "", nil, false, &p3, "id", "asc", 50, 0)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(0), total, "soft-deleted project matches nothing")
-	assert.Empty(t, byProject)
+	assert.Equal(t, int64(2), total, "both users hold Samsung SDS assignments")
+	assert.Len(t, byProject, 2)
 }

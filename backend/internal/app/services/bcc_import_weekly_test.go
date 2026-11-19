@@ -611,10 +611,10 @@ func TestBuildWeeklyPaymentPositions_BlocksEmployeeInMultiplePositionSheets(t *t
 	}
 }
 
-func TestPlanWeeklyPaymentPositionCorrections_SkipsExcludedFlexibleEmployees(t *testing.T) {
+func TestPlanWeeklyPaymentPositionCorrections_CorrectsMismatchedPositions(t *testing.T) {
 	assignments := []*domain.ProjectEmployee{
-		{ID: 10, EmployeeID: 100, EmployeeCCCD: "CCCD-WEEKLY", EmployeeName: "Nhân viên tuần", Position: "Lương 520", PaymentSchedule: string(domain.PaymentScheduleWeekly)},
-		{ID: 20, EmployeeID: 200, EmployeeCCCD: "CCCD-FLEX", EmployeeName: "Nhân viên linh hoạt", Position: "Lương 520", PaymentSchedule: string(domain.PaymentScheduleFlexible)},
+		{ID: 10, EmployeeID: 100, EmployeeCCCD: "CCCD-WEEKLY", EmployeeName: "Nhân viên tuần", Position: "Lương 520"},
+		{ID: 20, EmployeeID: 200, EmployeeCCCD: "CCCD-FLEX", EmployeeName: "Nhân viên linh hoạt", Position: "Lương 520"},
 	}
 	positions := map[string]string{
 		"CCCD-WEEKLY": "Lương 700",
@@ -623,12 +623,14 @@ func TestPlanWeeklyPaymentPositionCorrections_SkipsExcludedFlexibleEmployees(t *
 
 	corrections := planWeeklyPaymentPositionCorrections(assignments, positions, false)
 
-	if assert.Len(t, corrections, 1) {
+	if assert.Len(t, corrections, 2) {
 		assert.Equal(t, uint(10), corrections[100].assignmentID)
 		assert.Equal(t, "Lương 520", corrections[100].oldPosition)
 		assert.Equal(t, "Lương 700", corrections[100].newPosition)
+		assert.Equal(t, uint(20), corrections[200].assignmentID)
+		assert.Equal(t, "Lương 520", corrections[200].oldPosition)
+		assert.Equal(t, "Lương 750", corrections[200].newPosition)
 	}
-	assert.NotContains(t, corrections, uint(200))
 }
 
 func TestSelectWeeklyPaymentPositionCorrections_OnlyEmployeesWithFinalEntries(t *testing.T) {

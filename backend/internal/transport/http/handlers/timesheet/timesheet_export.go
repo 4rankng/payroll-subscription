@@ -3,13 +3,11 @@ package timesheet
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"api-server/internal/app/dto"
 	"api-server/internal/app/services/excel"
 	"api-server/internal/constants"
 	"api-server/internal/domain"
-	domainServices "api-server/internal/domain/services"
 	"api-server/internal/infra/observability"
 	"api-server/internal/transport/http/response"
 
@@ -97,7 +95,6 @@ func translateStatusToVietnamese(status string) string {
 		"rejected":         "Bị từ chối",
 		"pending":          "Chờ thanh toán",
 		"paid":             "Đã thanh toán",
-		"failed":           "Thanh toán thất bại",
 		"cancelled":        "Đã hủy",
 	}
 
@@ -105,166 +102,6 @@ func translateStatusToVietnamese(status string) string {
 		return translated
 	}
 	return status
-}
-
-// filterReportDataForPartner narrows an atDate report to the projects the
-// partner may access. The fromDate+toDate branch scopes its query up front via
-// filterProjectsForPartner, but GetProjectsForPayrollReport picks projects
-// internally, so without this a partner could export every active project's
-// payroll through ?atDate=.
-func filterReportDataForPartner(reportData []*domainServices.ProjectReportData, allowedIDs []uint) []*domainServices.ProjectReportData {
-	if len(reportData) == 0 || len(allowedIDs) == 0 {
-		return nil
-	}
-
-	allowed := make(map[uint]struct{}, len(allowedIDs))
-	for _, id := range allowedIDs {
-		allowed[id] = struct{}{}
-	}
-
-	kept := make([]*domainServices.ProjectReportData, 0, len(reportData))
-	for _, rd := range reportData {
-		if rd == nil || rd.Project == nil {
-			continue
-		}
-		if _, ok := allowed[rd.Project.ID]; ok {
-			kept = append(kept, rd)
-		}
-	}
-	return kept
-}
-
-// PayrollReportExport exports payroll report by project and salary period.
-// Supports two modes:
-//  1. fromDate + toDate (+ optional projectIds) — export by date range
-//  2. atDate — existing behavior: auto-select projects by salary period
-func (h *Handler) PayrollReportExport(c *gin.Context) {
-	var req dto.PayrollReportByProjectRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		response.BadRequest(c, constants.MsgInvalidRequestBodyVN)
-		return
-	}
-
-	userID, userRole, ok := h.getUserContext(c)
-	if !ok {
-		return
-	}
-
-	if userRole != string(domain.RoleAdmin) && userRole != string(domain.RolePartner) && userRole != string(domain.RoleAccountant) {
-		response.Forbidden(c, constants.MsgForbiddenVN)
-		return
-	}
-
-	var reportData []*domainServices.ProjectReportData
-	var buffer []byte
-	var filename string
-
-	if req.IsExportByProjectRange() {
-		fromDate, toDate, err := req.GetParsedDateRange()
-		if err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
-
-		projectIDs, err := req.GetParsedProjectIDs()
-		if err != nil {
-			response.BadRequest(c, err.Error())
-			return
-		}
-
-		// Partner: restrict to accessible projects only
-		if userRole == string(domain.RolePartner) {
-			projectIDs, err = h.filterProjectsForPartner(c.Request.Context(), userID, projectIDs)
-			if err != nil {
-				response.InternalServerError(c, constants.MsgFailedToCheckProjectAccessVN)
-				return
-			}
-			if len(projectIDs) == 0 {
-				response.Forbidden(c, constants.MsgForbiddenVN)
-				return
-			}
-		}
-
-		reportData, err = h.payrollReportByProjectService.GetPayrollReportForProjects(
-			c.Request.Context(), projectIDs, fromDate, toDate,
-		)
-		if err != nil {
-			response.InternalServerError(c, constants.MsgFailedToGetPayrollReportDataVN)
-			return
-		}
-
-		var buf []byte
-		buf, _, err = h.payrollReportByProjectExporter.GenerateExcel(c.Request.Context(), reportData, fromDate)
-		if err != nil {
-			response.InternalServerError(c, constants.MsgFailedToGeneratePayrollReportVN)
-			return
-		}
-		buffer = buf
-		filename = fmt.Sprintf("sao_ke_%s_%s.xlsx", fromDate.Format("2006-01-02"), toDate.Format("2006-01-02"))
-	} else {
-		if req.AtDate == "" {
-			response.BadRequest(c, "atDate hoặc (fromDate, toDate) là bắt buộc")
-			return
-		}
-
-		if err := req.ValidateDate(); err != nil {
-			response.BadRequest(c, constants.MsgInvalidAtDateFormatVN)
-			return
-		}
-
-		atDate, err := req.GetParsedDate()
-		if err != nil {
-			response.BadRequest(c, constants.MsgInvalidDateFormatVN)
-			return
-		}
-
-		reportData, err = h.payrollReportByProjectService.GetProjectsForPayrollReport(c.Request.Context(), atDate)
-		if err != nil {
-			response.InternalServerError(c, constants.MsgFailedToGetPayrollReportDataVN)
-			return
-		}
-
-		// Partner: this branch picks projects itself, so scope the result the
-		// same way the date-range branch scopes its query.
-		if userRole == string(domain.RolePartner) {
-			allowedIDs, err := h.filterProjectsForPartner(c.Request.Context(), userID, nil)
-			if err != nil {
-				response.InternalServerError(c, constants.MsgFailedToCheckProjectAccessVN)
-				return
-			}
-			if len(allowedIDs) == 0 {
-				response.Forbidden(c, constants.MsgForbiddenVN)
-				return
-			}
-			reportData = filterReportDataForPartner(reportData, allowedIDs)
-		}
-
-		var buf []byte
-		buf, _, err = h.payrollReportByProjectExporter.GenerateExcel(c.Request.Context(), reportData, atDate)
-		if err != nil {
-			response.InternalServerError(c, constants.MsgFailedToGeneratePayrollReportVN)
-			return
-		}
-		buffer = buf
-		filename = fmt.Sprintf("sao_ke_tt_%s.xlsx", atDate.Format("2006-01-02"))
-	}
-
-	if auditSvc, ok := h.auditService.(interface {
-		LogFileExport(ctx context.Context, dataType string, recordCount int, fileName string) error
-	}); ok && auditSvc != nil {
-		go func() {
-			totalRecords := 0
-			for _, project := range reportData {
-				totalRecords += len(project.EmployeeData)
-			}
-			_ = auditSvc.LogFileExport(c.Request.Context(), "payroll_report_by_project", totalRecords, filename)
-		}()
-	}
-
-	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	c.Header("Content-Length", fmt.Sprintf("%d", len(buffer)))
-	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer)
 }
 
 func (h *Handler) buildTimesheetExportData(timesheets []*domain.Timesheet) [][]interface{} {
@@ -326,7 +163,7 @@ func (h *Handler) generateExcelResponse(c *gin.Context, sheetName string, header
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Header("Content-Length", fmt.Sprintf("%d", len(buffer)))
-	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer)
+	c.Data(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer)
 }
 
 func (h *Handler) extractEmployeeInfo(ts *domain.Timesheet) (string, string) {

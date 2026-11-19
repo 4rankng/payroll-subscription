@@ -10,13 +10,6 @@ import (
 	"api-server/internal/domain"
 )
 
-func (r *EmployeeRepository) GetEmployeesWithBankingInfo(ctx context.Context) ([]*domain.Employee, error) {
-	var employees []*domain.Employee
-	query := r.queryBuilder.BuildGetWithBankingInfoQuery()
-	err := query.Find(&employees).Error
-	return employees, err
-}
-
 func (r *EmployeeRepository) GetEmployeeStatistics(ctx context.Context) (*domain.EmployeeStatistics, error) {
 	var stats domain.EmployeeStatistics
 

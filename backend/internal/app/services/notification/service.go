@@ -238,7 +238,7 @@ func (s *NotificationService) NotifyUsersWithDefaultPassword(ctx context.Context
 	}
 
 	// Check partner users
-	partnerUsers, err := s.userRepo.ListByRole(ctx, domain.RolePartner)
+	partnerUsers, err := s.userRepo.ListByRole(ctx, domain.RoleQuanly)
 	if err != nil {
 		s.logger.Error("Failed to get partner users", "error", err)
 		return nil, err
@@ -289,7 +289,7 @@ func (s *NotificationService) NotifyPartnersByMonthlyProjects(ctx context.Contex
 			continue
 		}
 
-		if creator.Role == domain.RolePartner {
+		if creator.Role == domain.RoleQuanly {
 			partnerIDs[creator.ID] = true
 		}
 	}
@@ -365,12 +365,8 @@ func (s *NotificationService) SendCustomNotifications(
 // CreateCustomNotification creates a custom notification from admin to a specific user with specified content type
 func (s *NotificationService) CreateCustomNotification(ctx context.Context, senderID uint, recipientID uint, title, message string, contentType domain.NotificationContentType) error {
 	// Validate that recipient exists
-	recipient, err := s.userRepo.GetByID(ctx, recipientID)
-	if err != nil {
+	if _, err := s.userRepo.GetByID(ctx, recipientID); err != nil {
 		return domain.NewNotFoundError(constants.MsgRecipientUserNotFoundVN)
-	}
-	if !recipient.IsActive() {
-		return domain.NewValidationError(constants.MsgRecipientUserNotActiveVN)
 	}
 
 	// Validate content type

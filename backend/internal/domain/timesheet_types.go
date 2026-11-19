@@ -69,28 +69,14 @@ type TimesheetRepository interface {
 	HasTimesheetsForAssignment(ctx context.Context, projectID, employeeID uint) (bool, error)
 	HasNonEditableTimesheetsAfterDate(ctx context.Context, projectID, employeeID uint, date time.Time) (bool, error)
 	HasNonEditableTimesheetsInRange(ctx context.Context, projectID, employeeID uint, from, to *time.Time) (bool, error)
-	SetForcePayroll(ctx context.Context, id uint, flag bool) error
-
-	// Payment history methods
-	GetPaymentHistories(ctx context.Context, filters PaymentHistoryFilters) ([]*PaymentHistory, int64, error)
 
 	// Dashboard summary methods
 	GetTotalPaidSalary(ctx context.Context) (int64, error)
 	GetPendingSalaryForMonth(ctx context.Context, startDate, endDate time.Time) (int64, error)
-	GetPendingSalaryForMonthBySchedule(ctx context.Context, startDate, endDate time.Time, schedule PaymentSchedule) (int64, error)
 	GetPaidSalaryForMonth(ctx context.Context, startDate, endDate time.Time) (int64, error)
 	CountEmployeesPaidInLast30Days(ctx context.Context) (int, error)
 	GetFirstPaidTimesheetDate(ctx context.Context) (*time.Time, error)
 	GetPaidSalaryByEmployee(ctx context.Context, startDate, endDate time.Time) (map[uint]int64, error)
-
-	// Bulk transfer result processing methods
-	BatchUpdatePaymentStatusToFailed(ctx context.Context, tx interface{}, timesheetIDs []uint) error
-
-	// Revenue tracking methods
-	BulkUpdateRevenuePaid(ctx context.Context, timesheetIDs []uint) error
-	BulkUpdateRevenueReceivable(ctx context.Context, updates map[uint]int64) error
-	BulkUpdateTransactionID(ctx context.Context, transactionID uint, timesheetIDs []uint) error
-	GetByTransactionID(ctx context.Context, transactionID uint) ([]*Timesheet, error)
 
 	// Optimized aggregation methods for employee summaries
 	GetEmployeeTimesheetSummaryAggregated(ctx context.Context, employeeID uint) (*TimesheetSummaryAggregated, error)
@@ -106,27 +92,6 @@ type TimesheetRepository interface {
 
 	// Salary period change validation
 	CountUnsettledPaidTimesheets(ctx context.Context, projectID uint) (int64, error)
-
-	// Cash-readiness forecast: point-in-time facts used to reconstruct approved,
-	// pending, and not-yet-created target-Ky exposure. Scoped identically to
-	// GetSummaryStats; payment status is deliberately not part of this query.
-	GetAccrualCohort(ctx context.Context, filters TimesheetFilters) ([]TimesheetAccrualDailyRow, error)
-}
-
-// TimesheetAccrualDailyRow is a row-level, read-only forecast fact. CreatedAt
-// and ApprovedAt allow leakage-free point-in-time reconstruction; employee and
-// project identifiers support headcount normalization and subgroup fallback.
-// ApprovedDate is retained for source compatibility with the v1 forecast tests
-// and is populated alongside ApprovedAt by persistence.
-type TimesheetAccrualDailyRow struct {
-	WorkDate     time.Time       `gorm:"column:work_date" json:"work_date"`
-	CreatedAt    time.Time       `gorm:"column:created_at" json:"created_at"`
-	ApprovedAt   *time.Time      `gorm:"column:approved_at" json:"approved_at"`
-	ApprovedDate time.Time       `gorm:"column:approved_date" json:"approved_date"`
-	Status       TimesheetStatus `gorm:"column:timesheet_status" json:"timesheet_status"`
-	EmployeeID   uint            `gorm:"column:employee_id" json:"employee_id"`
-	ProjectID    uint            `gorm:"column:project_id" json:"project_id"`
-	Amount       int64           `gorm:"column:amount" json:"amount"`
 }
 
 // Narrow interfaces for interface segregation — each consumer depends only on what it needs.
@@ -145,7 +110,6 @@ type TimesheetReader interface {
 	GetByEmployee(ctx context.Context, employeeID uint, fromDate, toDate time.Time) ([]*Timesheet, error)
 	GetByEmployeeAndPeriod(ctx context.Context, employeeID uint, fromDate, toDate time.Time) ([]*Timesheet, error)
 	GetByProjectEmployeeDate(ctx context.Context, projectID, employeeID uint, date time.Time) ([]*Timesheet, error)
-	GetByTransactionID(ctx context.Context, transactionID uint) ([]*Timesheet, error)
 }
 
 // TimesheetWriter provides create/update/delete operations.
@@ -168,24 +132,10 @@ type TimesheetApprover interface {
 	Reset(ctx context.Context, id uint) error
 }
 
-// TimesheetUnpaidRejector performs the filtered Admin rejection command
-// without expanding every timesheet consumer's repository contract.
-type TimesheetUnpaidRejector interface {
-	RejectUnpaidByProjectDateRange(ctx context.Context, projectID uint, fromDate, toDate time.Time, rejectionReason string, rejectedBy uint) (int64, error)
-}
-
-// TimesheetEditRequestResetter atomically resets an approved timesheet only
-// while it still owns the pending edit-request link being approved.
-type TimesheetEditRequestResetter interface {
-	ResetForApprovedEditRequest(ctx context.Context, timesheetID, requestID uint) error
-}
-
 // TimesheetPaymentUpdater handles payment status transitions.
 type TimesheetPaymentUpdater interface {
 	BulkUpdatePaymentStatus(ctx context.Context, updates []PaymentStatusUpdate) error
-	BatchUpdatePaymentStatusToFailed(ctx context.Context, tx interface{}, timesheetIDs []uint) error
 	GetPaidTimesheetsInDateRange(ctx context.Context, startDate, endDate time.Time, timesheets *[]*Timesheet) error
-	GetPaymentHistories(ctx context.Context, filters PaymentHistoryFilters) ([]*PaymentHistory, int64, error)
 }
 
 // TimesheetValidator provides conflict detection for timesheet creation.
@@ -213,7 +163,6 @@ type TimesheetAssignmentChecker interface {
 type TimesheetDashboardReader interface {
 	GetTotalPaidSalary(ctx context.Context) (int64, error)
 	GetPendingSalaryForMonth(ctx context.Context, startDate, endDate time.Time) (int64, error)
-	GetPendingSalaryForMonthBySchedule(ctx context.Context, startDate, endDate time.Time, schedule PaymentSchedule) (int64, error)
 	GetPaidSalaryForMonth(ctx context.Context, startDate, endDate time.Time) (int64, error)
 	CountEmployeesPaidInLast30Days(ctx context.Context) (int, error)
 	GetFirstPaidTimesheetDate(ctx context.Context) (*time.Time, error)
@@ -221,13 +170,6 @@ type TimesheetDashboardReader interface {
 	GetPendingApprovalCount(ctx context.Context, startDate, endDate time.Time) (int, error)
 	GetApprovedSalaryTotal(ctx context.Context, startDate, endDate time.Time) (int64, error)
 	CountDistinctEmployeesPaidInPeriod(ctx context.Context, startDate, endDate time.Time) (int, error)
-}
-
-// TimesheetRevenueUpdater handles revenue tracking updates.
-type TimesheetRevenueUpdater interface {
-	BulkUpdateRevenuePaid(ctx context.Context, timesheetIDs []uint) error
-	BulkUpdateRevenueReceivable(ctx context.Context, updates map[uint]int64) error
-	BulkUpdateTransactionID(ctx context.Context, transactionID uint, timesheetIDs []uint) error
 }
 
 // TimesheetReportingReader provides reporting and aggregation queries.
@@ -273,24 +215,16 @@ type TimesheetFilters struct {
 	Offset                    int
 	SortBy                    string
 	SortOrder                 string
-	ForcePayroll              *bool  // filter by admin inclusion flag
-	AllowedEdit               *bool  // filter by allowed_edit flag
-	RequestEditID             *uint  // filter by specific edit request
-	HasRequestEdit            *bool  // filter by presence of pending edit request
 	SkipRelations             bool   // skip loading relationships for performance
 	Search                    string // search by employee fullname or code
 }
 
 // NewPendingPaymentTimesheetFilters returns the canonical cohort that is ready
-// for payroll: approved timesheets that have not been paid or whose payment
-// attempt failed and can be retried.
+// for payroll: approved timesheets that have not been paid yet.
 func NewPendingPaymentTimesheetFilters() TimesheetFilters {
 	return TimesheetFilters{
 		TimesheetStatus: []TimesheetStatus{TimesheetStatusApproved},
-		PaymentStatus: []PaymentStatus{
-			PaymentStatusPending,
-			PaymentStatusFailed,
-		},
+		PaymentStatus:   []PaymentStatus{PaymentStatusPending},
 	}
 }
 
@@ -303,10 +237,7 @@ func NewOperationalPaymentBacklogTimesheetFilters() TimesheetFilters {
 			TimesheetStatusPendingApproval,
 			TimesheetStatusApproved,
 		},
-		PaymentStatus: []PaymentStatus{
-			PaymentStatusPending,
-			PaymentStatusFailed,
-		},
+		PaymentStatus: []PaymentStatus{PaymentStatusPending},
 	}
 }
 
@@ -392,34 +323,6 @@ type TimesheetSummaryStats struct {
 	PaidEmployees        int       `json:"paidEmployees"`
 	RejectedEntries      int       `json:"rejectedEntries"`
 	LastUpdated          time.Time `json:"lastUpdated"`
-}
-
-// PaymentHistory represents aggregated payment history for an employee
-type PaymentHistory struct {
-	EmployeeID      uint
-	EmployeeName    string
-	EmployeeCCCD    string
-	ProjectID       uint
-	ProjectName     string
-	Position        string
-	TotalPaidAmount int64
-	PaidAt          time.Time
-}
-
-// PaymentHistoryFilters represents filtering options for payment history queries
-type PaymentHistoryFilters struct {
-	EmployeeCreatedBy         *uint      // Filter by who created the employee (for partner access control)
-	EmployeeAssignedByPartner *uint      // Filter by who assigned the employee to project (for partner access control)
-	ProjectIDs                []uint     // Filter by project IDs
-	EmployeeIDs               []uint     // Filter by employee IDs
-	Position                  string     // Filter by position
-	Search                    string     // Search across employee fullname and CCCD
-	FromDate                  *time.Time // Payment date range start
-	ToDate                    *time.Time // Payment date range end
-	SortBy                    string     // Field to sort by
-	SortOrder                 string     // Sort direction
-	Limit                     int        // Pagination limit
-	Offset                    int        // Pagination offset
 }
 
 // BulkOperationResult represents the result of a bulk operation

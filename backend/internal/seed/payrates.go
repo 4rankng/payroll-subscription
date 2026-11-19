@@ -43,13 +43,11 @@ func (s *Seeder) seedPayrates(ctx context.Context, db *gorm.DB) error {
 
 	payrateCount := 0
 	for _, project := range projects {
-		// Determine base rates for this project based on industry and budget
-		baseMultiplier := 1.0
-
 		// Adjust rates based on project characteristics
-		if project.TotalReceivedVND > 5000000000 { // > 5 billion VND = high-budget project
+		baseMultiplier := 1.0
+		if project.TotalPayoutVND > 5000000000 { // > 5 billion VND = high-budget project
 			baseMultiplier = 1.3
-		} else if project.TotalReceivedVND > 2000000000 { // > 2 billion VND = medium budget
+		} else if project.TotalPayoutVND > 2000000000 { // > 2 billion VND = medium budget
 			baseMultiplier = 1.15
 		}
 

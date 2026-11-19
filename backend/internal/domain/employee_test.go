@@ -1,12 +1,9 @@
 package domain
 
 import (
-	"api-server/internal/pkg/clock"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 func TestEmployee_ValidateFullname(t *testing.T) {
@@ -91,127 +88,15 @@ func TestEmployee_ValidateMobile_RejectsCCCD(t *testing.T) {
 	assert.NoError(t, e.ValidateMobile())
 }
 
-func TestEmployee_ValidateDates(t *testing.T) {
-	e := &Employee{}
-
-	// Test valid dates
-	dateOfBirth := time.Now().AddDate(-30, 0, 0) // 30 years ago
-	e.DateOfBirth = &dateOfBirth
-	err := e.ValidateDates()
-	assert.NoError(t, err)
-
-	// Test future date of birth
-	futureDate := time.Now().AddDate(1, 0, 0) // next year
-	e.DateOfBirth = &futureDate
-	err = e.ValidateDates()
-	assert.Error(t, err)
-}
-
-func TestCompareEmployees_DateOfBirthUsesCalendarDate(t *testing.T) {
-	originalDate := time.Date(1990, time.January, 2, 0, 0, 0, 0, time.UTC)
-	sameDateDifferentZone := time.Date(1990, time.January, 2, 0, 0, 0, 0, time.FixedZone("ICT", 7*60*60))
-
-	changes := CompareEmployees(
-		&Employee{DateOfBirth: &originalDate},
-		&Employee{DateOfBirth: &sameDateDifferentZone},
-	)
-
-	assert.NotContains(t, changes, "date_of_birth")
-
-	updatedDate := time.Date(1991, time.March, 4, 0, 0, 0, 0, time.UTC)
-	changes = CompareEmployees(
-		&Employee{DateOfBirth: &originalDate},
-		&Employee{DateOfBirth: &updatedDate},
-	)
-
-	assert.Equal(t, FieldChange{Before: "1990-01-02", After: "1991-03-04"}, changes["date_of_birth"])
-}
-
-func TestEmployee_HasBankingInfo(t *testing.T) {
-	bankID := uint(1)
-	e := &Employee{
-		BankID:            &bankID,
-		BankAccountName:   "Test Name",
-		BankAccountNumber: "123456789",
-	}
-
-	hasInfo := e.HasBankingInfo()
-	assert.True(t, hasInfo)
-
-	e.BankAccountNumber = ""
-	hasInfo = e.HasBankingInfo()
-	assert.False(t, hasInfo)
-}
-
-func TestEmployee_GetAge(t *testing.T) {
-	// Use clock.Now() to match GetAge() which uses clock.Now() internally.
-	// Add 1 extra day to avoid boundary issues when the birthday falls on today.
-	dateOfBirth := clock.Now().AddDate(-30, 0, -1) // 30 years and 1 day ago
-	e := &Employee{
-		DateOfBirth: &dateOfBirth,
-	}
-
-	age := e.GetAge()
-	assert.Equal(t, 30, age)
-}
-
-func TestEmployee_CanBeAssignedToProject(t *testing.T) {
-	bankID := uint(1)
-	dateOfBirth := time.Now().AddDate(-25, 0, 0)
-	e := &Employee{
-		DateOfBirth:       &dateOfBirth,
-		BankID:            &bankID,
-		BankAccountName:   "Test Name",
-		BankAccountNumber: "123456789",
-	}
-
-	canAssign := e.CanBeAssignedToProject()
-	assert.True(t, canAssign)
-
-	// Test without banking info
-	e.BankID = nil
-	canAssign = e.CanBeAssignedToProject()
-	assert.False(t, canAssign)
-
-	// Test soft-deleted employee should not be assignable even with banking info
-	e.BankID = &bankID
-	e.DeletedAt = gorm.DeletedAt{Time: time.Now(), Valid: true}
-	canAssign = e.CanBeAssignedToProject()
-	assert.False(t, canAssign)
-}
-
-func TestEmployee_ValidateBankingInfo(t *testing.T) {
-	bankID := uint(1)
-	e := &Employee{
-		BankID:            &bankID,
-		BankAccountName:   "Test Name",
-		BankAccountNumber: "123456789",
-	}
-
-	err := e.ValidateBankingInfo()
-	assert.NoError(t, err)
-
-	// Test with empty bank account number
-	e.BankAccountNumber = ""
-	err = e.ValidateBankingInfo()
-	assert.Error(t, err)
-}
-
 func TestEmployee_IsValid(t *testing.T) {
-	bankID := uint(1)
 	email := "test@example.com"
-	dateOfBirth := time.Now().AddDate(-25, 0, 0)
 
 	// Test valid employee
 	e := &Employee{
-		Fullname:          "John Doe",
-		CCCD:              "123456789",
-		Email:             &email,
-		Mobile:            "0123456789",
-		BankID:            &bankID,
-		BankAccountName:   "Test Name",
-		BankAccountNumber: "123456789",
-		DateOfBirth:       &dateOfBirth,
+		Fullname: "John Doe",
+		CCCD:     "123456789",
+		Email:    &email,
+		Mobile:   "0123456789",
 	}
 	err := e.IsValid()
 	assert.NoError(t, err)

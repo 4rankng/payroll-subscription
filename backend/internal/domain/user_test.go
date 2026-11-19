@@ -2,10 +2,8 @@ package domain
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
 )
 
 func TestUser_ValidateEmail(t *testing.T) {
@@ -65,15 +63,15 @@ func TestUser_ValidateRole(t *testing.T) {
 	err := u.ValidateRole()
 	assert.NoError(t, err)
 
-	u.Role = RolePartner
+	u.Role = RoleQuanly
 	err = u.ValidateRole()
 	assert.NoError(t, err)
 
-	u.Role = RoleEmployee
+	u.Role = RoleGiamdoc
 	err = u.ValidateRole()
 	assert.NoError(t, err)
 
-	u.Role = RoleAdvPartner
+	u.Role = RoleNhanvien
 	err = u.ValidateRole()
 	assert.NoError(t, err)
 
@@ -83,24 +81,12 @@ func TestUser_ValidateRole(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestUser_IsAdvPartner(t *testing.T) {
-	u := &User{Role: RoleAdvPartner}
-	assert.True(t, u.IsAdvPartner())
+func TestUser_IsQuanly(t *testing.T) {
+	u := &User{Role: RoleQuanly}
+	assert.True(t, u.IsQuanly())
 
 	u.Role = RoleAdmin
-	assert.False(t, u.IsAdvPartner())
-}
-
-func TestUser_IsActive(t *testing.T) {
-	u := &User{}
-
-	// User is active by default (not soft deleted)
-	assert.True(t, u.IsActive())
-
-	// Soft delete the user
-	now := time.Now()
-	u.DeletedAt = gorm.DeletedAt{Time: now, Valid: true}
-	assert.False(t, u.IsActive())
+	assert.False(t, u.IsQuanly())
 }
 
 func TestUser_IsAdmin(t *testing.T) {
@@ -110,30 +96,30 @@ func TestUser_IsAdmin(t *testing.T) {
 
 	assert.True(t, u.IsAdmin())
 
-	u.Role = RolePartner
+	u.Role = RoleNhanvien
 	assert.False(t, u.IsAdmin())
 }
 
-func TestUser_IsPartner(t *testing.T) {
+func TestUser_IsGiamdoc(t *testing.T) {
 	u := &User{
-		Role: RolePartner,
+		Role: RoleGiamdoc,
 	}
 
-	assert.True(t, u.IsPartner())
+	assert.True(t, u.IsGiamdoc())
 
 	u.Role = RoleAdmin
-	assert.False(t, u.IsPartner())
+	assert.False(t, u.IsGiamdoc())
 }
 
-func TestUser_IsEmployee(t *testing.T) {
+func TestUser_IsNhanvien(t *testing.T) {
 	u := &User{
-		Role: RoleEmployee,
+		Role: RoleNhanvien,
 	}
 
-	assert.True(t, u.IsEmployee())
+	assert.True(t, u.IsNhanvien())
 
 	u.Role = RoleAdmin
-	assert.False(t, u.IsEmployee())
+	assert.False(t, u.IsNhanvien())
 }
 
 func TestUser_GetAuditEntityType(t *testing.T) {

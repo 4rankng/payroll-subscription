@@ -17,10 +17,9 @@ import (
 
 // DatabaseHelper provides utilities for reliable database operations
 type DatabaseHelper struct {
-	db             *gorm.DB
-	retryConfig    retry.Config
-	batchHelper    *BatchOperationHelper
-	temporalHelper *TemporalHelper
+	db          *gorm.DB
+	retryConfig retry.Config
+	batchHelper *BatchOperationHelper
 }
 
 // NewDatabaseHelper creates a new database helper
@@ -30,7 +29,6 @@ func NewDatabaseHelper(db *gorm.DB) *DatabaseHelper {
 		retryConfig: retry.DefaultConfig(),
 	}
 	helper.batchHelper = NewBatchOperationHelper(helper)
-	helper.temporalHelper = NewTemporalHelper(helper)
 	return helper
 }
 
@@ -302,9 +300,4 @@ func (h *DatabaseHelper) HealthCheck(ctx context.Context) error {
 // GetBatchHelper returns the batch operation helper
 func (h *DatabaseHelper) GetBatchHelper() *BatchOperationHelper {
 	return h.batchHelper
-}
-
-// GetTemporalHelper returns the temporal operation helper
-func (h *DatabaseHelper) GetTemporalHelper() *TemporalHelper {
-	return h.temporalHelper
 }

@@ -1,7 +1,6 @@
 package query_builders
 
 import (
-	"api-server/internal/pkg/clock"
 	"context"
 	"fmt"
 	"log/slog"
@@ -21,7 +20,7 @@ type EmployeeQueryBuilder struct {
 
 // NewEmployeeQueryBuilder creates a new employee query builder
 func NewEmployeeQueryBuilder(db *gorm.DB) *EmployeeQueryBuilder {
-	preloads := []string{"Creator", "Bank", "User"}
+	preloads := []string{"Creator", "User"}
 	return &EmployeeQueryBuilder{
 		BaseQueryBuilder: common.NewBaseQueryBuilder(db, "created_at", "DESC", preloads),
 	}
@@ -44,7 +43,6 @@ func (b *EmployeeQueryBuilder) BuildListQuery(filters domain.EmployeeFilters) *g
 func (b *EmployeeQueryBuilder) BuildGetByIDQuery(id uint) *gorm.DB {
 	return b.DB.Model(&domain.Employee{}).
 		Preload("Creator").
-		Preload("Bank").
 		Preload("User").
 		Where("id = ?", id)
 }
@@ -59,7 +57,6 @@ func (b *EmployeeQueryBuilder) BuildGetByIDForUpdateQuery(id uint) *gorm.DB {
 func (b *EmployeeQueryBuilder) BuildGetByFieldQuery(fieldName string, value interface{}) *gorm.DB {
 	return b.DB.Model(&domain.Employee{}).
 		Preload("Creator").
-		Preload("Bank").
 		Preload("User").
 		Where(fieldName+" = ?", value)
 }
@@ -68,7 +65,6 @@ func (b *EmployeeQueryBuilder) BuildGetByFieldQuery(fieldName string, value inte
 func (b *EmployeeQueryBuilder) BuildGetByFieldWithoutUserQuery(fieldName string, value interface{}) *gorm.DB {
 	return b.DB.Model(&domain.Employee{}).
 		Preload("Creator").
-		Preload("Bank").
 		Where(fieldName+" = ?", value)
 }
 
@@ -86,14 +82,10 @@ func (b *EmployeeQueryBuilder) BuildSearchQuery(search string, limit int) *gorm.
 			projects.name as project_name,
 			projects.code as project_code,
 			projects.client_name as project_client_name,
-			pe.position as position,
-			banks.id as bank_id,
-			banks.branch_name as bank_branch_name`).
+			pe.position as position`).
 		Joins(`LEFT JOIN project_employees pe ON employees.id = pe.employee_id
-		   AND pe.deleted_at IS NULL
-		   AND pe.last_date IS NULL AND pe.start_date <= CURDATE()`).
-		Joins("LEFT JOIN projects ON pe.project_id = projects.id AND projects.deleted_at IS NULL").
-		Joins("LEFT JOIN banks ON employees.bank_id = banks.id")
+		   AND pe.start_date <= CURDATE()`).
+		Joins("LEFT JOIN projects ON pe.project_id = projects.id")
 
 	// Apply search filter using normalized column
 	normalizedSearch := utils.NormalizeVietnameseForSearch(search)
@@ -131,7 +123,7 @@ func (b *EmployeeQueryBuilder) ApplyFilters(query *gorm.DB, filters domain.Emplo
 	if filters.ProjectID != nil {
 		subQuery := b.DB.Model(&domain.ProjectEmployee{}).
 			Select("employee_id").
-			Where("project_id = ? AND last_date IS NULL AND deleted_at IS NULL", *filters.ProjectID)
+			Where("project_id = ?", *filters.ProjectID)
 		query = query.Where("employees.id IN (?)", subQuery)
 	}
 
@@ -142,31 +134,15 @@ func (b *EmployeeQueryBuilder) ApplyFilters(query *gorm.DB, filters domain.Emplo
 		query = query.Where(`EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 	case "unassigned":
 		// Employees NOT assigned to any project
 		query = query.Where(`NOT EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
-	}
-
-	// Filter by payment schedule (via project_employees join) - employee-specific logic
-	if filters.PaymentSchedule != "" {
-		query = query.Where(`EXISTS (
-			SELECT 1 FROM project_employees pe
-			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
-			AND pe.last_date IS NULL
-			AND pe.start_date <= NOW()
-			AND pe.payment_schedule = ?
-		)`, filters.PaymentSchedule)
 	}
 
 	// Search functionality with Vietnamese normalization using virtual column - employee-specific
@@ -193,7 +169,7 @@ func (b *EmployeeQueryBuilder) ApplyAccessControl(query *gorm.DB, filters domain
 		// prequery) so the request still returns correctly scoped rows.
 		slog.Warn("employee_access_resolution_failed", "error", err, "user_id", userID)
 		return query.Where(
-			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ? AND pe.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.deleted_at IS NULL AND pu.deleted_at IS NULL AND pe2.start_date <= NOW() AND (pe2.last_date IS NULL OR pe2.last_date > NOW()))",
+			"employees.created_by = ? OR EXISTS (SELECT 1 FROM project_employees pe WHERE pe.employee_id = employees.id AND pe.created_by = ?) OR EXISTS (SELECT 1 FROM project_employees pe2 INNER JOIN project_users pu ON pe2.project_id = pu.project_id WHERE pe2.employee_id = employees.id AND pu.user_id = ? AND pe2.start_date <= NOW())",
 			userID, userID, userID,
 		)
 	}
@@ -216,20 +192,17 @@ func (b *EmployeeQueryBuilder) ApplyAccessControl(query *gorm.DB, filters domain
 func resolveAccessibleEmployeeIDs(db *gorm.DB, userID uint) ([]uint, error) {
 	var ids []uint
 	err := db.Raw(`
-		SELECT id FROM employees WHERE created_by = ? AND deleted_at IS NULL
+		SELECT id FROM employees WHERE created_by = ?
 		UNION
-		SELECT employee_id FROM employee_users WHERE user_id = ? AND deleted_at IS NULL
+		SELECT employee_id FROM employee_users WHERE user_id = ?
 		UNION
-		SELECT employee_id FROM project_employees WHERE created_by = ? AND deleted_at IS NULL
+		SELECT employee_id FROM project_employees WHERE created_by = ?
 		UNION
 		SELECT pe2.employee_id
 		FROM project_employees pe2
 		INNER JOIN project_users pu ON pe2.project_id = pu.project_id
 		WHERE pu.user_id = ?
-		  AND pe2.deleted_at IS NULL
-		  AND pu.deleted_at IS NULL
 		  AND pe2.start_date <= NOW()
-		  AND (pe2.last_date IS NULL OR pe2.last_date > NOW())
 	`, userID, userID, userID, userID).Scan(&ids).Error
 	return ids, err
 }
@@ -238,7 +211,6 @@ func resolveAccessibleEmployeeIDs(db *gorm.DB, userID uint) ([]uint, error) {
 func (b *EmployeeQueryBuilder) BuildGetByIDsQuery(ctx context.Context, ids []int64) *gorm.DB {
 	query := b.DB.Model(&domain.Employee{}).
 		Preload("Creator").
-		Preload("Bank").
 		Preload("User")
 
 	if len(ids) == 0 {
@@ -279,10 +251,8 @@ func (b *EmployeeQueryBuilder) BuildUnassignedAtDateQuery(atDate time.Time, filt
 	query = query.Where(`NOT EXISTS (
 		SELECT 1 FROM project_employees pe
 		WHERE pe.employee_id = employees.id
-		AND pe.deleted_at IS NULL
 		AND pe.start_date <= ?
-		AND (pe.last_date IS NULL OR pe.last_date > ?)
-	)`, atDate, atDate)
+	)`, atDate)
 
 	// Apply sorting
 	sortBy := "created_at"

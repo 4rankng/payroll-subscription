@@ -38,16 +38,11 @@ type settingsConfigCacheInvalidator interface {
 }
 
 type SettingsService struct {
-	logger                  *slog.Logger
-	SettingsRepo            domain.SettingsRepository
-	QuotaRepo               domain.AdvancePaymentRepository
-	AttendanceRepo          domain.AttendanceRepository
-	TxManager               domain.TransactionManager
-	CacheService            *infrastructure.CacheService
-	EventBus                domain.EventBus
-	quotaCreditTaskEnqueuer interface {
-		EnqueueCreditQuota(attendanceID uint, at time.Time) error
-	}
+	logger       *slog.Logger
+	SettingsRepo domain.SettingsRepository
+	TxManager    domain.TransactionManager
+	CacheService *infrastructure.CacheService
+	EventBus     domain.EventBus
 	// configCacheInvalidator is bound at bootstrap to the SettingsConfigService
 	// that reads business settings (payment percentages, beneficiary bank
 	// details, ...). It is cleared after every committed mutation so a
@@ -74,24 +69,16 @@ func (s *SettingsService) invalidateConfigCache() {
 
 func NewSettingsService(
 	settingsRepo domain.SettingsRepository,
-	quotaRepo domain.AdvancePaymentRepository,
-	attendanceRepo domain.AttendanceRepository,
 	txManager domain.TransactionManager,
 	cacheService *infrastructure.CacheService,
 	eventBus domain.EventBus,
-	quotaCreditTaskEnqueuer interface {
-		EnqueueCreditQuota(attendanceID uint, at time.Time) error
-	},
 ) *SettingsService {
 	return &SettingsService{
-		logger:                  observability.GetLogger(),
-		SettingsRepo:            settingsRepo,
-		QuotaRepo:               quotaRepo,
-		AttendanceRepo:          attendanceRepo,
-		TxManager:               txManager,
-		CacheService:            cacheService,
-		EventBus:                eventBus,
-		quotaCreditTaskEnqueuer: quotaCreditTaskEnqueuer,
+		logger:       observability.GetLogger(),
+		SettingsRepo: settingsRepo,
+		TxManager:    txManager,
+		CacheService: cacheService,
+		EventBus:     eventBus,
 	}
 }
 
@@ -182,7 +169,6 @@ func (s *SettingsService) GetSettingByKeyAuthoritativeForUpdate(ctx context.Cont
 
 func (s *SettingsService) UpdateSetting(ctx context.Context, settingID uint, updateData map[string]any, updatedBy uint) (*domain.Settings, error) {
 	var updatedSetting *domain.Settings
-	var rescheduledQuotaCredits []domain.QuotaCreditSchedule
 	err := s.TxManager.WithTransaction(ctx, func(txCtx context.Context) error {
 		existingSetting, err := s.SettingsRepo.GetByIDForUpdate(txCtx, settingID)
 		if err != nil {
@@ -219,43 +205,12 @@ func (s *SettingsService) UpdateSetting(ctx context.Context, settingID uint, upd
 		if err := s.SettingsRepo.Update(txCtx, existingSetting); err != nil {
 			return fmt.Errorf("failed to update setting: %w", err)
 		}
-		if existingSetting.Key == SettingKeySelfCheckInAdvancePercent {
-			percent, err := parseSelfCheckInAdvancePercent(existingSetting)
-			if err != nil {
-				return err
-			}
-			if err := s.QuotaRepo.RecomputeActiveCheckInMaxAdvance(txCtx, percent); err != nil {
-				return fmt.Errorf("failed to recompute active self check-in quota: %w", err)
-			}
-		}
-		if existingSetting.Key == SettingKeySelfCheckInAdvanceHold && s.AttendanceRepo != nil {
-			holdHours, err := parseSelfCheckInAdvanceHoldHours(existingSetting)
-			if err != nil {
-				return err
-			}
-			schedules, err := s.AttendanceRepo.RecalculatePendingQuotaCreditSchedules(txCtx, time.Duration(holdHours)*time.Hour)
-			if err != nil {
-				return fmt.Errorf("failed to recalculate pending self check-in quota deadlines: %w", err)
-			}
-			rescheduledQuotaCredits = schedules
-		}
 
 		updatedSetting = existingSetting
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-	for _, schedule := range rescheduledQuotaCredits {
-		if s.quotaCreditTaskEnqueuer == nil {
-			break
-		}
-		if err := s.quotaCreditTaskEnqueuer.EnqueueCreditQuota(schedule.AttendanceID, schedule.EligibleAt); err != nil {
-			s.logger.Warn("failed to enqueue recalculated quota credit task",
-				"attendance_id", schedule.AttendanceID,
-				"eligible_at", schedule.EligibleAt,
-				"error", err)
-		}
 	}
 
 	if err := s.EventBus.Publish(ctx, domain.NewSettingsUpdatedEvent(ctx, updatedSetting.Key, updatedSetting.ID)); err != nil {
@@ -267,31 +222,11 @@ func (s *SettingsService) UpdateSetting(ctx context.Context, settingID uint, upd
 }
 
 func validateBusinessSetting(setting *domain.Settings) error {
-	if setting == nil {
-		return nil
-	}
-	switch setting.Key {
-	case SettingKeyBulkTransferWorkbookLimit:
-		_, err := parseBulkTransferWorkbookLimit(setting)
-		return err
-	case SettingKeySelfCheckInAdvancePercent:
-		_, err := parseSelfCheckInAdvancePercent(setting)
-		return err
-	case SettingKeySelfCheckInAdvanceHold:
-		_, err := parseSelfCheckInAdvanceHoldHours(setting)
-		return err
-	case SettingKeySelfCheckInAdvanceWindowOpenDay:
-		_, err := parseSelfCheckInAdvanceWindowOpenDay(setting)
-		return err
-	case SettingKeyAdvanceRequestStopDay:
-		_, err := parseAdvanceRequestStopDay(setting)
-		return err
-	case SettingKeyWalletBalanceAlert:
-		_, err := parseWalletBalanceAlertThreshold(setting)
-		return err
-	default:
-		return nil
-	}
+	// Kept business settings (employee.mobile_required,
+	// subscription_fee_per_employee_per_ky_vnd) tolerate any stored text:
+	// readers fall back to their defaults when the value does not parse.
+	_ = setting
+	return nil
 }
 
 func (s *SettingsService) DeleteSetting(ctx context.Context, id uint, deletedBy uint) error {
@@ -416,5 +351,5 @@ func isDuplicateKeyError(err error) bool {
 	}
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "duplicate entry") ||
-		strings.Contains(msg, "uniq_settings_active_key")
+		strings.Contains(msg, "uq_settings_key")
 }

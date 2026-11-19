@@ -11,11 +11,6 @@ import (
 	"api-server/internal/pkg/timeutil"
 )
 
-// GetEmployeeStatistics delegates to domain service for business logic
-func (s *EmployeeService) GetEmployeeStatistics(ctx context.Context) (*domain.EmployeeStatistics, error) {
-	return s.EmployeeDomainService.GetEmployeeStatistics(ctx)
-}
-
 // GetEmployeesSummary delegates to domain service for business logic with caching
 func (s *EmployeeService) GetEmployeesSummary(ctx context.Context) (*domain.EmployeesSummary, error) {
 	// Try to get from cache

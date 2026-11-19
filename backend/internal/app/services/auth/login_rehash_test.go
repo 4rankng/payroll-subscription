@@ -54,7 +54,7 @@ func TestLogin_RehashesLegacyBcryptPassword(t *testing.T) {
 			ID:       1417,
 			Username: "nv478",
 			Fullname: "NV 478",
-			Role:     domain.RoleEmployee,
+			Role:     domain.RoleNhanvien,
 			Password: string(bcryptHash),
 		},
 	}
@@ -86,7 +86,7 @@ func TestLogin_WrongPasswordOnBcryptAccountDoesNotRehash(t *testing.T) {
 		user: &domain.User{
 			ID:       1418,
 			Username: "nv548",
-			Role:     domain.RoleEmployee,
+			Role:     domain.RoleNhanvien,
 			Password: string(bcryptHash),
 		},
 	}
@@ -120,7 +120,7 @@ func TestLogin_Argon2idAccountIsNotRehashed(t *testing.T) {
 	repo.user = &domain.User{
 		ID:       1,
 		Username: "admin",
-		Role:     domain.RoleEmployee,
+		Role:     domain.RoleNhanvien,
 		Password: hashed,
 	}
 

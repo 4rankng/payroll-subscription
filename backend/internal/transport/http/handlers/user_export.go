@@ -23,14 +23,12 @@ func userRoleLabel(role string) string {
 	switch role {
 	case "admin":
 		return "Quản trị viên"
-	case "partner":
+	case "quanly":
 		return "Quản lý"
-	case "employee":
+	case "giamdoc":
+		return "Giám đốc"
+	case "nhanvien":
 		return "Nhân viên"
-	case "adv_partner":
-		return "Quản lý ứng lương"
-	case "accountant":
-		return "Kế toán"
 	default:
 		return "Người dùng"
 	}

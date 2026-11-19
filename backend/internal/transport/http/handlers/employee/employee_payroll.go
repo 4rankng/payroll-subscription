@@ -109,7 +109,6 @@ func (h *Handler) GetEmployeePayroll(c *gin.Context) {
 		validStatuses := map[string]domain.PaymentStatus{
 			"pending":   domain.PaymentStatusPending,
 			"paid":      domain.PaymentStatusPaid,
-			"failed":    domain.PaymentStatusFailed,
 			"cancelled": domain.PaymentStatusCancelled,
 		}
 		if paymentStatus, ok := validStatuses[status]; ok {
@@ -180,7 +179,6 @@ func (h *Handler) GetEmployeePayroll(c *gin.Context) {
 			PayRate:          utils.RoundToTwoDecimals(float64(timesheet.PayRate)),
 			Amount:           utils.RoundToTwoDecimals(float64(timesheet.Amount)),
 			PaymentStatus:    string(timesheet.PaymentStatus),
-			PaymentReference: timesheet.PaymentReference,
 			PaymentDate:      paymentDateStr,
 			CreatedAt:        timesheet.CreatedAt,
 			PaidAmount:       utils.RoundToTwoDecimals(float64(timesheet.PaidAmount)),

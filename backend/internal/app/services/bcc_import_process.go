@@ -204,19 +204,6 @@ func (s *BCCImportService) processAssetData(
 			continue
 		}
 
-		if assignment.PaymentSchedule == string(domain.PaymentScheduleFlexible) {
-			if !includeFlexibleEmployees {
-				importErrors = append(importErrors, domain.ImportError{
-					Row:      rowNum,
-					Employee: emp.FullName,
-					Reason:   "nhân viên lương linh hoạt không áp dụng BCC import",
-				})
-				rowNum++
-				continue
-			}
-			flexibleEmployeeIDs[assignment.EmployeeID] = struct{}{}
-		}
-
 		for _, entry := range emp.Entries {
 			date := time.Date(year, month, entry.DayNum, 0, 0, 0, 0, loc)
 			if entry.FullDate != nil {

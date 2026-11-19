@@ -9,7 +9,6 @@ import (
 	"api-server/internal/constants"
 	"api-server/internal/domain"
 	"api-server/internal/infra/persistence/common"
-	pkgConstants "api-server/internal/pkg/constants"
 	"api-server/internal/pkg/utils"
 
 	"gorm.io/gorm"
@@ -90,7 +89,6 @@ func (r *ProjectRepository) Update(ctx context.Context, project *domain.Project)
 }
 
 func (r *ProjectRepository) Delete(ctx context.Context, id uint) error {
-	// Soft delete by setting deleted_at
 	return r.DB.WithContext(ctx).Delete(&domain.Project{}, id).Error
 }
 
@@ -179,19 +177,15 @@ func (r *ProjectRepository) GetSummary(ctx context.Context) (*domain.ProjectSumm
 
 	// Sum financial fields
 	var result struct {
-		TotalReceived          float64
-		TotalPayout            float64
-		TotalPendingPayable    float64
-		TotalPendingReceivable float64
+		TotalPayout         float64
+		TotalPendingPayable float64
 	}
 
 	err = r.DB.WithContext(ctx).
 		Model(&domain.Project{}).
 		Select(`
-			COALESCE(SUM(total_received_vnd), 0) as total_received,
 			COALESCE(SUM(total_payout_vnd), 0) as total_payout,
-			COALESCE(SUM(pending_payable_vnd), 0) as total_pending_payable,
-			COALESCE(SUM(pending_receivable_vnd), 0) as total_pending_receivable
+			COALESCE(SUM(pending_payable_vnd), 0) as total_pending_payable
 		`).
 		Scan(&result).Error
 
@@ -199,10 +193,8 @@ func (r *ProjectRepository) GetSummary(ctx context.Context) (*domain.ProjectSumm
 		return nil, err
 	}
 
-	summary.TotalReceivedVND = result.TotalReceived
 	summary.TotalPayoutVND = result.TotalPayout
 	summary.TotalPendingPayableVND = result.TotalPendingPayable
-	summary.TotalPendingReceivableVND = result.TotalPendingReceivable
 
 	return &summary, nil
 }
@@ -224,7 +216,6 @@ func (r *ProjectRepository) applyFilters(query *gorm.DB, filters domain.ProjectF
 				SELECT 1 FROM project_users
 				WHERE project_users.project_id = projects.id
 					AND project_users.user_id = ?
-					AND project_users.deleted_at IS NULL
 			)`, *filters.ModifiableBy, *filters.ModifiableBy)
 	}
 
@@ -247,12 +238,9 @@ func (r *ProjectRepository) applyAccessibilityFilter(query *gorm.DB, userID uint
 	query = query.Joins(`
 		LEFT JOIN project_users pu ON pu.project_id = projects.id
 			AND pu.user_id = ?
-			AND pu.deleted_at IS NULL
 		LEFT JOIN project_employees pe ON pe.project_id = projects.id
-			AND pe.deleted_at IS NULL
 		LEFT JOIN employee_users eu ON eu.employee_id = pe.employee_id
-			AND eu.user_id = ?
-			AND eu.deleted_at IS NULL`,
+			AND eu.user_id = ?`,
 		userID, userID)
 
 	query = query.Where("(projects.created_by = ? AND projects.owner_revoked_at IS NULL) OR pu.id IS NOT NULL OR pe.created_by = ? OR eu.id IS NOT NULL", userID, userID)
@@ -293,11 +281,9 @@ func (r *ProjectRepository) GetByIDWithEmployeeCount(ctx context.Context, id uin
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(pe.employee_count, 0) as employee_count,
-			COALESCE(pe.weekly_count, 0) as weekly_salary_employee_count,
-			COALESCE(pe.monthly_count, 0) as monthly_salary_employee_count
+			COALESCE(pe.employee_count, 0) as employee_count
 		`).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
 		Joins("LEFT JOIN (?) pe ON projects.id = pe.project_id", employeeCountSubQuery).
 		Where("projects.id = ?", id).
 		First(&result).Error
@@ -327,20 +313,17 @@ func (r *ProjectRepository) getAccessibleProjectIDs(ctx context.Context, userID 
 
 	err := r.DB.WithContext(ctx).Raw(`
 		SELECT p.id FROM projects p
-		 WHERE p.created_by = ? AND p.owner_revoked_at IS NULL AND p.deleted_at IS NULL
+		 WHERE p.created_by = ? AND p.owner_revoked_at IS NULL
 		UNION
 		SELECT p.id FROM projects p
-		 INNER JOIN project_users pu ON pu.project_id = p.id AND pu.user_id = ? AND pu.deleted_at IS NULL
-		 WHERE p.deleted_at IS NULL
+		 INNER JOIN project_users pu ON pu.project_id = p.id AND pu.user_id = ?
 		UNION
 		SELECT p.id FROM projects p
-		 INNER JOIN project_employees pe ON pe.project_id = p.id AND pe.created_by = ? AND pe.deleted_at IS NULL
-		 WHERE p.deleted_at IS NULL
+		 INNER JOIN project_employees pe ON pe.project_id = p.id AND pe.created_by = ?
 		UNION
 		SELECT p.id FROM projects p
-		 INNER JOIN project_employees pe2 ON pe2.project_id = p.id AND pe2.deleted_at IS NULL
-		 INNER JOIN employee_users eu ON eu.employee_id = pe2.employee_id AND eu.user_id = ? AND eu.deleted_at IS NULL
-		 WHERE p.deleted_at IS NULL
+		 INNER JOIN project_employees pe2 ON pe2.project_id = p.id
+		 INNER JOIN employee_users eu ON eu.employee_id = pe2.employee_id AND eu.user_id = ?
 	`, userID, userID, userID, userID).Scan(&accessibleIDs).Error
 	if err != nil {
 		return nil, r.errorHandler.HandleListError(err, "accessible project IDs")
@@ -364,13 +347,10 @@ func (r *ProjectRepository) ListWithEmployeeCount(ctx context.Context, filters d
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(SUM(CASE WHEN pe.last_date IS NULL THEN 1 ELSE 0 END), 0) as employee_count,
-			COALESCE(SUM(CASE WHEN pe.last_date IS NULL AND pe.payment_schedule = ? THEN 1 ELSE 0 END), 0) as weekly_salary_employee_count,
-			COALESCE(SUM(CASE WHEN pe.last_date IS NULL AND pe.payment_schedule = ? THEN 1 ELSE 0 END), 0) as monthly_salary_employee_count
-		`, pkgConstants.PaymentScheduleWeekly, pkgConstants.PaymentScheduleMonthly).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
-		Joins("LEFT JOIN project_employees pe ON projects.id = pe.project_id AND pe.deleted_at IS NULL").
-		Where("projects.deleted_at IS NULL").
+			COALESCE(SUM(CASE WHEN pe.id IS NOT NULL THEN 1 ELSE 0 END), 0) as employee_count
+		`).
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
+		Joins("LEFT JOIN project_employees pe ON projects.id = pe.project_id").
 		Group("projects.id, u.fullname")
 
 	// Apply additional filters
@@ -443,7 +423,7 @@ func (r *ProjectRepository) getSharedProjectIDs(ctx context.Context, userID uint
 	var sharedProjectIDs []uint
 	err := r.DB.WithContext(ctx).Model(&domain.ProjectUser{}).
 		Select("project_id").
-		Where("user_id = ? AND deleted_at IS NULL", userID).
+		Where("user_id = ?", userID).
 		Pluck("project_id", &sharedProjectIDs).Error
 
 	if err != nil {
@@ -461,13 +441,11 @@ func (r *ProjectRepository) getEmployeeAccessibleProjectIDs(ctx context.Context,
 	// Last two branches of getAccessibleProjectIDs, as one UNION of keyed lookups.
 	err := r.DB.WithContext(ctx).Raw(`
 		SELECT p.id FROM projects p
-		 INNER JOIN project_employees pe ON pe.project_id = p.id AND pe.created_by = ? AND pe.deleted_at IS NULL
-		 WHERE p.deleted_at IS NULL
+		 INNER JOIN project_employees pe ON pe.project_id = p.id AND pe.created_by = ?
 		UNION
 		SELECT p.id FROM projects p
-		 INNER JOIN project_employees pe2 ON pe2.project_id = p.id AND pe2.deleted_at IS NULL
-		 INNER JOIN employee_users eu ON eu.employee_id = pe2.employee_id AND eu.user_id = ? AND eu.deleted_at IS NULL
-		 WHERE p.deleted_at IS NULL
+		 INNER JOIN project_employees pe2 ON pe2.project_id = p.id
+		 INNER JOIN employee_users eu ON eu.employee_id = pe2.employee_id AND eu.user_id = ?
 	`, userID, userID).Scan(&employeeProjectIDs).Error
 
 	if err != nil {
@@ -482,11 +460,8 @@ func (r *ProjectRepository) createEmployeeCountSubQuery() *gorm.DB {
 	return r.DB.Model(&domain.ProjectEmployee{}).
 		Select(`
 			project_id,
-			COUNT(*) as employee_count,
-			SUM(CASE WHEN payment_schedule = ? THEN 1 ELSE 0 END) as weekly_count,
-			SUM(CASE WHEN payment_schedule = ? THEN 1 ELSE 0 END) as monthly_count
-		`, pkgConstants.PaymentScheduleWeekly, pkgConstants.PaymentScheduleMonthly).
-		Where("last_date IS NULL").
+			COUNT(*) as employee_count
+		`).
 		Group("project_id")
 }
 
@@ -504,11 +479,9 @@ func (r *ProjectRepository) fetchOwnedProjects(ctx context.Context, filters doma
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(pe.employee_count, 0) as employee_count,
-			COALESCE(pe.weekly_count, 0) as weekly_salary_employee_count,
-			COALESCE(pe.monthly_count, 0) as monthly_salary_employee_count
+			COALESCE(pe.employee_count, 0) as employee_count
 		`).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
 		Joins("LEFT JOIN (?) pe ON projects.id = pe.project_id", employeeCountSubQuery)
 
 	query = r.applyFilters(query, ownedFilters)
@@ -551,11 +524,9 @@ func (r *ProjectRepository) fetchSharedProjects(ctx context.Context, filters dom
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(pe.employee_count, 0) as employee_count,
-			COALESCE(pe.weekly_count, 0) as weekly_salary_employee_count,
-			COALESCE(pe.monthly_count, 0) as monthly_salary_employee_count
+			COALESCE(pe.employee_count, 0) as employee_count
 		`).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
 		Joins("LEFT JOIN (?) pe ON projects.id = pe.project_id", employeeCountSubQuery).
 		Where("projects.id IN (?)", projectIDs)
 
@@ -600,11 +571,9 @@ func (r *ProjectRepository) fetchEmployeeAccessibleProjects(ctx context.Context,
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(pe.employee_count, 0) as employee_count,
-			COALESCE(pe.weekly_count, 0) as weekly_salary_employee_count,
-			COALESCE(pe.monthly_count, 0) as monthly_salary_employee_count
+			COALESCE(pe.employee_count, 0) as employee_count
 		`).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
 		Joins("LEFT JOIN (?) pe ON projects.id = pe.project_id", employeeCountSubQuery).
 		Where("projects.id IN (?)", projectIDs).
 		Where("projects.created_by != ?", userID) // Exclude owned projects
@@ -693,42 +662,14 @@ func (r *ProjectRepository) GetProjectsWithEmployeeCount(ctx context.Context) ([
 		Select(`
 			projects.*,
 			u.fullname as creator_fullname,
-			COALESCE(pe.employee_count, 0) as employee_count,
-			COALESCE(pe.weekly_count, 0) as weekly_salary_employee_count,
-			COALESCE(pe.monthly_count, 0) as monthly_salary_employee_count
+			COALESCE(pe.employee_count, 0) as employee_count
 		`).
-		Joins("LEFT JOIN users u ON projects.created_by = u.id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN users u ON projects.created_by = u.id").
 		Joins("LEFT JOIN (?) pe ON projects.id = pe.project_id", employeeCountSubQuery).
 		Limit(common.DefaultMaxResults).
 		Scan(&results).Error
 
 	return results, err
-}
-
-func (r *ProjectRepository) GetFinancialSummaryByDateRange(ctx context.Context, startDate, endDate time.Time) (*domain.ProjectFinancialSummary, error) {
-	var summary domain.ProjectFinancialSummary
-
-	err := r.DB.WithContext(ctx).
-		Model(&domain.Project{}).
-		Where("created_at BETWEEN ? AND ?", startDate, endDate).
-		Select(`
-			COUNT(*) as total_projects,
-			COALESCE(SUM(total_received_vnd), 0) as total_revenue,
-			COALESCE(SUM(total_payout_vnd), 0) as total_expenses,
-			COALESCE(SUM(pending_receivable_vnd), 0) as pending_revenue,
-			COALESCE(SUM(pending_payable_vnd), 0) as pending_expenses
-		`).
-		Scan(&summary).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	summary.NetProfit = summary.TotalRevenue - summary.TotalExpenses
-	summary.StartDate = startDate
-	summary.EndDate = endDate
-
-	return &summary, nil
 }
 
 // GetActiveCountAtDate returns count of active projects at a specific date

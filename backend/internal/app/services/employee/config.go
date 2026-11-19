@@ -12,11 +12,9 @@ import (
 // Config consolidates all dependencies for EmployeeService
 // This reduces constructor complexity from 11 parameters to 1
 type Config struct {
-	// Repositories (7)
+	// Repositories
 	EmployeeRepo        domain.EmployeeRepository
 	TimesheetRepo       domain.TimesheetRepository
-	AttendanceRepo      domain.AttendanceRepository
-	BankRepo            domain.BankRepository
 	ProjectEmployeeRepo domain.ProjectEmployeeRepository
 	EmployeeUserRepo    domain.EmployeeUserRepository
 	UserRepo            domain.UserRepository
@@ -30,11 +28,6 @@ type Config struct {
 	Events             domain.EventBus
 	Cache              domain.CacheServiceUseCase
 	Logger             *slog.Logger
-
-	// BankAccountValidator performs live OnePay account verification on
-	// create/update. Nil in environments without a configured provider
-	// (e.g. some tests) — validation is then silently skipped.
-	BankAccountValidator *BankAccountValidator
 
 	// IsEmployeeMobileRequired reports the admin policy toggle that makes the
 	// phone number mandatory on employee creation. Nil (tests, partial wiring)

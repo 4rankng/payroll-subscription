@@ -27,7 +27,6 @@ func setupEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
 		employees.GET("/duplicate-mobiles", container.Handlers.Employee.GetDuplicateMobileGroups)
 		employees.GET("/summary", container.Handlers.Employee.GetEmployeesSummary)
 		employees.GET("/unassigned", container.Handlers.Employee.GetUnassignedEmployees)
-		employees.GET("/missing-bank-details", container.Handlers.Employee.GetEmployeesMissingBankDetails)
 		employees.GET("/cccd/:cccd", container.Handlers.Employee.GetEmployeeByCCCD)
 		employees.GET("/duplicate-check", container.Handlers.Employee.CheckEmployeeDuplicates)
 		// Data-quality report: mobiles/CCCDs carried by more than one employee.
@@ -52,15 +51,5 @@ func setupEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
 		employees.GET("/:id/timesheet", container.Handlers.Employee.GetEmployeeTimesheet)
 		employees.GET("/:id/timesheets/summary", container.Handlers.Employee.GetEmployeeTimesheetSummary)
 		employees.GET("/:id/current-projects", container.Handlers.Employee.GetEmployeeCurrentProjects)
-	}
-}
-
-func setupProjectEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
-	projectEmployees := protected.Group("/project-employees")
-	{
-		// Payment schedule management
-		projectEmployees.POST("/:id/payment-schedule", container.Handlers.ProjectEmployee.RequestPaymentScheduleChange)
-		projectEmployees.DELETE("/:id/payment-schedule", container.Handlers.ProjectEmployee.CancelPaymentScheduleChange)
-		projectEmployees.GET("/pending-schedule-changes", container.Handlers.ProjectEmployee.GetPendingScheduleChanges)
 	}
 }

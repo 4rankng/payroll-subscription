@@ -76,7 +76,7 @@ func (s *AuthorizationService) CanAccessTimesheet(ctx context.Context, userRole 
 		return false
 	}
 
-	if (action == "PUT" || action == "DELETE") && timesheetID != nil && userRole == string(domain.RolePartner) {
+	if (action == "PUT" || action == "DELETE") && timesheetID != nil && userRole == string(domain.RoleQuanly) {
 		timesheet, err := s.timesheetService.GetTimesheet(ctx, *timesheetID)
 		if err != nil {
 			s.logger.Error("Failed to get timesheet for authorization check",
@@ -100,7 +100,7 @@ func (s *AuthorizationService) CanAccessTimesheet(ctx context.Context, userRole 
 }
 
 func (s *AuthorizationService) CanModifyTimesheets(ctx context.Context, userRole string, timesheetIDs []uint) bool {
-	if userRole != string(domain.RolePartner) {
+	if userRole != string(domain.RoleQuanly) {
 		return true
 	}
 

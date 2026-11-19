@@ -318,119 +318,6 @@ func (r *UserRepository) CountRecentLogins(ctx context.Context, since time.Time)
 	return count, nil
 }
 
-func (r *UserRepository) CountActiveEmployeesBySchedule(ctx context.Context, since, until time.Time) (weekly, monthly, flexible int, err error) {
-	type scheduleCount struct {
-		Schedule string
-		Count    int
-	}
-
-	var results []scheduleCount
-	now := clock.Now()
-
-	if err := r.DB.WithContext(ctx).
-		Model(&domain.User{}).
-		Select("pe.payment_schedule as schedule, COUNT(DISTINCT e.id) as count").
-		Joins("JOIN employees e ON e.user_id = users.id AND e.deleted_at IS NULL").
-		Joins("JOIN project_employees pe ON pe.employee_id = e.id AND pe.deleted_at IS NULL AND pe.start_date <= ? AND (pe.last_date IS NULL OR pe.last_date >= ?)", now, now).
-		Where("users.role = ?", "employee").
-		Where("users.last_login >= ? AND users.last_login < ?", since, until).
-		Group("pe.payment_schedule").
-		Scan(&results).Error; err != nil {
-		return 0, 0, 0, domain.NewInternalError("failed to count active employees by schedule", err)
-	}
-
-	for _, res := range results {
-		switch res.Schedule {
-		case "weekly":
-			weekly = res.Count
-		case "monthly":
-			monthly = res.Count
-		case "flexible":
-			flexible = res.Count
-		}
-	}
-
-	return weekly, monthly, flexible, nil
-}
-
-// CountActiveEmployeesByProject groups the same active-login population as
-// CountActiveEmployeesBySchedule by the employee's active project assignment.
-// DISTINCT counts are per project: an employee active in several projects is
-// counted in each, so sums may exceed the schedule totals.
-func (r *UserRepository) CountActiveEmployeesByProject(ctx context.Context, since, until time.Time) ([]*domain.ProjectActiveCount, error) {
-	type projectCount struct {
-		ProjectID   uint
-		ProjectName string
-		Count       int
-	}
-
-	var results []projectCount
-	now := clock.Now()
-
-	if err := r.DB.WithContext(ctx).
-		Model(&domain.User{}).
-		Select("p.id as project_id, p.name as project_name, COUNT(DISTINCT e.id) as count").
-		Joins("JOIN employees e ON e.user_id = users.id AND e.deleted_at IS NULL").
-		Joins("JOIN project_employees pe ON pe.employee_id = e.id AND pe.deleted_at IS NULL AND pe.start_date <= ? AND (pe.last_date IS NULL OR pe.last_date >= ?)", now, now).
-		Joins("JOIN projects p ON p.id = pe.project_id AND p.deleted_at IS NULL").
-		Where("users.role = ?", "employee").
-		Where("users.last_login >= ? AND users.last_login < ?", since, until).
-		Group("p.id, p.name").
-		Order("count DESC").
-		Scan(&results).Error; err != nil {
-		return nil, domain.NewInternalError("failed to count active employees by project", err)
-	}
-
-	counts := make([]*domain.ProjectActiveCount, len(results))
-	for i, res := range results {
-		counts[i] = &domain.ProjectActiveCount{
-			ProjectID:   res.ProjectID,
-			ProjectName: res.ProjectName,
-			Count:       res.Count,
-		}
-	}
-	return counts, nil
-}
-
-func (r *UserRepository) GetActiveEmployeesBySchedule(ctx context.Context, since, until time.Time, schedule string) ([]*domain.ActiveEmployeeUser, error) {
-	type row struct {
-		UserID     uint       `gorm:"column:user_id"`
-		EmployeeID uint       `gorm:"column:employee_id"`
-		Fullname   string     `gorm:"column:fullname"`
-		Username   string     `gorm:"column:username"`
-		LastLogin  *time.Time `gorm:"column:last_login"`
-	}
-
-	var rows []row
-	now := clock.Now()
-
-	if err := r.DB.WithContext(ctx).
-		Model(&domain.User{}).
-		Select("users.id as user_id, e.id as employee_id, users.fullname, users.username, users.last_login").
-		Joins("JOIN employees e ON e.user_id = users.id AND e.deleted_at IS NULL").
-		Joins("JOIN project_employees pe ON pe.employee_id = e.id AND pe.deleted_at IS NULL AND pe.start_date <= ? AND (pe.last_date IS NULL OR pe.last_date >= ?)", now, now).
-		Where("users.role = ?", "employee").
-		Where("users.last_login >= ? AND users.last_login < ?", since, until).
-		Where("pe.payment_schedule = ?", schedule).
-		Group("users.id, e.id, users.fullname, users.username, users.last_login, users.role, pe.payment_schedule").
-		Order("users.last_login DESC").
-		Scan(&rows).Error; err != nil {
-		return nil, domain.NewInternalError("failed to get active employees by schedule", err)
-	}
-
-	result := make([]*domain.ActiveEmployeeUser, len(rows))
-	for i, r := range rows {
-		result[i] = &domain.ActiveEmployeeUser{
-			UserID:     r.UserID,
-			EmployeeID: r.EmployeeID,
-			Fullname:   r.Fullname,
-			Username:   r.Username,
-			LastLogin:  r.LastLogin,
-		}
-	}
-	return result, nil
-}
-
 func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var count int64
 	if err := r.DB.WithContext(ctx).Model(&domain.User{}).Where("username = ?", username).Count(&count).Error; err != nil {
@@ -511,11 +398,10 @@ func (r *UserRepository) GetCurrentProjectNamesByUserIDs(ctx context.Context, us
 	now := clock.Now()
 	if err := r.DB.WithContext(ctx).Raw(`SELECT DISTINCT e.user_id AS user_id, p.name AS name
 			FROM employees e
-			JOIN project_employees pe ON pe.employee_id = e.id AND pe.deleted_at IS NULL
-				AND pe.start_date <= ? AND (pe.last_date IS NULL OR pe.last_date >= ?)
-			JOIN projects p ON p.id = pe.project_id AND p.deleted_at IS NULL
-			WHERE e.deleted_at IS NULL AND e.user_id IN ?
-			ORDER BY p.name`, now, now, userIDs).
+			JOIN project_employees pe ON pe.employee_id = e.id AND pe.start_date <= ?
+			JOIN projects p ON p.id = pe.project_id
+			WHERE e.user_id IN ?
+			ORDER BY p.name`, now, userIDs).
 		Scan(&rows).Error; err != nil {
 		return nil, domain.NewInternalError("failed to load current project names", err)
 	}
@@ -558,16 +444,15 @@ func (r *UserRepository) ListWithFilters(ctx context.Context, role *domain.UserR
 	}
 
 	// Apply project filter: only users holding a current assignment to the
-	// project (active window: started and not yet ended).
+	// project (an assignment row IS the active assignment).
 	if projectID != nil {
-		now := clock.Now()
 		query = query.Where(`EXISTS (
 			SELECT 1 FROM employees e
-			JOIN project_employees pe ON pe.employee_id = e.id AND pe.deleted_at IS NULL
-				AND pe.start_date <= ? AND (pe.last_date IS NULL OR pe.last_date >= ?)
-			JOIN projects p ON p.id = pe.project_id AND p.deleted_at IS NULL
-			WHERE e.user_id = users.id AND e.deleted_at IS NULL AND pe.project_id = ?
-		)`, now, now, *projectID)
+			JOIN project_employees pe ON pe.employee_id = e.id
+				AND pe.start_date <= ?
+			JOIN projects p ON p.id = pe.project_id
+			WHERE e.user_id = users.id AND pe.project_id = ?
+		)`, clock.Now(), *projectID)
 	}
 
 	// Apply search filter if provided (case-insensitive, partial match, vietnamese normalization)

@@ -293,62 +293,6 @@ func (s *TimesheetService) CountTimesheets(ctx context.Context, filters domain.T
 	return s.timesheetRepo.Count(ctx, filters)
 }
 
-// AddTimesheetToNextPayroll marks a timesheet to be included in the next payroll run
-// by setting its payment status to pending (with validation: must be approved and not paid)
-func (s *TimesheetService) AddTimesheetToNextPayroll(ctx context.Context, timesheetID uint, requestedBy uint) error {
-	err := s.transactionManager.ExecuteInTransaction(ctx, func(tx *gorm.DB) error {
-		// 1) Load timesheet
-		ts, err := s.timesheetRepo.GetByID(ctx, timesheetID)
-		if err != nil {
-			return err
-		}
-
-		// 2) Reject only if already paid (failed/cancelled can be retried)
-		if ts.PaymentStatus == domain.PaymentStatusPaid {
-			return domain.NewValidationError(constants.MsgCannotEditPaidTimesheetVN)
-		}
-
-		// 3) Force-approve if not approved (admin override)
-		if !ts.IsApproved() {
-			if err := s.timesheetRepo.Approve(ctx, timesheetID, requestedBy); err != nil {
-				return err
-			}
-		}
-
-		// 4) Ensure payment status is pending for inclusion in next payroll
-		if ts.PaymentStatus != domain.PaymentStatusPending {
-			update := domain.PaymentStatusUpdate{
-				TimesheetID:   timesheetID,
-				PaymentStatus: domain.PaymentStatusPending,
-			}
-			if err := s.timesheetDomainService.UpdatePaymentStatus(ctx, []domain.PaymentStatusUpdate{update}); err != nil {
-				return err
-			}
-		}
-
-		// 5) Mark for forced payroll inclusion until paid
-		return s.timesheetRepo.SetForcePayroll(ctx, timesheetID, true)
-	})
-
-	if err != nil {
-		return err
-	}
-
-	// Publish TimesheetUpdated event for payment status changes
-	timesheet, err := s.timesheetRepo.GetByID(ctx, timesheetID)
-	if err == nil {
-		event := domain.NewTimesheetUpdatedEvent(ctx, timesheet, nil)
-		if err := s.events.Publish(ctx, event); err != nil {
-			s.logger.Warn("Failed to publish TimesheetUpdated event for payment status change",
-				"timesheetID", timesheet.ID,
-				"error", err)
-		}
-	}
-
-	return nil
-}
-
-// UpdateTimesheet orchestrates timesheet updates
 func (s *TimesheetService) UpdateTimesheet(ctx context.Context, timesheetID uint, updates *domain.Timesheet, updatedBy uint) error {
 	err := s.transactionManager.ExecuteInTransaction(ctx, func(tx *gorm.DB) error {
 		// 1. Check if timesheet is paid (must be first validation)
@@ -699,18 +643,6 @@ func (s *TimesheetService) generateSummaryStatsCacheKey(filters domain.Timesheet
 	if filters.PendingApproval {
 		params = append(params, "pending_approval", "true")
 	}
-	if filters.ForcePayroll != nil {
-		params = append(params, "force_payroll", fmt.Sprintf("%t", *filters.ForcePayroll))
-	}
-	if filters.AllowedEdit != nil {
-		params = append(params, "allowed_edit", fmt.Sprintf("%t", *filters.AllowedEdit))
-	}
-	if filters.RequestEditID != nil {
-		params = append(params, "request_edit_id", fmt.Sprintf("%d", *filters.RequestEditID))
-	}
-	if filters.HasRequestEdit != nil {
-		params = append(params, "has_request_edit", fmt.Sprintf("%t", *filters.HasRequestEdit))
-	}
 	if filters.Limit > 0 {
 		params = append(params, "limit", fmt.Sprintf("%d", filters.Limit))
 	}
@@ -810,31 +742,19 @@ func (s *TimesheetService) PreviewTimesheets(ctx context.Context, requests []dom
 	return result, nil
 }
 
-// RecalculateTimesheetsForAssignment recalculates editable timesheets after assignment update
-// Only recalculates timesheets within the assignment's temporal window:
-//   - On or after the assignment's StartDate
-//   - On or before the assignment's LastDate (if LastDate is not NULL)
-//
-// This prevents touching timesheets from previous or future assignments
-// Uses batch updates for performance and better error handling
+// RecalculateTimesheetsForAssignment recalculates editable timesheets after
+// an assignment update (position change moves the payrate bucket). Only
+// recalculates timesheets on or after the assignment's StartDate —
+// assignments have no end date, so the window is open-ended — and only
+// editable rows (pending approval or rejected, payment still pending).
 func (s *TimesheetService) RecalculateTimesheetsForAssignment(ctx context.Context, assignment *domain.ProjectEmployee, updatedBy uint) error {
 	return s.transactionManager.ExecuteInTransaction(ctx, func(tx *gorm.DB) error {
-		// 1. Get editable timesheets within the assignment's temporal window
-		// FromDate: Only timesheets on or after the assignment start date
-		// ToDate: Only timesheets on or before the assignment end date (if it exists)
-		// This ensures we don't touch timesheets from before OR after the assignment period
 		filters := domain.TimesheetFilters{
 			ProjectIDs:      []uint{assignment.ProjectID},
 			EmployeeID:      &assignment.EmployeeID,
 			FromDate:        &assignment.StartDate,
 			TimesheetStatus: []domain.TimesheetStatus{domain.TimesheetStatusPendingApproval, domain.TimesheetStatusRejected},
-			PaymentStatus:   []domain.PaymentStatus{domain.PaymentStatusPending, domain.PaymentStatusFailed, domain.PaymentStatusCancelled},
-		}
-
-		// Cap the upper bound if assignment has an end date
-		// This prevents touching timesheets from future assignments
-		if assignment.LastDate != nil {
-			filters.ToDate = assignment.LastDate
+			PaymentStatus:   []domain.PaymentStatus{domain.PaymentStatusPending},
 		}
 
 		timesheets, err := s.timesheetRepo.List(ctx, filters)
@@ -846,7 +766,7 @@ func (s *TimesheetService) RecalculateTimesheetsForAssignment(ctx context.Contex
 			return nil // No timesheets to recalculate
 		}
 
-		// 2. Recalculate each timesheet using the updated assignment's position
+		// Recalculate each timesheet using the updated assignment's position
 		var timesheetsToUpdate []*domain.Timesheet
 		var recalcErrors []error
 
@@ -883,14 +803,14 @@ func (s *TimesheetService) RecalculateTimesheetsForAssignment(ctx context.Contex
 			timesheetsToUpdate = append(timesheetsToUpdate, timesheet)
 		}
 
-		// 3. Log any recalculation errors (non-critical)
+		// Log any recalculation errors (non-critical)
 		if len(recalcErrors) > 0 {
 			for _, recalcErr := range recalcErrors {
 				s.logger.Warn("Timesheet recalculation error", "error", recalcErr)
 			}
 		}
 
-		// 4. Batch update all timesheets that changed
+		// Batch update all timesheets that changed
 		if len(timesheetsToUpdate) > 0 {
 			if err := s.timesheetRepo.BulkUpdate(ctx, timesheetsToUpdate); err != nil {
 				return fmt.Errorf("failed to bulk update timesheets: %w", err)
@@ -898,11 +818,8 @@ func (s *TimesheetService) RecalculateTimesheetsForAssignment(ctx context.Contex
 
 			s.logger.Info("Recalculated timesheets for assignment update",
 				"assignmentID", assignment.ID,
-				"projectID", assignment.ProjectID,
-				"employeeID", assignment.EmployeeID,
-				"startDate", assignment.StartDate.Format("2006-01-02"),
-				"updatedCount", len(timesheetsToUpdate),
-				"skippedCount", len(timesheets)-len(timesheetsToUpdate),
+				"updatedBy", updatedBy,
+				"count", len(timesheetsToUpdate),
 			)
 		}
 

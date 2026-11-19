@@ -1,7 +1,6 @@
 package timesheet
 
 import (
-	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -13,78 +12,55 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"api-server/internal/app/services"
 	"api-server/internal/app/services/config"
 	"api-server/internal/app/services/employee"
 	"api-server/internal/app/services/payroll"
 	"api-server/internal/app/services/project"
-	"api-server/internal/app/services/settlement"
 	"api-server/internal/app/services/timesheet"
 	"api-server/internal/pkg/clock"
 )
 
 // Handler struct for all timesheet-related handlers
 type Handler struct {
-	timesheetService               *timesheet.TimesheetService
-	payrollReportService           *payroll.PayrollReportService
-	payrollReportExporter          *payroll.PayrollReportExporter
-	payrollReportByProjectService  *payroll.PayrollReportByProjectService
-	payrollReportByProjectExporter *payroll.PayrollReportByProjectExporter
-	timesheetResponseService       *timesheet.TimesheetResponseService
-	settingsConfigService          *config.SettingsConfigService
-	projectService                 *project.ProjectService
-	projectEmployeeService         *project.ProjectEmployeeService
-	payrateService                 *payroll.PayrateService
-	projectPermissionService       *project.ProjectPermissionService
-	employeePermissionService      *employee.EmployeePermissionService
-	settlementUploadService        *settlement.SettlementUploadService
-	timesheetRepo                  domain.TimesheetRepository
-	auditService                   interface{} // *infrastructure.AuditService
-	clock                          clock.Clock
-	cashReadinessSvc               *services.CashReadinessForecastService
+	timesheetService          *timesheet.TimesheetService
+	timesheetResponseService  *timesheet.TimesheetResponseService
+	settingsConfigService     *config.SettingsConfigService
+	projectService            *project.ProjectService
+	projectEmployeeService    *project.ProjectEmployeeService
+	payrateService            *payroll.PayrateService
+	projectPermissionService  *project.ProjectPermissionService
+	employeePermissionService *employee.EmployeePermissionService
+	auditService              interface{} // *infrastructure.AuditService
+	clock                     clock.Clock
 }
 
 // NewHandler creates a new timesheet handler
 func NewHandler(
 	timesheetService *timesheet.TimesheetService,
-	payrollReportService *payroll.PayrollReportService,
 	settingsConfigService *config.SettingsConfigService,
-	payrollReportExporter *payroll.PayrollReportExporter,
-	payrollReportByProjectService *payroll.PayrollReportByProjectService,
-	payrollReportByProjectExporter *payroll.PayrollReportByProjectExporter,
 	projectService *project.ProjectService,
 	projectEmployeeService *project.ProjectEmployeeService,
 	payrateService *payroll.PayrateService,
 	projectPermissionService *project.ProjectPermissionService,
 	employeePermissionService *employee.EmployeePermissionService,
-	settlementUploadService *settlement.SettlementUploadService,
-	timesheetRepo domain.TimesheetRepository,
 	auditService interface{},
 	clk clock.Clock,
-	cashReadinessSvc *services.CashReadinessForecastService,
 ) *Handler {
 	if clk == nil {
 		clk = clock.New()
 	}
 	timesheetResponseService := timesheet.NewTimesheetResponseService(timesheetService)
 	return &Handler{
-		timesheetService:               timesheetService,
-		payrollReportService:           payrollReportService,
-		payrollReportExporter:          payrollReportExporter,
-		payrollReportByProjectService:  payrollReportByProjectService,
-		payrollReportByProjectExporter: payrollReportByProjectExporter,
-		timesheetResponseService:       timesheetResponseService,
-		settingsConfigService:          settingsConfigService,
-		projectService:                 projectService,
-		projectEmployeeService:         projectEmployeeService,
-		payrateService:                 payrateService,
-		projectPermissionService:       projectPermissionService,
-		employeePermissionService:      employeePermissionService,
-		settlementUploadService:        settlementUploadService,
-		timesheetRepo:                  timesheetRepo,
-		auditService:                   auditService,
-		clock:                          clk,
-		cashReadinessSvc:               cashReadinessSvc,
+		timesheetService:          timesheetService,
+		timesheetResponseService:  timesheetResponseService,
+		settingsConfigService:     settingsConfigService,
+		projectService:            projectService,
+		projectEmployeeService:    projectEmployeeService,
+		payrateService:            payrateService,
+		projectPermissionService:  projectPermissionService,
+		employeePermissionService: employeePermissionService,
+		auditService:              auditService,
+		clock:                     clk,
 	}
 }
 
@@ -122,7 +98,7 @@ func (h *Handler) validateTimesheetID(c *gin.Context) (uint, bool) {
 // it fails closed (returns false) to avoid leaking data on partial outages.
 func (h *Handler) canPartnerAccessTimesheet(c *gin.Context, timesheet *domain.Timesheet) bool {
 	userRole := c.GetString(constants.CtxUserRole)
-	if userRole != string(domain.RolePartner) {
+	if userRole != string(domain.RoleQuanly) {
 		// Admins (and any non-partner role) are not tenant-restricted here.
 		return true
 	}
@@ -298,40 +274,4 @@ func parseBoolQueryParam(value string) (bool, bool) {
 	default:
 		return false, false
 	}
-}
-
-// filterProjectsForPartner returns only project IDs the partner can access.
-// If requestedIDs is nil/empty, returns all accessible project IDs.
-func (h *Handler) filterProjectsForPartner(ctx context.Context, userID uint, requestedIDs []uint) ([]uint, error) {
-	// Get all project IDs created by or shared with this partner
-	filters := domain.ProjectFilters{
-		AccessibleBy:  &userID,
-		ProjectStatus: []domain.ProjectStatus{domain.ProjectStatusRunning},
-	}
-	projects, err := h.projectService.ListProjects(ctx, filters)
-	if err != nil {
-		return nil, err
-	}
-	accessibleIDs := make(map[uint]struct{}, len(projects))
-	for _, p := range projects {
-		accessibleIDs[p.ID] = struct{}{}
-	}
-
-	// If no specific projects requested, return all accessible
-	if len(requestedIDs) == 0 {
-		result := make([]uint, 0, len(accessibleIDs))
-		for id := range accessibleIDs {
-			result = append(result, id)
-		}
-		return result, nil
-	}
-
-	// Intersect requested with accessible
-	var result []uint
-	for _, id := range requestedIDs {
-		if _, ok := accessibleIDs[id]; ok {
-			result = append(result, id)
-		}
-	}
-	return result, nil
 }

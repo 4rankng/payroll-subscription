@@ -25,7 +25,7 @@ func (h *Handler) GetSummary(c *gin.Context) {
 	filters := domain.TimesheetFilters{}
 
 	// 2. Apply role-based filtering for partner users - only show stats for employees they created
-	if userRole == string(domain.RolePartner) {
+	if userRole == string(domain.RoleQuanly) {
 		if uid, ok := userID.(uint); ok {
 			filters.EmployeeCreatedBy = &uid
 		} else {

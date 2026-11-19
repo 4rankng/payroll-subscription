@@ -151,9 +151,8 @@ func (s *TimesheetDomainService) UpdatePaymentStatus(ctx context.Context, update
 func (s *TimesheetDomainService) validatePaymentStatusTransition(currentStatus, newStatus domain.PaymentStatus) error {
 	// Define valid payment status transitions
 	validTransitions := map[domain.PaymentStatus][]domain.PaymentStatus{
-		domain.PaymentStatusPending:   {domain.PaymentStatusPaid, domain.PaymentStatusFailed, domain.PaymentStatusCancelled},
+		domain.PaymentStatusPending:   {domain.PaymentStatusPaid, domain.PaymentStatusCancelled},
 		domain.PaymentStatusPaid:      {}, // No transitions allowed from paid
-		domain.PaymentStatusFailed:    {domain.PaymentStatusPending, domain.PaymentStatusCancelled},
 		domain.PaymentStatusCancelled: {domain.PaymentStatusPending},
 	}
 

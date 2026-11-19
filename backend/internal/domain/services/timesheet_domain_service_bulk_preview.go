@@ -164,7 +164,7 @@ func (s *TimesheetDomainService) PreviewTimesheets(ctx context.Context, requests
 					errors = append(errors, PreviewError{EmployeeID: req.EmployeeID, Date: req.Date, Message: detailedError})
 					continue
 				}
-				if existingTimesheet.IsApproved() && userRole == "partner" {
+				if existingTimesheet.IsApproved() && userRole == "quanly" {
 					errors = append(errors, PreviewError{
 						EmployeeID: req.EmployeeID,
 						Date:       req.Date,
@@ -180,7 +180,7 @@ func (s *TimesheetDomainService) PreviewTimesheets(ctx context.Context, requests
 				errors = append(errors, PreviewError{EmployeeID: req.EmployeeID, Date: req.Date, Message: detailedError})
 				continue
 			}
-			if existingTimesheet.IsApproved() && userRole == "partner" {
+			if existingTimesheet.IsApproved() && userRole == "quanly" {
 				errors = append(errors, PreviewError{
 					EmployeeID: req.EmployeeID,
 					Date:       req.Date,

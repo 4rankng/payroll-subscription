@@ -24,26 +24,6 @@ func formatDateVN(t time.Time) string {
 	return t.Format("02/01/2006")
 }
 
-func formatOptionalDateVN(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-	return formatDateVN(*t)
-}
-
-func paymentScheduleVN(schedule string) string {
-	switch schedule {
-	case "weekly":
-		return "Lương tuần"
-	case "monthly":
-		return "Lương tháng"
-	case "flexible":
-		return "Linh động"
-	default:
-		return schedule
-	}
-}
-
 // ExportEmployeeDetail exports a single employee's detail to Excel using the HoSoNhanSu template
 func (h *Handler) ExportEmployeeDetail(c *gin.Context) {
 	defer func() {
@@ -110,23 +90,13 @@ func (h *Handler) ExportEmployeeDetail(c *gin.Context) {
 		}
 	}
 
-	_ = f.SetCellValue(sheetName, "E7", formatOptionalDateVN(employee.DateOfBirth))
 	_ = f.SetCellValue(sheetName, "C8", employee.Mobile)
 	_ = f.SetCellValue(sheetName, "E8", formatDateVN(employee.CreatedAt))
-	_ = f.SetCellValue(sheetName, "C9", employee.Address)
-
-	// Bank info
-	if employee.Bank != nil {
-		_ = f.SetCellValue(sheetName, "C12", employee.Bank.BranchName)
-	}
-	_ = f.SetCellValue(sheetName, "E12", employee.BankAccountNumber)
-	_ = f.SetCellValue(sheetName, "C13", employee.BankAccountName)
 
 	// Project info - fetch active assignments
 	if h.projectEmployeeService != nil {
 		assignments, err := h.projectEmployeeService.ListAssignments(c.Request.Context(), domain.ProjectEmployeeFilters{
 			EmployeeID: &employee.ID,
-			ActiveOnly: true,
 			SortBy:     "created_at",
 			SortOrder:  "desc",
 		})
@@ -137,7 +107,6 @@ func (h *Handler) ExportEmployeeDetail(c *gin.Context) {
 				_ = f.SetCellValue(sheetName, "E16", a.Project.Code)
 			}
 			_ = f.SetCellValue(sheetName, "C17", a.Position)
-			_ = f.SetCellValue(sheetName, "E17", paymentScheduleVN(a.PaymentSchedule))
 			_ = f.SetCellValue(sheetName, "C18", formatDateVN(a.StartDate))
 		}
 	}

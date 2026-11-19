@@ -10,7 +10,6 @@ import (
 	"api-server/internal/constants"
 	"api-server/internal/domain"
 	auditctx "api-server/internal/pkg/context"
-	"api-server/internal/pkg/timeutil"
 )
 
 type ProjectService struct {
@@ -99,24 +98,9 @@ func (s *ProjectService) UpdateProject(ctx context.Context, project *domain.Proj
 	// Currently no IsWeekly or IsMonthly fields exist, so we skip this check
 	// When those fields are added back in the future, this check should be re-enabled
 
-	// Log salary period changes with unsettled paid timesheets (allowed, settlement dedup prevents issues)
-	salaryPeriodChanged := project.SalaryPeriodFrom != originalProject.SalaryPeriodFrom ||
-		project.SalaryPeriodTo != originalProject.SalaryPeriodTo
-	if salaryPeriodChanged {
-		count, err := s.TimesheetRepo.CountUnsettledPaidTimesheets(ctx, project.ID)
-		if err != nil {
-			return fmt.Errorf("failed to check unsettled timesheets: %w", err)
-		}
-		if count > 0 {
-			s.logger.Warn("Salary period change with unsettled paid timesheets",
-				"project_id", project.ID,
-				"unsettled_count", count)
-		}
-	}
-
 	// Check if project is being closed (completed or cancelled)
-	isBeingClosed := (project.IsCompleted() || project.IsCancelled()) &&
-		(!originalProject.IsCompleted() && !originalProject.IsCancelled())
+	isBeingClosed := (project.ProjectStatus == domain.ProjectStatusCompleted || project.ProjectStatus == domain.ProjectStatusCancelled) &&
+		(originalProject.ProjectStatus != domain.ProjectStatusCompleted && originalProject.ProjectStatus != domain.ProjectStatusCancelled)
 
 	if err := s.ProjectRepo.Update(ctx, project); err != nil {
 		return fmt.Errorf("failed to update project: %w", err)
@@ -529,70 +513,22 @@ func (s *ProjectService) codeExists(code string) bool {
 	return s.ProjectRepo.CodeExistsIncludingDeleted(context.Background(), code)
 }
 
-// autoTerminateEmployees terminates all active employees for a project when it's closed
+// autoTerminateEmployees removes all assignments for a project when it's closed
 func (s *ProjectService) autoTerminateEmployees(ctx context.Context, project *domain.Project, updatedBy uint) error {
 	s.logger.Info("Auto-terminating employees for closed project",
 		"project_id", project.ID,
 		"project_status", project.ProjectStatus)
 
-	// Get all active project employees (those without LastDate)
-	filters := domain.ProjectEmployeeFilters{
-		ProjectID:  &project.ID,
-		ActiveOnly: true,
-		Limit:      1000,
-		Offset:     0,
-	}
-
-	activeAssignments, err := s.ProjectEmployeeRepo.List(ctx, filters)
-	if err != nil {
-		return fmt.Errorf("failed to get active project employees: %w", err)
-	}
-
-	if len(activeAssignments) == 0 {
-		s.logger.Info("No active employees to terminate for project", "project_id", project.ID)
-		return nil
-	}
-
-	// Determine termination date
-	terminationDate := timeutil.StartOfDay(clock.NowUTC())
-
-	// Collect IDs of active assignments
-	assignmentIDs := make([]uint, 0, len(activeAssignments))
-	for _, a := range activeAssignments {
-		if a.LastDate == nil {
-			assignmentIDs = append(assignmentIDs, a.ID)
-		}
-	}
-
-	if len(assignmentIDs) == 0 {
-		return nil
-	}
-
-	// Batch-update all active assignments in a single query
-	if err := s.ProjectEmployeeRepo.BulkUpdateLastDate(ctx, assignmentIDs, terminationDate); err != nil {
-		s.logger.Error("Failed to bulk-terminate employee assignments",
+	// Assignment rows are open-ended, so every row of the project is active.
+	if err := s.ProjectEmployeeRepo.DeleteByProjectID(ctx, project.ID); err != nil {
+		s.logger.Error("Failed to delete employee assignments for closed project",
 			"project_id", project.ID,
 			"error", err)
 		return fmt.Errorf("failed to terminate employee assignments: %w", err)
 	}
 
 	s.logger.Info("Completed auto-termination of employees for project closure",
-		"project_id", project.ID,
-		"terminated_employees", len(assignmentIDs),
-		"termination_date", terminationDate.Format("2006-01-02"))
-
-	// Publish events for each terminated assignment
-	for _, assignment := range activeAssignments {
-		if assignment.LastDate == nil {
-			event := domain.NewProjectEmployeeUpdatedEvent(ctx, assignment)
-			if err := s.events.Publish(ctx, event); err != nil {
-				s.logger.Warn("Failed to publish ProjectEmployeeUpdated event for auto-termination",
-					"projectID", project.ID,
-					"assignmentID", assignment.ID,
-					"error", err)
-			}
-		}
-	}
+		"project_id", project.ID)
 
 	return nil
 }
@@ -618,18 +554,14 @@ func (s *ProjectService) validateProjectCanBeDeleted(ctx context.Context, projec
 		return domain.NewValidationError(constants.MsgCannotDeleteProjectWithApprovedTimesheetsVN)
 	}
 
-	// Check for currently assigned employees. GetActiveAssignments also returns
-	// assignments whose last_date is today or later, so post-filter for the
-	// open-ended ones (last_date IS NULL) — the same set the UI counts.
+	// Check for currently assigned employees
 	assignments, err := s.ProjectEmployeeRepo.GetActiveAssignments(ctx, projectID)
 	if err != nil {
 		s.logger.Error("Failed to check for assigned employees", "project_id", projectID, "error", err)
 		return domain.NewInternalError(constants.MsgFailedToValidateProjectDeletionVN, err)
 	}
-	for _, a := range assignments {
-		if a.LastDate == nil {
-			return domain.NewValidationError(constants.MsgCannotDeleteProjectWithAssignedEmployeesVN)
-		}
+	if len(assignments) > 0 {
+		return domain.NewValidationError(constants.MsgCannotDeleteProjectWithAssignedEmployeesVN)
 	}
 
 	return nil

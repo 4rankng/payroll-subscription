@@ -79,9 +79,7 @@ func planBCCReplacement(
 			continue
 		}
 		if timesheet.Status != domain.TimesheetStatusPendingApproval ||
-			timesheet.TransactionID != nil ||
 			timesheet.PaymentStatus == domain.PaymentStatusPaid ||
-			timesheet.PaymentStatus == domain.PaymentStatusFailed ||
 			timesheet.PaymentStatus == domain.PaymentStatusCancelled {
 			protectedKeys[key] = struct{}{}
 		}

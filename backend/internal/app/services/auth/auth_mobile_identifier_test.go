@@ -98,7 +98,7 @@ func TestFindUserByMobileIdentifier_ResolvesBothPhoneStores(t *testing.T) {
 
 	t.Run("employee from employees.mobile", func(t *testing.T) {
 		employeeUserID := uint(7)
-		employeeUser := &domain.User{ID: employeeUserID, Username: "emp1", Role: domain.RoleEmployee}
+		employeeUser := &domain.User{ID: employeeUserID, Username: "emp1", Role: domain.RoleNhanvien}
 		users := notFoundUsersRepo()
 		users.byID = func(_ context.Context, id uint) (*domain.User, error) {
 			require.Equal(t, employeeUserID, id)
