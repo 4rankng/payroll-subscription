@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { format, startOfMonth } from 'date-fns';
-import { Users, UserCheck, UserX, Banknote } from 'lucide-react';
+import { Banknote, Hourglass, UserCheck, UserPlus } from 'lucide-react';
 import { UserX01 } from '@untitledui/icons';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,19 +13,15 @@ import {
 } from '@/components/ui/select';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { ConsoleKpi, ConsolePanel } from '@/components/shared/console-panel';
-import { usePartnerDashboard } from '@/hooks/api/useDashboard';
+import { useDashboardSummary, useTopPaidEmployees } from '@/hooks/api/useDashboard';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
-import { PartnerEmployeeListSheet } from '@/components/partner-dashboard/PartnerEmployeeListSheet';
-import { PartnerWorkforceOverviewCard } from '@/components/partner-dashboard/PartnerWorkforceOverviewCard';
+import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
+import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatFullCurrency } from '@/utils/formatters';
-import type {
-  TopPaidEmployeeItem,
-  PartnerEmployeeListType,
-} from '@/types/api/dashboard.types';
-import type { Employee } from '@/types/api/employee.types';
+import type { TopPaidEmployeeItem } from '@/types/api/dashboard.types';
 import { monthOptions, formatVND } from './utils';
 
 const ALL_VALUE = 'all';
@@ -185,23 +181,23 @@ const PartnerDashboardPage = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(
     format(startOfMonth(new Date()), 'yyyy-MM'),
   );
-  const [sheetType, setSheetType] = useState<PartnerEmployeeListType | null>(null);
 
   const handleMonthChange = useCallback((value: string) => setSelectedMonth(value), []);
-  const openSheet = useCallback((type: PartnerEmployeeListType) => setSheetType(type), []);
-  const closeSheet = useCallback(() => setSheetType(null), []);
 
   // Employee rows in the mobile-warning section open the employee details
   // sheet through the URL-driven modal system — same wiring as the partner
   // EmployeesPage's handleEmployeeClick.
   const { openEmployeeDetails } = useEmployeeModals();
   const handleEmployeeClick = useCallback(
-    (employee: Employee) => openEmployeeDetails(employee.id.toString()),
+    (employee: { id: number }) => openEmployeeDetails(employee.id.toString()),
     [openEmployeeDetails],
   );
 
   const apiMonth = selectedMonth === ALL_VALUE ? undefined : selectedMonth;
-  const { data, isLoading } = usePartnerDashboard({ month: apiMonth });
+  const { data: summary, isLoading: isSummaryLoading } = useDashboardSummary(apiMonth);
+  const { data: topPaid, isLoading: isTopLoading } = useTopPaidEmployees(
+    apiMonth ? { month: apiMonth } : undefined,
+  );
 
   const periodLabel = useMemo(() => {
     if (selectedMonth === ALL_VALUE) return 'tất cả thời gian';
@@ -209,8 +205,7 @@ const PartnerDashboardPage = () => {
     return `tháng ${m}/${y}`;
   }, [selectedMonth]);
 
-  const topEmployees = useMemo(() => data?.top_paid_employees ?? [], [data?.top_paid_employees]);
-  const showMomBadges = selectedMonth !== ALL_VALUE;
+  const topEmployees = useMemo(() => topPaid?.employees ?? [], [topPaid?.employees]);
 
   return (
     <div className="min-h-full p-3 sm:p-4">
@@ -222,56 +217,38 @@ const PartnerDashboardPage = () => {
         />
 
         {/* ── KPI strip ── */}
-        {isLoading ? (
+        {isSummaryLoading ? (
           <StatRowSkeleton />
         ) : (
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 motion-safe:animate-fade-in-up">
             <ConsoleKpi
-              label="Tổng chi trả"
-              value={formatFullCurrency(data?.total_paid_vnd ?? 0)}
-              title={formatVND(data?.total_paid_vnd ?? 0)}
+              label="Đã trả kỳ này"
+              value={formatFullCurrency(summary?.paid_salary_this_month ?? 0)}
+              title={formatVND(summary?.paid_salary_this_month ?? 0)}
               icon={Banknote}
               tone="primary"
-              delta={
-                showMomBadges && (data?.total_paid_vnd ?? 0) > 0
-                  ? { value: data?.mom_paid_amount?.change_pct ?? null }
-                  : undefined
-              }
-              hint={!showMomBadges ? periodLabel : undefined}
-              onClick={(data?.total_paid_vnd ?? 0) > 0 ? () => openSheet('paid') : undefined}
+              hint={periodLabel}
+            />
+            <ConsoleKpi
+              label="Chờ trả"
+              value={formatFullCurrency(summary?.pending_salary_this_month ?? 0)}
+              title={formatVND(summary?.pending_salary_this_month ?? 0)}
+              icon={Hourglass}
+              tone="gold"
+              hint="đã duyệt, chờ chuyển khoản"
             />
             <ConsoleKpi
               label="Đang làm việc"
-              value={(data?.active_employees ?? 0).toLocaleString('vi-VN')}
+              value={(summary?.total_working_employees ?? 0).toLocaleString('vi-VN')}
               icon={UserCheck}
               tone="secondary"
-              hint="bảng công 14 ngày qua"
-              onClick={() => openSheet('active')}
             />
             <ConsoleKpi
-              label="Có thể nghỉ"
-              value={(data?.dropped_employees ?? 0).toLocaleString('vi-VN')}
-              icon={UserX}
-              tone="gold"
-              hint="không bảng công 14 ngày"
-              onClick={
-                (data?.dropped_employees ?? 0) > 0 ? () => openSheet('dropped') : undefined
-              }
-            />
-            <ConsoleKpi
-              label="Đã thanh toán"
-              value={(data?.paid_employees ?? 0).toLocaleString('vi-VN')}
-              icon={Users}
+              label="NV mới"
+              value={(summary?.employees_hired_this_month ?? 0).toLocaleString('vi-VN')}
+              icon={UserPlus}
               tone="neutral"
-              delta={
-                showMomBadges && (data?.paid_employees ?? 0) > 0
-                  ? { value: data?.mom_paid_employees?.change_pct ?? null }
-                  : undefined
-              }
-              hint={!showMomBadges ? 'tất cả thời gian' : undefined}
-              onClick={
-                (data?.paid_employees ?? 0) > 0 ? () => openSheet('paid') : undefined
-              }
+              hint={periodLabel}
             />
           </div>
         )}
@@ -279,60 +256,49 @@ const PartnerDashboardPage = () => {
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
 
-        {/* ── Analytics gallery: workforce donut + leaderboard ── */}
-        <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-12">
-          <PartnerWorkforceOverviewCard
-            active={data?.active_employees ?? 0}
-            dropped={data?.dropped_employees ?? 0}
-            paid={data?.paid_employees ?? 0}
-            isLoading={isLoading}
-            className="h-full lg:col-span-4"
-          />
+        {/* ── PAYSUB: phí theo kỳ + chuỗi thời gian ── */}
+        <section className="flex flex-col gap-3">
+          <KyFeeSummaryTable />
+          <PaidSeriesSection />
+        </section>
 
-          <ConsolePanel
-            kicker="Chi trả"
-            title="Top nhân viên"
-            description={periodLabel}
-            isFlush
-            className="h-full lg:col-span-8"
-            bodyClassName="flex flex-1 flex-col"
-            actions={
-              !isLoading && topEmployees.length > 0 ? (
-                <span className="console-kicker">{topEmployees.length} nhân viên</span>
-              ) : undefined
-            }
+        {/* ── Leaderboard ── */}
+        <ConsolePanel
+          kicker="Chi trả"
+          title="Top nhân viên"
+          description={periodLabel}
+          isFlush
+          bodyClassName="flex flex-1 flex-col"
+          actions={
+            !isTopLoading && topEmployees.length > 0 ? (
+              <span className="console-kicker">{topEmployees.length} nhân viên</span>
+            ) : undefined
+          }
+        >
+          <div
+            className={cn(
+              'px-3 py-2',
+              !isTopLoading && topEmployees.length === 0 && 'flex flex-1 items-center justify-center',
+            )}
           >
-            <div
-              className={cn(
-                'px-3 py-2',
-                !isLoading && topEmployees.length === 0 && 'flex flex-1 items-center justify-center',
-              )}
-            >
-              {isLoading ? (
-                <LeaderboardSkeleton />
-              ) : topEmployees.length === 0 ? (
-                <EmptyState
+            {isTopLoading ? (
+              <LeaderboardSkeleton />
+            ) : topEmployees.length === 0 ? (
+              <EmptyState
                 showIllustration={false}
-                  title="Chưa có dữ liệu thanh toán"
-                  description={`Chưa có chi trả trong ${periodLabel}.`}
-                  size="sm"
-                />
-              ) : (
-                <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 min-[1120px]:grid-cols-2">
-                  {topEmployees.map((item, idx) => (
-                    <LeaderRow key={item.employee_id} item={item} rank={idx + 1} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </ConsolePanel>
-        </div>
-
-        <PartnerEmployeeListSheet
-          type={sheetType}
-          month={apiMonth}
-          onClose={closeSheet}
-        />
+                title="Chưa có dữ liệu thanh toán"
+                description={`Chưa có chi trả trong ${periodLabel}.`}
+                size="sm"
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 min-[1120px]:grid-cols-2">
+                {topEmployees.map((item, idx) => (
+                  <LeaderRow key={item.employee_id} item={item} rank={idx + 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        </ConsolePanel>
       </div>
     </div>
   );

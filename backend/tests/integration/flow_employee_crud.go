@@ -22,7 +22,7 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 			Fullname: prefix + " Employee",
 			CCCD:     testCCCD,
 			Address:  "123 Test Street",
-			Mobile:   "0909123456",
+			Mobile:   uniqueMobile(),
 		}
 		var resp EmployeeResponse
 		if _, err := admin.PostInto("/api/v1/employees", body, &resp); err != nil {
@@ -113,15 +113,6 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 		return nil
 	})
 
-	reporter.RunTest(flowEmployee, "Get employees missing bank details", func() error {
-		var list []EmployeeResponse
-		if _, err := admin.GetInto("/api/v1/employees/missing-bank-details", &list); err != nil {
-			return fmt.Errorf("missing bank details: %w", err)
-		}
-		fmt.Printf("    Missing bank details: %d\n", len(list))
-		return nil
-	})
-
 	reporter.RunTest(flowEmployee, "Export employees (binary)", func() error {
 		data, _, statusCode, err := admin.DownloadGet("/api/v1/employees/export")
 		if err != nil {
@@ -151,38 +142,23 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 		return AssertContains("fullname", resp.Fullname, "Updated Name")
 	})
 
-	reporter.RunTest(flowEmployee, "Update employee bank details", func() error {
+	reporter.RunTest(flowEmployee, "Update employee mobile", func() error {
 		if testEmpID == 0 {
 			return fmt.Errorf("no test employee ID")
 		}
-		bankAcc := "1234567890"
-		bankName := "Test Account"
-		var bankID uint
-		for _, bank := range data.Banks {
-			if bank.SwiftCode != "" {
-				bankID = bank.ID
-				break
-			}
-		}
-		if bankID == 0 {
-			return fmt.Errorf("bank fixture with SWIFT code is required for account update")
-		}
-		body := UpdateEmployeeRequest{
-			BankID:            &bankID,
-			BankAccountNumber: &bankAcc,
-			BankAccountName:   &bankName,
-		}
+		mobile := uniqueMobile()
+		body := UpdateEmployeeRequest{Mobile: &mobile}
 		if _, status, err := admin.Put(fmt.Sprintf("/api/v1/employees/%d", testEmpID), body); err != nil {
-			return fmt.Errorf("update bank: %w", err)
+			return fmt.Errorf("update mobile: %w", err)
 		} else if status >= 400 {
-			return fmt.Errorf("update bank returned HTTP %d", status)
+			return fmt.Errorf("update mobile returned HTTP %d", status)
 		}
 		var resp EmployeeResponse
 		if _, err := admin.GetInto(fmt.Sprintf("/api/v1/employees/%d", testEmpID), &resp); err != nil {
-			return fmt.Errorf("get after bank update: %w", err)
+			return fmt.Errorf("get after mobile update: %w", err)
 		}
-		fmt.Printf("    Bank account after update: number=%q, name=%q\n", resp.BankAccountNumber, resp.BankAccountName)
-		return AssertEqual("bank_account_number", bankAcc, resp.BankAccountNumber)
+		fmt.Printf("    Mobile after update: %q\n", resp.Mobile)
+		return AssertEqual("mobile", mobile, resp.Mobile)
 	})
 
 	// --- Employee User Access ---
@@ -263,7 +239,7 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 			body := CreateEmployeeRequest{
 				Fullname: prefix + " Pool Employee",
 				CCCD:     poolCCCD,
-				Mobile:   "0909123000",
+				Mobile:   uniqueMobile(),
 			}
 			var resp EmployeeResponse
 			if _, err := admin.PostInto("/api/v1/employees", body, &resp); err != nil {

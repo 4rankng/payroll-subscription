@@ -9,6 +9,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import { format, parseISO } from 'date-fns';
+
 import { formatCurrency } from '@/utils/formatters';
 import type { PaidSeriesRow } from '@/services/api/billing.service';
 
@@ -37,6 +39,14 @@ function projectNameOf(projects: ProjectLabel[], projectId: number): string {
  * axis. Metric selects employees vs amount; explicit variant components
  * below are the only intended entry points.
  */
+function formatChartDate(iso: string): string {
+  try {
+    return format(parseISO(iso), 'dd/MM');
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
   if (rows.length === 0) {
     return <p className="text-sm text-slate-500">Chưa có dữ liệu thanh toán</p>;
@@ -50,7 +60,7 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
     byProject.set(row.project_id, slot);
   }
   const data = dates.map((d) => {
-    const point: Record<string, string | number> = { date: d };
+    const point: Record<string, string | number> = { date: formatChartDate(d) };
     for (const [projectId, slot] of byProject) {
       point[projectNameOf(projects, projectId)] = slot[d] ?? 0;
     }
@@ -63,7 +73,7 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" fontSize={12} />
+          <XAxis dataKey="date" tickFormatter={formatChartDate} fontSize={12} />
           <YAxis
             fontSize={12}
             tickFormatter={(v: number) => (metric === 'amount' ? formatCurrency(v) : String(v))}

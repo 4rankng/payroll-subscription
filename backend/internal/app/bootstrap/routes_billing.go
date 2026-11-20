@@ -18,6 +18,7 @@ func setupBillingRoutes(v1 *gin.RouterGroup, container *Container) {
 		billing.GET("/uploads", container.Handlers.Billing.ListUploads)
 		billing.GET("/ky-paid-records", container.Handlers.Billing.KyPaidRecords)
 		billing.GET("/dashboard/paid-series", container.Handlers.Billing.PaidSeries)
+		billing.GET("/dashboard/ky-summary", container.Handlers.Billing.KySummary)
 	}
 	reports := v1.Group("/billing/reports")
 	reports.Use(container.Middleware.Auth.Authenticate())

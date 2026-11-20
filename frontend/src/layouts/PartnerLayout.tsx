@@ -58,7 +58,10 @@ const PartnerLayout = () => {
   const isPartner = user?.role === "quanly";
 
   return (
-    <ProtectedRoute requiredRole="quanly">
+    // Mirrors the /partner route guard: quanly operates, giamdoc reads and
+    // exports reports (D19) — without giamdoc here the director role spins
+    // forever on the layout's own gate.
+    <ProtectedRoute requiredRole={["quanly", "giamdoc"]}>
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner isPartner={isPartner} />
         <MobileBottomNav groups={PARTNER_NAV_GROUPS} />

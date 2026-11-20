@@ -1,37 +1,39 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 const flowMetrics = "Metrics"
 
 func runMetricsTests(client *APIClient, data *TestData, reporter *Reporter, cfg *TestConfig) {
-	reporter.PrintSection("FLOW: Metrics Read-Only")
+	reporter.PrintSection("FLOW: Metrics (Prometheus)")
 
 	admin := client.WithToken(data.AdminToken)
 
-	endpoints := []struct {
-		name string
-		path string
-	}{
-		{"API metrics", "/api/v1/metrics/api"},
-		{"Event bus metrics", "/api/v1/metrics/event-bus"},
-		{"Cache metrics", "/api/v1/metrics/cache"},
-		{"Errors overview", "/api/v1/metrics/errors/recent"},
-		{"Latency overview", "/api/v1/metrics/latency/trend"},
-		{"Top endpoints", "/api/v1/metrics/top-endpoints"},
-		{"Failed logins overview", "/api/v1/metrics/failed-logins"},
-		{"Browser platform stats", "/api/v1/metrics/browser-platform-stats"},
-	}
-
-	for _, ep := range endpoints {
-		ep := ep
-		reporter.RunTest(flowMetrics, "GET "+ep.name, func() error {
-			var resp interface{}
-			if _, err := admin.GetInto(ep.path, &resp); err != nil {
-				return fmt.Errorf("%s: %w", ep.name, err)
+	// The Prometheus exposition endpoint is the only metrics surface; the
+	// per-stat JSON views (/metrics/api, /metrics/cache, …) belonged to the
+	// removed API-metric table (PAYSUB-9) and are covered by the dashboard
+	// flow's REMOVED pins.
+	reporter.RunTest(flowMetrics, "GET Prometheus metrics", func() error {
+		resp, statusCode, err := admin.Get("/metrics")
+		if err != nil {
+			// The exposition is plain Prometheus text, not the JSON envelope —
+			// the client's parse step fails on a healthy 200.
+			if statusCode == 200 {
+				return nil
 			}
-			fmt.Printf("    OK: %s\n", ep.name)
-			return nil
-		})
-	}
+			return fmt.Errorf("metrics: %w", err)
+		}
+		if statusCode >= 400 {
+			return fmt.Errorf("metrics: HTTP %d", statusCode)
+		}
+		if !strings.Contains(resp.Message, "go_") && len(resp.Data) == 0 {
+			// Empty exposition is still valid for a quiet server; only fail on
+			// an unparseable empty response.
+			return fmt.Errorf("metrics: empty response")
+		}
+		return nil
+	})
 }

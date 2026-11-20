@@ -97,7 +97,6 @@ func (r *TimesheetQueryRepository) GetTimesheetDatesByIDs(ctx context.Context, i
 			Table("timesheets").
 			Select("id, date").
 			Where("id IN ?", batchIDs).
-			Where("deleted_at IS NULL").
 			Find(&rows).Error; err != nil {
 			return nil, err
 		}
@@ -621,7 +620,7 @@ func (r *TimesheetQueryRepository) buildGroupedQuery(filters domain.TimesheetFil
 		Joins("INNER JOIN projects p ON p.id = timesheets.project_id").
 		Joins(`LEFT JOIN project_employees latest_pe ON latest_pe.id = (
 			SELECT pe.id FROM project_employees pe
-			WHERE pe.employee_id = e.id AND pe.deleted_at IS NULL
+			WHERE pe.employee_id = e.id
 			ORDER BY pe.created_at DESC LIMIT 1
 		)`)
 

@@ -30,7 +30,7 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		Username: username,
 		Password: password,
 		Fullname: "ITest RBAC Employee",
-		Role:     "employee",
+		Role:     "nhanvien",
 	}, &created); err != nil {
 		reporter.Record(TestResult{Flow: flowRoleEnforcement, Name: "create employee fixture", Status: StatusFail, Error: fmt.Errorf("create employee: %w", err).Error()})
 		return
@@ -61,12 +61,10 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		{"employee calls admin user list", empClient, http.MethodGet, "/api/v1/users"},
 		{"employee calls admin user create", empClient, http.MethodPost, "/api/v1/users"},
 		{"employee calls settings write (admin-only)", empClient, http.MethodPost, "/api/v1/settings"},
-		{"employee calls approval decision (explicit deny)", empClient, http.MethodPost, "/api/v1/approvals/99999/approve"},
-		{"employee calls cron toggle (deny-by-default)", empClient, http.MethodPut, "/api/v1/cron-jobs/x/toggle"},
-		{"employee calls zns admin list (deny-by-default)", empClient, http.MethodGet, "/api/v1/admin/zns-notifications"},
+		{"employee calls audit log list (admin-only)", empClient, http.MethodGet, "/api/v1/audit/logs"},
+		{"employee calls employee delete (admin-only)", empClient, http.MethodDelete, "/api/v1/employees/1"},
 		{"partner calls admin user create", partnerClient, http.MethodPost, "/api/v1/users"},
-		{"partner calls admin api-key create", partnerClient, http.MethodPost, "/api/v1/admin/api-keys"},
-		{"partner calls cron toggle (deny-by-default)", partnerClient, http.MethodPut, "/api/v1/cron-jobs/x/toggle"},
+		{"partner calls settings write", partnerClient, http.MethodPut, "/api/v1/settings/1"},
 		{"partner calls db export start (deny-by-default)", partnerClient, http.MethodPost, "/api/v1/db-export"},
 	}
 
@@ -104,7 +102,7 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		if _, err := empClient.GetInto("/api/v1/auth/me", &me); err != nil {
 			return fmt.Errorf("employee /auth/me: %w", err)
 		}
-		return AssertEqual("role", "employee", me.Role)
+		return AssertEqual("role", "nhanvien", me.Role)
 	})
 
 	reporter.RunTest(flowRoleEnforcement, "RBAC allow: employee reads settings (explicit grant)", func() error {
@@ -155,7 +153,7 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		if _, err := empCookie.WithCookie(empCookie.CookieToken).GetInto("/api/v1/auth/me", &me); err != nil {
 			return fmt.Errorf("cookie /auth/me: %w", err)
 		}
-		return AssertEqual("role", "employee", me.Role)
+		return AssertEqual("role", "nhanvien", me.Role)
 	})
 
 	reporter.RunTest(flowRoleEnforcement, "RBAC deny over cookie channel: employee calls admin user list", func() error {

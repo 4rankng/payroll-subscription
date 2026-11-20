@@ -247,22 +247,8 @@ export const QueryKeys = {
   // ========== DASHBOARD ==========
   dashboard: {
     all: ['dashboard'] as const,
-    stats: () => [...QueryKeys.dashboard.all, 'stats'] as const,
     summary: (month?: string) => [...QueryKeys.dashboard.all, 'summary', month] as const,
-    charts: (type?: string) => [...QueryKeys.dashboard.all, 'charts', type] as const,
-    employeeActivity: () => [...QueryKeys.dashboard.all, 'employee-activity'] as const,
-    employeeActivityUsers: (schedule: string) => [...QueryKeys.dashboard.all, 'employee-activity-users', schedule] as const,
-    projectProfitability: () => [...QueryKeys.dashboard.all, 'project-profitability'] as const,
-    projectWeeklyProfit: (weeks?: number) => [...QueryKeys.dashboard.all, 'project-weekly-profit', weeks] as const,
     topPaidEmployees: (month?: string, limit?: number) => [...QueryKeys.dashboard.all, 'top-paid-employees', month, limit] as const,
-    partnerDashboard: (month?: string) => [...QueryKeys.dashboard.all, 'partner-dashboard', month] as const,
-    bankUsage: (projectId?: number) => [...QueryKeys.dashboard.all, 'bank-usage', projectId] as const,
-    bankUsageAllProjects: () => [...QueryKeys.dashboard.all, 'bank-usage-projects'] as const,
-    partnerEmployeeList: (type: string, month?: string) => [...QueryKeys.dashboard.all, 'partner-employee-list', type, month] as const,
-    checkInHealth: (month?: string) => [...QueryKeys.dashboard.all, 'check-in-health', month] as const,
-    quotaAnomalies: (type?: string, month?: string) => [...QueryKeys.dashboard.all, 'quota-anomalies', type, month] as const,
-    failedAttempts: (params?: Record<string, unknown>) => [...QueryKeys.dashboard.all, 'failed-attempts', params] as const,
-    adminAttendances: (params?: Record<string, unknown>) => [...QueryKeys.dashboard.all, 'admin-attendances', params] as const,
   },
 
   // ========== AUDIT ==========

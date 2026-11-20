@@ -44,6 +44,11 @@ type TimesheetImportJobRepository interface {
 	Create(ctx context.Context, job *TimesheetImportJob) error
 	GetByAssetID(ctx context.Context, assetID uint) (*TimesheetImportJob, error)
 	GetByIdempotencyKey(ctx context.Context, uploadedBy uint, key string) (*TimesheetImportJob, error)
+
+	// ReleaseTerminalScope frees the active-scope slot of a terminal
+	// (completed/failed) job so later uploads for the same (project, month)
+	// are not blocked by residue. Reports whether a slot was freed.
+	ReleaseTerminalScope(ctx context.Context, scopeKey string) (bool, error)
 	Claim(ctx context.Context, assetID uint, leaseUntil time.Time) (uint, bool, error)
 	LockProcessingAttempt(ctx context.Context, assetID uint, attempt uint) error
 	ReleaseForRetry(ctx context.Context, assetID uint, attempt uint, reason string) error

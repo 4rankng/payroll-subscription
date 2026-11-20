@@ -176,7 +176,7 @@ func setupProjectUserAccessFixture(base *APIClient, adminToken, prefix string) (
 			Username: username,
 			Password: password,
 			Fullname: "ITest PUA " + key,
-			Role:     "partner",
+			Role:     "quanly",
 		}, &created); err != nil {
 			return nil, nil, fmt.Errorf("create %s: %w", key, err)
 		}

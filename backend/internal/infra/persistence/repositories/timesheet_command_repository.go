@@ -109,8 +109,6 @@ func (r *TimesheetCommandRepository) Approve(ctx context.Context, id uint, appro
 			"approved_by":      approvedBy,
 			"approved_at":      now,
 			"rejection_reason": "",
-			"allowed_edit":     false,
-			"request_edit_id":  nil,
 		}).Error
 }
 
@@ -133,9 +131,7 @@ func (r *TimesheetCommandRepository) BulkApprove(ctx context.Context, ids []uint
 				"approved_by":      approvedBy,
 				"approved_at":      now,
 				"rejection_reason": "",
-				"allowed_edit":     false,
-				"request_edit_id":  nil,
-			}).Error
+					}).Error
 	})
 }
 
@@ -169,8 +165,6 @@ func (r *TimesheetCommandRepository) Reject(ctx context.Context, id uint, reject
 			"rejection_reason": rejectionReason,
 			"approved_by":      nil,
 			"approved_at":      nil,
-			"allowed_edit":     false,
-			"request_edit_id":  nil,
 		}).Error
 }
 
@@ -185,7 +179,6 @@ func (r *TimesheetCommandRepository) Reset(ctx context.Context, id uint) error {
 			"approved_at":      nil,
 			"rejection_reason": "",
 			"force_payroll":    false,
-			"request_edit_id":  nil,
 		}).Error
 }
 

@@ -24,14 +24,6 @@ export function useDashboardNavigation() {
     navigate(`/admin/projects?${params.toString()}`);
   }, [navigate]);
 
-  const navigateToLedger = useCallback((filter?: string) => {
-    const params = new URLSearchParams();
-    if (filter) {
-      params.set('period', filter);
-    }
-    navigate(`/admin/ledger?${params.toString()}`);
-  }, [navigate]);
-
   return {
     // Employee-related navigation
     navigateToActiveEmployees: useCallback(() => {
@@ -63,15 +55,6 @@ export function useDashboardNavigation() {
     navigateToActiveProjects: useCallback(() => {
       navigateToProjects('active');
     }, [navigateToProjects]),
-
-    // Salary/Ledger navigation
-    navigateToSalaryLedger: useCallback(() => {
-      navigateToLedger('salary');
-    }, [navigateToLedger]),
-
-    navigateToCurrentMonthSalary: useCallback(() => {
-      navigateToLedger('current-month');
-    }, [navigateToLedger]),
 
     // Timesheet-related navigation
     navigateToPendingApprovals: useCallback(() => {

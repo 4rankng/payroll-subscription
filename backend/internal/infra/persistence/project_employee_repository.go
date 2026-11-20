@@ -631,7 +631,7 @@ func (r *ProjectEmployeeRepository) HasAccessViaProject(ctx context.Context, emp
 		Model(&domain.ProjectEmployee{}).
 		Joins("INNER JOIN projects ON projects.id = project_employees.project_id").
 		// LEFT JOIN so a project creator matches even with no project_users row.
-		Joins("LEFT JOIN project_users ON project_users.project_id = project_employees.project_id AND project_users.user_id = ? AND project_users.deleted_at IS NULL", userID).
+		Joins("LEFT JOIN project_users ON project_users.project_id = project_employees.project_id AND project_users.user_id = ?", userID).
 		Where("project_employees.employee_id = ?", employeeID).
 		Where("project_employees.start_date <= NOW()").
 		// Creator of the project OR explicit project member.

@@ -1,27 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
 )
-
-func hasImportedAdvanceAssignment(projects []EmployeeProjectInfo) bool {
-	hasImported := false
-	for _, project := range projects {
-		if project.PaymentSchedule == "flexible" {
-			if project.CheckInEnabled {
-				return false
-			}
-			hasImported = true
-		}
-	}
-	return hasImported
-}
-
-// Reserve the maximum signed BIGINT for negative API scenarios. Small magic
-// IDs such as 999999 can be real records in a populated local test database.
-const nonexistentID = 9223372036854775807
 
 func loadAllPages[T any](client *APIClient, path string) ([]T, error) {
 	endpoint, err := url.Parse(path)
@@ -49,29 +33,12 @@ func loadAllPages[T any](client *APIClient, path string) ([]T, error) {
 	}
 }
 
-// hasRegisteredDisbursementProvider reports whether this server process has a
-// disbursement provider wired. It is the authoritative availability signal: the
-// payout settings flag lives in the database and can be on in a deployment that
-// registered no provider (a local run, for example), where the poller never
-// starts and the bulk-transfer endpoints legitimately refuse to work.
-func hasRegisteredDisbursementProvider(client *APIClient) bool {
-	var settings struct {
-		RegisteredProviders []string `json:"registered_providers"`
-	}
-	if _, err := client.GetInto("/api/v1/admin/settings/disbursement", &settings); err != nil {
-		// Unknown is treated as available so a broken probe cannot silently
-		// retire the provider-dependent flows.
-		return true
-	}
-	return len(settings.RegisteredProviders) > 0
-}
-
-// partnerWeeklyProject returns a weekly project the given partner can actually
-// upload into. Discovery picks the weekly project globally while partners come
-// from config, so the two are not guaranteed to overlap; a partner upload to a
-// project outside their scope is refused by design. Prefer the discovered
-// project when it is visible, otherwise fall back to any weekly project the
-// partner sees, and report false when there is none (caller skips).
+// partnerWeeklyProject returns a project the given partner can actually
+// upload into. Discovery picks the fixture project globally while partners
+// come from config, so the two are not guaranteed to overlap; a partner upload
+// to a project outside their scope is refused by design. Prefer the discovered
+// project when it is visible, otherwise fall back to any project the partner
+// sees, and report false when there is none (caller skips).
 func partnerWeeklyProject(client *APIClient, preferred *ProjectResponse) (*ProjectResponse, bool) {
 	projects, err := loadAllPages[ProjectResponse](client, "/api/v1/projects")
 	if err != nil {
@@ -85,9 +52,68 @@ func partnerWeeklyProject(client *APIClient, preferred *ProjectResponse) (*Proje
 		}
 	}
 	for i := range projects {
-		if projects[i].WeeklySalaryEmployeeCount > 0 {
-			return &projects[i], true
-		}
+		return &projects[i], true
 	}
 	return nil, false
+}
+
+// bootstrapFixtures creates the minimal operating set on a fresh database
+// (consolidated schema.sql deployments start empty): one fixture project, one
+// employee, the assignment pairing, a payrate, and project access for every
+// configured partner. Idempotent by discovery — the caller only invokes it
+// when no projects exist.
+func bootstrapFixtures(client *APIClient, data *TestData, cfg *TestConfig) error {
+	admin := client.WithToken(data.AdminToken)
+
+	var project ProjectResponse
+	createBody := CreateProjectRequest{
+		ClientName: "Khách kiểm thử",
+		Name:       "Dự án fixture integration",
+		Code:       "FIX" + cfg.UniquePrefix(),
+	}
+	if _, err := admin.PostInto("/api/v1/projects", createBody, &project); err != nil {
+		return fmt.Errorf("create fixture project: %w", err)
+	}
+
+	// Auto-activate so summary/eligibility surfaces see an active project.
+	if _, status, err := admin.Post("/api/v1/projects/activate", map[string]any{}); err != nil {
+		return fmt.Errorf("activate fixture projects: %w (HTTP %d)", err, status)
+	}
+
+	payrateBody := map[string]any{
+		"rates":          json.RawMessage(`{"Nhân viên":{"Ngày thường":{"Ca ngày":250000}}}`),
+		"effective_from": today(),
+	}
+	if _, status, err := admin.Post(fmt.Sprintf("/api/v1/projects/%d/payrate", project.ID), payrateBody); err != nil {
+		return fmt.Errorf("create fixture payrate: %w (HTTP %d)", err, status)
+	}
+
+	empBody := CreateEmployeeRequest{
+		Fullname: "NV Fixture " + cfg.UniquePrefix(),
+		CCCD:     "99" + cfg.UniquePrefix() + "000001",
+		Mobile:   uniqueMobile(),
+	}
+	var employee EmployeeResponse
+	if _, err := admin.PostInto("/api/v1/employees", empBody, &employee); err != nil {
+		return fmt.Errorf("create fixture employee: %w", err)
+	}
+
+	assignBody := []map[string]any{{
+		"employee_id": employee.ID,
+		"position":    "Nhân viên",
+		"start_date":  today(),
+	}}
+	if _, status, err := admin.Post(fmt.Sprintf("/api/v1/projects/%d/employees", project.ID), assignBody); err != nil {
+		return fmt.Errorf("assign fixture employee: %w (HTTP %d)", err, status)
+	}
+
+	for _, p := range data.Partners {
+		if _, status, err := admin.Post(fmt.Sprintf("/api/v1/projects/%d/users", project.ID),
+			map[string]any{"user_id": p.ID}); err != nil {
+			return fmt.Errorf("grant partner %d access: %w (HTTP %d)", p.ID, err, status)
+		}
+	}
+
+	fmt.Printf("  Bootstrapped fixture project %d + employee %d\n", project.ID, employee.ID)
+	return nil
 }

@@ -11,25 +11,18 @@ func runDashboardTests(client *APIClient, data *TestData, reporter *Reporter, cf
 
 	admin := client.WithToken(data.AdminToken)
 
+	// Live dashboard surface (PAYSUB rebuild): the summary feeds the Tổng quan
+	// metric strip, new-employees and top-paid feed its cards. The old-model
+	// endpoints (financial-overview, monthly-financials, salary-distribution,
+	// employee-activity, bank-usage, profitability, partner) are removed and
+	// must stay absent — their absence is pinned by the routes file.
 	endpoints := []struct {
 		name string
 		path string
 	}{
 		{"Summary", "/api/v1/dashboard/summary"},
-		{"Financial overview", "/api/v1/dashboard/financial-overview"},
-		{"Financial", "/api/v1/dashboard/financial"},
-		{"Salary distribution", "/api/v1/dashboard/salary-distribution"},
-		{"Recent activities", "/api/v1/dashboard/recent-activities?pageSize=5"},
-		{"Notifications", "/api/v1/dashboard/notifications"},
-		{"New employees", "/api/v1/dashboard/new-employees"},
-		{"Historical", "/api/v1/dashboard/historical"},
-		{"Monthly financials", "/api/v1/dashboard/monthly-financials"},
-		{"Employee activity", "/api/v1/dashboard/employee-activity"},
+		{"New employees", "/api/v1/dashboard/new-employees?pageSize=5"},
 		{"Top paid employees", "/api/v1/dashboard/top-paid-employees"},
-		{"Bank usage", "/api/v1/dashboard/bank-usage"},
-		{"Bank usage by project", "/api/v1/dashboard/bank-usage/projects"},
-		{"Project profitability", "/api/v1/dashboard/project-profitability"},
-		{"Project weekly profit", "/api/v1/dashboard/project-weekly-profit"},
 	}
 
 	for _, ep := range endpoints {
@@ -44,25 +37,50 @@ func runDashboardTests(client *APIClient, data *TestData, reporter *Reporter, cf
 		})
 	}
 
-	// Partner dashboard (requires partner token)
+	// Removed old-model dashboard endpoints must answer 404, not 200 with
+	// stale aggregates (PAYSUB demolition pin).
+	removed := []struct {
+		name string
+		path string
+	}{
+		{"Financial overview", "/api/v1/dashboard/financial-overview"},
+		{"Salary distribution", "/api/v1/dashboard/salary-distribution"},
+		{"Monthly financials", "/api/v1/dashboard/monthly-financials"},
+		{"Employee activity", "/api/v1/dashboard/employee-activity"},
+		{"Bank usage", "/api/v1/dashboard/bank-usage"},
+		{"Project profitability", "/api/v1/dashboard/project-profitability"},
+		{"Partner dashboard", "/api/v1/dashboard/partner"},
+	}
+	for _, ep := range removed {
+		ep := ep
+		reporter.RunTest(flowDashboard, "REMOVED "+ep.name, func() error {
+			// The router answers plain-text "404 page not found" — check the
+			// status code directly instead of parsing the body.
+			_, statusCode, parseErr := admin.Get(ep.path)
+			if parseErr != nil && statusCode == 0 {
+				return fmt.Errorf("%s: %w", ep.name, parseErr)
+			}
+			if statusCode != 404 {
+				return fmt.Errorf("%s: want 404 for removed endpoint, got HTTP %d", ep.name, statusCode)
+			}
+			return nil
+		})
+	}
+
+	if cfg == nil {
+		return
+	}
+
+	// Partner-role dashboard read access (quanly has /dashboard/* GET).
 	if len(data.Partners) > 0 {
 		partner := client.WithToken(data.Partners[0].Token)
 
-		reporter.RunTest(flowDashboard, "Partner dashboard", func() error {
+		reporter.RunTest(flowDashboard, "Partner summary read", func() error {
 			var resp interface{}
-			if _, err := partner.GetInto("/api/v1/dashboard/partner", &resp); err != nil {
-				return fmt.Errorf("partner dashboard: %w", err)
+			if _, err := partner.GetInto("/api/v1/dashboard/summary", &resp); err != nil {
+				return fmt.Errorf("partner summary: %w", err)
 			}
-			fmt.Printf("    OK: Partner dashboard\n")
-			return nil
-		})
-
-		reporter.RunTest(flowDashboard, "Partner employees", func() error {
-			var resp interface{}
-			if _, err := partner.GetInto("/api/v1/dashboard/partner/employees?type=active", &resp); err != nil {
-				return fmt.Errorf("partner employees: %w", err)
-			}
-			fmt.Printf("    OK: Partner employees\n")
+			fmt.Printf("    OK: Partner summary\n")
 			return nil
 		})
 	}

@@ -189,3 +189,24 @@ func (h *BillingHandler) PaidSeries(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"items": rows}})
 }
+
+// KySummary serves the FR-6 Tổng quan per-month table: distinct employees per
+// Kỳ for the last N work months (query `months`, default 12, max 24) plus the
+// current subscription fee (BR-1) so the UI can render VND totals.
+func (h *BillingHandler) KySummary(c *gin.Context) {
+	months := 12
+	if v := c.Query("months"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil || parsed < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "months phải là số nguyên dương"})
+			return
+		}
+		months = parsed
+	}
+	summary, err := h.reports.DashboardKySummary(c.Request.Context(), months)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": summary})
+}

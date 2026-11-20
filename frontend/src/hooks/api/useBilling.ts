@@ -13,6 +13,7 @@ export const billingKeys = {
   payCycles: (workMonth: string) => ['billing', 'pay-cycles', workMonth] as const,
   paidSeries: (from: string, to: string, projectId?: number) =>
     ['billing', 'paid-series', from, to, projectId ?? 'all'] as const,
+  kySummary: ['billing', 'ky-summary'] as const,
   report: (workMonth: string) => ['billing', 'report', workMonth] as const,
 };
 
@@ -35,6 +36,12 @@ export const usePaidSeries = (from: string, to: string, projectId?: number) =>
     queryKey: billingKeys.paidSeries(from, to, projectId),
     queryFn: () => billingService.getPaidSeries({ from, to, projectId }),
     enabled: from.length === 10 && to.length === 10,
+  });
+
+export const useKySummary = (months = 12) =>
+  useQuery({
+    queryKey: billingKeys.kySummary,
+    queryFn: () => billingService.getKySummary(months),
   });
 
 export const useTransferUpload = (workMonth: string) => {

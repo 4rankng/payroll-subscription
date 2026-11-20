@@ -270,3 +270,78 @@ func (s *BillingReportService) GetReport(ctx context.Context, workMonth string) 
 func (s *BillingReportService) PaidSeries(ctx context.Context, from, to time.Time, projectID *uint) ([]domain.PaidSeriesRow, error) {
 	return s.timesheets.GetPaidSeries(ctx, from, to, projectID)
 }
+
+// KyMonthSummary is one work month of the FR-6 Tổng quan per-month table:
+// distinct-employee counts per Kỳ of that month.
+type KyMonthSummary struct {
+	WorkMonth string         `json:"work_month"`
+	Counts    map[int]int64  `json:"counts"`
+}
+
+// DashboardKySummary is the FR-6 per-month view payload: the last `Months`
+// work months ending at the current one, each with per-Kỳ distinct counts,
+// plus the current subscription fee so the table can render VND totals
+// without a second call.
+type DashboardKySummary struct {
+	Months                   []KyMonthSummary `json:"months"`
+	FeePerEmployeePerKyVnd   int64            `json:"fee_per_employee_per_ky_vnd"`
+}
+
+// DashboardKySummary builds the FR-6 monthly table input. months is clamped
+// to [1, 24] and defaults to 12 at the handler.
+func (s *BillingReportService) DashboardKySummary(ctx context.Context, months int) (*DashboardKySummary, error) {
+	if months < 1 {
+		months = 1
+	}
+	if months > 24 {
+		months = 24
+	}
+
+	now := clock.Now()
+	// Walk back to the first work month of the window, inclusive of the
+	// current month. char(7) YYYY-MM sorts lexicographically == chronologically.
+	firstYear, firstMonth := now.Year(), int(now.Month())
+	firstMonth -= months - 1
+	for firstMonth < 1 {
+		firstMonth += 12
+		firstYear--
+	}
+	fromMonth := fmt.Sprintf("%04d-%02d", firstYear, firstMonth)
+	toMonth := fmt.Sprintf("%04d-%02d", now.Year(), int(now.Month()))
+
+	rows, err := s.kyPaid.CountDistinctEmployeesByCycles(ctx, fromMonth, toMonth)
+	if err != nil {
+		return nil, fmt.Errorf("billing: dashboard ky summary: %w", err)
+	}
+
+	byMonth := make(map[string]map[int]int64, months)
+	for _, row := range rows {
+		counts, ok := byMonth[row.WorkMonth]
+		if !ok {
+			counts = make(map[int]int64, clock.TimesheetKyCount)
+			byMonth[row.WorkMonth] = counts
+		}
+		counts[row.Cycle] = row.Count
+	}
+
+	monthItems := make([]KyMonthSummary, 0, months)
+	year, month := firstYear, firstMonth
+	for range months {
+		workMonth := fmt.Sprintf("%04d-%02d", year, month)
+		counts := byMonth[workMonth]
+		if counts == nil {
+			counts = map[int]int64{}
+		}
+		monthItems = append(monthItems, KyMonthSummary{WorkMonth: workMonth, Counts: counts})
+		month++
+		if month > 12 {
+			month = 1
+			year++
+		}
+	}
+
+	return &DashboardKySummary{
+		Months:                 monthItems,
+		FeePerEmployeePerKyVnd: s.feeSource.GetSubscriptionFeePerEmployeePerKy(ctx),
+	}, nil
+}

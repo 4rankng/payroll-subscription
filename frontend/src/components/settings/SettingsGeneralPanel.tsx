@@ -98,10 +98,10 @@ interface SettingsGeneralPanelProps {
 
 export const SettingsGeneralPanel = ({ form }: SettingsGeneralPanelProps) => (
   <div className="columns-1 gap-3 xl:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
-    <SettingsSection kicker="PAYSUB" title="Phí subscription">
+    <SettingsSection kicker="PAYSUB" title="Phí">
       <SettingCard
-        title="Phí subscription (VND/nhân viên/kỳ)"
-        description="Số tiền tính phí cho mỗi nhân viên distinct trong mỗi kỳ của một tháng làm việc."
+        title="Phí (VND/NV/kỳ)"
+        description="Số tiền tính phí cho mỗi NV trong mỗi kỳ trả của một tháng làm việc."
         value={form.subscriptionFeeVnd}
         originalValue={form.originalSubscriptionFeeVnd}
         onChange={form.setSubscriptionFeeVnd}

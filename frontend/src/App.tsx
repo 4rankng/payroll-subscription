@@ -31,10 +31,6 @@ const UsersPageMobile = lazy(() => import("./pages/mobile/admin/UsersPage"));
 const ProjectsPageMobile = lazy(() => import("./pages/mobile/admin/ProjectsPage"));
 const EmployeesPageMobile = lazy(() => import("./pages/mobile/admin/EmployeesPage"));
 const TimesheetPageMobile = lazy(() => import("./pages/mobile/admin/TimesheetPage"));
-const ActivityUsersPageMobile = lazy(() => import("./pages/mobile/admin/DashboardPage/ActivityUsersPage"));
-// Desktop variant for the drill-down route above (PAYR-23): ResponsivePage
-// picks the right variant per width instead of pinning mobile UI everywhere.
-const ActivityUsersPage = lazy(() => import("./pages/admin/DashboardPage/ActivityUsersPage"));
 const SettingsPageMobile = lazy(() => import("./pages/mobile/admin/SettingsPage"));
 const AuditLogPageMobile = lazy(() => import("./pages/mobile/admin/AuditLogPage"));
 const PayrateEditPageMobile = lazy(() => import("./pages/mobile/admin/PayrateEditPage"));
@@ -232,7 +228,6 @@ const AppContent = () => {
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
           <Route index element={<ResponsivePage desktopComponent={AdminDashboard} mobileComponent={AdminDashboardMobile} />} />
-          <Route path="dashboard/activity" element={<ResponsivePage desktopComponent={ActivityUsersPage} mobileComponent={ActivityUsersPageMobile} />} />
           <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
@@ -245,8 +240,8 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* Partner Routes */}
-        <Route path="/partner" element={<ProtectedRoute requiredRole="quanly"><PartnerLayout /></ProtectedRoute>}>
+        {/* Partner Routes — quanly operates; giamdoc reads and exports reports (D19) */}
+        <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/partner/dashboard" replace />} />
           <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />

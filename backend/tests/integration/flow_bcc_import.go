@@ -24,27 +24,63 @@ type bccImportResponse struct {
 	ErrorDetail  *string `json:"error_detail"`
 }
 
-func waitForBCCImport(client *APIClient, endpoint string, importID uint) (*bccImportResponse, error) {
-	apiResp, err := client.PollUntil(
-		fmt.Sprintf("%s/%d", endpoint, importID),
-		500*time.Millisecond,
-		2*time.Minute,
-		func(resp *APIResponse) bool {
-			var result bccImportResponse
-			raw, _ := json.Marshal(resp.Data)
-			_ = json.Unmarshal(raw, &result)
-			return result.Status == "completed" || result.Status == "failed"
-		},
+
+// uploadBCCWithBusyRetry retries an upload while the import scope for the
+// (project, month) pair is busy (409) — sequential tests fire uploads faster
+// than the previous job finalizes, and ScopeBusy is a wait signal, not a
+// failure. Returns the first non-409 response or the last attempt.
+func uploadBCCWithBusyRetry(partnerClient *APIClient, endpoint, file string, params map[string]string) (*APIResponse, int, error) {
+	var (
+		apiResp *APIResponse
+		status  int
+		err     error
 	)
+	for attempt := 0; attempt < 8; attempt++ {
+		apiResp, status, err = partnerClient.UploadFile(endpoint, "file", file, params)
+		if err != nil || status != 409 {
+			return apiResp, status, err
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return apiResp, status, err
+}
+
+func waitForBCCImport(client *APIClient, endpoint string, importID uint) (*bccImportResponse, error) {
+	read := func() (*bccImportResponse, error) {
+		apiResp, _, err := client.Get(fmt.Sprintf("%s/%d", endpoint, importID))
+		if err != nil {
+			return nil, err
+		}
+		var result bccImportResponse
+		raw, _ := json.Marshal(apiResp.Data)
+		if err := json.Unmarshal(raw, &result); err != nil {
+			return nil, err
+		}
+		return &result, nil
+	}
+
+	// "failed" can be transient: the bcc_import_recovery sweep (1m cadence)
+	// re-runs lease-expired jobs and completes them. Poll through the sweep
+	// window before treating failed as the user-facing terminal state.
+	first, err := read()
 	if err != nil {
 		return nil, err
 	}
-	var result bccImportResponse
-	raw, _ := json.Marshal(apiResp.Data)
-	if err := json.Unmarshal(raw, &result); err != nil {
-		return nil, err
+	deadline := time.Now().Add(75 * time.Second)
+	for {
+		if first.Status == "completed" {
+			return first, nil
+		}
+		if time.Now().After(deadline) {
+			return first, nil
+		}
+		time.Sleep(500 * time.Millisecond)
+		next, rerr := read()
+		if rerr != nil {
+			return nil, rerr
+		}
+		first = next
 	}
-	return &result, nil
 }
 
 func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
@@ -76,6 +112,56 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 	projectIDStr := strconv.Itoa(int(projectID))
 	endpoint := "/api/v1/timesheets/partner-import"
 
+	// Uploads need explicit modify access: visibility alone (employee-based)
+	// is not enough for the scoped-partner write check in the middleware.
+	if _, status, err := adminClient.Post(fmt.Sprintf("/api/v1/projects/%d/users", projectID),
+		map[string]any{"user_id": data.Partners[0].ID}); err != nil {
+		fmt.Printf("    grant partner upload access: %v (HTTP %d) — continuing\n", err, status)
+	}
+
+	// from_date = first day of the month: the import validates that a payrate
+	// is effective within for_month, so mid-month effective dates do not count.
+	monthStart := time.Now().AddDate(0, 0, -(time.Now().Day() - 1)).Format("2006-01-02")
+	prBody := CreatePayrateRequest{
+		Rates:         []byte(`{"Nhân viên":{"Ngày thường":{"Ca ngày":250000}}}`),
+		EffectiveFrom: monthStart,
+	}
+	if _, status, perr := adminClient.Post(fmt.Sprintf("/api/v1/projects/%d/payrate", projectID), prBody); perr != nil && status != 409 {
+		fmt.Printf("    seed payrate: %v (HTTP %d) — continuing\n", perr, status)
+	}
+
+	// Seed the fixture month's payrate and the sheet employee's assignment —
+	// the BCC LGD fixture carries May-2026 work days, so the payrate must be
+	// effective from 2026-05-01 and the employee assigned before import.
+	seedPayrateSQL := "INSERT INTO payrates (project_id, payrate_json, from_date, created_by, created_at, updated_at) " +
+		"VALUES (%d, '{\"Nhân viên\":{\"ngày thường\":{\"HC\":33000,\"Ca ngày\":250000}}}', '2026-05-01', 1, NOW(), NOW()) " +
+		"ON DUPLICATE KEY UPDATE payrate_json = VALUES(payrate_json), updated_at = NOW()"
+	if err := execPayrollSQL(fmt.Sprintf(seedPayrateSQL, projectID)); err != nil {
+		fmt.Printf("    seed payrate: %v — continuing\n", err)
+	}
+	const sheetCCCD = "031092020742"
+	var sheetEmp EmployeeResponse
+	if _, err := adminClient.GetInto("/api/v1/employees/cccd/"+sheetCCCD, &sheetEmp); err != nil {
+		empBody := CreateEmployeeRequest{
+			Fullname: "NV BCC LGD",
+			CCCD:     sheetCCCD,
+			Mobile:   uniqueMobile(),
+		}
+		if _, cerr := adminClient.PostInto("/api/v1/employees", empBody, &sheetEmp); cerr != nil {
+			fmt.Printf("    seed sheet employee: %v — continuing\n", cerr)
+		}
+	}
+	if sheetEmp.ID != 0 {
+		assign := []map[string]any{{
+			"employee_id": sheetEmp.ID,
+			"position":    "Nhân viên",
+			"start_date":  "2026-05-01",
+		}}
+		if _, status, aerr := adminClient.Post(fmt.Sprintf("/api/v1/projects/%d/employees", projectID), assign); aerr != nil {
+			fmt.Printf("    assign sheet employee: %v (HTTP %d) — continuing\n", aerr, status)
+		}
+	}
+
 	// BCC sample file shipped with the repo (path relative to backend/ working dir).
 	bccFile := getEnvOrDefault("PAYROLL_BCC_FIXTURE", "../docs/WeeklyBCC/BCC LGD.xlsx")
 	if _, err := os.Stat(bccFile); os.IsNotExist(err) {
@@ -95,8 +181,8 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 	// ── 2. Happy path upload ─────────────────────────────────────────────────
 	var importID uint
 	reporter.RunTest(flowBCC, "Upload valid BCC file", func() error {
-		apiResp, status, err := partnerClient.UploadFile(endpoint, "file", bccFile,
-			map[string]string{"project_id": projectIDStr, "for_month": time.Now().Format("2006-01")})
+		apiResp, status, err := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
+			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err != nil {
 			return fmt.Errorf("request failed: %w", err)
 		}
@@ -139,8 +225,8 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 	// TZ=Asia/Ho_Chi_Minh (Dockerfile). NOTE: the pre-fix failure only reproduces when
 	// the host runs UTC; on a +07 dev host this asserts the happy path.
 	reporter.RunTest(flowBCC, "Import not rejected on payrate effective-date boundary (TZ)", func() error {
-		apiResp, status, err := partnerClient.UploadFile(endpoint, "file", bccFile,
-			map[string]string{"project_id": projectIDStr, "for_month": time.Now().Format("2006-01")})
+		apiResp, status, err := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
+			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err != nil {
 			return fmt.Errorf("request failed: %w", err)
 		}
@@ -225,8 +311,8 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 	// ── 6. Re-upload preserves approved rows ─────────────────────────────────
 	reporter.RunTest(flowBCC, "Re-upload preserves approved timesheets", func() error {
 		// First upload to get some timesheets.
-		apiResp1, status1, err := partnerClient.UploadFile(endpoint, "file", bccFile,
-			map[string]string{"project_id": projectIDStr, "for_month": time.Now().Format("2006-01")})
+		apiResp1, status1, err := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
+			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err != nil {
 			return fmt.Errorf("first upload: %w", err)
 		}
@@ -254,7 +340,7 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 		var ids []uint
 		before := make(map[uint]TimesheetResponse)
 		for _, row := range rows {
-			if row.Status == "pending_approval" && strings.HasPrefix(row.Date, time.Now().Format("2006-01")) {
+			if row.Status == "pending_approval" && strings.HasPrefix(row.Date, "2026-05") {
 				ids = append(ids, row.ID)
 				before[row.ID] = row
 			}
@@ -284,8 +370,8 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 		}
 
 		// Re-upload should complete with protected rows skipped.
-		apiResp2, status2, err2 := partnerClient.UploadFile(endpoint, "file", bccFile,
-			map[string]string{"project_id": projectIDStr, "for_month": time.Now().Format("2006-01")})
+		apiResp2, status2, err2 := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
+			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err2 != nil {
 			return fmt.Errorf("second upload: %w", err2)
 		}

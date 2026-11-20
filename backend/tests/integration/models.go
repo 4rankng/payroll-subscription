@@ -65,10 +65,6 @@ type ProjectResponse struct {
 	Code                       string `json:"code"`
 	Status                     string `json:"status"`
 	EmployeeCount              int    `json:"employee_count"`
-	WeeklySalaryEmployeeCount  int    `json:"weekly_salary_employee_count"`
-	MonthlySalaryEmployeeCount int    `json:"monthly_salary_employee_count"`
-	SalaryPeriodFrom           int    `json:"salary_period_from"`
-	SalaryPeriodTo             int    `json:"salary_period_to"`
 }
 
 type ListProjectsResponse struct {
@@ -106,60 +102,37 @@ type DisableCheckInEmployeesResponse struct {
 // --- Employees ---
 
 type EmployeeResponse struct {
-	ID                uint                  `json:"id"`
-	Fullname          string                `json:"fullname"`
-	Email             *string               `json:"email"`
-	CCCD              string                `json:"cccd"`
-	Mobile            string                `json:"mobile"`
-	BankAccountNumber string                `json:"bank_account_number"`
-	BankAccountName   string                `json:"bank_account_name"`
-	CurrentProjects   []EmployeeProjectInfo `json:"current_projects"`
+	ID              uint                  `json:"id"`
+	Fullname        string                `json:"fullname"`
+	Email           *string               `json:"email"`
+	CCCD            string                `json:"cccd"`
+	Mobile          string                `json:"mobile"`
+	CurrentProjects []EmployeeProjectInfo `json:"current_projects"`
 }
 
 type EmployeeDetailedResponse struct {
-	ID                uint                  `json:"id"`
-	Username          *string               `json:"username,omitempty"`
-	Fullname          string                `json:"fullname"`
-	Email             *string               `json:"email"`
-	CCCD              string                `json:"cccd"`
-	Mobile            string                `json:"mobile"`
-	BankAccountNumber string                `json:"bank_account_number"`
-	BankAccountName   string                `json:"bank_account_name"`
-	CurrentProjects   []EmployeeProjectInfo `json:"current_projects"`
+	ID              uint                  `json:"id"`
+	Username        *string               `json:"username,omitempty"`
+	Fullname        string                `json:"fullname"`
+	Email           *string               `json:"email"`
+	CCCD            string                `json:"cccd"`
+	Mobile          string                `json:"mobile"`
+	CurrentProjects []EmployeeProjectInfo `json:"current_projects"`
 }
 
 type EmployeeProjectInfo struct {
-	ProjectID              uint    `json:"project_id"`
-	ProjectEmployeeID      uint    `json:"project_employee_id"`
-	Name                   string  `json:"name"`
-	Code                   string  `json:"code"`
-	ClientName             string  `json:"client_name"`
-	Position               string  `json:"position"`
-	StartDate              string  `json:"start_date"`
-	LastDate               *string `json:"last_date"`
-	PaymentSchedule        string  `json:"payment_schedule"`
-	CheckInEnabled         bool    `json:"check_in_enabled"`
-	PendingPaymentSchedule *string `json:"pending_payment_schedule"`
+	ProjectID         uint   `json:"project_id"`
+	ProjectEmployeeID uint   `json:"project_employee_id"`
+	Name              string `json:"name"`
+	Code              string `json:"code"`
+	ClientName        string `json:"client_name"`
+	Position          string `json:"position"`
+	StartDate         string `json:"start_date"`
 }
 
 type ListEmployeesResponse struct {
 	Employees []EmployeeResponse `json:"employees"`
 	Total     int64              `json:"total"`
-}
-
-// --- Banks ---
-
-type BankResponse struct {
-	ID         uint   `json:"id"`
-	BranchName string `json:"branch_name"`
-	BankCode   string `json:"bank_code"`
-	Bin        string `json:"bin"`
-	SwiftCode  string `json:"swift_code"`
-}
-
-type ListBanksResponse struct {
-	Banks []BankResponse `json:"banks"`
-	Total int64          `json:"total"`
 }
 
 // --- Timesheets ---
@@ -367,45 +340,6 @@ type AvailableMonth struct {
 	EmployeeCount int    `json:"employeeCount"`
 }
 
-type EmployeeAdvanceListResponse struct {
-	ForMonth string                `json:"forMonth"`
-	Data     []EmployeeAdvanceItem `json:"data"`
-}
-
-type EmployeeAdvanceItem struct {
-	EmployeeID             uint                        `json:"employeeId"`
-	Fullname               string                      `json:"fullname"`
-	CCCD                   string                      `json:"cccd"`
-	Username               string                      `json:"username"`
-	Bank                   *EmployeeAdvanceBankInfo    `json:"bank"`
-	Project                *EmployeeAdvanceProjectInfo `json:"project"`
-	ForMonth               string                      `json:"forMonth"`
-	Salary                 uint64                      `json:"salary"`
-	MaxAdvanceAmount       uint64                      `json:"maxAdvanceAmount"`
-	UtilizedAmount         uint64                      `json:"utilizedAmount"`
-	AvailableAmount        uint64                      `json:"availableAmount"`
-	TotalFeeGenerated      uint64                      `json:"totalFeeGenerated"`
-	PendingAmount          uint64                      `json:"pendingAmount"`
-	CompletedRequestsCount int                         `json:"completedRequestsCount"`
-	PendingRequestsCount   int                         `json:"pendingRequestsCount"`
-}
-
-type EmployeeAdvanceBankInfo struct {
-	BankID        uint   `json:"bankId"`
-	BankName      string `json:"bankName"`
-	AccountNumber string `json:"accountNumber"`
-	AccountName   string `json:"accountName"`
-}
-
-type EmployeeAdvanceProjectInfo struct {
-	ID                    uint   `json:"id"`
-	Name                  string `json:"name"`
-	Code                  string `json:"code"`
-	AssignmentID          uint   `json:"assignment_id"`
-	CheckInEnabled        bool   `json:"check_in_enabled"`
-	AdvanceRequestEnabled bool   `json:"advance_request_enabled"`
-}
-
 // --- FlexPay Import ---
 
 type ImportJobResponse struct {
@@ -497,27 +431,19 @@ type TestData struct {
 	AdminToken string
 	Projects   []ProjectResponse
 	Employees  []EmployeeResponse
-	Banks      []BankResponse
-
-	// Picked for bulk transfer tests
+	// Fixture project/employee for the timesheet flows (one schedule — D8)
 	WeeklyProject     *ProjectResponse
-	MonthlyProject    *ProjectResponse
 	WeeklyEmployee    *EmployeeResponse
-	MonthlyEmployee   *EmployeeResponse
-	WeeklyAssignment  *EmployeeProjectInfo // assignment metadata for weekly employee
-	MonthlyAssignment *EmployeeProjectInfo // assignment metadata for monthly employee
+	WeeklyAssignment  *EmployeeProjectInfo // assignment metadata for the fixture pairing
 	WeeklyHourType    string               // first available hour type from payrate config
 	WeeklyDayType     string               // first available day type from payrate config
 
-	// Picked for advance payment tests
+	// Employee user account for self-service flows (nhanvien token)
 	EmployeeForAdvance  *EmployeeDetailedResponse
 	EmployeeTokenForAdv string
 
 	// Partner users for timesheet creation
 	Partners []PartnerUser
-
-	// FlexPay import job
-	FlexPayJobID uint
 }
 
 // --- Auth & User Management ---
@@ -624,8 +550,6 @@ type CreateProjectRequest struct {
 	ClientName       string `json:"client_name"`
 	Name             string `json:"name"`
 	Code             string `json:"code"`
-	SalaryPeriodFrom *int   `json:"salary_period_from,omitempty"`
-	SalaryPeriodTo   *int   `json:"salary_period_to,omitempty"`
 }
 
 type UpdateProjectRequest struct {
@@ -633,8 +557,6 @@ type UpdateProjectRequest struct {
 	Name             *string `json:"name,omitempty"`
 	Code             *string `json:"code,omitempty"`
 	Status           *string `json:"status,omitempty"`
-	SalaryPeriodFrom *int    `json:"salary_period_from,omitempty"`
-	SalaryPeriodTo   *int    `json:"salary_period_to,omitempty"`
 }
 
 type ProjectSummaryResponse struct {

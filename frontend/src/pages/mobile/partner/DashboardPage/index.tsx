@@ -4,11 +4,11 @@ import { format, startOfMonth } from 'date-fns';
 import {
   Users,
   UserCheck,
-  UserX,
   Banknote,
   FolderKanban,
   ClipboardList,
-  History,
+  Hourglass,
+  Wallet,
 } from 'lucide-react';
 import { UserCheck01, UserX01 } from '@untitledui/icons';
 import { Badge } from '@/components/ui/badge';
@@ -19,19 +19,17 @@ import { MobilePageHeader } from '@/components/shared/MobilePageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import {
   MobileOperationsPanel,
-  MobileTaskList,
   type MobileOperationAction,
   type MobileOperationMetric,
-  type MobileTaskRow,
 } from '@/components/shared/MobileOperationsPanel';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
-import { usePartnerDashboard } from '@/hooks/api/useDashboard';
+import { useDashboardSummary, useTopPaidEmployees } from '@/hooks/api/useDashboard';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
-import { PartnerEmployeeListSheet } from '@/components/partner-dashboard/PartnerEmployeeListSheet';
+import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
+import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSelector';
 import { cn } from '@/lib/utils';
-import type { TopPaidEmployeeItem, PartnerEmployeeListType } from '@/types/api/dashboard.types';
-import type { Employee } from '@/types/api/employee.types';
+import type { TopPaidEmployeeItem } from '@/types/api/dashboard.types';
 import { formatFullCurrency as formatVND } from '@/utils/formatters';
 
 const ALL_VALUE = 'all';
@@ -106,23 +104,23 @@ const PartnerDashboardMobile = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(
     format(startOfMonth(new Date()), 'yyyy-MM'),
   );
-  const [sheetType, setSheetType] = useState<PartnerEmployeeListType | null>(null);
 
   const handleMonthChange = useCallback((v: string) => setSelectedMonth(v), []);
-  const openSheet = useCallback((type: PartnerEmployeeListType) => setSheetType(type), []);
-  const closeSheet = useCallback(() => setSheetType(null), []);
 
   // Employee rows in the mobile-warning section open the employee details
   // sheet through the URL-driven modal system — same wiring as the mobile
   // partner EmployeesPage's handleEmployeeClick.
   const { openEmployeeDetails } = useEmployeeModals();
   const handleEmployeeClick = useCallback(
-    (employee: Employee) => openEmployeeDetails(employee.id.toString()),
+    (employee: { id: number }) => openEmployeeDetails(employee.id.toString()),
     [openEmployeeDetails],
   );
 
   const apiMonth = selectedMonth === ALL_VALUE ? undefined : selectedMonth;
-  const { data, isLoading } = usePartnerDashboard({ month: apiMonth });
+  const { data: summary, isLoading: isSummaryLoading } = useDashboardSummary(apiMonth);
+  const { data: topPaid, isLoading: isTopLoading } = useTopPaidEmployees(
+    apiMonth ? { month: apiMonth } : undefined,
+  );
 
   const periodLabel = useMemo(() => {
     if (selectedMonth === ALL_VALUE) return 'Tất cả';
@@ -130,20 +128,8 @@ const PartnerDashboardMobile = () => {
     return `T${m}/${y}`;
   }, [selectedMonth]);
 
-  const topEmployees = useMemo(() => data?.top_paid_employees ?? [], [data?.top_paid_employees]);
+  const topEmployees = useMemo(() => topPaid?.employees ?? [], [topPaid?.employees]);
   const maxPaid = topEmployees[0]?.total_paid_vnd ?? 0;
-
-  const momEmployeesSublabel = useMemo(() => {
-    if (!data?.mom_paid_employees || selectedMonth === ALL_VALUE) return periodLabel;
-    const pct = data.mom_paid_employees.change_pct;
-    return `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% so tháng trước`;
-  }, [data?.mom_paid_employees, periodLabel, selectedMonth]);
-
-  const momAmountSublabel = useMemo(() => {
-    if (!data?.mom_paid_amount || selectedMonth === ALL_VALUE) return periodLabel;
-    const pct = data.mom_paid_amount.change_pct;
-    return `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% so tháng trước`;
-  }, [data?.mom_paid_amount, periodLabel, selectedMonth]);
 
   const quickActions = useMemo<MobileOperationAction[]>(() => [
     {
@@ -162,69 +148,49 @@ const PartnerDashboardMobile = () => {
       onClick: () => navigate('/partner/timesheet'),
     },
     {
-      label: 'Lịch sử',
-      icon: History,
-      onClick: () => navigate('/partner/timesheet/payment-history'),
+      label: 'Thanh toán',
+      icon: Wallet,
+      onClick: () => navigate('/partner/billing'),
     },
   ], [navigate]);
 
   const operationMetrics = useMemo<MobileOperationMetric[]>(() => [
     {
-      label: 'Tổng chi trả',
-      value: formatVND(data?.total_paid_vnd ?? 0),
-      helper: momAmountSublabel,
+      label: 'Đã trả kỳ này',
+      value: formatVND(summary?.paid_salary_this_month ?? 0),
+      helper: periodLabel,
       icon: Banknote,
       tone: 'primary',
-      onClick: (data?.total_paid_vnd ?? 0) > 0 ? () => openSheet('paid') : undefined,
+    },
+    {
+      label: 'Chờ trả',
+      value: formatVND(summary?.pending_salary_this_month ?? 0),
+      helper: 'Đã duyệt, chờ chuyển khoản',
+      icon: Hourglass,
+      tone: 'warning',
     },
     {
       label: 'Đang làm việc',
-      value: (data?.active_employees ?? 0).toLocaleString('vi-VN'),
-      helper: 'Có bảng công 14 ngày qua',
+      value: (summary?.total_working_employees ?? 0).toLocaleString('vi-VN'),
+      helper: `Tổng ${(summary?.total_employees ?? 0).toLocaleString('vi-VN')} NV`,
       icon: UserCheck,
       tone: 'success',
-      onClick: () => openSheet('active'),
     },
     {
-      label: 'Có thể nghỉ',
-      value: (data?.dropped_employees ?? 0).toLocaleString('vi-VN'),
-      helper: 'Không bảng công 14 ngày qua',
-      icon: UserX,
-      tone: (data?.dropped_employees ?? 0) > 0 ? 'warning' : 'neutral',
-      onClick: (data?.dropped_employees ?? 0) > 0 ? () => openSheet('dropped') : undefined,
-    },
-    {
-      label: 'Đã thanh toán',
-      value: (data?.paid_employees ?? 0).toLocaleString('vi-VN'),
-      helper: momEmployeesSublabel,
+      label: 'NV mới',
+      value: (summary?.employees_hired_this_month ?? 0).toLocaleString('vi-VN'),
+      helper: periodLabel,
       icon: Users,
       tone: 'neutral',
-      onClick: (data?.paid_employees ?? 0) > 0 ? () => openSheet('paid') : undefined,
     },
-  ], [data, momAmountSublabel, momEmployeesSublabel, openSheet]);
-
-  const taskRows = useMemo<MobileTaskRow[]>(() => {
-    const dropped = data?.dropped_employees ?? 0;
-    if (dropped <= 0) return [];
-
-    return [
-      {
-        title: 'Nhân viên cần kiểm tra',
-        description: 'Không có bảng công trong 14 ngày gần nhất',
-        value: dropped.toLocaleString('vi-VN'),
-        icon: UserX,
-        tone: 'warning',
-        onClick: () => openSheet('dropped'),
-      },
-    ];
-  }, [data?.dropped_employees, openSheet]);
+  ], [summary, periodLabel]);
 
   return (
     <MobilePageShell className="space-y-2">
       <MobilePageHeader kicker="Đối tác" title="Tổng quan" subtitle={periodLabel} />
       <TimesheetMonthSelector value={selectedMonth} onChange={handleMonthChange} />
 
-      {isLoading ? (
+      {isSummaryLoading ? (
         <MobileSurface className="p-4">
           <div className="space-y-3">
             <Skeleton className="h-7 w-36" />
@@ -240,23 +206,20 @@ const PartnerDashboardMobile = () => {
         <MobileOperationsPanel
           eyebrow={periodLabel}
           title="Theo dõi chi trả"
-          primaryLabel="Tổng chi trả"
-          primaryValue={formatVND(data?.total_paid_vnd ?? 0)}
-          primaryHint={momAmountSublabel}
+          primaryLabel="Đã trả kỳ này"
+          primaryValue={formatVND(summary?.paid_salary_this_month ?? 0)}
+          primaryHint={`Chờ trả ${formatVND(summary?.pending_salary_this_month ?? 0)}`}
           metrics={operationMetrics}
           actions={quickActions}
           className="rounded-lg bg-card"
         />
       )}
 
-      <MobileTaskList
-        title="Việc cần theo dõi"
-        items={taskRows}
-        className="rounded-lg bg-card"
-      />
-
       {/* Mobile warnings render nothing when clean (no dead card). */}
       <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
+
+      <KyFeeSummaryTable variant="mobile" />
+      <PaidSeriesSection />
 
       <MobileSurface className="p-4">
         <div className="mb-3 flex items-baseline gap-2">
@@ -265,7 +228,7 @@ const PartnerDashboardMobile = () => {
         </div>
 
         <div className="divide-y divide-border/60">
-          {isLoading ? (
+          {isTopLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 py-3">
                 <Skeleton className="w-7 h-7 rounded-full" />
@@ -290,8 +253,6 @@ const PartnerDashboardMobile = () => {
           )}
         </div>
       </MobileSurface>
-
-      <PartnerEmployeeListSheet type={sheetType} month={apiMonth} onClose={closeSheet} />
     </MobilePageShell>
   );
 };

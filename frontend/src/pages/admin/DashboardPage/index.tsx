@@ -1,27 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth } from 'date-fns';
-// UU PRO restyle (W13a): lucide → verified @untitledui/icons. The shared
-// admin-dashboard icon slots are widened to ComponentType<SVGProps> (W13a
-// follow-up), so UU's plain-FC icons fit everywhere on this page.
-import {
-  AlertTriangle,
-  SwitchHorizontal01,
-} from '@untitledui/icons';
+import { AlertTriangle } from '@untitledui/icons';
 
 import { DashboardLoadingSkeleton } from '@/components/ui/loading-states';
 import { DashboardHeader } from '@/components/admin-dashboard/DashboardHeader';
 import { RecentEmployeesCard } from '@/components/admin-dashboard/RecentEmployeesCard';
-import { ActivityUsersSheet } from '@/components/admin-dashboard/ActivityUsersSheet';
-import { ProjectProfitabilityCard } from '@/components/admin-dashboard/ProjectProfitabilityCard';
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
-import { SalaryDistributionChart } from '@/components/admin-dashboard/SalaryDistributionChart';
-import { MonthlyFinancialTable } from '@/components/admin-dashboard/MonthlyFinancialTable';
+import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { TopPaidEmployeesCard } from '@/components/admin-dashboard/TopPaidEmployeesCard';
-import { BankTransferBreakdownCard } from '@/components/admin-dashboard/BankTransferBreakdownCard';
-import { CheckInHealthStrip } from '@/components/admin-dashboard/CheckInHealthStrip';
 import {
-  DashboardActivityPanel,
   DashboardMetricStrip,
   DashboardPriorityList,
   type DashboardMetricItem,
@@ -33,16 +20,12 @@ import { useDashboardData } from '@/hooks/admin-dashboard/useDashboardData';
 import { useDashboardActions } from '@/hooks/admin-dashboard/useDashboardActions';
 import { useDashboardStats } from '@/hooks/admin-dashboard/useDashboardStats';
 import { useTimesheets } from '@/hooks/api/useTimesheets';
-import { useEmployeeActivityStats } from '@/hooks/api/useDashboard';
 import { useDashboardNavigation } from '@/hooks/useDashboardNavigation';
-import { CheckInRosterReminderBanner } from '@/components/admin-dashboard/CheckInRosterReminderBanner';
 import { formatFullCurrency as formatVND } from '@/utils/formatters';
 
 const AdminDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM'));
-  const [activitySchedule, setActivitySchedule] = useState<'weekly' | 'monthly' | 'flexible' | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-
 
   const handleMonthChange = useCallback((value: string) => {
     setSelectedMonth(value);
@@ -65,14 +48,6 @@ const AdminDashboard = () => {
     isFetching: isPendingFetching,
     refetch: refetchPending,
   } = useTimesheets({ status: 'pending_approval', page: 1, pageSize: 20 });
-  const {
-    data: activityData,
-    isLoading: isActivityLoading,
-    isError: hasActivityError,
-    isFetching: isActivityFetching,
-    refetch: refetchActivity,
-  } = useEmployeeActivityStats(monthParam);
-  const navigate = useNavigate();
   const dashboardNav = useDashboardNavigation();
   const pendingApprovals = pendingData?.pagination?.totalRecords ?? null;
 
@@ -82,48 +57,20 @@ const AdminDashboard = () => {
       await Promise.all([
         refetch(),
         refetchPending(),
-        refetchActivity(),
         Promise.resolve(actions.handleRefresh?.()),
       ]);
     } finally {
       setIsManualRefreshing(false);
     }
-  }, [actions, refetch, refetchActivity, refetchPending]);
+  }, [actions, refetch, refetchPending]);
 
-  const isDashboardRefreshing =
-    isManualRefreshing || isRefreshing || isPendingFetching || isActivityFetching;
+  const isDashboardRefreshing = isManualRefreshing || isRefreshing || isPendingFetching;
 
-  const { activityStats } = useDashboardStats({
+  const { employeeStats } = useDashboardStats({
     dashboardSummary: data.dashboardSummary,
     totalPendingApprovals: pendingApprovals ?? 0,
     dashboardNav,
-    activityStats: activityData ?? null,
-    onActivityClick: setActivitySchedule,
   });
-
-  const activityItems = useMemo(
-    () =>
-      activityStats
-        .map((item) => ({
-          label: typeof item.label === 'string' ? item.label : 'Hoạt động',
-          value: item.value,
-          onClick: item.onClick,
-        }))
-        // Non-zero row law: a zero channel is noise, not a signal.
-        .filter((item) => Number(item.value) > 0),
-    [activityStats],
-  );
-
-  const activityProjectItems = useMemo(
-    () =>
-      (activityData?.active_by_project ?? [])
-        .map((project) => ({
-          label: project.project_name,
-          value: project.count,
-        }))
-        .filter((project) => Number(project.value) > 0),
-    [activityData],
-  );
 
   const metricItems = useMemo<DashboardMetricItem[]>(() => {
     if (!data.dashboardSummary) {
@@ -140,21 +87,13 @@ const AdminDashboard = () => {
         fullValue: formatVND(data.dashboardSummary.paid_salary_this_month),
         context: `Tổng đã trả ${formatVND(data.dashboardSummary.total_paid_salary)}`,
         tone: 'primary',
-        onClick: dashboardNav.navigateToSalaryLedger,
       },
       {
-        label: 'Lợi nhuận kỳ này',
-        value: formatVND(data.dashboardSummary.total_profit_this_month),
-        fullValue: formatVND(data.dashboardSummary.total_profit_this_month),
-        context: `Lũy kế ${formatVND(data.dashboardSummary.total_profit)}`,
-        tone: 'success',
-      },
-      {
-        label: 'Doanh thu kỳ này',
-        value: formatVND(data.dashboardSummary.total_revenue),
-        fullValue: formatVND(data.dashboardSummary.total_revenue),
-        context: 'Doanh thu ghi nhận trong kỳ',
-        tone: 'neutral',
+        label: 'Chờ giải ngân',
+        value: formatVND(data.dashboardSummary.pending_salary_this_month),
+        fullValue: formatVND(data.dashboardSummary.pending_salary_this_month),
+        context: `Lương đã duyệt chờ thanh toán ${monthLabel}`,
+        tone: 'warning',
       },
       {
         label: 'Nhân sự đang làm',
@@ -173,7 +112,8 @@ const AdminDashboard = () => {
         label: 'Nhân sự mới',
         value: data.dashboardSummary.employees_hired_this_month.toLocaleString('vi-VN'),
         context: `Tuyển trong ${monthLabel}`,
-        tone: 'warning',
+        tone: 'neutral',
+        onClick: dashboardNav.navigateToNewEmployees,
       },
     ];
   }, [dashboardNav, data.dashboardSummary, monthLabel]);
@@ -208,24 +148,11 @@ const AdminDashboard = () => {
       });
     }
 
-    if (data.dashboardSummary.pending_salary_this_month > 0) {
-      items.push({
-        title: 'Lương chờ giải ngân',
-        detail: `Sau khi chốt công kỳ ${monthLabel}.`,
-        value: formatVND(data.dashboardSummary.pending_salary_this_month),
-        statusLabel: 'Cần theo dõi',
-        icon: SwitchHorizontal01,
-        tone: 'primary',
-        onClick: dashboardNav.navigateToSalaryLedger,
-      });
-    }
-
     return items;
   }, [
     dashboardNav,
     data.dashboardSummary,
     hasPendingError,
-    monthLabel,
     pendingApprovals,
   ]);
 
@@ -244,8 +171,6 @@ const AdminDashboard = () => {
           <DashboardHeader value={selectedMonth} onChange={handleMonthChange} />
         </div>
 
-        <CheckInRosterReminderBanner />
-
         <DashboardMetricStrip items={metricItems} />
 
         <section className="flex flex-col gap-2">
@@ -254,59 +179,29 @@ const AdminDashboard = () => {
             title="Vận hành"
             meta={`Kỳ ${monthLabel}`}
           />
-          <MasonryGrid>
-            <DashboardPriorityList
-              items={priorityItems}
-              isRefreshing={isDashboardRefreshing}
-              onRefresh={handleRefresh}
-              className="lg:col-span-8"
-            />
-            <DashboardActivityPanel
-              monthLabel={monthLabel}
-              totalActive={activityData?.active_total}
-              projectItems={activityProjectItems}
-              items={activityItems}
-              isLoading={isActivityLoading && !activityData}
-              hasError={hasActivityError}
-              className="lg:col-span-4"
-            />
-          </MasonryGrid>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <ConsoleSectionHeading
-            kicker="Tiền và hiệu quả"
-            title="Tài chính"
-            meta="12 tháng gần nhất"
+          <DashboardPriorityList
+            items={priorityItems}
+            isRefreshing={isDashboardRefreshing}
+            onRefresh={handleRefresh}
+            className="lg:col-span-12"
           />
-          <MasonryGrid>
-            <MonthlyFinancialTable className="lg:col-span-8" />
-            <BankTransferBreakdownCard className="lg:col-span-4" />
-          </MasonryGrid>
         </section>
 
         <section className="flex flex-col gap-2">
           <ConsoleSectionHeading
             kicker="PAYSUB"
-            title="Đã thanh toán"
-            meta="Nhân viên và số tiền đã trả · 12 tháng"
+            title="Phí"
+            meta="NV theo kỳ trả · 12 tháng"
           />
-          <PaidSeriesSection />
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <ConsoleSectionHeading
-            kicker="Dự án"
-            title="Hiệu quả"
-            meta="Lợi nhuận theo tuần · 12 tháng"
-          />
-          <ProjectProfitabilityCard />
+          <div className="flex flex-col gap-3">
+            <KyFeeSummaryTable />
+            <PaidSeriesSection />
+          </div>
         </section>
 
         <section className="flex flex-col gap-2">
           <ConsoleSectionHeading kicker="Con người" title="Nhân sự" meta={monthLabel} />
           <MasonryGrid>
-            <SalaryDistributionChart className="lg:col-span-8" />
             <TopPaidEmployeesCard month={monthParam} className="lg:col-span-4" />
             <RecentEmployeesCard
               employees={employees.employees}
@@ -316,26 +211,11 @@ const AdminDashboard = () => {
               weeks={employees.weeks}
               onEmployeeClick={(employee) => actions.handleEmployeeClick?.(employee)}
               onLoadMore={employees.loadMore}
-              className="lg:col-span-12"
+              className="lg:col-span-8"
             />
           </MasonryGrid>
         </section>
-
-        <section className="flex flex-col gap-2">
-          <ConsoleSectionHeading
-            kicker="Sức khỏe"
-            title="Chấm công và hạn mức"
-            meta={monthLabel}
-          />
-          <CheckInHealthStrip month={monthParam} />
-        </section>
       </div>
-
-      <ActivityUsersSheet
-        schedule={activitySchedule}
-        month={monthParam}
-        onClose={() => setActivitySchedule(null)}
-      />
     </div>
   );
 };

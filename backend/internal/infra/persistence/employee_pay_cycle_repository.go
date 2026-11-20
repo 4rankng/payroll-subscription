@@ -66,7 +66,7 @@ func (r *EmployeePayCycleRepository) ListByWorkMonth(ctx context.Context, workMo
 // per-employee billing atom, so a plain COUNT per Kỳ is the distinct count.
 func (r *EmployeePayCycleRepository) CountDistinctEmployeesByCycle(ctx context.Context, workMonth string) (map[int]int64, error) {
 	var rows []struct {
-		Cycle int   `gorm:"column:ky"`
+		Cycle int   `gorm:"column:cycle"`
 		Count int64 `gorm:"column:c"`
 	}
 	err := r.dbForContext(ctx).
@@ -83,4 +83,23 @@ func (r *EmployeePayCycleRepository) CountDistinctEmployeesByCycle(ctx context.C
 		out[row.Cycle] = row.Count
 	}
 	return out, nil
+}
+
+// CountDistinctEmployeesByCycles returns one row per (work month, Kỳ) with its
+// distinct-employee count for the inclusive [fromMonth, toMonth] window. The
+// unique key (employee_id, cycle, work_month) makes COUNT(*) the distinct
+// employee count of each bucket.
+func (r *EmployeePayCycleRepository) CountDistinctEmployeesByCycles(ctx context.Context, fromMonth, toMonth string) ([]domain.CycleMonthCount, error) {
+	var rows []domain.CycleMonthCount
+	err := r.dbForContext(ctx).
+		Model(&domain.EmployeePayCycle{}).
+		Select("work_month, cycle, COUNT(*) AS count").
+		Where("work_month >= ? AND work_month <= ?", fromMonth, toMonth).
+		Group("work_month, cycle").
+		Order("work_month ASC, cycle ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("employee_pay_cycles: count distinct by cycles: %w", err)
+	}
+	return rows, nil
 }

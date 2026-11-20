@@ -11,6 +11,7 @@ const ENDPOINTS = {
   uploads: '/billing/uploads',
   kyPaidRecords: '/billing/ky-paid-records',
   paidSeries: '/billing/dashboard/paid-series',
+  kySummary: '/billing/dashboard/ky-summary',
   reports: '/billing/reports',
   generateReport: '/billing/reports/generate',
 } as const;
@@ -70,6 +71,18 @@ export interface PaidSeriesRow {
   amount: number;
 }
 
+/** One work month of the FR-6 per-month table: distinct employees per Kỳ. */
+export interface KyMonthSummary {
+  work_month: string;
+  counts: Record<string, number>;
+}
+
+/** FR-6 per-month table payload: last N months + current subscription fee. */
+export interface DashboardKySummary {
+  months: KyMonthSummary[];
+  fee_per_employee_per_ky_vnd: number;
+}
+
 export interface UploadOutcome {
   result: TransferUploadResult;
 }
@@ -112,8 +125,14 @@ class BillingService {
   async getPaidSeries(params: { from: string; to: string; projectId?: number }): Promise<PaidSeriesRow[]> {
     const qs = new URLSearchParams({ from: params.from, to: params.to });
     if (params.projectId !== undefined) qs.set('project_id', String(params.projectId));
-    const response = await apiClient.get<PaidSeriesRow[]>(`${ENDPOINTS.paidSeries}?${qs}`);
-    return response.data ?? [];
+    const response = await apiClient.get<{ items: PaidSeriesRow[] }>(`${ENDPOINTS.paidSeries}?${qs}`);
+    return response.data?.items ?? [];
+  }
+
+  /** FR-6 Tổng quan: distinct employees per Kỳ for the last N months + fee (BR-1). */
+  async getKySummary(months = 12): Promise<DashboardKySummary> {
+    const response = await apiClient.get<DashboardKySummary>(`${ENDPOINTS.kySummary}?months=${months}`);
+    return response.data ?? { months: [], fee_per_employee_per_ky_vnd: 0 };
   }
 
   /** Generate (or regenerate) the monthly billing report. Giamdoc/admin. */

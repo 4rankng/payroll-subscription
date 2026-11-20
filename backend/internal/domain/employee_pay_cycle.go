@@ -12,16 +12,15 @@ import (
 // projects are internal detail, never a second billing row. One row per
 // (employee, Kỳ, work month), hard delete only (D16).
 type EmployeePayCycle struct {
-	ID             uint64    `gorm:"column:id;primaryKey;autoIncrement"`
-	Cycle          int       `gorm:"column:cycle;type:tinyint unsigned;not null"`
-	WorkMonth      string    `gorm:"column:work_month;type:char(7);not null"`
-	EmployeeID     uint      `gorm:"column:employee_id;type:bigint unsigned;not null"`
-	CCCD           string    `gorm:"column:cccd;type:varchar(255);not null"`
-	ProjectID      uint      `gorm:"column:project_id;type:bigint unsigned;not null"`
-	TimesheetID    uint      `gorm:"column:timesheet_id;type:bigint unsigned;not null"`
-	SourceUploadID uint64    `gorm:"column:source_upload_id;type:bigint unsigned;not null"`
-	PaidAmount     int64     `gorm:"column:paid_amount;not null;default:0"`
-	CreatedAt      time.Time `gorm:"column:created_at"`
+	ID             uint64    `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	Cycle          int       `json:"cycle" gorm:"column:cycle;type:tinyint unsigned;not null"`
+	WorkMonth      string    `json:"work_month" gorm:"column:work_month;type:char(7);not null"`
+	EmployeeID     uint      `json:"employee_id" gorm:"column:employee_id;type:bigint unsigned;not null"`
+	ProjectID      uint      `json:"project_id" gorm:"column:project_id;type:bigint unsigned;not null"`
+	TimesheetID    uint      `json:"timesheet_id" gorm:"column:timesheet_id;type:bigint unsigned;not null"`
+	SourceUploadID uint64    `json:"source_upload_id" gorm:"column:source_upload_id;type:bigint unsigned;not null"`
+	PaidAmount     int64     `json:"paid_amount" gorm:"column:paid_amount;not null;default:0"`
+	CreatedAt      time.Time `json:"created_at" gorm:"column:created_at"`
 }
 
 // TableName pins the consolidated-schema table name.
@@ -39,4 +38,17 @@ type EmployeePayCycleRepository interface {
 	// CountDistinctEmployeesByCycle returns distinct-employee counts per Kỳ for
 	// one work month — the billing-report summary input (FR-3).
 	CountDistinctEmployeesByCycle(ctx context.Context, workMonth string) (map[int]int64, error)
+	// CountDistinctEmployeesByCycles returns one row per (work month, Kỳ) with
+	// its distinct-employee count, for every work month in the inclusive
+	// [fromMonth, toMonth] window (YYYY-MM) — the FR-6 Tổng quan per-month
+	// table input. Months with no paid records simply have no rows.
+	CountDistinctEmployeesByCycles(ctx context.Context, fromMonth, toMonth string) ([]CycleMonthCount, error)
+}
+
+// CycleMonthCount is the distinct-employee count of one (work month, Kỳ)
+// bucket of the FR-6 monthly table.
+type CycleMonthCount struct {
+	WorkMonth string
+	Cycle     int
+	Count     int64
 }

@@ -10,6 +10,37 @@ import (
 	"time"
 )
 
+// nonexistentID is a stable id far beyond any real row, for not-found
+// negative tests across flows.
+const nonexistentID = 999_999_999
+
+// uniqueMobile returns a mobile number unique to this run so identity
+// resolution never collides with leftover fixtures.
+func uniqueMobile() string {
+	return fmt.Sprintf("09%08d", time.Now().UnixNano()%100_000_000)
+}
+
+// rawRows decodes a list endpoint's data payload as raw JSON objects, for
+// wire-format assertions that must not depend on typed models.
+func rawRows(c *APIClient, path string) ([]map[string]any, *Pagination, error) {
+	resp, statusCode, err := c.Get(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	if resp.Status == "error" || statusCode >= 400 {
+		return nil, resp.Pagination, fmt.Errorf("API error (HTTP %d): %s", statusCode, resp.Message)
+	}
+	if len(resp.Data) == 0 {
+		return nil, resp.Pagination, nil
+	}
+
+	var rows []map[string]any
+	if err := json.Unmarshal(resp.Data, &rows); err != nil {
+		return nil, resp.Pagination, fmt.Errorf("decode rows: %w", err)
+	}
+	return rows, resp.Pagination, nil
+}
+
 func main() {
 	// Serialize runs before touching any shared state: a second instance
 	// blocks here until the first one exits, so two lanes can never pollute
@@ -52,13 +83,7 @@ func main() {
 	// Phase 1.5: Clock manipulation (admin-only, tests time control endpoints)
 	runClockManipulationTests(client, reporter)
 
-	// Phase 2: Run Flow 1 - Bulk Transfer (9Pay auto)
-	runBulkTransferTests(client, testData, reporter)
-
-	// Phase 2.5: Wallet Bulk Transfer Pipeline (OnePay) — Stage 2 upload/process.
-	runWalletBulkTransferTests(client, testData, reporter)
-
-	// Phase 3: Run Flow 4 - Partner creates timesheets → Admin approves
+	// Phase 3: Partner creates timesheets → Admin approves
 	runPartnerTimesheetTests(client, testData, reporter)
 
 	// Phase 3.5: Partner BCC Excel import
@@ -66,30 +91,6 @@ func main() {
 
 	// Phase 3.6: Weekly BCC (BCC-<shiftType> sheet format)
 	runWeeklyBCCImportTests(client, testData, reporter)
-
-	// Phase 3.7: Weekly Payment (Thai Binh Duong format - numeric sheets)
-	runWeeklyPaymentImportTests(client, testData, reporter)
-
-	// Phase 3.8: Weekly Payment POURIN template (full-month variant)
-	runPourinTemplateImportTests(client, testData, reporter)
-
-	// Phase 4: Run Flow 5 - Manual bulk transfer export & import
-	runManualBulkTransferTests(client, testData, reporter)
-
-	// Settlement simulation — read-only, safe to run anytime after bulk transfer.
-	runSettlementSimulationTests(client, testData, reporter, cfg)
-
-	// Phase 5: Run Flow 3 - FlexPay Import (must run before advance payment)
-	runFlexPayImportTests(client, testData, reporter, cfg)
-
-	// Phase 6: Run Flow 2 - Advance Payment (needs FlexPay data)
-	runAdvancePaymentTests(client, testData, reporter)
-
-	// Phase 6.5: Advance Payment - Removal Visibility
-	runAdvanceRemovalVisibilityTests(client, testData, reporter)
-
-	// Phase 6.7: Advance request kill switch (tạm ngừng ứng lương)
-	runAdvanceRequestKillSwitchTests(client, testData, reporter)
 
 	// Phase 7: Auth & User Management
 	runAuthUserTests(client, testData, reporter, cfg)
@@ -105,15 +106,7 @@ func main() {
 	// untested PUT /employees/:id/change-password endpoint)
 	runEmployeePasswordAdminTests(client, testData, reporter, cfg)
 
-	// Phase 7.6: Integration API (chatbot API-key channel)
-	runIntegrationResetTests(client, testData, reporter, cfg)
-	runVendorTimesheetTests(client, testData, reporter, cfg)
-
-	// Phase 7.65: Integration self check-in (chatbot enable/disable channel)
-	runIntegrationSelfCheckinTests(client, testData, reporter, cfg)
-
 	// Phase 8: CRUD flows
-	runBankCRUDTests(client, testData, reporter, cfg)
 	runEmployeeCRUDTests(client, testData, reporter, cfg)
 	runProjectCRUDTests(client, testData, reporter, cfg)
 	runProjectUserAccessTests(client, testData, reporter, cfg)
@@ -123,38 +116,22 @@ func main() {
 	runPayratePartnerVisibilityTests(client, testData, reporter, cfg)
 	runSettingsTests(client, testData, reporter, cfg)
 	runAssetTests(client, testData, reporter, cfg)
-	runLoanTests(client, testData, reporter, cfg)
-	runLedgerTests(client, testData, reporter, cfg)
-	runTransactionTests(client, testData, reporter, cfg)
+
+	// Phase 9.5: PAYSUB billing — upload verification read model + FR-6 surfaces
+	runBillingTests(client, testData, reporter)
 
 	// Phase 10: Read-only flows
 	runNotificationTests(client, testData, reporter, cfg)
 	runDashboardTests(client, testData, reporter, cfg)
 	runAuditTests(client, testData, reporter, cfg)
-	runCronTests(client, testData, reporter, cfg)
 	runMetricsTests(client, testData, reporter, cfg)
-	runWalletTests(client, testData, reporter, cfg)
-	runDisbursementTests(client, testData, reporter, cfg)
 
 	// Phase 11: Infrastructure invariants (schema, asynq migration guard)
 	runInfraTests(reporter)
 
-	// Phase 12: Sao kê (statement email & settlement)
-	runSaoKeTests(client, testData, reporter, cfg)
-
-	// Phase 11: Extended flows
+	// Phase 12: Extended flows
 	runEmployeeSelfServiceTests(client, testData, reporter, cfg)
 	runTimesheetExtendedTests(client, testData, reporter, cfg)
-	runAdBannerTests(client, testData, reporter, cfg)
-
-	// Approvals flow (MiMo assistant wave 1)
-	runApprovalsTests(client, testData, reporter, cfg)
-
-	// payroll-ops-mcp flow (pk_ops_* admin-equivalent machine keys)
-	runOpsMCPTests(client, testData, reporter, cfg)
-
-	// MCP API key flow (mcp_* chat-integration keys: admin scope toggle)
-	runMCPAPIKeyTests(client, testData, reporter, cfg)
 
 	// Summary
 	reporter.PrintSummary()
@@ -184,148 +161,70 @@ func discoverTestData(client *APIClient, cfg *TestConfig) (*TestData, error) {
 	}
 	fmt.Printf("  Found %d employees\n", len(data.Employees))
 
-	// Fetch banks
-	if data.Banks, err = loadAllPages[BankResponse](client, "/api/v1/banks"); err != nil {
-		return nil, fmt.Errorf("fetch banks: %w", err)
-	}
-	fmt.Printf("  Found %d banks\n", len(data.Banks))
-
-	// Identify weekly/monthly projects and employees
-	for i := range data.Projects {
-		p := &data.Projects[i]
-		if p.WeeklySalaryEmployeeCount > 0 && data.WeeklyProject == nil {
-			data.WeeklyProject = p
-		}
-		if p.MonthlySalaryEmployeeCount > 0 && data.MonthlyProject == nil {
-			data.MonthlyProject = p
-		}
-	}
-
-	// Discover payrate hour/day types for the weekly project
-	if data.WeeklyProject != nil {
-		discoverPayrateTypes(client, data)
-	}
-
-	// If no monthly project exists, assign a weekly employee to a project with monthly schedule
-	if data.MonthlyProject == nil && data.WeeklyProject != nil {
-		if err := setupMonthlyData(client, data); err != nil {
-			fmt.Printf("  Warning: could not set up monthly test data: %v\n", err)
-		}
-	}
-
-	// Find employees for weekly/monthly projects
-	// Match employee to the specific project they need to be assigned to
-	for i := range data.Employees {
-		emp := &data.Employees[i]
-		if emp.BankAccountNumber == "" {
-			continue
-		}
-		for _, proj := range emp.CurrentProjects {
-			if data.WeeklyProject != nil && proj.ProjectID == data.WeeklyProject.ID &&
-				proj.PaymentSchedule == "weekly" && data.WeeklyEmployee == nil {
-				data.WeeklyEmployee = emp
-				projCopy := proj
-				data.WeeklyAssignment = &projCopy
-			}
-			if data.MonthlyProject != nil && proj.ProjectID == data.MonthlyProject.ID &&
-				proj.PaymentSchedule == "monthly" && data.MonthlyEmployee == nil {
-				data.MonthlyEmployee = emp
-			}
-		}
-	}
-
-	// Fallback: if no employee matched the project specifically, pick any with the right schedule
-	if data.WeeklyEmployee == nil {
-		for i := range data.Employees {
-			emp := &data.Employees[i]
-			if emp.BankAccountNumber == "" {
-				continue
-			}
-			for _, proj := range emp.CurrentProjects {
-				if proj.PaymentSchedule == "weekly" {
-					data.WeeklyEmployee = emp
-					projCopy := proj
-					data.WeeklyAssignment = &projCopy
-					break
-				}
-			}
-			if data.WeeklyEmployee != nil {
-				break
-			}
-		}
-	}
-	if data.MonthlyEmployee == nil {
-		for i := range data.Employees {
-			emp := &data.Employees[i]
-			if emp.BankAccountNumber == "" {
-				continue
-			}
-			for _, proj := range emp.CurrentProjects {
-				if proj.PaymentSchedule == "monthly" {
-					data.MonthlyEmployee = emp
-					break
-				}
-			}
-			if data.MonthlyEmployee != nil {
-				break
-			}
-		}
-	}
-
-	// Find employee user for advance payment testing
+	// Find an employee user account for self-service flows (nhanvien token).
 	if err := findEmployeeForAdvance(client, data, cfg); err != nil {
-		fmt.Printf("  Warning: could not find employee for advance payment: %v\n", err)
+		fmt.Printf("  Warning: could not find employee user account: %v\n", err)
 	}
 
 	// Find partner users
 	findPartners(client, data, cfg)
 
-	return data, nil
-}
-
-func findEmployeeForAdvance(client *APIClient, data *TestData, cfg *TestConfig) error {
-	// First, check admin endpoint for employees with available advance amounts
-	var advanceEmployees []EmployeeAdvanceItem
-	if _, err := client.GetInto("/api/v1/advance-payments/employees", &advanceEmployees); err == nil {
-		for _, ae := range advanceEmployees {
-			if ae.AvailableAmount == 0 || ae.MaxAdvanceAmount == 0 {
-				continue
-			}
-			// The cutoff scenarios exercise imported monthly quotas. Self check-in
-			// assignments deliberately use a different eligibility policy.
-			if ae.Project != nil && ae.Project.CheckInEnabled {
-				continue
-			}
-			// Try to login as this employee
-			empClient := NewAPIClient(client.BaseURL)
-			loginResp, err := empClient.Login(ae.Username, cfg.CommonPassword)
-			if err != nil {
-				continue
-			}
-
-			// Get employee detail
-			var detail EmployeeDetailedResponse
-			if _, err := client.GetInto(fmt.Sprintf("/api/v1/employees/%d", ae.EmployeeID), &detail); err != nil {
-				continue
-			}
-			if !hasImportedAdvanceAssignment(detail.CurrentProjects) {
-				continue
-			}
-
-			data.EmployeeForAdvance = &detail
-			data.EmployeeTokenForAdv = loginResp.AccessToken
-			fmt.Printf("  Found advance payment employee: %s (username: %s, available: %d)\n",
-				ae.Fullname, ae.Username, ae.AvailableAmount)
-			return nil
+	// Fresh-database bootstrap: the consolidated schema ships no data, so the
+	// fixture set is created on the first run against an empty deployment.
+	if len(data.Projects) == 0 {
+		if err := bootstrapFixtures(client, data, cfg); err != nil {
+			fmt.Printf("  Warning: fixture bootstrap failed: %v\n", err)
+		}
+		if data.Projects, err = loadAllPages[ProjectResponse](client, "/api/v1/projects"); err != nil {
+			return nil, fmt.Errorf("re-fetch projects: %w", err)
+		}
+		if data.Employees, err = loadAllPages[EmployeeResponse](client, "/api/v1/employees"); err != nil {
+			return nil, fmt.Errorf("re-fetch employees: %w", err)
 		}
 	}
 
-	// Fallback: look for employees with flexible payment schedule who have user accounts
-	for _, emp := range data.Employees {
-		if !hasImportedAdvanceAssignment(emp.CurrentProjects) {
-			continue
-		}
+	pickWeeklyFixture(data)
 
+	// Discover payrate hour/day types for the fixture project (after bootstrap
+	// so a fresh database has its payrate too).
+	if data.WeeklyProject != nil {
+		discoverPayrateTypes(client, data)
+	}
+
+	return data, nil
+}
+
+// pickWeeklyFixture selects the fixture project and its assigned employee
+// after the project/employee lists are final.
+func pickWeeklyFixture(data *TestData) {
+	if len(data.Projects) > 0 {
+		data.WeeklyProject = &data.Projects[0]
+	}
+	for i := range data.Employees {
+		emp := &data.Employees[i]
+		if data.WeeklyProject != nil {
+			for _, proj := range emp.CurrentProjects {
+				if proj.ProjectID == data.WeeklyProject.ID && data.WeeklyEmployee == nil {
+					data.WeeklyEmployee = emp
+					projCopy := proj
+					data.WeeklyAssignment = &projCopy
+				}
+			}
+		}
+		if data.WeeklyEmployee != nil {
+			break
+		}
+	}
+	if data.WeeklyEmployee == nil && len(data.Employees) > 0 {
+		data.WeeklyEmployee = &data.Employees[0]
+	}
+}
+
+func findEmployeeForAdvance(client *APIClient, data *TestData, cfg *TestConfig) error {
+	// Name kept for the two consumers (self-service + removal-visibility flows)
+	// that predate the PAYSUB rebuild: find any employee with a user account
+	// so the flows can log in as nhanvien.
+	for _, emp := range data.Employees {
 		var detail EmployeeDetailedResponse
 		if _, err := client.GetInto(fmt.Sprintf("/api/v1/employees/%d", emp.ID), &detail); err != nil {
 			continue
@@ -342,7 +241,7 @@ func findEmployeeForAdvance(client *APIClient, data *TestData, cfg *TestConfig) 
 
 		data.EmployeeForAdvance = &detail
 		data.EmployeeTokenForAdv = loginResp.AccessToken
-		fmt.Printf("  Found advance payment employee: %s (username: %s) - note: may not have available amount\n",
+		fmt.Printf("  Found employee user account: %s (username: %s)\n",
 			emp.Fullname, *detail.Username)
 		return nil
 	}
@@ -366,69 +265,6 @@ func findPartners(client *APIClient, data *TestData, cfg *TestConfig) {
 		})
 		fmt.Printf("  Found partner: %s (%s)\n", loginResp.User.Fullname, username)
 	}
-}
-
-func setupMonthlyData(client *APIClient, data *TestData) error {
-	// Find a weekly employee with bank details not already in the weekly project
-	var candidate *EmployeeResponse
-	for i := range data.Employees {
-		emp := &data.Employees[i]
-		if emp.BankAccountNumber == "" {
-			continue
-		}
-		hasWeekly := false
-		inProject := false
-		for _, proj := range emp.CurrentProjects {
-			if proj.PaymentSchedule == "weekly" {
-				hasWeekly = true
-			}
-			if data.WeeklyProject != nil && proj.ProjectID == data.WeeklyProject.ID {
-				inProject = true
-			}
-		}
-		if hasWeekly && !inProject {
-			candidate = emp
-			break
-		}
-	}
-
-	if candidate == nil {
-		return fmt.Errorf("no suitable employee found for monthly assignment")
-	}
-
-	projectID := data.WeeklyProject.ID
-	fmt.Printf("  Setting up monthly data: assigning %s (ID %d) to project %d as monthly\n",
-		candidate.Fullname, candidate.ID, projectID)
-
-	req := []map[string]any{
-		{
-			"employee_id":      candidate.ID,
-			"position":         "phổ thông",
-			"payment_schedule": "monthly",
-		},
-	}
-	if _, _, err := client.Post(fmt.Sprintf("/api/v1/projects/%d/employees", projectID), req); err != nil {
-		return fmt.Errorf("assign monthly employee: %w", err)
-	}
-
-	// Re-fetch projects and employees to pick up the change
-	var err error
-	if data.Projects, err = loadAllPages[ProjectResponse](client, "/api/v1/projects"); err != nil {
-		return fmt.Errorf("re-fetch projects: %w", err)
-	}
-	if data.Employees, err = loadAllPages[EmployeeResponse](client, "/api/v1/employees"); err != nil {
-		return fmt.Errorf("re-fetch employees: %w", err)
-	}
-
-	// Re-identify monthly project
-	for i := range data.Projects {
-		p := &data.Projects[i]
-		if p.MonthlySalaryEmployeeCount > 0 && data.MonthlyProject == nil {
-			data.MonthlyProject = p
-		}
-	}
-
-	return nil
 }
 
 func today() string {

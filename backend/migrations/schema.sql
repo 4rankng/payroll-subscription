@@ -25,7 +25,7 @@ CREATE TABLE `users` (
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `password` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `fullname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `role` enum('admin','quanly','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien' (D19),
+  `role` enum('admin','quanly','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien',
   `last_login` datetime(3) DEFAULT NULL,
   `tokens_invalid_before` datetime(3) DEFAULT NULL COMMENT 'when set, any JWT issued before this instant is rejected on validate; used by RevokeUserTokens',
   `otp_failed_attempts` int NOT NULL DEFAULT '0' COMMENT 'consecutive failed OTP verifies; reset on success',
@@ -38,7 +38,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `idx_users_username` (`username`),
   KEY `idx_users_email_nonunique` (`email`),
   KEY `idx_users_email` (`email`),
-  KEY `idx_users_last_login` (`last_login`)
+  KEY `idx_users_last_login` (`last_login`),
 UNIQUE KEY `uq_users_cccd` (`cccd`),
 UNIQUE KEY `uq_users_mobile` (`mobile`),
 KEY `idx_users_role` (`role`)
@@ -66,7 +66,7 @@ CREATE TABLE `employees` (
   KEY `idx_employees_search_normalized` (`search_normalized`(255)),
   CONSTRAINT `fk_employees_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_employees_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_employees_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
 UNIQUE KEY `uq_employees_email` (`email`),
 UNIQUE KEY `uq_employees_cccd` (`cccd`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -115,7 +115,7 @@ CREATE TABLE `project_employees` (
   KEY `fk_project_employees_employee` (`employee_id`),
   CONSTRAINT `fk_project_employees_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_project_employees_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
-  CONSTRAINT `fk_project_employees_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
+  CONSTRAINT `fk_project_employees_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
 UNIQUE KEY `uq_project_employees_pair` (`project_id`,`employee_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -132,7 +132,7 @@ CREATE TABLE `project_users` (
   CONSTRAINT `fk_project_users_granted_by` FOREIGN KEY (`granted_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_project_users_granted_by_user` FOREIGN KEY (`granted_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_project_users_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
-  CONSTRAINT `fk_project_users_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `fk_project_users_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
 UNIQUE KEY `uq_project_users_project_user` (`project_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -150,7 +150,7 @@ CREATE TABLE `employee_users` (
   CONSTRAINT `fk_employee_users_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_employee_users_granted_by` FOREIGN KEY (`granted_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_employee_users_granted_by_user` FOREIGN KEY (`granted_by`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_employee_users_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_employee_users_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
 UNIQUE KEY `uq_employee_users_pair` (`employee_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -166,7 +166,7 @@ CREATE TABLE `payrates` (
   KEY `fk_payrates_project` (`project_id`),
   KEY `fk_payrates_created_user` (`created_by`),
   CONSTRAINT `fk_payrates_created_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_payrates_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)
+  CONSTRAINT `fk_payrates_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`),
 UNIQUE KEY `uq_payrates_project_from_date` (`project_id`,`from_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

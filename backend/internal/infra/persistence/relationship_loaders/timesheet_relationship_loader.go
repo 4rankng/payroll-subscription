@@ -248,7 +248,7 @@ func (l *TimesheetRelationshipLoader) assignRelationships(
 func (l *TimesheetRelationshipLoader) LoadProjectEmployees(ctx context.Context, projectID, employeeID uint) (*domain.ProjectEmployee, error) {
 	var pe domain.ProjectEmployee
 	err := l.db.WithContext(ctx).
-		Where("employee_id = ? AND project_id = ? AND deleted_at IS NULL", employeeID, projectID).
+		Where("employee_id = ? AND project_id = ?", employeeID, projectID).
 		Order("created_at DESC").
 		First(&pe).Error
 	return &pe, err
@@ -258,7 +258,7 @@ func (l *TimesheetRelationshipLoader) LoadProjectEmployees(ctx context.Context, 
 func (l *TimesheetRelationshipLoader) LoadLatestProjectEmployeeForDate(ctx context.Context, projectID, employeeID uint, date time.Time) (*domain.ProjectEmployee, error) {
 	var pe domain.ProjectEmployee
 	err := l.db.WithContext(ctx).
-		Where("employee_id = ? AND project_id = ? AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= ?)", employeeID, projectID, date).
+		Where("employee_id = ? AND project_id = ?", employeeID, projectID).
 		Order("created_at DESC").
 		First(&pe).Error
 	return &pe, err

@@ -33,12 +33,6 @@ export interface DashboardPriorityItem {
   onClick?: () => void;
 }
 
-export interface DashboardActivityItem {
-  label: string;
-  value: string | number;
-  onClick?: () => void;
-}
-
 interface DashboardMetricStripProps {
   items: DashboardMetricItem[];
 }
@@ -47,17 +41,6 @@ interface DashboardPriorityListProps {
   items: DashboardPriorityItem[];
   isRefreshing: boolean;
   onRefresh: () => void;
-  className?: string;
-}
-
-interface DashboardActivityPanelProps {
-  monthLabel: string;
-  totalActive?: number;
-  items: DashboardActivityItem[];
-  /** Per-project active logins for the same month; hidden when empty. */
-  projectItems?: DashboardActivityItem[];
-  isLoading?: boolean;
-  hasError?: boolean;
   className?: string;
 }
 
@@ -230,109 +213,6 @@ export function DashboardPriorityList({
             </div>
           );
         })}
-      </div>
-    </ConsolePanel>
-  );
-}
-
-export function DashboardActivityPanel({
-  monthLabel,
-  totalActive,
-  items,
-  projectItems = [],
-  isLoading = false,
-  hasError = false,
-  className,
-}: DashboardActivityPanelProps) {
-  const [projectsExpanded, setProjectsExpanded] = useState(false);
-
-  return (
-    <ConsolePanel
-      kicker={`Tín hiệu sử dụng · ${monthLabel}`}
-      title="Tài khoản hoạt động"
-      isFlush
-      className={className}
-      actions={
-        <div className="text-right">
-          <p className="console-value font-display text-xl font-semibold leading-6 text-foreground tabular-nums">
-            {isLoading || hasError || totalActive === undefined
-              ? '--'
-              : totalActive.toLocaleString('vi-VN')}
-          </p>
-          <p className="console-kicker">tổng hoạt động</p>
-        </div>
-      }
-    >
-      <div className="divide-y divide-border/60" aria-busy={isLoading} aria-live="polite">
-        {hasError ? (
-          <p className="px-3 py-4 text-[13px] text-destructive">
-            Không thể tải dữ liệu hoạt động. Vui lòng làm mới để thử lại.
-          </p>
-        ) : isLoading ? (
-          Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="flex min-h-11 items-center justify-between px-3 py-2 sm:min-h-9"
-            >
-              <span className="h-3 w-24 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-              <span className="h-4 w-8 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-            </div>
-          ))
-        ) : items.length === 0 ? (
-          <p className="px-3 py-4 text-[13px] text-muted-foreground">
-            Chưa có hoạt động trong kỳ.
-          </p>
-        ) : (
-          items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={item.onClick}
-              disabled={!item.onClick}
-              className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-transparent sm:min-h-9 motion-reduce:transition-none"
-            >
-              <span className="truncate text-[13px] text-foreground">{item.label}</span>
-              <span className="console-value font-display text-base font-semibold text-foreground tabular-nums">
-                {typeof item.value === 'number'
-                  ? item.value.toLocaleString('vi-VN')
-                  : item.value}
-              </span>
-            </button>
-          ))
-        )}
-        {projectItems.length > 0 && (
-          <div className="border-t border-border/60">
-            <button
-              type="button"
-              aria-expanded={projectsExpanded}
-              onClick={() => setProjectsExpanded((expanded) => !expanded)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:min-h-9"
-            >
-              <span className="console-kicker">Theo dự án</span>
-              <span className="flex items-center gap-1.5 text-[11px] tabular-nums text-muted-foreground">
-                {projectItems.length} dự án
-                <ChevronDown
-                  className={cn('h-4 w-4 transition-transform', projectsExpanded && 'rotate-180')}
-                  aria-hidden="true"
-                />
-              </span>
-            </button>
-            {projectsExpanded &&
-              projectItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex min-h-11 items-center justify-between gap-3 px-3 py-2 sm:min-h-9"
-                >
-                  <span className="truncate text-[13px] text-foreground">{item.label}</span>
-                  <span className="console-value font-display text-base font-semibold text-foreground tabular-nums">
-                    {typeof item.value === 'number'
-                      ? item.value.toLocaleString('vi-VN')
-                      : item.value}
-                  </span>
-                </div>
-              ))}
-          </div>
-        )}
       </div>
     </ConsolePanel>
   );

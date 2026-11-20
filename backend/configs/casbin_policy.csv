@@ -80,3 +80,6 @@ p, nhanvien, /api/v1/auth/change-password, POST, allow
 p, nhanvien, /api/v1/auth/logout, POST, allow
 p, nhanvien, /api/v1/settings, GET, allow
 p, nhanvien, /api/v1/settings/*, GET, allow
+p, admin, /metrics, GET, allow
+p, giamdoc, /api/v1/dashboard/*, GET, allow
+p, admin, /metrics, GET, allow

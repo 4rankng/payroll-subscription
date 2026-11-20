@@ -114,12 +114,12 @@ func (r *EmployeeRepository) GetDuplicateIdentities(ctx context.Context) ([]*dom
 		err := r.DB.WithContext(ctx).
 			Model(&domain.Employee{}).
 			Select(field+" AS value, id AS employee_id, user_id").
-			Where("deleted_at IS NULL").
+			Where("").
 			Where(field+" IS NOT NULL AND "+field+" <> ''").
 			Where(field+" IN (?)",
 				r.DB.Model(&domain.Employee{}).
 					Select(field).
-					Where("deleted_at IS NULL").
+					Where("").
 					Where(field+" IS NOT NULL AND "+field+" <> ''").
 					Group(field).
 					Having("COUNT(*) > 1"),
@@ -313,7 +313,7 @@ func (r *EmployeeRepository) countWithTwoQueries(ctx context.Context, filters do
 	var sharedEmployeeIDs []uint
 	err := r.DB.Model(&domain.EmployeeUser{}).
 		Select("employee_id").
-		Where("user_id = ? AND deleted_at IS NULL", userID).
+		Where("user_id = ?", userID).
 		Pluck("employee_id", &sharedEmployeeIDs).Error
 
 	if err != nil {
@@ -324,7 +324,7 @@ func (r *EmployeeRepository) countWithTwoQueries(ctx context.Context, filters do
 	var assignedEmployeeIDs []uint
 	err = r.DB.Model(&domain.ProjectEmployee{}).
 		Select("DISTINCT employee_id").
-		Where("created_by = ? AND deleted_at IS NULL", userID).
+		Where("created_by = ?", userID).
 		Pluck("employee_id", &assignedEmployeeIDs).Error
 
 	if err != nil {
@@ -415,10 +415,7 @@ func (r *EmployeeRepository) countWithTwoQueries(ctx context.Context, filters do
 			INNER JOIN project_users pu ON pe.project_id = pu.project_id
 			WHERE pe.employee_id = employees.id
 			AND pu.user_id = ?
-			AND pe.deleted_at IS NULL
-			AND pu.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`, userID)
 
 	projectBasedQuery = r.queryBuilder.ApplyFilters(projectBasedQuery, projectBasedFilters)

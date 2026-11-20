@@ -111,6 +111,15 @@ func NewContainer(cfg *config.Config, version string) (*Container, error) {
 		infra.Logger.Warn("settings boot seed failed", "error", err)
 	}
 
+	// Local-dev login accounts (admin/quanly/giamdoc/ketoan, shared dev
+	// password). Non-production only — production never gets seeded
+	// credentials.
+	if env := cfg.App.Env; env != "production" {
+		if err := seed.EnsureDevUsers(context.Background(), infra.DB.DB, cfg); err != nil {
+			infra.Logger.Warn("dev users seed failed", "error", err)
+		}
+	}
+
 	// Shared clock instance — must be created before services so services that
 	// need deterministic time in tests receive the correct FakeClock.
 	var clk clock.Clock

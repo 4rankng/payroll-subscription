@@ -14,16 +14,19 @@ describe("useDashboardNavigation", () => {
     navigate.mockReset();
   });
 
-  it("routes salary drill-downs through the ledger period contract", () => {
+  it("routes the pending-approval queue to the timesheet filter contract", () => {
     const { result } = renderHook(() => useDashboardNavigation());
 
-    act(() => result.current.navigateToSalaryLedger());
-    act(() => result.current.navigateToCurrentMonthSalary());
+    act(() => result.current.navigateToPendingApprovals());
 
-    expect(navigate).toHaveBeenNthCalledWith(1, "/admin/ledger?period=salary");
-    expect(navigate).toHaveBeenNthCalledWith(
-      2,
-      "/admin/ledger?period=current-month",
-    );
+    expect(navigate).toHaveBeenCalledWith("/admin/timesheet?status=pending_approval");
+  });
+
+  it("routes active-employee drill-down to the working status filter", () => {
+    const { result } = renderHook(() => useDashboardNavigation());
+
+    act(() => result.current.navigateToActiveEmployees());
+
+    expect(navigate).toHaveBeenCalledWith("/admin/employees?status=working");
   });
 });

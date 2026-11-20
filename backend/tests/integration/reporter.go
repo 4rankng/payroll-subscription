@@ -109,18 +109,14 @@ func (r *Reporter) PrintSection(name string) {
 }
 
 func (r *Reporter) PrintDiscovery(data *TestData) {
-	r.printf("  Discovered: %d projects, %d employees, %d banks\n",
-		len(data.Projects), len(data.Employees), len(data.Banks))
+	r.printf("  Discovered: %d projects, %d employees\n",
+		len(data.Projects), len(data.Employees))
 	if data.WeeklyProject != nil {
-		r.printf("  Weekly project: %s (ID %d, %d weekly employees)\n",
-			data.WeeklyProject.Name, data.WeeklyProject.ID, data.WeeklyProject.WeeklySalaryEmployeeCount)
-	}
-	if data.MonthlyProject != nil {
-		r.printf("  Monthly project: %s (ID %d, %d monthly employees)\n",
-			data.MonthlyProject.Name, data.MonthlyProject.ID, data.MonthlyProject.MonthlySalaryEmployeeCount)
+		r.printf("  Fixture project: %s (ID %d)\n",
+			data.WeeklyProject.Name, data.WeeklyProject.ID)
 	}
 	if data.EmployeeForAdvance != nil {
-		r.printf("  Advance payment employee: %s (ID %d, username: %s)\n",
+		r.printf("  Employee user account: %s (ID %d, username: %s)\n",
 			data.EmployeeForAdvance.Fullname, data.EmployeeForAdvance.ID, ptrStr(data.EmployeeForAdvance.Username))
 	}
 	if len(data.Partners) > 0 {

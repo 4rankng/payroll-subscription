@@ -210,7 +210,6 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 				Cycle:          upload.Cycle,
 				WorkMonth:      upload.WorkMonth,
 				EmployeeID:     employee.ID,
-				CCCD:           employee.CCCD,
 				ProjectID:      ts.ProjectID,
 				TimesheetID:    ts.ID,
 				SourceUploadID: upload.ID,

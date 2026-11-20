@@ -54,7 +54,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         } else if (user.role === "quanly") {
           navigate("/partner/dashboard", { replace: true });
         } else if (user.role === "giamdoc") {
-          navigate("/accountant", { replace: true });
+          navigate("/partner/dashboard", { replace: true });
         } else if (user.role === "nhanvien") {
           navigate("/employee", { replace: true });
         }

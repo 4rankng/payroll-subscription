@@ -1,22 +1,16 @@
 import { useCallback, useMemo, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { addMonths, format, parse, startOfMonth, subMonths } from 'date-fns';
 import { vi } from 'date-fns/locale';
 // UU PRO restyle (W13a): lucide → verified @untitledui/icons; daisyUI ct-btn
 // chrome → bridge tokens. The shared icon slots are widened to
 // ComponentType<SVGProps> (W13a follow-up), so UU icons fit everywhere.
 import {
-  Activity,
   AlertCircle,
-  ArrowUpRight,
-  BarChart02,
   BarChart03,
-  Building02,
   CalendarCheck01,
   ChevronLeft,
   ChevronRight,
   Clock,
-  FolderCheck,
   RefreshCcw01,
   SwitchHorizontal01,
   UserPlus01,
@@ -27,28 +21,21 @@ import {
 import { MonthPicker } from '@/components/ui/month-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DashboardLoadingSkeleton } from '@/components/ui/loading-states';
-import { SalaryDistributionChartMobile } from '@/components/admin-dashboard/SalaryDistributionChartMobile';
 import { GroupedStatCard } from '@/components/shared/GroupedStatCard';
-import { ProjectProfitabilityMobile } from '@/components/admin-dashboard/ProjectProfitabilityMobile';
-import { MonthlyFinancialTable } from '@/components/admin-dashboard/MonthlyFinancialTable';
 import { RecentEmployeesCard } from '@/components/admin-dashboard/RecentEmployeesCard';
 import { TopPaidEmployeesCard } from '@/components/admin-dashboard/TopPaidEmployeesCard';
-import { BankTransferBreakdownCard } from '@/components/admin-dashboard/BankTransferBreakdownCard';
-import { CheckInHealthStrip } from '@/components/admin-dashboard/CheckInHealthStrip';
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
+import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useDashboardData } from '@/hooks/admin-dashboard/useDashboardData';
 import { useDashboardActions } from '@/hooks/admin-dashboard/useDashboardActions';
 import { useDashboardStats } from '@/hooks/admin-dashboard/useDashboardStats';
 import { useTimesheets } from '@/hooks/api/useTimesheets';
-import { useBankUsageAllProjects, useEmployeeActivityStats } from '@/hooks/api/useDashboard';
 import { useDashboardNavigation } from '@/hooks/useDashboardNavigation';
 import { useEmployeeModals, useTimesheetModals } from '@/hooks/useModalNavigation';
 import { cn } from '@/lib/utils';
-import { MobileSectionHeader as SectionHeader } from '@/components/shared/MobileSectionHeader';
 import { MobilePageHeader } from '@/components/shared/MobilePageHeader';
 import { MobilePageShell } from '@/components/shared/MobilePageShell';
-import { CheckInRosterReminderBanner } from '@/components/admin-dashboard/CheckInRosterReminderBanner';
 import {
   MobileOperationsPanel,
   MobileTaskList,
@@ -110,12 +97,9 @@ function DashboardDisclosureSection({
 }
 
 const AdminDashboardMobile = () => {
-  const navigate = useNavigate();
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM'));
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
-
-  const { data: bankData } = useBankUsageAllProjects();
 
   const monthParam = selectedMonth === 'all' ? undefined : selectedMonth;
   const monthLabel =
@@ -145,13 +129,6 @@ const AdminDashboardMobile = () => {
     isFetching: isPendingFetching,
     refetch: refetchPending,
   } = useTimesheets({ status: 'pending_approval', page: 1, pageSize: 20 });
-  const {
-    data: activityData,
-    isLoading: isActivityLoading,
-    isError: hasActivityError,
-    isFetching: isActivityFetching,
-    refetch: refetchActivity,
-  } = useEmployeeActivityStats(monthParam);
   const dashboardNav = useDashboardNavigation();
   const { openTimesheetEntry } = useTimesheetModals();
   const { openAddEmployee } = useEmployeeModals();
@@ -164,31 +141,22 @@ const AdminDashboardMobile = () => {
       await Promise.all([
         refetch(),
         refetchPending(),
-        refetchActivity(),
         Promise.resolve(actions.handleRefresh?.()),
       ]);
     } finally {
       setIsManualRefreshing(false);
     }
-  }, [actions, refetch, refetchActivity, refetchPending]);
+  }, [actions, refetch, refetchPending]);
 
   const isDashboardRefreshing =
     isManualRefreshing ||
     isDashboardDataRefreshing ||
-    isPendingFetching ||
-    isActivityFetching;
+    isPendingFetching;
 
-  const { employeeStats, salaryStats, profitStats, activityStats, activityProjectStats } = useDashboardStats({
+  const { employeeStats, salaryStats } = useDashboardStats({
     dashboardSummary: data.dashboardSummary,
     totalPendingApprovals: pendingApprovals ?? 0,
     dashboardNav,
-    activityStats: activityData ?? null,
-    onActivityClick: (schedule) => {
-      const params = new URLSearchParams();
-      if (schedule) params.set('schedule', schedule);
-      if (monthParam) params.set('month', monthParam);
-      navigate(`/admin/dashboard/activity?${params.toString()}`);
-    },
   });
 
   const resolvedSalaryStats = useMemo(
@@ -239,7 +207,6 @@ const AdminDashboardMobile = () => {
         helper: monthLabel,
         icon: SwitchHorizontal01,
         tone: 'success',
-        onClick: dashboardNav.navigateToSalaryLedger,
       },
       {
         label: 'Nhân viên mới',
@@ -305,8 +272,6 @@ const AdminDashboardMobile = () => {
         bordered={false}
         className="px-0 pt-0 [&_.shadow-sm]:shadow-none"
       />
-
-      <CheckInRosterReminderBanner />
 
       <div className="admin-dashboard-mobile-monthbar console-panel overflow-hidden">
         <div className="grid grid-cols-[auto_44px_minmax(0,1fr)_44px_44px] items-center gap-1 px-1 py-1">
@@ -395,27 +360,6 @@ const AdminDashboardMobile = () => {
               <GroupedStatCard title="Bảng công" icon={Clock} stats={resolvedSalaryStats} />
             )}
             {employeeStats.length > 0 && <GroupedStatCard title="Nhân viên" icon={Users01} stats={employeeStats} />}
-            {isActivityLoading && !activityData ? (
-              <p className="rounded-xl border border-input bg-muted px-3 py-3 text-xs text-fg-tertiary">
-                Đang tải hoạt động nhân sự…
-              </p>
-            ) : hasActivityError ? (
-              <p className="rounded-xl border border-input bg-muted px-3 py-3 text-xs text-fg-tertiary">
-                Không thể tải hoạt động nhân sự. Hãy làm mới để thử lại.
-              </p>
-            ) : activityData && activityStats.length > 0 ? (
-              <>
-                <GroupedStatCard title={`Hoạt động (${monthLabel})`} icon={Activity} stats={activityStats} />
-                {activityProjectStats.length > 0 && (
-                  <GroupedStatCard
-                    title="Hoạt động theo dự án"
-                    icon={Activity}
-                    stats={activityProjectStats}
-                    defaultCollapsed
-                  />
-                )}
-              </>
-            ) : null}
           </div>
 
           <RecentEmployeesCard
@@ -430,24 +374,14 @@ const AdminDashboardMobile = () => {
         </DashboardDisclosureSection>
 
         <DashboardDisclosureSection
-          value="payout-analytics"
-          eyebrow="Phân tích"
-          title="Chi trả và biến động"
-          summary="Đối chiếu phân bổ lương, lợi nhuận và người nhận lương cao nhất."
-          meta={`${formatFullCurrency(dashboardSummary?.total_profit_this_month ?? 0)} lợi nhuận`}
-          icon={ArrowUpRight}
+          value="paysub-fee"
+          eyebrow="PAYSUB"
+          title="Phí"
+          summary="NV theo kỳ trả và phí theo tháng."
+          meta="12 tháng"
+          icon={CalendarCheck01}
         >
-          <div className="space-y-3">
-            {profitStats.length > 0 && <GroupedStatCard title="Tài chính" icon={BarChart02} stats={profitStats} />}
-          </div>
-
-          <div className="space-y-2">
-            <SectionHeader icon={BarChart03} title="Phân bổ lương" />
-            <SalaryDistributionChartMobile />
-          </div>
-
-          <TopPaidEmployeesCard month={monthParam} />
-          <MonthlyFinancialTable />
+          <KyFeeSummaryTable variant="mobile" />
         </DashboardDisclosureSection>
 
         <DashboardDisclosureSection
@@ -462,21 +396,14 @@ const AdminDashboardMobile = () => {
         </DashboardDisclosureSection>
 
         <DashboardDisclosureSection
-          value="projects-health"
-          eyebrow="Kiểm soát"
-          title="Dự án, ngân hàng và sức khỏe hệ thống"
-          summary="Rà soát tài khoản nhận lương, chấm công và hạn mức ứng."
-          meta={`${bankData?.projects.length.toLocaleString('vi-VN') ?? '--'} dự án`}
-          icon={Building02}
+          value="payout-analytics"
+          eyebrow="Phân tích"
+          title="Chi trả"
+          summary="Người nhận lương cao nhất trong kỳ."
+          meta={monthLabel}
+          icon={Clock}
         >
-          <div className="space-y-2">
-            <SectionHeader icon={FolderCheck} title="Lợi nhuận dự án" />
-            <ProjectProfitabilityMobile />
-          </div>
-
-          <BankTransferBreakdownCard />
-
-          <CheckInHealthStrip month={monthParam} />
+          <TopPaidEmployeesCard month={monthParam} />
         </DashboardDisclosureSection>
       </Accordion>
     </MobilePageShell>

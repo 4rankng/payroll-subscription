@@ -37,7 +37,7 @@ func isYYYYMMDD(s string) bool {
 // execPayrollSQL runs one statement against the dev DB inside payroll-mysql.
 func execPayrollSQL(sql string) error {
 	out, err := exec.Command("docker", "exec", "payroll-mysql", "mysql",
-		"-uroot", "-prootpassword", "payroll_db", "-N", "-B", "-e", sql).CombinedOutput()
+		"--default-character-set=utf8mb4", "-uroot", "-prootpassword", "payroll_db", "-N", "-B", "-e", sql).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("exec %q: %w (%s)", sql, err, strings.TrimSpace(string(out)))
 	}
@@ -48,7 +48,7 @@ func execPayrollSQL(sql string) error {
 // query, or "" when the query yields no rows.
 func queryPayrollScalar(sql string) (string, error) {
 	out, err := exec.Command("docker", "exec", "payroll-mysql", "mysql",
-		"-uroot", "-prootpassword", "payroll_db", "-N", "-B", "-e", sql).Output()
+		"--default-character-set=utf8mb4", "-uroot", "-prootpassword", "payroll_db", "-N", "-B", "-e", sql).Output()
 	if err != nil {
 		stderr := strings.TrimSpace(string(out))
 		return "", fmt.Errorf("query via payroll-mysql: %w (%s)", err, stderr)

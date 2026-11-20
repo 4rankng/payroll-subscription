@@ -41,6 +41,33 @@ const bccTemplateMismatchMessage = "Mẫu file chấm công không đúng. Vui l
 // fingerprint still gets the legacy strategy chain, which parses for real: some
 // partner layouts ship under sheet names the detector does not key on, and only
 // the strategy chain can tell those apart from an unrelated spreadsheet.
+// isDuplicateActiveScope reports whether err's chain carries the
+// uq_timesheet_import_active_scope duplicate-key violation. The repo wraps the
+// SQL error in a domain InternalError whose Error() is only the message, so
+// the check must unwrap to the cause.
+func isDuplicateActiveScope(err error) bool {
+	// MySQL 8 truncates the index identifier in 1062 messages
+	// ("... for key 'timesheet_import_jobs.uq_timesheet_import_activ'"), so the
+	// check matches the table name + duplicate-entry signature across the whole
+	// error chain: the repo wraps the SQL error in a domain InternalError whose
+	// Error() is only the message.
+	var cause error = err
+	for {
+		msg := strings.ToLower(cause.Error())
+		if strings.Contains(msg, "error 1062") && strings.Contains(msg, "timesheet_import_jobs") {
+			return true
+		}
+		unwrapper, ok := cause.(interface{ Unwrap() error })
+		if !ok {
+			return false
+		}
+		cause = unwrapper.Unwrap()
+		if cause == nil {
+			return false
+		}
+	}
+}
+
 func validateBCCWorkbookTemplate(data []byte) error {
 	xf, err := excelkit.OpenReader(bytes.NewReader(data))
 	if err != nil {
@@ -164,8 +191,43 @@ func (s *BCCImportService) AcceptUpload(
 			}
 			return s.resultForAsset(ctx, existing.AssetID)
 		}
-		if strings.Contains(strings.ToLower(err.Error()), "active_scope") ||
-			strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+		if isDuplicateActiveScope(err) {
+			// uq_timesheet_import_active_scope collision: if the current holder
+			// is a terminal job, its scope is residue — release and retry the
+			// acceptance once. A processing holder keeps ScopeBusy.
+			if released, relErr := s.importJobRepo.ReleaseTerminalScope(ctx, activeScope); relErr == nil && released {
+				err = s.transactionManager.WithTransaction(ctx, func(txCtx context.Context) error {
+					created, createErr := s.assetRepo.Create(txCtx, asset)
+					if createErr != nil {
+						return createErr
+					}
+					asset = created
+					return s.importJobRepo.Create(txCtx, &domain.TimesheetImportJob{
+						AssetID:                  asset.ID,
+						ProjectID:                projectID,
+						ForMonth:                 forMonth,
+						UploadedBy:               uploaderID,
+						UploaderRole:             uploaderRole,
+						IncludeFlexibleEmployees: includeFlexibleEmployees,
+						AddOnTop:                 addOnTop,
+						Status:                   domain.TimesheetImportStatusPending,
+						IdempotencyKey:           idempotencyKey,
+						RequestFingerprint:       fingerprint,
+						ActiveScopeKey:           &activeScope,
+						CreatedAt:                now,
+						UpdatedAt:                now,
+					})
+				})
+				if err == nil {
+					// The durable pending row is an outbox: the periodic recovery
+					// sweep re-enqueues it, so enqueue failures are not fatal here.
+					_ = s.importEnqueuer.EnqueueBCCImport(asset.ID)
+					return s.resultForAsset(ctx, asset.ID)
+				}
+			}
+			return nil, ErrBCCImportScopeBusy
+		}
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
 			return nil, ErrBCCImportScopeBusy
 		}
 		return nil, err

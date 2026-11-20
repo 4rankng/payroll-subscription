@@ -244,12 +244,10 @@ func (b *EmployeeStatisticsBuilder) BuildGetAccessibleEmployeeIDsQuery(createdBy
 // BuildWorkingEmployeesCountQuery builds a query for counting working employees
 func (b *EmployeeStatisticsBuilder) BuildWorkingEmployeesCountQuery() *gorm.DB {
 	return b.db.Model(&domain.Employee{}).
-		Where(`deleted_at IS NULL AND EXISTS (
+		Where(`EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 }
 
@@ -257,7 +255,7 @@ func (b *EmployeeStatisticsBuilder) BuildWorkingEmployeesCountQuery() *gorm.DB {
 func (b *EmployeeStatisticsBuilder) BuildEmployeesHiredThisMonthQuery(startOfMonth, endOfMonth time.Time) *gorm.DB {
 	return b.db.Model(&domain.Employee{}).
 		Select(`
-			COUNT(DISTINCT CASE WHEN deleted_at IS NULL AND created_at BETWEEN ? AND ? THEN id END) as employees_hired_this_month
+			COUNT(DISTINCT CASE WHEN created_at BETWEEN ? AND ? THEN id END) as employees_hired_this_month
 		`, startOfMonth, endOfMonth)
 }
 
@@ -272,7 +270,7 @@ func (b *EmployeeStatisticsBuilder) applyFilters(query *gorm.DB, filters domain.
 	if filters.ProjectID != nil {
 		subQuery := b.db.Model(&domain.ProjectEmployee{}).
 			Select("employee_id").
-			Where("project_id = ? AND last_date IS NULL AND deleted_at IS NULL", *filters.ProjectID)
+			Where("project_id = ?", *filters.ProjectID)
 		query = query.Where("employees.id IN (?)", subQuery)
 	}
 
@@ -283,18 +281,14 @@ func (b *EmployeeStatisticsBuilder) applyFilters(query *gorm.DB, filters domain.
 		query = query.Where(`EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 	case "unassigned":
 		// Employees NOT assigned to any project
 		query = query.Where(`NOT EXISTS (
 			SELECT 1 FROM project_employees pe
 			WHERE pe.employee_id = employees.id
-			AND pe.deleted_at IS NULL
 			AND pe.start_date <= NOW()
-			AND (pe.last_date IS NULL OR pe.last_date > NOW())
 		)`)
 	}
 

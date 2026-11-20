@@ -419,29 +419,8 @@ export const API_ENDPOINTS = {
   dashboard: {
     base: '/dashboard',
     summary: '/dashboard/summary',
-    financialOverview: '/dashboard/financial-overview',
-    recentActivities: '/dashboard/recent-activities',
-    notifications: '/dashboard/notifications',
     newEmployees: '/dashboard/new-employees',
-    salaryDistribution: '/dashboard/salary-distribution',
-    historical: '/dashboard/historical',
-    monthlyFinancials: '/dashboard/monthly-financials',
-    employeeActivity: '/dashboard/employee-activity',
-    employeeActivityUsers: '/dashboard/employee-activity/users',
-    projectProfitability: '/dashboard/project-profitability',
-    projectWeeklyProfit: '/dashboard/project-weekly-profit',
     topPaidEmployees: '/dashboard/top-paid-employees',
-    partnerDashboard: '/dashboard/partner',
-    bankUsage: '/dashboard/bank-usage',
-    bankUsageProjects: '/dashboard/bank-usage/projects',
-    partnerEmployeeList: '/dashboard/partner/employees',
-    checkInHealth: '/dashboard/check-in-health',
-    quotaAnomalies: '/dashboard/quota-anomalies',
-  },
-
-  // Admin Attendances
-  adminAttendances: {
-    failedAttempts: '/admin/attendances/failed-attempts',
   },
 
   // Employee Self-Service Portal

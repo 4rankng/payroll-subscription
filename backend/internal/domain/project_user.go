@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"gorm.io/gorm"
 )
 
 type ProjectUser struct {
@@ -12,7 +11,6 @@ type ProjectUser struct {
 	ProjectID uint           `json:"project_id" gorm:"not null;type:bigint unsigned"`
 	UserID    uint           `json:"user_id" gorm:"not null;type:bigint unsigned"`
 	GrantedBy uint           `json:"granted_by" gorm:"not null;type:bigint unsigned"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 

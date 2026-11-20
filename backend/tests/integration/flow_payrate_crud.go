@@ -230,7 +230,7 @@ func runPayrateCRUDTests(client *APIClient, data *TestData, reporter *Reporter, 
 	reporter.RunTest(flowPayrate, "New model: no end date on the wire (from-date-only)", func() error {
 		// Migration 138 dropped payrates.to_date; the API must not carry any
 		// toDate key — neither derived nor stale.
-		rows, _, err := vendorRawRows(admin, fmt.Sprintf("/api/v1/payrates?project_id=%d&pageSize=100", projectID))
+		rows, _, err := rawRows(admin, fmt.Sprintf("/api/v1/payrates?project_id=%d&pageSize=100", projectID))
 		if err != nil {
 			return fmt.Errorf("list: %w", err)
 		}

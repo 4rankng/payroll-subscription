@@ -518,7 +518,7 @@ func (r *TimesheetRepository) GetTotalPaidSalary(ctx context.Context) (int64, er
 	var total int64
 	err := r.DB.WithContext(ctx).
 		Model(&domain.Timesheet{}).
-		Where("payment_status = ? AND deleted_at IS NULL", domain.PaymentStatusPaid).
+		Where("payment_status = ?", domain.PaymentStatusPaid).
 		Select("COALESCE(SUM(paid_amount), 0)").
 		Scan(&total).Error
 
@@ -625,7 +625,7 @@ func (r *TimesheetRepository) GetEmployeeTimesheetSummaryAggregated(ctx context.
 	// Get all aggregated data in a single query
 	err := r.DB.WithContext(ctx).
 		Model(&domain.Timesheet{}).
-		Where("employee_id = ? AND deleted_at IS NULL", employeeID).
+		Where("employee_id = ?", employeeID).
 		Select(`
 			COUNT(*) as total_entries,
 			COALESCE(SUM(hours_worked), 0) as total_hours,
@@ -669,7 +669,7 @@ func (r *TimesheetRepository) GetEmployeeCurrentWeekHours(ctx context.Context, e
 	var totalHours float64
 	err := r.DB.WithContext(ctx).
 		Model(&domain.Timesheet{}).
-		Where("employee_id = ? AND deleted_at IS NULL AND date BETWEEN ? AND ?",
+		Where("employee_id = ? AND date BETWEEN ? AND ?",
 			employeeID, startOfWeek, endOfWeek).
 		Select("COALESCE(SUM(hours_worked), 0)").
 		Scan(&totalHours).Error
@@ -688,7 +688,7 @@ func (r *TimesheetRepository) GetEmployeeMonthlyPayrollSummary(ctx context.Conte
 
 	err := r.DB.WithContext(ctx).
 		Model(&domain.Timesheet{}).
-		Where("employee_id = ? AND deleted_at IS NULL AND payment_status = ? AND paid_at BETWEEN ?",
+		Where("employee_id = ? AND payment_status = ? AND paid_at BETWEEN ?",
 			employeeID, domain.PaymentStatusPaid, firstDayOfMonth, lastDayOfMonth).
 		Select(`
 			COUNT(*) as total_payments,
@@ -774,7 +774,7 @@ func (r *TimesheetRepository) GetPaidSeries(ctx context.Context, startDate, endD
 		Select("COALESCE(payment_date, DATE(paid_at)) AS date, project_id, COUNT(DISTINCT employee_id) AS employee_count, SUM(amount) AS amount").
 		Where("payment_status = ?", domain.PaymentStatusPaid).
 		Where("COALESCE(payment_date, DATE(paid_at)) BETWEEN ? AND ?", startDate, endDate).
-		Group("date, project_id").
+		Group("COALESCE(payment_date, DATE(paid_at)), project_id").
 		Order("date ASC")
 	if projectID != nil {
 		q = q.Where("project_id = ?", *projectID)

@@ -27,6 +27,22 @@ func (r *TimesheetImportJobRepository) Create(ctx context.Context, job *domain.T
 	return nil
 }
 
+// ReleaseTerminalScope frees the active-scope slot held by a job that has
+// already reached a terminal state (completed/failed). Terminal jobs no longer
+// run, so a held scope there is residue from a CAS-missed finalize — without
+// this, every future upload for the same (project, month) collides on
+// uq_timesheet_import_active_scope forever. Reports whether a slot was freed.
+func (r *TimesheetImportJobRepository) ReleaseTerminalScope(ctx context.Context, scopeKey string) (bool, error) {
+	result := r.db(ctx).Model(&domain.TimesheetImportJob{}).
+		Where("active_scope_key = ? AND status IN (?)", scopeKey,
+			[]string{string(domain.TimesheetImportStatusCompleted), string(domain.TimesheetImportStatusFailed)}).
+		Update("active_scope_key", nil)
+	if result.Error != nil {
+		return false, domain.NewInternalError("failed to release terminal import scope", result.Error)
+	}
+	return result.RowsAffected > 0, nil
+}
+
 func (r *TimesheetImportJobRepository) GetByAssetID(ctx context.Context, assetID uint) (*domain.TimesheetImportJob, error) {
 	var job domain.TimesheetImportJob
 	if err := r.db(ctx).First(&job, "asset_id = ?", assetID).Error; err != nil {
