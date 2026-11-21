@@ -7,16 +7,13 @@ import { UploadHistorySheet } from "@/components/timesheet/UploadHistorySheet";
 import { BCCUploadModal } from "@/components/timesheet/BCCUploadModal";
 import { RejectUnpaidTimesheetsDialog } from "@/components/timesheet/RejectUnpaidTimesheetsDialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { useTimesheetManagement } from "@/hooks/timesheet/useTimesheetManagement";
 import { useTimesheetStatsConfig } from "@/hooks/useTimesheetStatsConfig";
 import {
   useApproveAllTimesheets,
   useResetAllTimesheets,
-  useCashReadiness,
   useTimesheetSummary,
 } from "@/hooks/api/useTimesheets";
-import { PayrollControlCenter } from "@/components/timesheet/PayrollControlCenter";
 import { useEmployeeModals, useModalNavigation } from "@/hooks/useModalNavigation";
 import { MODAL_IDS } from "@/constants/modalRegistry";
 import { toast } from "@/components/ui/sonner";
@@ -133,7 +130,6 @@ const TimesheetPageMobile = () => {
   // honest, unfiltered scope here. Mirrors the desktop TimesheetPage.
   const { data: globalSummary, refetch: refetchGlobalSummary } =
     useTimesheetSummary({});
-  const cashReadiness = useCashReadiness({});
 
   const handleAddTimesheet = useCallback(
     () => openModal(MODAL_IDS.TIMESHEET_ENTRY),
@@ -267,23 +263,6 @@ const TimesheetPageMobile = () => {
         monthValue={timesheetManagement.selectedMonth}
         onMonthChange={timesheetManagement.setSelectedMonth}
       />
-
-      {/* ── Payroll Control Center: cash readiness + operational KPIs ── */}
-      <PayrollControlCenter
-        cashReadiness={{
-          data: cashReadiness.data,
-          isLoading: cashReadiness.isLoading,
-          isError: cashReadiness.isError,
-        }}
-        stats={{
-          summary: timesheetStats.summary,
-          isLoading: timesheetStats.isLoading,
-        }}
-        activeFilter={timesheetManagement.statusFilter}
-        onFilterChange={timesheetManagement.setStatusFilter}
-      />
-
-      <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
 
       <TimesheetDisplaySection
         timesheetManagement={timesheetManagement}

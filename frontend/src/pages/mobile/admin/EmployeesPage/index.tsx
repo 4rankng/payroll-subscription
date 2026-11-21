@@ -22,7 +22,6 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { EmployeeMobileCard } from "@/components/employees/EmployeeMobileCard";
 import { EmployeeEmptyStates } from "@/components/employees/EmployeeEmptyStates";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
 import { ExportPaidNoMobileModal } from "@/components/modals/ExportPaidNoMobileModal";
 import { ImportMobilesModal } from "@/components/modals/ImportMobilesModal";
@@ -371,7 +370,6 @@ const EmployeesPageMobile = () => {
       {/* Padded to the page's block rhythm — this page has no page-level
           padding, so a bare render sat wider than the list and touched it. */}
       <div className="px-4 pb-3">
-        <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
       </div>
       <div className="flex-1 px-4">
         {employees.length === 0 ? (

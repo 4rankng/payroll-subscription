@@ -30,7 +30,6 @@ import { useEmployeeModals } from "@/hooks/useModalNavigation";
 import { useAssignableProjects } from "@/hooks/api/useProjects";
 import { useEmployeeExport } from "@/hooks/employees/useEmployeeExport";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { Users } from "lucide-react";
 import { Download01, FilterLines, Plus, UserPlus01, XClose } from "@untitledui/icons";
 import type { Employee } from "@/types/api/employee.types";
@@ -318,7 +317,6 @@ const EmployeesPageMobile = () => {
 
       {/* ── Employee list ── */}
       <div className="flex-1 space-y-3">
-        <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
         {employees.length === 0 ? (
           <EmployeeEmptyStates
             searchTerm={searchTerm}

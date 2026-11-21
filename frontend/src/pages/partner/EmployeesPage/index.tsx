@@ -13,7 +13,6 @@ import { useEmployeeModals } from "@/hooks/useModalNavigation";
 import { useEmployeeExport } from "@/hooks/employees/useEmployeeExport";
 import { useAssignableProjects } from "@/hooks/api/useProjects";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { useTableSorting } from "@/utils/sorting";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -638,9 +637,8 @@ const EmployeesPage = () => {
           </div>
         )}
 
-        {poolView !== "global" && <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />}
-
-        <div className="console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
+        {poolView !== "global" && (
+          <div className="console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
           <div className="console-panel-header justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <span className="console-kicker">Danh sách nhân sự</span>
@@ -674,6 +672,7 @@ const EmployeesPage = () => {
             accordionType="single"
           />
         </div>
+        )}
 
       </div>
 

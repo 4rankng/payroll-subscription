@@ -7,7 +7,6 @@ import { TimesheetMobileList } from "@/components/timesheet/TimesheetMobileList"
 import { TimesheetProvider } from "@/components/timesheet/TimesheetContext";
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { Skeleton } from "@/components/ui/skeleton";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { useTimesheetManagement } from "@/hooks/timesheet/useTimesheetManagement";
 import { useEmployeeModals, useTimesheetModals } from "@/hooks/useModalNavigation";
 import { useTimesheetStatsConfig } from "@/hooks/useTimesheetStatsConfig";
@@ -365,7 +364,6 @@ export default function TimesheetsPage() {
           />
         </div>
 
-        <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
 
         {/* Filters + Table */}
         <TimesheetProvider

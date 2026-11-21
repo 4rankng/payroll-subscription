@@ -24,7 +24,6 @@ import { useAssignableProjects } from "@/hooks/api/useProjects";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
 import { ExportPaidNoMobileModal } from "@/components/modals/ExportPaidNoMobileModal";
 import { ImportMobilesModal } from "@/components/modals/ImportMobilesModal";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useTableSorting } from "@/utils/sorting";
 import { useMediaQuery } from "@/hooks/useBreakpoint";
@@ -221,7 +220,6 @@ const EmployeesPage = () => {
           isLoading={employeeStats.isLoading}
         />
 
-        <MissingBankDetailsSection onEmployeeClick={handleOpenEmployeeSheet} />
 
         <AdminSectionCard aria-label="Danh sách nhân viên">
           <AdminFilterRow>

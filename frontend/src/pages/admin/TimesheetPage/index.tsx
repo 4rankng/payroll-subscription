@@ -13,7 +13,6 @@ import {
   UploadCloud01,
 } from '@untitledui/icons';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { MissingBankDetailsSection } from '@/components/employees/MissingBankDetailsSection';
 import { TimesheetDisplaySection } from '@/components/timesheet/TimesheetDisplaySection';
 import { UploadHistorySheet } from '@/components/timesheet/UploadHistorySheet';
 import { BCCUploadModal } from '@/components/timesheet/BCCUploadModal';
@@ -21,8 +20,7 @@ import { RejectUnpaidTimesheetsDialog } from '@/components/timesheet/RejectUnpai
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTimesheetManagement } from '@/hooks/timesheet/useTimesheetManagement';
-import { useApproveAllTimesheets, useResetAllTimesheets, useCashReadiness, useTimesheetSummary } from '@/hooks/api/useTimesheets';
-import { PayrollControlCenter } from '@/components/timesheet/PayrollControlCenter';
+import { useApproveAllTimesheets, useResetAllTimesheets, useTimesheetSummary } from '@/hooks/api/useTimesheets';
 import { useEmployeeModals, useModalNavigation } from '@/hooks/useModalNavigation';
 import { MODAL_IDS } from '@/constants/modalRegistry';
 import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSelector';
@@ -51,7 +49,6 @@ const TimesheetPage = () => {
   // approveAll() ignores filters and approves system-wide, so we show the
   // honest, unfiltered scope here.
   const { data: globalSummary, refetch: refetchGlobalSummary } = useTimesheetSummary({});
-  const cashReadiness = useCashReadiness({});
 
   // Initialize employee and status selection from URL on mount only
   useEffect(() => {
@@ -270,21 +267,7 @@ const TimesheetPage = () => {
       </PageHeader>
 
       {/* ── Payroll Control Center: cash readiness + operational KPIs ── */}
-      <PayrollControlCenter
-        cashReadiness={{
-          data: cashReadiness.data,
-          isLoading: cashReadiness.isLoading,
-          isError: cashReadiness.isError,
-        }}
-        stats={{
-          summary: timesheetSummary,
-          isLoading: isTimesheetSummaryLoading,
-        }}
-        activeFilter={timesheetManagement.statusFilter}
-        onFilterChange={timesheetManagement.setStatusFilter}
-      />
 
-      <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
 
       <TimesheetDisplaySection
         timesheetManagement={timesheetManagement}

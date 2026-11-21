@@ -81,7 +81,7 @@ func (r *BillingReportRepository) LinesOf(ctx context.Context, reportID uint64) 
 	var rows []domain.BillingReportLine
 	err := r.dbForContext(ctx).
 		Where("report_id = ?", reportID).
-		Order("ky ASC").
+		Order("cycle ASC").
 		Find(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("billing_report_lines: list: %w", err)

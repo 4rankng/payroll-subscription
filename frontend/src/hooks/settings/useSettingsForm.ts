@@ -1,110 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useCreateSetting, useMultipleSettings, useUpdateSetting } from '@/hooks/api/useSettings';
 
+// PAYSUB (PRD §6.4): the reduced Settings page tracks the subscription fee
+// only — every donor-era percentage/bank/wallet/self-check-in key is dropped.
 const SETTINGS_KEYS = {
-  WEEKLY_PAYMENT_PERCENTAGE: 'bulk_transfer_payment_percentage',
-  MONTHLY_PAYMENT_PERCENTAGE: 'monthly_payment_percentage',
-  PARTNER_COMPANY: 'partner_company',
   SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND: 'subscription_fee_per_employee_per_ky_vnd',
-  BULK_TRANSFER_WORKBOOK_LIMIT_VND: 'bulk_transfer_workbook_limit_vnd',
-  WALLET_BALANCE_ALERT_THRESHOLD_VND: 'wallet_balance_alert_threshold_vnd',
-  SELF_CHECK_IN_ADVANCE_PERCENTAGE: 'self_check_in_advance_percentage',
-  SELF_CHECK_IN_ADVANCE_HOLD_HOURS: 'self_check_in_advance_hold_hours',
-  SELF_CHECK_IN_ADVANCE_WINDOW_OPEN_DAY: 'self_check_in_advance_window_open_day',
-  ADVANCE_REQUEST_STOP_DAY: 'advance_request_stop_day',
-  TRANSFER_BANK_HOLDER: 'transfer_bank_account_holder',
-  TRANSFER_BANK_NUMBER: 'transfer_bank_account_number',
-  TRANSFER_BANK_NAME: 'transfer_bank_name',
-  TRANSFER_BANK_VISIBLE: 'transfer_bank_visible',
-  FLEXPAY_TRANSFER_BANK_HOLDER: 'flexpay_transfer_bank_account_holder',
-  FLEXPAY_TRANSFER_BANK_NUMBER: 'flexpay_transfer_bank_account_number',
-  FLEXPAY_TRANSFER_BANK_NAME: 'flexpay_transfer_bank_name',
-  FLEXPAY_TRANSFER_BANK_VISIBLE: 'flexpay_transfer_bank_visible',
-} as const;
-
-// Defaults shown until the admin saves a value (must mirror backend defaults).
-const TRANSFER_BANK_DEFAULTS = {
-  HOLDER: 'CONG TY TNHH MTV GPPM TING TING',
-  NUMBER: '271866699',
-  NAME: 'Ngân hàng Quân đội (MB)',
 } as const;
 
 export interface SettingsFormState {
-  weeklyPaymentPercentage: string;
-  originalWeeklyPayment: string;
-  monthlyPaymentPercentage: string;
-  originalMonthlyPayment: string;
-  partnerCompany: string;
-  originalPartnerCompany: string;
   subscriptionFeeVnd: string;
   originalSubscriptionFeeVnd: string;
-  bulkTransferWorkbookLimitVnd: string;
-  originalBulkTransferWorkbookLimitVnd: string;
-  bulkTransferWorkbookLimitSaveError: string | null;
-  bulkTransferWorkbookLimitUnavailableMessage: string | null;
-  walletBalanceAlertThresholdVnd: string;
-  originalWalletBalanceAlertThresholdVnd: string;
-  walletBalanceAlertThresholdSaveError: string | null;
-  walletBalanceAlertThresholdUnavailableMessage: string | null;
-  selfCheckInAdvancePercentage: string;
-  originalSelfCheckInAdvancePercentage: string;
-  selfCheckInAdvanceHoldHours: string;
-  originalSelfCheckInAdvanceHoldHours: string;
-  selfCheckInAdvanceWindowOpenDay: string;
-  originalSelfCheckInAdvanceWindowOpenDay: string;
-  advanceRequestStopDay: string;
-  originalAdvanceRequestStopDay: string;
-  transferBankHolder: string;
-  originalTransferBankHolder: string;
-  transferBankNumber: string;
-  originalTransferBankNumber: string;
-  transferBankName: string;
-  originalTransferBankName: string;
-  transferBankVisible: boolean;
-  originalTransferBankVisible: boolean;
-  flexPayTransferBankHolder: string;
-  originalFlexPayTransferBankHolder: string;
-  flexPayTransferBankNumber: string;
-  originalFlexPayTransferBankNumber: string;
-  flexPayTransferBankName: string;
-  originalFlexPayTransferBankName: string;
-  flexPayTransferBankVisible: boolean;
-  originalFlexPayTransferBankVisible: boolean;
-  loadError: string | null;
+  setSubscriptionFeeVnd: (value: string) => void;
+  handleSaveSubscriptionFee: () => void;
   isSaving: boolean;
   isLoading: boolean;
-  setWeeklyPaymentPercentage: (v: string) => void;
-  setMonthlyPaymentPercentage: (v: string) => void;
-  setPartnerCompany: (v: string) => void;
-  setSubscriptionFeeVnd: (v: string) => void;
-  setBulkTransferWorkbookLimitVnd: (v: string) => void;
-  setWalletBalanceAlertThresholdVnd: (v: string) => void;
-  setSelfCheckInAdvancePercentage: (v: string) => void;
-  setSelfCheckInAdvanceHoldHours: (v: string) => void;
-  setSelfCheckInAdvanceWindowOpenDay: (v: string) => void;
-  setAdvanceRequestStopDay: (v: string) => void;
-  setTransferBankHolder: (v: string) => void;
-  setTransferBankNumber: (v: string) => void;
-  setTransferBankName: (v: string) => void;
-  setTransferBankVisible: (v: boolean) => void;
-  setFlexPayTransferBankHolder: (v: string) => void;
-  setFlexPayTransferBankNumber: (v: string) => void;
-  setFlexPayTransferBankName: (v: string) => void;
-  setFlexPayTransferBankVisible: (v: boolean) => void;
-  handleSaveWeeklyPayment: () => void;
-  handleSaveMonthlyPayment: () => void;
-  handleSavePartnerCompany: () => void;
-  handleSaveSubscriptionFee: () => void;
-  handleSaveBulkTransferWorkbookLimitVnd: () => Promise<void>;
-  handleSaveWalletBalanceAlertThresholdVnd: () => Promise<void>;
-  handleSaveSelfCheckInAdvancePercentage: () => void;
-  handleSaveSelfCheckInAdvanceHoldHours: () => void;
-  handleSaveSelfCheckInAdvanceWindowOpenDay: () => void;
-  handleSaveAdvanceRequestStopDay: () => void;
-  handleSaveTransferBank: () => void;
-  handleSaveTransferBankVisible: () => void;
-  handleSaveFlexPayTransferBank: () => void;
-  handleSaveFlexPayTransferBankVisible: () => void;
+  loadError: string | null;
   retryLoading: () => void;
 }
 
@@ -114,279 +24,32 @@ export function useSettingsForm(): SettingsFormState {
     isError: isSettingsError,
     isLoading,
     refetch,
-  } = useMultipleSettings([
-    SETTINGS_KEYS.WEEKLY_PAYMENT_PERCENTAGE,
-    SETTINGS_KEYS.MONTHLY_PAYMENT_PERCENTAGE,
-    SETTINGS_KEYS.PARTNER_COMPANY,
-    SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND,
-    SETTINGS_KEYS.BULK_TRANSFER_WORKBOOK_LIMIT_VND,
-    SETTINGS_KEYS.WALLET_BALANCE_ALERT_THRESHOLD_VND,
-    SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_PERCENTAGE,
-    SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_HOLD_HOURS,
-    SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_WINDOW_OPEN_DAY,
-    SETTINGS_KEYS.ADVANCE_REQUEST_STOP_DAY,
-    SETTINGS_KEYS.TRANSFER_BANK_HOLDER,
-    SETTINGS_KEYS.TRANSFER_BANK_NUMBER,
-    SETTINGS_KEYS.TRANSFER_BANK_NAME,
-    SETTINGS_KEYS.TRANSFER_BANK_VISIBLE,
-    SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_HOLDER,
-    SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NUMBER,
-    SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NAME,
-    SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_VISIBLE,
-  ]);
+  } = useMultipleSettings([SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND]);
 
-  const updateMutation = useUpdateSetting();
-  const createMutation = useCreateSetting();
+  const feeSetting = settings?.find((s) => s?.key === SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND);
 
-  const [weeklyPaymentPercentage, setWeeklyPaymentPercentage] = useState('');
-  const [originalWeeklyPayment, setOriginalWeeklyPayment] = useState('');
-  const [monthlyPaymentPercentage, setMonthlyPaymentPercentage] = useState('');
-  const [originalMonthlyPayment, setOriginalMonthlyPayment] = useState('');
-  const [partnerCompany, setPartnerCompany] = useState('');
-  const [originalPartnerCompany, setOriginalPartnerCompany] = useState('');
   const [subscriptionFeeVnd, setSubscriptionFeeVnd] = useState('');
   const [originalSubscriptionFeeVnd, setOriginalSubscriptionFeeVnd] = useState('');
-  const [bulkTransferWorkbookLimitVnd, setBulkTransferWorkbookLimitVndState] = useState('');
-  const [originalBulkTransferWorkbookLimitVnd, setOriginalBulkTransferWorkbookLimitVnd] = useState('');
-  const [walletBalanceAlertThresholdVnd, setWalletBalanceAlertThresholdVndState] = useState('');
-  const [originalWalletBalanceAlertThresholdVnd, setOriginalWalletBalanceAlertThresholdVnd] = useState('');
-  const [selfCheckInAdvancePercentage, setSelfCheckInAdvancePercentage] = useState('');
-  const [originalSelfCheckInAdvancePercentage, setOriginalSelfCheckInAdvancePercentage] = useState('');
-  const [selfCheckInAdvanceHoldHours, setSelfCheckInAdvanceHoldHours] = useState('');
-  const [originalSelfCheckInAdvanceHoldHours, setOriginalSelfCheckInAdvanceHoldHours] = useState('');
-  const [selfCheckInAdvanceWindowOpenDay, setSelfCheckInAdvanceWindowOpenDay] = useState('');
-  const [originalSelfCheckInAdvanceWindowOpenDay, setOriginalSelfCheckInAdvanceWindowOpenDay] = useState('');
-  const [advanceRequestStopDay, setAdvanceRequestStopDay] = useState('');
-  const [originalAdvanceRequestStopDay, setOriginalAdvanceRequestStopDay] = useState('');
-  const [transferBankHolder, setTransferBankHolder] = useState('');
-  const [originalTransferBankHolder, setOriginalTransferBankHolder] = useState('');
-  const [transferBankNumber, setTransferBankNumber] = useState('');
-  const [originalTransferBankNumber, setOriginalTransferBankNumber] = useState('');
-  const [transferBankName, setTransferBankName] = useState('');
-  const [originalTransferBankName, setOriginalTransferBankName] = useState('');
-  const [transferBankVisible, setTransferBankVisibleState] = useState(true);
-  const [originalTransferBankVisible, setOriginalTransferBankVisible] = useState(true);
-  const [flexPayTransferBankHolder, setFlexPayTransferBankHolder] = useState('');
-  const [originalFlexPayTransferBankHolder, setOriginalFlexPayTransferBankHolder] = useState('');
-  const [flexPayTransferBankNumber, setFlexPayTransferBankNumber] = useState('');
-  const [originalFlexPayTransferBankNumber, setOriginalFlexPayTransferBankNumber] = useState('');
-  const [flexPayTransferBankName, setFlexPayTransferBankName] = useState('');
-  const [originalFlexPayTransferBankName, setOriginalFlexPayTransferBankName] = useState('');
-  const [flexPayTransferBankVisible, setFlexPayTransferBankVisibleState] = useState(true);
-  const [originalFlexPayTransferBankVisible, setOriginalFlexPayTransferBankVisible] = useState(true);
-  const [bulkTransferWorkbookLimitSaveError, setBulkTransferWorkbookLimitSaveError] =
-    useState<string | null>(null);
-  const [walletBalanceAlertThresholdSaveError, setWalletBalanceAlertThresholdSaveError] =
-    useState<string | null>(null);
 
+  // Sync display values once the settings query lands.
   useEffect(() => {
-    if (settings && Array.isArray(settings)) {
-      const weeklySetting = settings.find((s) => s?.key === SETTINGS_KEYS.WEEKLY_PAYMENT_PERCENTAGE);
-      const monthlySetting = settings.find((s) => s?.key === SETTINGS_KEYS.MONTHLY_PAYMENT_PERCENTAGE);
-      const partnerCompanySetting = settings.find((s) => s?.key === SETTINGS_KEYS.PARTNER_COMPANY);
-      const bulkTransferWorkbookLimitSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.BULK_TRANSFER_WORKBOOK_LIMIT_VND,
-      );
-      const walletBalanceAlertThresholdSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.WALLET_BALANCE_ALERT_THRESHOLD_VND,
-      );
-      const selfCheckInAdvancePercentageSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_PERCENTAGE,
-      );
-      const selfCheckInAdvanceHoldHoursSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_HOLD_HOURS,
-      );
-      const selfCheckInAdvanceWindowOpenDaySetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_WINDOW_OPEN_DAY,
-      );
-      const transferBankHolderSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.TRANSFER_BANK_HOLDER,
-      );
-      const transferBankNumberSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.TRANSFER_BANK_NUMBER,
-      );
-      const transferBankNameSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.TRANSFER_BANK_NAME,
-      );
-      const transferBankVisibleSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.TRANSFER_BANK_VISIBLE,
-      );
-      const flexPayTransferBankHolderSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_HOLDER,
-      );
-      const flexPayTransferBankNumberSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NUMBER,
-      );
-      const flexPayTransferBankNameSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NAME,
-      );
-      const flexPayTransferBankVisibleSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_VISIBLE,
-      );
-
-      if (weeklySetting?.value) {
-        const value = (parseFloat(weeklySetting.value) * 100).toString();
-        setWeeklyPaymentPercentage(value);
-        setOriginalWeeklyPayment(value);
-      }
-      if (monthlySetting?.value) {
-        const value = (parseFloat(monthlySetting.value) * 100).toString();
-        setMonthlyPaymentPercentage(value);
-        setOriginalMonthlyPayment(value);
-      }
-      if (partnerCompanySetting?.value) {
-        setPartnerCompany(partnerCompanySetting.value);
-        setOriginalPartnerCompany(partnerCompanySetting.value);
-      }
-      const subscriptionFeeSetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND,
-      );
-      if (subscriptionFeeSetting?.value != null) {
-        setSubscriptionFeeVnd(subscriptionFeeSetting.value);
-        setOriginalSubscriptionFeeVnd(subscriptionFeeSetting.value);
-      }
-      if (bulkTransferWorkbookLimitSetting?.value != null) {
-        setBulkTransferWorkbookLimitVndState(bulkTransferWorkbookLimitSetting.value);
-        setOriginalBulkTransferWorkbookLimitVnd(bulkTransferWorkbookLimitSetting.value);
-      }
-      if (walletBalanceAlertThresholdSetting?.value != null) {
-        setWalletBalanceAlertThresholdVndState(walletBalanceAlertThresholdSetting.value);
-        setOriginalWalletBalanceAlertThresholdVnd(walletBalanceAlertThresholdSetting.value);
-      }
-      if (selfCheckInAdvancePercentageSetting?.value != null) {
-        setSelfCheckInAdvancePercentage(selfCheckInAdvancePercentageSetting.value);
-        setOriginalSelfCheckInAdvancePercentage(selfCheckInAdvancePercentageSetting.value);
-      }
-      if (selfCheckInAdvanceHoldHoursSetting?.value != null) {
-        setSelfCheckInAdvanceHoldHours(selfCheckInAdvanceHoldHoursSetting.value);
-        setOriginalSelfCheckInAdvanceHoldHours(selfCheckInAdvanceHoldHoursSetting.value);
-      }
-      if (selfCheckInAdvanceWindowOpenDaySetting?.value != null) {
-        setSelfCheckInAdvanceWindowOpenDay(selfCheckInAdvanceWindowOpenDaySetting.value);
-        setOriginalSelfCheckInAdvanceWindowOpenDay(selfCheckInAdvanceWindowOpenDaySetting.value);
-      }
-      const advanceRequestStopDaySetting = settings.find(
-        (s) => s?.key === SETTINGS_KEYS.ADVANCE_REQUEST_STOP_DAY,
-      );
-      // The migration seeds this row; a missing row (fresh env before the
-      // migration ran) falls back to the backend default of 9.
-      const advanceRequestStopDayValue = advanceRequestStopDaySetting?.value ?? '9';
-      setAdvanceRequestStopDay(advanceRequestStopDayValue);
-      setOriginalAdvanceRequestStopDay(advanceRequestStopDayValue);
-      // Missing rows fall back to the shared defaults so admins see what is
-      // currently printed on statements before saving an override.
-      setTransferBankHolder(transferBankHolderSetting?.value ?? TRANSFER_BANK_DEFAULTS.HOLDER);
-      setOriginalTransferBankHolder(transferBankHolderSetting?.value ?? TRANSFER_BANK_DEFAULTS.HOLDER);
-      setTransferBankNumber(transferBankNumberSetting?.value ?? TRANSFER_BANK_DEFAULTS.NUMBER);
-      setOriginalTransferBankNumber(transferBankNumberSetting?.value ?? TRANSFER_BANK_DEFAULTS.NUMBER);
-      setTransferBankName(transferBankNameSetting?.value ?? TRANSFER_BANK_DEFAULTS.NAME);
-      setOriginalTransferBankName(transferBankNameSetting?.value ?? TRANSFER_BANK_DEFAULTS.NAME);
-      // Mirrors the backend parse: missing/empty row => default visible;
-      // otherwise only an explicit "true" keeps the block visible.
-      const rawBankVisible = transferBankVisibleSetting?.value?.trim().toLowerCase();
-      const bankVisible = rawBankVisible === undefined || rawBankVisible === '' || rawBankVisible === 'true';
-      setTransferBankVisibleState(bankVisible);
-      setOriginalTransferBankVisible(bankVisible);
-
-      // FlexPay rows mirror the backend fallback: an unset (or empty) FlexPay
-      // field shows the weekly payroll account so admins see what is currently
-      // printed before saving a FlexPay-only override.
-      const flexPayHolder =
-        flexPayTransferBankHolderSetting?.value ||
-        transferBankHolderSetting?.value ||
-        TRANSFER_BANK_DEFAULTS.HOLDER;
-      const flexPayNumber =
-        flexPayTransferBankNumberSetting?.value ||
-        transferBankNumberSetting?.value ||
-        TRANSFER_BANK_DEFAULTS.NUMBER;
-      const flexPayName =
-        flexPayTransferBankNameSetting?.value ||
-        transferBankNameSetting?.value ||
-        TRANSFER_BANK_DEFAULTS.NAME;
-      setFlexPayTransferBankHolder(flexPayHolder);
-      setOriginalFlexPayTransferBankHolder(flexPayHolder);
-      setFlexPayTransferBankNumber(flexPayNumber);
-      setOriginalFlexPayTransferBankNumber(flexPayNumber);
-      setFlexPayTransferBankName(flexPayName);
-      setOriginalFlexPayTransferBankName(flexPayName);
-      const rawFlexPayVisible = flexPayTransferBankVisibleSetting?.value?.trim().toLowerCase();
-      const flexPayVisible =
-        rawFlexPayVisible === undefined || rawFlexPayVisible === ''
-          ? bankVisible
-          : rawFlexPayVisible === 'true';
-      setFlexPayTransferBankVisibleState(flexPayVisible);
-      setOriginalFlexPayTransferBankVisible(flexPayVisible);
+    if (feeSetting) {
+      setSubscriptionFeeVnd(feeSetting.value ?? '');
+      setOriginalSubscriptionFeeVnd(feeSetting.value ?? '');
     }
-  }, [settings]);
+  }, [feeSetting]);
 
-  const bulkTransferWorkbookLimitSetting = settings?.find(
-    (setting) => setting?.key === SETTINGS_KEYS.BULK_TRANSFER_WORKBOOK_LIMIT_VND,
-  );
-  const walletBalanceAlertThresholdSetting = settings?.find(
-    (setting) => setting?.key === SETTINGS_KEYS.WALLET_BALANCE_ALERT_THRESHOLD_VND,
-  );
-  const loadError = isSettingsError
-    ? 'Không thể tải cài đặt. Vui lòng thử lại.'
-    : null;
-  const bulkTransferWorkbookLimitUnavailableMessage =
-    loadError ??
-    (!isLoading && !bulkTransferWorkbookLimitSetting
-      ? 'Không tìm thấy cài đặt giới hạn file Chuyển lô. Vui lòng thử tải lại.'
-      : null);
-  const walletBalanceAlertThresholdUnavailableMessage =
-    loadError ??
-    (!isLoading && !walletBalanceAlertThresholdSetting
-      ? 'Không tìm thấy cài đặt ngưỡng cảnh báo số dư ví tiền. Vui lòng thử tải lại.'
-      : null);
-
-  const setBulkTransferWorkbookLimitVnd = (value: string) => {
-    setBulkTransferWorkbookLimitSaveError(null);
-    setBulkTransferWorkbookLimitVndState(value);
-  };
-
-  const setWalletBalanceAlertThresholdVnd = (value: string) => {
-    setWalletBalanceAlertThresholdSaveError(null);
-    setWalletBalanceAlertThresholdVndState(value);
-  };
-
-  const handleSaveWeeklyPayment = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find((s) => s?.key === SETTINGS_KEYS.WEEKLY_PAYMENT_PERCENTAGE);
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: (parseFloat(weeklyPaymentPercentage) / 100).toString() } },
-      { onSuccess: () => setOriginalWeeklyPayment(weeklyPaymentPercentage) },
-    );
-  };
-
-  const handleSaveMonthlyPayment = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find((s) => s?.key === SETTINGS_KEYS.MONTHLY_PAYMENT_PERCENTAGE);
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: (parseFloat(monthlyPaymentPercentage) / 100).toString() } },
-      { onSuccess: () => setOriginalMonthlyPayment(monthlyPaymentPercentage) },
-    );
-  };
-
-  const handleSavePartnerCompany = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find((s) => s?.key === SETTINGS_KEYS.PARTNER_COMPANY);
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: partnerCompany } },
-      { onSuccess: () => setOriginalPartnerCompany(partnerCompany) },
-    );
-  };
+  const createMutation = useCreateSetting();
+  const updateMutation = useUpdateSetting();
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   // Upsert: the fee row may not exist yet on an environment that never saved
   // it — the backend defaults the fee until an admin stores one.
   const handleSaveSubscriptionFee = () => {
-    const setting = settings?.find((s) => s?.key === SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND);
     const value = subscriptionFeeVnd;
     const onSaved = () => setOriginalSubscriptionFeeVnd(value);
-    if (setting?.id) {
-      updateMutation.mutate({ id: setting.id, data: { value } }, { onSuccess: onSaved });
+    if (feeSetting?.id) {
+      updateMutation.mutate({ id: feeSetting.id, data: { value } }, { onSuccess: onSaved });
     } else {
       createMutation.mutate(
         { key: SETTINGS_KEYS.SUBSCRIPTION_FEE_PER_EMPLOYEE_PER_KY_VND, value, value_type: 'number' },
@@ -395,223 +58,16 @@ export function useSettingsForm(): SettingsFormState {
     }
   };
 
-  const handleSaveSelfCheckInAdvancePercentage = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find(
-      (item) => item?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_PERCENTAGE,
-    );
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: selfCheckInAdvancePercentage } },
-      { onSuccess: () => setOriginalSelfCheckInAdvancePercentage(selfCheckInAdvancePercentage) },
-    );
-  };
-
-  const handleSaveSelfCheckInAdvanceHoldHours = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find(
-      (item) => item?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_HOLD_HOURS,
-    );
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: selfCheckInAdvanceHoldHours } },
-      { onSuccess: () => setOriginalSelfCheckInAdvanceHoldHours(selfCheckInAdvanceHoldHours) },
-    );
-  };
-
-  const handleSaveSelfCheckInAdvanceWindowOpenDay = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find(
-      (item) => item?.key === SETTINGS_KEYS.SELF_CHECK_IN_ADVANCE_WINDOW_OPEN_DAY,
-    );
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: selfCheckInAdvanceWindowOpenDay } },
-      { onSuccess: () => setOriginalSelfCheckInAdvanceWindowOpenDay(selfCheckInAdvanceWindowOpenDay) },
-    );
-  };
-
-  const handleSaveAdvanceRequestStopDay = () => {
-    if (!settings || !Array.isArray(settings)) return;
-    const setting = settings.find(
-      (item) => item?.key === SETTINGS_KEYS.ADVANCE_REQUEST_STOP_DAY,
-    );
-    if (!setting) return;
-    updateMutation.mutate(
-      { id: setting.id, data: { value: advanceRequestStopDay } },
-      { onSuccess: () => setOriginalAdvanceRequestStopDay(advanceRequestStopDay) },
-    );
-  };
-
-  const handleSaveBulkTransferWorkbookLimitVnd = async () => {
-    if (!bulkTransferWorkbookLimitSetting) return;
-
-    setBulkTransferWorkbookLimitSaveError(null);
-    try {
-      await updateMutation.mutateAsync({
-        id: bulkTransferWorkbookLimitSetting.id,
-        data: { value: bulkTransferWorkbookLimitVnd },
-      });
-      setOriginalBulkTransferWorkbookLimitVnd(bulkTransferWorkbookLimitVnd);
-    } catch {
-      setBulkTransferWorkbookLimitSaveError(
-        'Không thể lưu giới hạn file Chuyển lô. Kiểm tra giá trị và thử lại.',
-      );
-    }
-  };
-
-  const handleSaveWalletBalanceAlertThresholdVnd = async () => {
-    if (!walletBalanceAlertThresholdSetting) return;
-
-    setWalletBalanceAlertThresholdSaveError(null);
-    try {
-      await updateMutation.mutateAsync({
-        id: walletBalanceAlertThresholdSetting.id,
-        data: { value: walletBalanceAlertThresholdVnd },
-      });
-      setOriginalWalletBalanceAlertThresholdVnd(walletBalanceAlertThresholdVnd);
-    } catch {
-      setWalletBalanceAlertThresholdSaveError(
-        'Không thể lưu ngưỡng cảnh báo số dư ví tiền. Kiểm tra giá trị và thử lại.',
-      );
-    }
-  };
-
-  // Upserts one string setting. The row may not exist yet on an environment
-  // where the key was never seeded, so a miss creates it.
-  const upsertStringSetting = (key: string, value: string, onSaved: () => void) => {
-    const setting = settings?.find((s) => s?.key === key);
-    if (setting?.id) {
-      updateMutation.mutate({ id: setting.id, data: { value } }, { onSuccess: onSaved });
-    } else {
-      createMutation.mutate({ key, value, value_type: 'string' }, { onSuccess: onSaved });
-    }
-  };
-
-  const upsertVisibleSetting = (key: string, visible: boolean, onSaved: () => void) => {
-    upsertStringSetting(key, visible ? 'true' : 'false', onSaved);
-  };
-
-  const handleSaveTransferBank = () => {
-    upsertStringSetting(SETTINGS_KEYS.TRANSFER_BANK_HOLDER, transferBankHolder, () =>
-      setOriginalTransferBankHolder(transferBankHolder),
-    );
-    upsertStringSetting(SETTINGS_KEYS.TRANSFER_BANK_NUMBER, transferBankNumber, () =>
-      setOriginalTransferBankNumber(transferBankNumber),
-    );
-    upsertStringSetting(SETTINGS_KEYS.TRANSFER_BANK_NAME, transferBankName, () =>
-      setOriginalTransferBankName(transferBankName),
-    );
-  };
-
-  const handleSaveTransferBankVisible = () => {
-    upsertVisibleSetting(SETTINGS_KEYS.TRANSFER_BANK_VISIBLE, transferBankVisible, () =>
-      setOriginalTransferBankVisible(transferBankVisible),
-    );
-  };
-
-  const handleSaveFlexPayTransferBank = () => {
-    upsertStringSetting(SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_HOLDER, flexPayTransferBankHolder, () =>
-      setOriginalFlexPayTransferBankHolder(flexPayTransferBankHolder),
-    );
-    upsertStringSetting(SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NUMBER, flexPayTransferBankNumber, () =>
-      setOriginalFlexPayTransferBankNumber(flexPayTransferBankNumber),
-    );
-    upsertStringSetting(SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_NAME, flexPayTransferBankName, () =>
-      setOriginalFlexPayTransferBankName(flexPayTransferBankName),
-    );
-  };
-
-  const handleSaveFlexPayTransferBankVisible = () => {
-    upsertVisibleSetting(
-      SETTINGS_KEYS.FLEXPAY_TRANSFER_BANK_VISIBLE,
-      flexPayTransferBankVisible,
-      () => setOriginalFlexPayTransferBankVisible(flexPayTransferBankVisible),
-    );
-  };
-
-  const retryLoading = () => {
-    void refetch();
-  };
+  const loadError = isSettingsError ? 'Không thể tải cài đặt. Vui lòng thử lại.' : null;
 
   return {
-    weeklyPaymentPercentage,
-    originalWeeklyPayment,
-    monthlyPaymentPercentage,
-    originalMonthlyPayment,
-    partnerCompany,
-    originalPartnerCompany,
     subscriptionFeeVnd,
     originalSubscriptionFeeVnd,
-    bulkTransferWorkbookLimitVnd,
-    originalBulkTransferWorkbookLimitVnd,
-    bulkTransferWorkbookLimitSaveError,
-    bulkTransferWorkbookLimitUnavailableMessage,
-    walletBalanceAlertThresholdVnd,
-    originalWalletBalanceAlertThresholdVnd,
-    walletBalanceAlertThresholdSaveError,
-    walletBalanceAlertThresholdUnavailableMessage,
-    selfCheckInAdvancePercentage,
-    originalSelfCheckInAdvancePercentage,
-    selfCheckInAdvanceHoldHours,
-    originalSelfCheckInAdvanceHoldHours,
-    selfCheckInAdvanceWindowOpenDay,
-    originalSelfCheckInAdvanceWindowOpenDay,
-    advanceRequestStopDay,
-    originalAdvanceRequestStopDay,
-    transferBankHolder,
-    originalTransferBankHolder,
-    transferBankNumber,
-    originalTransferBankNumber,
-    transferBankName,
-    originalTransferBankName,
-    transferBankVisible,
-    originalTransferBankVisible,
-    flexPayTransferBankHolder,
-    originalFlexPayTransferBankHolder,
-    flexPayTransferBankNumber,
-    originalFlexPayTransferBankNumber,
-    flexPayTransferBankName,
-    originalFlexPayTransferBankName,
-    flexPayTransferBankVisible,
-    originalFlexPayTransferBankVisible,
-    loadError,
-    // Covers both save paths: a missing settings row (e.g. the not-yet-seeded
-    // transfer_bank_visible toggle) is created, an existing one updated.
-    isSaving: updateMutation.isPending || createMutation.isPending,
-    isLoading,
-    setWeeklyPaymentPercentage,
-    setMonthlyPaymentPercentage,
-    setPartnerCompany,
     setSubscriptionFeeVnd,
-    setBulkTransferWorkbookLimitVnd,
-    setWalletBalanceAlertThresholdVnd,
-    setSelfCheckInAdvancePercentage,
-    setSelfCheckInAdvanceHoldHours,
-    setSelfCheckInAdvanceWindowOpenDay,
-    setAdvanceRequestStopDay,
-    setTransferBankHolder,
-    setTransferBankNumber,
-    setTransferBankName,
-    setTransferBankVisible: setTransferBankVisibleState,
-    setFlexPayTransferBankHolder,
-    setFlexPayTransferBankNumber,
-    setFlexPayTransferBankName,
-    setFlexPayTransferBankVisible: setFlexPayTransferBankVisibleState,
-    handleSaveWeeklyPayment,
-    handleSaveMonthlyPayment,
-    handleSavePartnerCompany,
     handleSaveSubscriptionFee,
-    handleSaveBulkTransferWorkbookLimitVnd,
-    handleSaveWalletBalanceAlertThresholdVnd,
-    handleSaveSelfCheckInAdvancePercentage,
-    handleSaveSelfCheckInAdvanceHoldHours,
-    handleSaveSelfCheckInAdvanceWindowOpenDay,
-    handleSaveAdvanceRequestStopDay,
-    handleSaveTransferBank,
-    handleSaveTransferBankVisible,
-    handleSaveFlexPayTransferBank,
-    handleSaveFlexPayTransferBankVisible,
-    retryLoading,
+    isSaving,
+    isLoading,
+    loadError,
+    retryLoading: () => refetch(),
   };
 }

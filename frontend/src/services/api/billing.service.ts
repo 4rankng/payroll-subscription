@@ -146,10 +146,12 @@ class BillingService {
 
   /** One monthly report with its Kỳ lines. */
   async getReport(workMonth: string): Promise<(BillingReport & { lines?: BillingReportLine[] }) | null> {
-    const response = await apiClient.get<BillingReport & { lines?: BillingReportLine[] }>(
+    const response = await apiClient.get<{ report: BillingReport; lines?: BillingReportLine[] }>(
       `${ENDPOINTS.reports}?work_month=${encodeURIComponent(workMonth)}`,
     );
-    return response.data ?? null;
+    const payload = response.data;
+    if (!payload?.report) return null;
+    return { ...payload.report, lines: payload.lines ?? [] };
   }
 }
 

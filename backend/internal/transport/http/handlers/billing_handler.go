@@ -139,7 +139,7 @@ func (h *BillingHandler) GetReport(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "work_month phải có dạng YYYY-MM"})
 		return
 	}
-	report, _, err := h.reports.GetReport(c.Request.Context(), workMonth)
+	report, lines, err := h.reports.GetReport(c.Request.Context(), workMonth)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -148,7 +148,7 @@ func (h *BillingHandler) GetReport(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "chưa có báo cáo cho tháng này"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "success", "data": report})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"report": report, "lines": lines}})
 }
 
 // PaidSeries serves the FR-6 Tổng quan time series: per-day distinct paid

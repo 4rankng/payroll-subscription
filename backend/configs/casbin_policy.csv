@@ -83,3 +83,14 @@ p, nhanvien, /api/v1/settings/*, GET, allow
 p, admin, /metrics, GET, allow
 p, giamdoc, /api/v1/dashboard/*, GET, allow
 p, admin, /metrics, GET, allow
+p, giamdoc, /api/v1/notifications, GET, allow
+p, giamdoc, /api/v1/notifications/*, GET, allow
+p, giamdoc, /api/v1/notifications/unread, GET, allow
+p, giamdoc, /api/v1/notifications/unread/count, GET, allow
+p, giamdoc, /api/v1/employees/*, GET, allow
+p, giamdoc, /api/v1/push/vapid-key, GET, allow
+p, quanly, /api/v1/notifications, GET, allow
+p, quanly, /api/v1/notifications/*, GET, allow
+p, quanly, /api/v1/notifications/unread, GET, allow
+p, quanly, /api/v1/notifications/unread/count, GET, allow
+p, quanly, /api/v1/push/vapid-key, GET, allow

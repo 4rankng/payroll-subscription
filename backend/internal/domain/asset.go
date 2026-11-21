@@ -81,6 +81,7 @@ const (
 	UploadTypeSettlementProof           = "settlement_proof" // settlement evidence uploads
 	UploadTypeChat                      = "chat"             // chat assistant screenshot attachments (PNG/JPG only)
 	UploadTypeEmployeeImports           = "employee_imports" // bulk employee import files
+	UploadTypeBillingReport             = "billing_report"   // FR-3 month-end billing report workbooks (Excel)
 	// UploadTypeCheckInRoster holds the day-9 prepared self check-in roster
 	// the admin downloads from Tổng quan (dashboard). One file per period.
 	UploadTypeCheckInRoster = "checkin_roster"
@@ -101,6 +102,7 @@ var allowedUploadTypes = map[string]bool{
 	UploadTypeAdvancePaymentExport:      true,
 	UploadTypeAdvancePaymentSaoKeExport: true,
 	UploadTypeAdvancePaymentSaoKeResult: true,
+	UploadTypeBillingReport:             true,
 	UploadTypePartnerBCCImport:          true,
 	UploadTypeSaoKe:                     true,
 	UploadTypeSettlementProof:           true,

@@ -5,7 +5,6 @@ import { TimesheetDisplaySection } from "@/components/timesheet/TimesheetDisplay
 import { BCCUploadModal } from "@/components/timesheet/BCCUploadModal";
 import { UploadHistorySheet } from "@/components/timesheet/UploadHistorySheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MissingBankDetailsSection } from "@/components/employees/MissingBankDetailsSection";
 import { GroupedStatCard } from "@/components/shared/GroupedStatCard";
 import { MobilePageShell, MobileSurface } from "@/components/shared/MobilePageShell";
 import { Calendar, AlertCircle } from "lucide-react";
@@ -234,10 +233,6 @@ export default function TimesheetsPageMobile() {
           )}
         </div>
       )}
-
-      <MobileSurface className="p-3">
-        <MissingBankDetailsSection onEmployeeClick={handleEmployeeClick} />
-      </MobileSurface>
 
       <MobileSurface className="overflow-hidden p-3">
         <TimesheetDisplaySection

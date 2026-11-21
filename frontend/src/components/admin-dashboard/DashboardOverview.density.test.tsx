@@ -39,6 +39,7 @@ describe('DashboardOverview density', () => {
             statusLabel: 'Cần duyệt',
             icon: () => null,
             tone: 'warning',
+            onClick: () => {},
           },
         ]}
         isRefreshing={false}

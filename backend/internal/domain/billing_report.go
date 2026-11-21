@@ -10,14 +10,14 @@ import (
 // rewrite history. One report per work month; regenerated reports replace
 // their lines but keep the same row.
 type BillingReport struct {
-	ID                     uint64    `gorm:"column:id;primaryKey;autoIncrement"`
-	WorkMonth              string    `gorm:"column:work_month;type:char(7);not null;uniqueIndex:uq_billing_reports_work_month"`
-	FeePerEmployeePerKyVnd int64     `gorm:"column:fee_per_employee_per_ky_vnd;not null;comment:'Fee snapshot at generation time (FR-4)'"`
-	TotalDistinct          int       `gorm:"column:total_distinct;not null;default:0"`
-	TotalVnd               int64     `gorm:"column:total_vnd;not null;default:0"`
-	ExcelPath              string    `gorm:"column:excel_path;type:varchar(500)"`
-	GeneratedBy            uint      `gorm:"column:generated_by;type:bigint unsigned;not null"`
-	GeneratedAt            time.Time `gorm:"column:generated_at;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3)"`
+	ID                     uint64    `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	WorkMonth              string    `json:"work_month" gorm:"column:work_month;type:char(7);not null;uniqueIndex:uq_billing_reports_work_month"`
+	FeePerEmployeePerKyVnd int64     `json:"fee_per_employee_per_ky_vnd" gorm:"column:fee_per_employee_per_ky_vnd;not null;comment:'Fee snapshot at generation time (FR-4)'"`
+	TotalDistinct          int       `json:"total_distinct" gorm:"column:total_distinct;not null;default:0"`
+	TotalVnd               int64     `json:"total_vnd" gorm:"column:total_vnd;not null;default:0"`
+	ExcelPath              string    `json:"excel_path" gorm:"column:excel_path;type:varchar(500)"`
+	GeneratedBy            uint      `json:"generated_by" gorm:"column:generated_by;type:bigint unsigned;not null"`
+	GeneratedAt            time.Time `json:"generated_at" gorm:"column:generated_at;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3)"`
 }
 
 // TableName pins the consolidated-schema table name.
@@ -26,11 +26,11 @@ func (BillingReport) TableName() string { return "billing_reports" }
 // BillingReportLine is one Kỳ row of a report: the distinct-employee count
 // and the amount for that Kỳ (distinct × fee).
 type BillingReportLine struct {
-	ID            uint64 `gorm:"column:id;primaryKey;autoIncrement"`
-	ReportID      uint64 `gorm:"column:report_id;type:bigint unsigned;not null"`
-	Cycle         int    `gorm:"column:cycle;type:tinyint unsigned;not null"`
-	DistinctCount int    `gorm:"column:distinct_count;not null;default:0"`
-	AmountVnd     int64  `gorm:"column:amount_vnd;not null;default:0"`
+	ID            uint64 `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	ReportID      uint64 `json:"report_id" gorm:"column:report_id;type:bigint unsigned;not null"`
+	Cycle         int    `json:"cycle" gorm:"column:cycle;type:tinyint unsigned;not null"`
+	DistinctCount int    `json:"distinct_count" gorm:"column:distinct_count;not null;default:0"`
+	AmountVnd     int64  `json:"amount_vnd" gorm:"column:amount_vnd;not null;default:0"`
 }
 
 // TableName pins the consolidated-schema table name.
