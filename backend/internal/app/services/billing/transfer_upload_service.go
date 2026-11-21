@@ -90,7 +90,18 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 		return nil, fmt.Errorf("billing: idempotency lookup: %w", err)
 	}
 	if prior != nil {
-		return &UploadResult{UploadID: prior.ID, Status: prior.Status, Duplicate: true}, nil
+		// Verified priors are genuine outcomes and stay idempotent: an
+		// identical re-upload returns the prior result without touching the
+		// books. Pending/rejected priors are re-processable — "pending" is
+		// residue from an errored attempt, and a rejected upload must re-run
+		// verification once the blocker clears (A2: corrected re-upload
+		// re-runs verification) — so drop the stale row and process fresh.
+		if prior.Status == domain.TransferUploadStatusVerified {
+			return &UploadResult{UploadID: prior.ID, Status: prior.Status, Duplicate: true}, nil
+		}
+		if delErr := s.uploads.Delete(ctx, prior.ID); delErr != nil {
+			return nil, fmt.Errorf("billing: clear stale %s upload: %w", prior.Status, delErr)
+		}
 	}
 
 	rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data))
@@ -166,6 +177,28 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 	now := clock.Now()
 	nowDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
+	// One billing atom per (employee, Kỳ): duplicate CCCD rows in one file are
+	// an uploader data-entry error — every row after the first would find its
+	// timesheets already marked paid by the earlier row and roll the whole
+	// file back with a spurious conflict. Keep the first row per CCCD and
+	// flag the duplicates as per-row failures instead.
+	seenCCCD := make(map[string]struct{}, len(rows))
+	uniqueRows := make([]ParsedTransferRow, 0, len(rows))
+	for _, row := range rows {
+		if _, dup := seenCCCD[row.CCCD]; dup {
+			result.Failures = append(result.Failures, RowFailure{
+				Row:  row.RowNumber,
+				CCCD: row.CCCD,
+				Reason: "dòng trùng CCCD trong file — nhân viên này đã được đối soát ở dòng trước",
+			})
+			result.RowsFailed++
+			continue
+		}
+		seenCCCD[row.CCCD] = struct{}{}
+		uniqueRows = append(uniqueRows, row)
+	}
+	rows = uniqueRows
+
 	for _, row := range rows {
 		employee, err := s.employees.GetByCCCD(ctx, row.CCCD)
 		if err != nil || employee == nil {
@@ -220,6 +253,11 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 			}
 		}
 		if err := s.timesheets.BulkUpdatePaymentStatus(ctx, updates); err != nil {
+			ids := make([]uint, 0, len(updates))
+			for _, u := range updates {
+				ids = append(ids, u.TimesheetID)
+			}
+			s.logger.Error("billing upload mark-paid conflict", "employee", employee.ID, "timesheet_ids", ids, "error", err)
 			return fmt.Errorf("mark %d timesheets paid (employee %d): %w", len(updates), employee.ID, err)
 		}
 		result.RowsOK++

@@ -23,19 +23,19 @@ const (
 // of re-touching the books (settlement_uploads pattern). Hard delete only —
 // no soft-delete columns anywhere (D16).
 type TransferUpload struct {
-	ID               uint64               `gorm:"column:id;primaryKey;autoIncrement"`
-	Cycle            int                  `gorm:"column:cycle;type:tinyint unsigned;not null"`
-	WorkMonth        string               `gorm:"column:work_month;type:char(7);not null"`
-	FileHash         string               `gorm:"column:file_hash;type:char(64);not null;uniqueIndex:uq_transfer_uploads_file_hash"`
-	OriginalFilename string               `gorm:"column:original_filename;type:varchar(255);not null"`
-	AssetID          *uint64              `gorm:"column:asset_id;type:bigint unsigned"`
-	UploadedBy       uint                 `gorm:"column:uploaded_by;type:bigint unsigned;not null"`
-	Status           TransferUploadStatus `gorm:"column:status;type:enum('pending','verified','rejected');not null;default:'pending'"`
-	RejectReason     *string              `gorm:"column:reject_reason;type:varchar(500)"`
-	VerifiedAt       *time.Time           `gorm:"column:verified_at;type:datetime(3)"`
-	VerifiedBy       *uint                `gorm:"column:verified_by;type:bigint unsigned"`
-	CreatedAt        time.Time            `gorm:"column:created_at"`
-	UpdatedAt        time.Time            `gorm:"column:updated_at"`
+	ID               uint64               `json:"id" gorm:"column:id;primaryKey;autoIncrement"`
+	Cycle            int                  `json:"cycle" gorm:"column:cycle;type:tinyint unsigned;not null"`
+	WorkMonth        string               `json:"work_month" gorm:"column:work_month;type:char(7);not null"`
+	FileHash         string               `json:"file_hash" gorm:"column:file_hash;type:char(64);not null;uniqueIndex:uq_transfer_uploads_file_hash"`
+	OriginalFilename string               `json:"original_filename" gorm:"column:original_filename;type:varchar(255);not null"`
+	AssetID          *uint64              `json:"asset_id" gorm:"column:asset_id;type:bigint unsigned"`
+	UploadedBy       uint                 `json:"uploaded_by" gorm:"column:uploaded_by;type:bigint unsigned;not null"`
+	Status           TransferUploadStatus `json:"status" gorm:"column:status;type:enum('pending','verified','rejected');not null;default:'pending'"`
+	RejectReason     *string              `json:"reject_reason" gorm:"column:reject_reason;type:varchar(500)"`
+	VerifiedAt       *time.Time           `json:"verified_at" gorm:"column:verified_at;type:datetime(3)"`
+	VerifiedBy       *uint                `json:"verified_by" gorm:"column:verified_by;type:bigint unsigned"`
+	CreatedAt        time.Time            `json:"created_at" gorm:"column:created_at"`
+	UpdatedAt        time.Time            `json:"updated_at" gorm:"column:updated_at"`
 }
 
 // TableName pins the consolidated-schema table name.
@@ -51,6 +51,8 @@ type TransferUploadRepository interface {
 	// Create inserts a new upload row; the unique file_hash index makes a
 	// concurrent duplicate fail rather than double-count.
 	Create(ctx context.Context, upload *TransferUpload) error
+	// Delete removes a residue pending upload row (hard delete, D16).
+	Delete(ctx context.Context, id uint64) error
 	// Update persists status/reject/verify mutations.
 	Update(ctx context.Context, upload *TransferUpload) error
 	// ListByWorkMonth returns the uploads of one work month, newest first.

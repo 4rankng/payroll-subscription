@@ -51,6 +51,15 @@ func (r *TransferUploadRepository) GetByID(ctx context.Context, id uint64) (*dom
 
 // Create inserts a new upload row. The unique index on file_hash makes a
 // concurrent duplicate fail rather than double-count.
+// Delete removes a residue row (e.g. a pending upload whose synchronous
+// processing never completed). Hard delete — D16.
+func (r *TransferUploadRepository) Delete(ctx context.Context, id uint64) error {
+	if err := r.dbForContext(ctx).Delete(&domain.TransferUpload{}, id).Error; err != nil {
+		return fmt.Errorf("transfer_uploads: delete: %w", err)
+	}
+	return nil
+}
+
 func (r *TransferUploadRepository) Create(ctx context.Context, upload *domain.TransferUpload) error {
 	if err := r.dbForContext(ctx).Create(upload).Error; err != nil {
 		return fmt.Errorf("transfer_uploads: create: %w", err)

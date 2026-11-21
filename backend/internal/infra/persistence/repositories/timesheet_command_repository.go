@@ -203,6 +203,23 @@ func (r *TimesheetCommandRepository) ResetAllApproved(ctx context.Context) (int6
 
 // BulkUpdatePaymentStatus updates payment status for multiple timesheets in a single transaction
 func (r *TimesheetCommandRepository) BulkUpdatePaymentStatus(ctx context.Context, updates []domain.PaymentStatusUpdate) error {
+	// A transfer result can carry several rows for the same timesheet (two
+	// payments inside one Kỳ). The per-row update below matches each id once —
+	// the second duplicate update would see payment_status already paid and
+	// trip the conflict check — so collapse duplicates to the last update per
+	// id before executing.
+	seen := make(map[uint]struct{}, len(updates))
+	deduped := make([]domain.PaymentStatusUpdate, 0, len(updates))
+	for i := len(updates) - 1; i >= 0; i-- {
+		id := updates[i].TimesheetID
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
+		deduped = append(deduped, updates[i])
+	}
+	updates = deduped
+
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, update := range updates {
 			updateFields := map[string]interface{}{

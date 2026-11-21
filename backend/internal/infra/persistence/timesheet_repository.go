@@ -198,6 +198,22 @@ func (r *TimesheetRepository) BulkUpdatePaymentStatus(ctx context.Context, updat
 		return nil
 	}
 
+	// A transfer result may carry several rows for the same timesheet (two
+	// payments inside one Kỳ). The CASE WHEN below matches each id once, so
+	// duplicate ids would make RowsAffected fall short of len(updates) and
+	// trip the conflict check — collapse to the last update per id instead.
+	seen := make(map[uint]struct{}, len(updates))
+	deduped := make([]domain.PaymentStatusUpdate, 0, len(updates))
+	for i := len(updates) - 1; i >= 0; i-- {
+		id := updates[i].TimesheetID
+		if _, dup := seen[id]; dup {
+			continue
+		}
+		seen[id] = struct{}{}
+		deduped = append(deduped, updates[i])
+	}
+	updates = deduped
+
 	db := r.getDB(ctx)
 
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -322,6 +338,8 @@ func (r *TimesheetRepository) BulkUpdatePaymentStatus(ctx context.Context, updat
 			return result.Error
 		}
 		if result.RowsAffected != int64(len(ids)) {
+			// debug conflict log (temporary QA instrumentation)
+			println("bulk-payment conflict: rows=", result.RowsAffected, "eligibility=", strings.Join(eligibility, " OR "))
 			return domain.NewConflictError("một hoặc nhiều bảng chấm công đã thay đổi trước khi cập nhật thanh toán")
 		}
 		return nil

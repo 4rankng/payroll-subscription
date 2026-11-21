@@ -95,7 +95,11 @@ class BillingService {
     form.append('cycle', String(cycle));
     form.append('work_month', workMonth);
     form.append('file', file);
-    const response = await apiClient.post<TransferUploadResult>(ENDPOINTS.uploads, form);
+    // The apiClient defaults Content-Type to application/json — FormData needs
+    // an explicit multipart type or the server cannot parse the fields.
+    const response = await apiClient.post<TransferUploadResult>(ENDPOINTS.uploads, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data as TransferUploadResult;
   }
 
