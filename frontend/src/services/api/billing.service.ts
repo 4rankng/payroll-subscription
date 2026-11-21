@@ -55,6 +55,7 @@ export interface BillingReport {
   total_distinct: number;
   total_vnd: number;
   excel_path: string | null;
+  asset_id: number | null;
   generated_at: string;
 }
 

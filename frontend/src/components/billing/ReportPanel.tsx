@@ -59,6 +59,13 @@ export function ReportPanel({ workMonth, canGenerate }: ReportPanelProps) {
               {report.excel_path !== null && report.excel_path !== "" && (
                 <span className="ml-2 font-mono text-xs">{report.excel_path}</span>
               )}
+              {report.asset_id != null && (
+                <Button asChild size="sm" variant="outline" className="ml-2">
+                  <a href={`${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/assets/${report.asset_id}/download`} download>
+                    Tải Excel
+                  </a>
+                </Button>
+              )}
             </div>
             <Table>
               <TableHeader>

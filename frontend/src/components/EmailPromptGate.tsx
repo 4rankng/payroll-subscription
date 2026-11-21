@@ -35,8 +35,8 @@ import { showSuccessNotification } from '@/utils/error-handler';
  * dashboard, so this gate is naturally inert for them.)
  *
  * The dialog is dismissable ("Nhắc tôi sau"): dismissal is recorded in
- * sessionStorage keyed by user id, so it survives reloads within the same
- * browser session and re-prompts on a new browser session. Keys off the
+ * localStorage keyed by user id with a 24h TTL, so it survives reloads and new
+ * browser tabs for a day, then gently re-prompts. Keys off the
  * authenticated user state so it fires after direct login, Google login,
  * OTP-verify, and page reload alike.
  */
@@ -46,7 +46,23 @@ const emailPromptSchema = z.object({
 
 type EmailPromptFormData = z.infer<typeof emailPromptSchema>;
 
-const dismissKey = (userId: string) => `emailPromptDismissed:${userId}`;
+const DISMISS_TTL_MS = 24 * 60 * 60 * 1000;
+const dismissRecord = (userId: string) => {
+  try {
+    const raw = localStorage.getItem(`emailPromptDismissed:${userId}`);
+    if (!raw) return false;
+    return Date.now() < Number(raw);
+  } catch {
+    return false;
+  }
+};
+const setDismissRecord = (userId: string) => {
+  try {
+    localStorage.setItem(`emailPromptDismissed:${userId}`, String(Date.now() + DISMISS_TTL_MS));
+  } catch {
+    /* storage unavailable — gate will re-prompt next session */
+  }
+};
 
 export const EmailPromptGate = () => {
   const { user, isAuthenticated, updateUser } = useAuth();
@@ -60,10 +76,10 @@ export const EmailPromptGate = () => {
     !user.email &&
     (role === 'admin' || role === 'quanly');
 
-  // Sync dismissal from sessionStorage whenever the authenticated user changes.
+  // Sync dismissal from localStorage whenever the authenticated user changes.
   useEffect(() => {
     if (userId) {
-      setDismissed(sessionStorage.getItem(dismissKey(userId)) === '1');
+      setDismissed(dismissRecord(userId));
     } else {
       setDismissed(false);
     }
@@ -82,7 +98,7 @@ export const EmailPromptGate = () => {
   });
 
   const handleDismiss = () => {
-    if (userId) sessionStorage.setItem(dismissKey(userId), '1');
+    if (userId) setDismissRecord(userId);
     setDismissed(true);
   };
 

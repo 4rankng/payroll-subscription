@@ -16,6 +16,7 @@ type BillingReport struct {
 	TotalDistinct          int       `json:"total_distinct" gorm:"column:total_distinct;not null;default:0"`
 	TotalVnd               int64     `json:"total_vnd" gorm:"column:total_vnd;not null;default:0"`
 	ExcelPath              string    `json:"excel_path" gorm:"column:excel_path;type:varchar(500)"`
+	AssetID                *uint64   `json:"asset_id" gorm:"column:asset_id;type:bigint unsigned"`
 	GeneratedBy            uint      `json:"generated_by" gorm:"column:generated_by;type:bigint unsigned;not null"`
 	GeneratedAt            time.Time `json:"generated_at" gorm:"column:generated_at;type:datetime(3);not null;default:CURRENT_TIMESTAMP(3)"`
 }

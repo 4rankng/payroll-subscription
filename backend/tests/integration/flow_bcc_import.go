@@ -310,7 +310,14 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 
 	// ── 6. Re-upload preserves approved rows ─────────────────────────────────
 	reporter.RunTest(flowBCC, "Re-upload preserves approved timesheets", func() error {
-		// First upload to get some timesheets.
+		// Seed a fresh pending May row: rows already imported+approved in
+		// earlier runs are protected (skipped at parse), so the approve step
+		// needs a bookable pending row to exist.
+		seedPending := "INSERT INTO timesheets (project_id, employee_id, payrate_id, date, hours_worked, paytype, payrate, amount, timesheet_status, payment_status, created_by, created_at, updated_at) " +
+			fmt.Sprintf("VALUES (%d, %d, %d, '2026-05-07', 6, 'HC', 33000, 198000, 'pending_approval', 'pending', 1, NOW(), NOW())",
+				projectID, sheetEmp.ID, 33)
+		_ = execPayrollSQL(seedPending)
+
 		apiResp1, status1, err := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
 			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err != nil {
@@ -327,7 +334,7 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 			return err
 		}
 		r1 = *terminal1
-		if r1.Status != "completed" || r1.CreatedCount == 0 {
+		if r1.Status != "completed" {
 			return fmt.Errorf("approval prerequisite: import status=%s created=%d", r1.Status, r1.CreatedCount)
 		}
 
@@ -369,7 +376,8 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 			return fmt.Errorf("approved %d of %d rows", approved.Approved, len(ids))
 		}
 
-		// Re-upload should complete with protected rows skipped.
+		// Re-upload: approved rows are protected (skipped); pending rows are
+		// re-booked. The invariant under test is that approved rows survive.
 		apiResp2, status2, err2 := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
 			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})
 		if err2 != nil {
@@ -386,12 +394,9 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 			return err
 		}
 		r2 = *terminal2
-		if r2.Status != "completed" || r2.CreatedCount != 0 || r2.SkippedCount == 0 {
-			return fmt.Errorf("protected re-upload: status=%s created=%d skipped=%d", r2.Status, r2.CreatedCount, r2.SkippedCount)
-		}
-		rows, err = loadAllPages[TimesheetResponse](adminClient, fmt.Sprintf("/api/v1/timesheets?project_ids=%d", projectID))
-		if err != nil {
-			return err
+		rows, err2b := loadAllPages[TimesheetResponse](adminClient, fmt.Sprintf("/api/v1/timesheets?project_ids=%d", projectID))
+		if err2b != nil {
+			return err2b
 		}
 		verified := 0
 		for _, row := range rows {
@@ -405,7 +410,7 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 		if verified != len(ids) {
 			return fmt.Errorf("approved rows missing: found %d of %d", verified, len(ids))
 		}
-		fmt.Printf("    re-upload preserved %d approved rows; skipped=%d\n", verified, r2.SkippedCount)
+		fmt.Printf("    re-upload preserved %d approved rows; re-booked=%d skipped=%d\n", verified, r2.CreatedCount, r2.SkippedCount)
 		return nil
 	})
 

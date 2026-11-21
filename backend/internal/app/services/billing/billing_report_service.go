@@ -125,6 +125,8 @@ func (s *BillingReportService) GenerateMonthly(ctx context.Context, workMonth st
 			return nil, nil, fmt.Errorf("billing report: store workbook: %w", err)
 		}
 		report.ExcelPath = stored.FilePath
+		assetID := uint64(stored.ID)
+		report.AssetID = &assetID
 	}
 
 	if err := s.reports.UpsertMonthly(ctx, report); err != nil {

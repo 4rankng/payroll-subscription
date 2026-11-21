@@ -33,6 +33,7 @@ func (r *BillingReportRepository) UpsertMonthly(ctx context.Context, report *dom
 				"total_distinct":              report.TotalDistinct,
 				"total_vnd":                   report.TotalVnd,
 				"excel_path":                  report.ExcelPath,
+				"asset_id":                    report.AssetID,
 				"generated_by":                report.GeneratedBy,
 				"generated_at":                report.GeneratedAt,
 			}),

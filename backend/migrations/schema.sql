@@ -432,6 +432,7 @@ CREATE TABLE `billing_reports` (
   `total_distinct` int NOT NULL DEFAULT '0',
   `total_vnd` bigint NOT NULL DEFAULT '0',
   `excel_path` varchar(500) DEFAULT NULL,
+  `asset_id` bigint unsigned DEFAULT NULL,
   `generated_by` bigint unsigned NOT NULL,
   `generated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
