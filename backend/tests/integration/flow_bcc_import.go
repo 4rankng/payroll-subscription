@@ -310,13 +310,34 @@ func runBCCImportTests(client *APIClient, data *TestData, reporter *Reporter) {
 
 	// ── 6. Re-upload preserves approved rows ─────────────────────────────────
 	reporter.RunTest(flowBCC, "Re-upload preserves approved timesheets", func() error {
-		// Seed a fresh pending May row: rows already imported+approved in
-		// earlier runs are protected (skipped at parse), so the approve step
-		// needs a bookable pending row to exist.
-		seedPending := "INSERT INTO timesheets (project_id, employee_id, payrate_id, date, hours_worked, paytype, payrate, amount, timesheet_status, payment_status, created_by, created_at, updated_at) " +
-			fmt.Sprintf("VALUES (%d, %d, %d, '2026-05-07', 6, 'HC', 33000, 198000, 'pending_approval', 'pending', 1, NOW(), NOW())",
-				projectID, sheetEmp.ID, 33)
-		_ = execPayrollSQL(seedPending)
+		// Reset any May-2026 rows left over from prior runs (approved rows are
+		// protected at parse and would leave nothing pending to approve), then
+		// seed a fresh pending row with the project's actual payrate.
+		execPayrollSQL(fmt.Sprintf(
+			"DELETE FROM timesheets WHERE project_id = %d AND employee_id = %d AND date LIKE '2026-05%%'",
+			projectID, sheetEmp.ID))
+		prID := uint(0)
+		var pr PayrateResponse
+		if _, gerr := adminClient.GetInto(fmt.Sprintf("/api/v1/projects/%d/payrate", projectID), &pr); gerr == nil && pr.ID != 0 {
+			prID = pr.ID
+		}
+		if prID == 0 {
+			prBody := map[string]any{
+				"rates":          json.RawMessage(`{"Nhân viên":{"ngày thường":{"HC":33000}}}`),
+				"effective_from": "2026-05-01",
+			}
+			var created PayrateResponse
+			if _, perr := adminClient.PostInto(fmt.Sprintf("/api/v1/projects/%d/payrate", projectID), prBody, &created); perr == nil {
+				prID = created.ID
+			}
+		}
+		seedPending := fmt.Sprintf(
+			"INSERT INTO timesheets (project_id, employee_id, payrate_id, date, hours_worked, paytype, payrate, amount, timesheet_status, payment_status, created_by, created_at, updated_at) "+
+				"VALUES (%d, %d, %d, '2026-05-07', 6, 'HC', 33000, 198000, 'pending_approval', 'pending', 1, NOW(), NOW())",
+			projectID, sheetEmp.ID, prID)
+		if serr := execPayrollSQL(seedPending); serr != nil {
+			return fmt.Errorf("seed pending May row: %w", serr)
+		}
 
 		apiResp1, status1, err := uploadBCCWithBusyRetry(partnerClient, endpoint, bccFile,
 			map[string]string{"project_id": projectIDStr, "for_month": "2026-05"})

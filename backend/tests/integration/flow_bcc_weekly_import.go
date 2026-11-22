@@ -46,7 +46,7 @@ func runWeeklyBCCImportTests(client *APIClient, data *TestData, reporter *Report
 		fmt.Printf("    grant partner upload access: %v (HTTP %d) — continuing\n", err, status)
 	}
 
-	seedWeeklyPayrateMatrix(projectID, fixtureMonth)
+	seedWeeklyPayrateMatrix(projectID, fixtureMonth + "-01")
 
 	const sheetCCCD = "031092020742"
 	var sheetEmp EmployeeResponse
