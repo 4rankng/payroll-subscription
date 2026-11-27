@@ -71,8 +71,17 @@ p, giamdoc, /api/v1/billing/reports, GET, allow
 p, giamdoc, /api/v1/billing/ky-paid-records, GET, allow
 p, giamdoc, /api/v1/billing/uploads, GET, allow
 p, giamdoc, /api/v1/billing/dashboard/*, GET, allow
+# Sao kê (PRD §5.8, PAYR-41): statement export, recipients and email.
+p, giamdoc, /api/v1/billing/saoke/export, GET, allow
+p, giamdoc, /api/v1/billing/saoke/recipients, GET, allow
+p, giamdoc, /api/v1/billing/saoke/recipients, PUT, allow
+p, giamdoc, /api/v1/billing/saoke/email, POST, allow
 
 # Nhanvien — read-only self-service (own profile; pay history endpoint lands with FR-6/A7)
+p, nhanvien, /api/v1/notifications, GET, allow
+p, nhanvien, /api/v1/notifications/*, GET, allow
+p, nhanvien, /api/v1/notifications/unread, GET, allow
+p, nhanvien, /api/v1/notifications/unread/count, GET, allow
 p, nhanvien, /api/v1/me, GET, allow
 p, nhanvien, /api/v1/me, PUT, allow
 p, nhanvien, /api/v1/me/*, GET, allow
@@ -103,8 +112,7 @@ p, giamdoc, /api/v1/users/*, POST, allow
 p, giamdoc, /api/v1/users/reset-first-time-login-password, GET, allow
 
 # Ketoan — accounting clerk (PAYSUB D28): reads the same operational surfaces
-# as giamdoc but holds no approval rights; the FR-7 sao ke export/email and
-# recipient endpoints extend this block when they land.
+# as giamdoc but holds no approval rights.
 p, ketoan, /api/v1/auth/me, GET, allow
 p, ketoan, /api/v1/auth/logout, POST, allow
 p, ketoan, /api/v1/auth/change-password, POST, allow
@@ -118,6 +126,11 @@ p, ketoan, /api/v1/billing/reports, GET, allow
 p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
 p, ketoan, /api/v1/billing/uploads, GET, allow
 p, ketoan, /api/v1/billing/dashboard/*, GET, allow
+# Sao kê (PRD §5.8, PAYR-41): statement export, recipients and email.
+p, ketoan, /api/v1/billing/saoke/export, GET, allow
+p, ketoan, /api/v1/billing/saoke/recipients, GET, allow
+p, ketoan, /api/v1/billing/saoke/recipients, PUT, allow
+p, ketoan, /api/v1/billing/saoke/email, POST, allow
 p, ketoan, /api/v1/dashboard/*, GET, allow
 p, ketoan, /api/v1/notifications, GET, allow
 p, ketoan, /api/v1/notifications/*, GET, allow

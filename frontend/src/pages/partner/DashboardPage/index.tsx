@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { format, startOfMonth } from 'date-fns';
-import { Banknote, Hourglass, UserCheck, UserPlus } from 'lucide-react';
+import { Banknote, Users, UserCheck, Wallet } from 'lucide-react';
 import { UserX01 } from '@untitledui/icons';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,8 @@ import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
+import { WorkforceOverviewCard } from '@/components/partner-dashboard/WorkforceOverviewCard';
+import { KpiEmployeeListSheet, type KpiEmployeeCategory } from '@/components/partner-dashboard/KpiEmployeeListSheet';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { formatFullCurrency } from '@/utils/formatters';
@@ -181,8 +183,15 @@ const PartnerDashboardPage = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(
     format(startOfMonth(new Date()), 'yyyy-MM'),
   );
+  const [kpiSheet, setKpiSheet] = useState<{ open: boolean; category: KpiEmployeeCategory }>({
+    open: false,
+    category: 'all',
+  });
 
   const handleMonthChange = useCallback((value: string) => setSelectedMonth(value), []);
+  const openKpiSheet = useCallback((category: KpiEmployeeCategory) => {
+    setKpiSheet({ open: true, category });
+  }, []);
 
   // Employee rows in the mobile-warning section open the employee details
   // sheet through the URL-driven modal system — same wiring as the partner
@@ -222,33 +231,37 @@ const PartnerDashboardPage = () => {
         ) : (
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 motion-safe:animate-fade-in-up">
             <ConsoleKpi
-              label="Đã trả kỳ này"
-              value={formatFullCurrency(summary?.paid_salary_this_month ?? 0)}
-              title={formatVND(summary?.paid_salary_this_month ?? 0)}
+              label="Tổng chi trả"
+              value={formatFullCurrency(summary?.total_paid_salary ?? 0)}
+              title={formatVND(summary?.total_paid_salary ?? 0)}
               icon={Banknote}
               tone="primary"
               hint={periodLabel}
-            />
-            <ConsoleKpi
-              label="Chờ trả"
-              value={formatFullCurrency(summary?.pending_salary_this_month ?? 0)}
-              title={formatVND(summary?.pending_salary_this_month ?? 0)}
-              icon={Hourglass}
-              tone="gold"
-              hint="đã duyệt, chờ chuyển khoản"
+              onClick={() => openKpiSheet('all')}
             />
             <ConsoleKpi
               label="Đang làm việc"
               value={(summary?.total_working_employees ?? 0).toLocaleString('vi-VN')}
               icon={UserCheck}
               tone="secondary"
+              onClick={() => openKpiSheet('working')}
             />
             <ConsoleKpi
-              label="NV mới"
-              value={(summary?.employees_hired_this_month ?? 0).toLocaleString('vi-VN')}
-              icon={UserPlus}
+              label="Có thể nghỉ"
+              value={Math.max(0, (summary?.total_employees ?? 0) - (summary?.total_working_employees ?? 0)).toLocaleString('vi-VN')}
+              icon={Users}
+              tone="gold"
+              hint="không hoạt động"
+              onClick={() => openKpiSheet('inactive')}
+            />
+            <ConsoleKpi
+              label="Đã thanh toán"
+              value={formatFullCurrency(summary?.paid_salary_this_month ?? 0)}
+              title={formatVND(summary?.paid_salary_this_month ?? 0)}
+              icon={Wallet}
               tone="neutral"
               hint={periodLabel}
+              onClick={() => openKpiSheet('new')}
             />
           </div>
         )}
@@ -256,9 +269,14 @@ const PartnerDashboardPage = () => {
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
 
-        {/* ── PAYSUB: phí theo kỳ + chuỗi thời gian ── */}
+        {/* ── Workforce donut + fee tables ── */}
         <section className="flex flex-col gap-3">
-          <KyFeeSummaryTable />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
+            <WorkforceOverviewCard month={apiMonth} />
+            <div className="flex flex-col gap-3">
+              <KyFeeSummaryTable />
+            </div>
+          </div>
           <PaidSeriesSection />
         </section>
 
@@ -299,6 +317,18 @@ const PartnerDashboardPage = () => {
             )}
           </div>
         </ConsolePanel>
+
+        {/* KPI employee list sheet */}
+        <KpiEmployeeListSheet
+          open={kpiSheet.open}
+          onOpenChange={(open) => setKpiSheet((prev) => ({ ...prev, open }))}
+          category={kpiSheet.category}
+          month={apiMonth}
+          onEmployeeClick={(id) => {
+            setKpiSheet((prev) => ({ ...prev, open: false }));
+            openEmployeeDetails(id.toString());
+          }}
+        />
       </div>
     </div>
   );

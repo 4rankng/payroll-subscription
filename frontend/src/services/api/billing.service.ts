@@ -1,10 +1,10 @@
-import { apiClient } from './client';
+import { apiClient, createIdempotencyKey } from './client';
 
 /**
  * Billing module (FR-2/FR-3/FR-6, PAYSUB): transfer-result uploads,
  * per-employee-per-Kỳ paid records, monthly billing reports, Tổng quan
- * paid series. Self-contained: owns its endpoint paths and response types.
- * API responses use the platform envelope { status, data }.
+ * paid series, sao kê export/email. Self-contained: owns its endpoint paths
+ * and response types. API responses use the platform envelope { status, data }.
  */
 
 const ENDPOINTS = {
@@ -14,6 +14,9 @@ const ENDPOINTS = {
   kySummary: '/billing/dashboard/ky-summary',
   reports: '/billing/reports',
   generateReport: '/billing/reports/generate',
+  saokeRecipients: '/billing/saoke/recipients',
+  saokeExport: '/billing/saoke/export',
+  saokeSendEmail: '/billing/saoke/send-email',
 } as const;
 
 export interface TransferUploadResult {
@@ -35,6 +38,9 @@ export interface TransferUploadSummary {
   reject_reason: string | null;
   verified_at: string | null;
   created_at: string;
+  /** Rows parsed from the workbook / matched to approved timesheets. */
+  parsed_rows: number;
+  matched_rows: number;
 }
 
 export interface EmployeePayCycleRow {
@@ -86,6 +92,23 @@ export interface DashboardKySummary {
 
 export interface UploadOutcome {
   result: TransferUploadResult;
+}
+
+/** Persisted To/CC lists for sao kê email (GET/PUT /billing/saoke/recipients). */
+export interface SaokeRecipients {
+  to: string[];
+  cc: string[];
+}
+
+export interface SendSaokeEmailParams {
+  report_date: string; // YYYY-MM-DD
+  to: string[];
+  cc?: string[];
+}
+
+export interface SendSaokeEmailResult {
+  status: string;
+  message: string;
 }
 
 class BillingService {
@@ -157,6 +180,41 @@ class BillingService {
     const payload = response.data;
     if (!payload?.report) return null;
     return { ...payload.report, lines: payload.lines ?? [] };
+  }
+
+  /** Sao kê recipient lists (To/CC) shared by the export/email dialogs. */
+  async getSaokeRecipients(): Promise<SaokeRecipients> {
+    const response = await apiClient.get<SaokeRecipients>(ENDPOINTS.saokeRecipients);
+    return { to: response.data?.to ?? [], cc: response.data?.cc ?? [] };
+  }
+
+  /** Replace the persisted sao kê recipient lists. */
+  async updateSaokeRecipients(params: { to: string[]; cc: string[] }): Promise<SaokeRecipients> {
+    const response = await apiClient.put<SaokeRecipients>(ENDPOINTS.saokeRecipients, params);
+    return {
+      to: response.data?.to ?? params.to,
+      cc: response.data?.cc ?? params.cc,
+    };
+  }
+
+  /** Download the sao kê Excel workbook for one report date. */
+  async exportSaoke(date: string): Promise<void> {
+    const qs = new URLSearchParams({ date });
+    await apiClient.download(`${ENDPOINTS.saokeExport}?${qs}`, `saoke_${date}.xlsx`);
+  }
+
+  /** Send the sao kê email for one report date to the given To/CC lists. */
+  async sendSaokeEmail(params: SendSaokeEmailParams): Promise<SendSaokeEmailResult> {
+    const response = await apiClient.post<SendSaokeEmailResult>(
+      ENDPOINTS.saokeSendEmail,
+      params,
+      {
+        headers: {
+          'Idempotency-Key': createIdempotencyKey('saoke-email'),
+        },
+      },
+    );
+    return response.data ?? { status: response.status, message: response.message || '' };
   }
 }
 

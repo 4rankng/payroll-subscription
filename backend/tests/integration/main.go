@@ -120,6 +120,9 @@ func main() {
 	// Phase 9.5: PAYSUB billing — upload verification read model + FR-6 surfaces
 	runBillingTests(client, testData, reporter)
 
+	// Phase 9.6: PAYR-41 sao kê — Sổ cái export/recipients/email
+	runSaoKeTests(client, testData, reporter)
+
 	// Phase 10: Read-only flows
 	runNotificationTests(client, testData, reporter, cfg)
 	runDashboardTests(client, testData, reporter, cfg)

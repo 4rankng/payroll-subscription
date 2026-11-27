@@ -62,6 +62,7 @@ type Handlers struct {
 	Notification    *handlers.NotificationHandler
 	Settings        *handlers.SettingsHandler
 	Billing         *handlers.BillingHandler
+	SaoKe           *handlers.SaoKeHandler
 	Asset           *handlers.AssetHandler
 	Cache           *handlers.CacheHandler
 	Email           *handlers.EmailHandler
@@ -209,6 +210,7 @@ func initHandlers(services *bootstrapServices.Services, repos *bootstrapRepos.Re
 		Notification:    handlers.NewNotificationHandler(services.Notification),
 		Settings:        handlers.NewSettingsHandler(services.Settings),
 		Billing:         handlers.NewBillingHandler(services.Billing, services.BillingReport),
+		SaoKe:           handlers.NewSaoKeHandler(services.SaoKe, services.Audit),
 		Asset:           handlers.NewAssetHandler(services.Asset),
 		EmployeeImport:  employeeImportHandler,
 		Cache:           handlers.NewCacheHandler(services.Cache, logger),

@@ -156,18 +156,11 @@ const PartnerDashboardMobile = () => {
 
   const operationMetrics = useMemo<MobileOperationMetric[]>(() => [
     {
-      label: 'Đã trả kỳ này',
-      value: formatVND(summary?.paid_salary_this_month ?? 0),
+      label: 'Tổng chi trả',
+      value: formatVND(summary?.total_paid_salary ?? 0),
       helper: periodLabel,
       icon: Banknote,
       tone: 'primary',
-    },
-    {
-      label: 'Chờ trả',
-      value: formatVND(summary?.pending_salary_this_month ?? 0),
-      helper: 'Đã duyệt, chờ chuyển khoản',
-      icon: Hourglass,
-      tone: 'warning',
     },
     {
       label: 'Đang làm việc',
@@ -177,10 +170,17 @@ const PartnerDashboardMobile = () => {
       tone: 'success',
     },
     {
-      label: 'NV mới',
-      value: (summary?.employees_hired_this_month ?? 0).toLocaleString('vi-VN'),
-      helper: periodLabel,
+      label: 'Có thể nghỉ',
+      value: Math.max(0, (summary?.total_employees ?? 0) - (summary?.total_working_employees ?? 0)).toLocaleString('vi-VN'),
+      helper: 'Không hoạt động',
       icon: Users,
+      tone: 'warning',
+    },
+    {
+      label: 'Đã thanh toán',
+      value: formatVND(summary?.paid_salary_this_month ?? 0),
+      helper: periodLabel,
+      icon: Wallet,
       tone: 'neutral',
     },
   ], [summary, periodLabel]);
@@ -206,9 +206,9 @@ const PartnerDashboardMobile = () => {
         <MobileOperationsPanel
           eyebrow={periodLabel}
           title="Theo dõi chi trả"
-          primaryLabel="Đã trả kỳ này"
-          primaryValue={formatVND(summary?.paid_salary_this_month ?? 0)}
-          primaryHint={`Chờ trả ${formatVND(summary?.pending_salary_this_month ?? 0)}`}
+          primaryLabel="Tổng chi trả"
+          primaryValue={formatVND(summary?.total_paid_salary ?? 0)}
+          primaryHint={`Đã thanh toán ${formatVND(summary?.paid_salary_this_month ?? 0)}`}
           metrics={operationMetrics}
           actions={quickActions}
           className="rounded-lg bg-card"

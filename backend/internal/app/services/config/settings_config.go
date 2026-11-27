@@ -28,6 +28,13 @@ const (
 	// generic settings API; the value is snapshotted into each billing
 	// report at generation time so later changes never rewrite history.
 	SettingKeySubscriptionFeePerEmployeePerKyVnd = "subscription_fee_per_employee_per_ky_vnd"
+
+	// Sao kê statement mailing list (PRD §5.8, PAYR-41): JSON arrays of
+	// email addresses. Owned by the billing sao kê endpoints, not the
+	// generic settings API — ketoan/giamdoc must edit them without holding
+	// settings permissions. Missing rows read as empty lists.
+	SettingKeySaoKeEmailRecipients = "saoke_email_recipients"
+	SettingKeySaoKeEmailCC         = "saoke_email_cc"
 )
 
 // DefaultSubscriptionFeePerEmployeePerKy is the flat per-employee-per-Kỳ fee

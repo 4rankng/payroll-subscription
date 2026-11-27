@@ -84,7 +84,7 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | Timesheets | `domain/timesheet.go` — salary amounts + work dates + approval-by-admin flow, the substrate for counting (edit-request flow removed, D25/D26) |
 | Payrate configs | `domain/payrate.go` (`payrate_json`; overlapping shift buckets allowed since 2026-11-23 — rate lookup is exact-key per shift name), `pkg/services/payrate_temporal_service.go` (a config freezes once ANY timesheet links to it — update/delete blocked, only a new config row allowed; creates may backdate only to a strictly earlier unoccupied date, 2026-11-18) — salary substrate for timesheet amounts; `payrates` survives the rebuild (§7) |
 | Paid marker fields | `Timesheet.PaymentStatus` enum + `PaymentDate` + `PaidAmount` (`domain/timesheet.go:51-56`) — in the rebuilt schema they mean exactly one thing: customer-paid, verified from the transfer upload (D11); only FR-2 verification writes them |
-| Auth, RBAC, audit | `routes_auth.go`, casbin policy (roles admin/quanly/ketoan/nhanvien, D19), `domain/audit_log*`; login is now gated by ALTCHA captcha — challenge issued after repeated OTP failures, widget mounted on rejection, employee-CCCD identifier resolved in preflight (donor 2026-11-25, `CaptchaService` in `app/services/auth/`) |
+| Auth, RBAC, audit | `routes_auth.go`, casbin policy, `domain/audit_log*`; login = username + password only — the donor's ALTCHA captcha was fully removed by owner decision (2026-11-27): no `/auth/captcha*` routes, no `CAPTCHA_*` env, no captcha_payload field |
 | Client file upload pipeline | `app/services/bcc_import_service.go` — job lifecycle, locks, replacement, result/audit; template for FR-2. Parser family at donor HEAD: monthly BCC, weekly block (`excel/weekly_block_bcc_parser.go`, 2026-11-19), POURIN weekly-payment template (`bcc_import_weekly_payment.go` — row-8 identity labels, `Lương/8h` spellings, TC/LE shift codes, 2026-11-18…25), format auto-detection (`excel/format_detector.go`), stk header-collapse hardening (`excel/stk_parser.go`) |
 | Idempotent upload receipt | `domain/settlement_upload.go` — FileHash (SHA-256) idempotency pattern; reuse for transfer uploads |
 | Report/export infra | `app/services/excel/` — template for the FR-3 billing-report export (old report exporters removed, D23) |
@@ -186,3 +186,15 @@ None — all questions are resolved and recorded in the decision log (D1–D28).
 - E-invoice/VAT integration — out of scope per D9; revisit only if the customer requests tax invoices.
 - Employee bank detail fields: likely droppable with disbursement; confirm no payroll export depends on them before §7 rebuild.
 - Attendance: removed entirely (D15) — timesheets via admin entry + BCC import are the only salary record source; no attendance tables exist in the consolidated schema (TechnicalDesign.md §3).
+
+
+
+
+
+
+
+
+
+
+
+

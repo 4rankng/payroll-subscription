@@ -44,7 +44,7 @@ func newCookieTestAuthService(t *testing.T, accessTTL time.Duration) *authservic
 	userSvc := user.NewUserService(&cookieTestUserRepo{}, nil, nil, "h", "s", nil)
 	return authservice.NewAuthService(
 		userSvc, nil, &cookieTestBlacklistRepo{}, nil, "test-secret", accessTTL,
-		nil, config.OTPConfig{}, "", nil, nil, nil, nil,
+		nil, config.OTPConfig{}, "", nil, nil, nil,
 	)
 }
 

@@ -27,4 +27,15 @@ func setupBillingRoutes(v1 *gin.RouterGroup, container *Container) {
 		reports.POST("/generate", container.Middleware.Authorization.Authorize(), container.Handlers.Billing.GenerateReport)
 		reports.GET("", container.Handlers.Billing.GetReport)
 	}
+
+	// Sao kê (PRD §5.8, PAYR-41): statement export, recipients and email —
+	// ketoan + giamdoc per the casbin policy; every route is casbin-gated.
+	saoKe := v1.Group("/billing/saoke")
+	saoKe.Use(container.Middleware.Auth.Authenticate())
+	{
+		saoKe.GET("/export", container.Middleware.Authorization.Authorize(), container.Handlers.SaoKe.Export)
+		saoKe.GET("/recipients", container.Middleware.Authorization.Authorize(), container.Handlers.SaoKe.GetRecipients)
+		saoKe.PUT("/recipients", container.Middleware.Authorization.Authorize(), container.Handlers.SaoKe.SaveRecipients)
+		saoKe.POST("/email", container.Middleware.Authorization.Authorize(), container.Handlers.SaoKe.SendEmail)
+	}
 }

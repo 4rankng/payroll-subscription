@@ -276,8 +276,8 @@ func (s *BillingReportService) PaidSeries(ctx context.Context, from, to time.Tim
 // KyMonthSummary is one work month of the FR-6 Tổng quan per-month table:
 // distinct-employee counts per Kỳ of that month.
 type KyMonthSummary struct {
-	WorkMonth string         `json:"work_month"`
-	Counts    map[int]int64  `json:"counts"`
+	WorkMonth string        `json:"work_month"`
+	Counts    map[int]int64 `json:"counts"`
 }
 
 // DashboardKySummary is the FR-6 per-month view payload: the last `Months`
@@ -285,8 +285,8 @@ type KyMonthSummary struct {
 // plus the current subscription fee so the table can render VND totals
 // without a second call.
 type DashboardKySummary struct {
-	Months                   []KyMonthSummary `json:"months"`
-	FeePerEmployeePerKyVnd   int64            `json:"fee_per_employee_per_ky_vnd"`
+	Months                 []KyMonthSummary `json:"months"`
+	FeePerEmployeePerKyVnd int64            `json:"fee_per_employee_per_ky_vnd"`
 }
 
 // DashboardKySummary builds the FR-6 monthly table input. months is clamped

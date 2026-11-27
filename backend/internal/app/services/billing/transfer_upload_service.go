@@ -192,8 +192,8 @@ func (s *TransferUploadService) processRows(ctx context.Context, upload *domain.
 	for _, row := range rows {
 		if _, dup := seenCCCD[row.CCCD]; dup {
 			result.Failures = append(result.Failures, RowFailure{
-				Row:  row.RowNumber,
-				CCCD: row.CCCD,
+				Row:    row.RowNumber,
+				CCCD:   row.CCCD,
 				Reason: "dòng trùng CCCD trong file — nhân viên này đã được đối soát ở dòng trước",
 			})
 			result.RowsFailed++
@@ -307,9 +307,47 @@ func deref(s *string) string {
 	return *s
 }
 
-// ListUploads returns the upload history of one work month, newest first.
-func (s *TransferUploadService) ListUploads(ctx context.Context, workMonth string, limit int) ([]domain.TransferUpload, error) {
-	return s.uploads.ListByWorkMonth(ctx, workMonth, limit)
+// UploadWithAmount is one upload-history row (Sổ cái, PRD §5.8) enriched
+// with the customer-paid total its verification accumulated into
+// employee_pay_cycles.
+type UploadWithAmount struct {
+	domain.TransferUpload
+	MatchedAmount int64 `json:"matched_amount"`
+}
+
+// ListUploads returns the upload history of one work month, newest first,
+// each row carrying matched_amount — the SUM of its
+// employee_pay_cycles.paid_amount rows (Sổ cái "Tổng tiền" column).
+func (s *TransferUploadService) ListUploads(ctx context.Context, workMonth string, limit int) ([]UploadWithAmount, error) {
+	uploads, err := s.uploads.ListByWorkMonth(ctx, workMonth, limit)
+	if err != nil {
+		return nil, err
+	}
+	amounts, err := s.uploadMatchedAmounts(ctx, workMonth)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]UploadWithAmount, len(uploads))
+	for i, upload := range uploads {
+		rows[i] = UploadWithAmount{TransferUpload: upload, MatchedAmount: amounts[upload.ID]}
+	}
+	return rows, nil
+}
+
+// uploadMatchedAmounts sums employee_pay_cycles.paid_amount per
+// source_upload_id for one work month. Rows are read via the existing
+// ListByWorkMonth port — the per-month read model is bounded (employees ×
+// Kỳ), so in-memory aggregation beats a second query path.
+func (s *TransferUploadService) uploadMatchedAmounts(ctx context.Context, workMonth string) (map[uint64]int64, error) {
+	paid, err := s.kyPaid.ListByWorkMonth(ctx, workMonth)
+	if err != nil {
+		return nil, fmt.Errorf("billing: load pay cycles: %w", err)
+	}
+	amounts := make(map[uint64]int64, len(paid))
+	for _, row := range paid {
+		amounts[row.SourceUploadID] += row.PaidAmount
+	}
+	return amounts, nil
 }
 
 // KyReconStatus is one Kỳ's reconciliation snapshot for the dashboard

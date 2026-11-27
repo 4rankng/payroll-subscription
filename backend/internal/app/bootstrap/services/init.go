@@ -58,6 +58,7 @@ type Services struct {
 	EmployeeNotifier        notification.EmployeeNotifier
 	Billing                 *billing.TransferUploadService
 	BillingReport           *billing.BillingReportService
+	SaoKe                   *billing.SaoKeService
 	Settings                *config.SettingsService
 	SettingsConfig          *config.SettingsConfigService
 	ExcelConverter          *reporting.ExcelConverterService
@@ -114,6 +115,10 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		emailProvider = email.NewResendProvider(cfg.Notification.ResendAPIKey)
 	}
 	emailService := notification.NewEmailService(cfg.Notification, emailProvider, repos.Notification, repos.User, emailNotificationPublisher, assetService, logger)
+
+	// Sao kê statement service (PRD §5.8): workbook export, statement email
+	// and the persisted recipient list (ketoan/giamdoc surface).
+	saoKeService := billing.NewSaoKeService(repos.Timesheet, repos.Employee, repos.Project, settingsService, emailService, logger)
 
 	// Create query repositories
 	timesheetAnalyticsRepo := repositories.NewTimesheetAnalyticsRepository(db.DB)
@@ -257,6 +262,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		EmployeeNotifier:        employeeNotificationService,
 		Billing:                 billingService,
 		BillingReport:           billingReportService,
+		SaoKe:                   saoKeService,
 		Settings:                settingsService,
 		SettingsConfig:          settingsConfigService,
 		ExcelConverter:          excelConverterService,

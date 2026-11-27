@@ -1,0 +1,12 @@
+{
+  "$schema": "https://mimo.xiaomi.com/mimocode/config.json",
+  "mcp": {
+    "folio": {
+      "type": "remote",
+      "url": "https://book.tingting.vip/mcp",
+      "headers": {
+        "Authorization": "Bearer {env:BOOK_API_KEY}"
+      }
+    }
+  }
+}
