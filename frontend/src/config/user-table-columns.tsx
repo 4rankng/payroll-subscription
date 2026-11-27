@@ -72,8 +72,11 @@ export const createUserColumns = (
       } else if (role === "nhanvien") {
         roleLabel = "Nhân viên";
         variant = "outline";
-      } else if (role === "giamdoc") {
+      } else if (role === "ketoan") {
         roleLabel = "Kế toán";
+        variant = "outline";
+      } else if (role === "giamdoc") {
+        roleLabel = "Giám đốc";
         variant = "outline";
       }
 

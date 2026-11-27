@@ -1,4 +1,4 @@
-.PHONY: deploy dev db api-test backup restore sandbox mirror-bases
+.PHONY: deploy dev db seed api-test backup restore sandbox mirror-bases
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GHCR base-image mirroring
@@ -49,6 +49,11 @@ db:
 
 api-test:
 	$(MAKE) -C backend api-test
+
+# Seed local-dev login accounts: admin/quanly/ketoan/giamdoc/nhanvien,
+# password Abc123 (PAYSUB D28). Dev only.
+seed:
+	$(MAKE) -C backend seed
 
 # Start the local mock OnePay/9Pay sandbox (port 9001) for advance-payout testing
 sandbox:

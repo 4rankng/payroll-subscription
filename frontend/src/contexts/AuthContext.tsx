@@ -154,7 +154,8 @@ const getDisplayName = (username: string, role: AppRole): string => {
   if (!username) {
     if (role === 'admin') return 'Quản trị viên';
     if (role === 'quanly') return 'Quản lý';
-    if (role === 'giamdoc') return 'Kế toán';
+    if (role === 'ketoan') return 'Kế toán';
+    if (role === 'giamdoc') return 'Giám đốc';
     return 'Nhân viên';
   }
 

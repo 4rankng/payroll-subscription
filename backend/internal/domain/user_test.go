@@ -75,10 +75,22 @@ func TestUser_ValidateRole(t *testing.T) {
 	err = u.ValidateRole()
 	assert.NoError(t, err)
 
+	u.Role = RoleKetoan
+	err = u.ValidateRole()
+	assert.NoError(t, err)
+
 	// Test invalid role
 	u.Role = "invalid"
 	err = u.ValidateRole()
 	assert.Error(t, err)
+}
+
+func TestUser_IsKetoan(t *testing.T) {
+	u := &User{Role: RoleKetoan}
+	assert.True(t, u.IsKetoan())
+
+	u.Role = RoleGiamdoc
+	assert.False(t, u.IsKetoan())
 }
 
 func TestUser_IsQuanly(t *testing.T) {

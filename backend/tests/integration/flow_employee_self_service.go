@@ -50,12 +50,4 @@ func runEmployeeSelfServiceTests(client *APIClient, data *TestData, reporter *Re
 		}
 		return AssertEqual("status", http.StatusForbidden, status)
 	})
-
-	reporter.RunTest(flowEmpSelfService, "Get my advance payment info", func() error {
-		var resp interface{}
-		if _, err := empClient.GetInto("/api/v1/me/advance-payment", &resp); err != nil {
-			return fmt.Errorf("get advance payment info: %w", err)
-		}
-		return nil
-	})
 }

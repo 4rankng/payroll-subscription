@@ -240,8 +240,8 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* Partner Routes — quanly operates; giamdoc reads and exports reports (D19) */}
-        <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
+        {/* Partner Routes — quanly operates; giamdoc + ketoan read and export reports (D28) */}
+        <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/partner/dashboard" replace />} />
           <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />

@@ -112,7 +112,7 @@ export const userModals: Record<UserModalId, UserModalMetadata> = {
     description: 'Đổi mật khẩu tài khoản',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly', 'giamdoc', 'nhanvien'],
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc', 'nhanvien'],
     componentPath: 'ChangePasswordModal',
     hasParams: false,
     permissions: {

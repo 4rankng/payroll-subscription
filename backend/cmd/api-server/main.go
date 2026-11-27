@@ -15,6 +15,7 @@ import (
 	"api-server/internal/infra/events"
 	"api-server/internal/infra/observability"
 	"api-server/internal/pkg/clock"
+	"api-server/internal/seed"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,8 +46,11 @@ func main() {
 		case "recompute-project-aggregates":
 			recomputeProjectAggregates()
 			return
+		case "seed-dev-users":
+			seedDevUsers()
+			return
 		default:
-			fmt.Printf("unknown command %q (available: healthcheck, recompute-project-aggregates)\n", os.Args[1])
+			fmt.Printf("unknown command %q (available: healthcheck, recompute-project-aggregates, seed-dev-users)\n", os.Args[1])
 			os.Exit(2)
 		}
 	}
@@ -104,6 +108,33 @@ func main() {
 		container.Logger.Error("Server failed to start", "error", err)
 		os.Exit(1)
 	}
+}
+
+// seedDevUsers ensures the standard local-dev login accounts (see
+// seed.EnsureDevUsers). One-off maintenance command for `make seed`; refuses
+// to run in production for the same reason the boot path guards on APP_ENV.
+func seedDevUsers() {
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
+	if cfg.App.Env == "production" {
+		fmt.Println("seed-dev-users is non-production only")
+		os.Exit(1)
+	}
+
+	infra, err := bootstrapInfra.Initialize(cfg)
+	if err != nil {
+		fmt.Printf("Failed to initialize infrastructure: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := seed.EnsureDevUsers(context.Background(), infra.DB.DB, cfg); err != nil {
+		fmt.Printf("Seed failed: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Dev users ensured: admin, quanly, ketoan, giamdoc, nhanvien (password Abc123)")
 }
 
 // healthcheck is used for Docker health checks

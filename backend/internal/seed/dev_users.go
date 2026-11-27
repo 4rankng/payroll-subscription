@@ -19,14 +19,16 @@ type devUser struct {
 	role     domain.UserRole
 }
 
-// devUsers are the standard local-dev logins, one per deployment role. The
-// D19 role rename mapped accountant (ketoan) → giamdoc, so `ketoan` is a
-// second giamdoc-role account kept under its legacy name.
+// devUsers are the standard local-dev logins, one per deployment role.
+// PAYSUB D28 (founder 2026-11-27): ketoan is its own role again — the D19
+// ketoan→giamdoc merge is superseded; role enum is
+// admin/quanly/ketoan/giamdoc/nhanvien.
 var devUsers = []devUser{
 	{username: "admin", fullname: "System Administrator", role: domain.RoleAdmin},
 	{username: "quanly", fullname: "Quản lý", role: domain.RoleQuanly},
+	{username: "ketoan", fullname: "Kế toán", role: domain.RoleKetoan},
 	{username: "giamdoc", fullname: "Giám đốc", role: domain.RoleGiamdoc},
-	{username: "ketoan", fullname: "Kế toán (giamdoc)", role: domain.RoleGiamdoc},
+	{username: "nhanvien", fullname: "Nhân viên", role: domain.RoleNhanvien},
 }
 
 // devUserPassword is the shared local-dev password. Never applied outside
@@ -34,9 +36,9 @@ var devUsers = []devUser{
 const devUserPassword = "Abc123"
 
 // EnsureDevUsers creates or updates the standard local-dev login accounts
-// (admin, quanly, giamdoc, ketoan — password Abc123). Idempotent: existing
-// rows get their role and password re-asserted so a lost password never
-// locks a developer out. Non-production only.
+// (admin, quanly, ketoan, giamdoc, nhanvien — password Abc123). Idempotent:
+// existing rows get their role and password re-asserted so a lost password
+// never locks a developer out. Non-production only.
 func EnsureDevUsers(ctx context.Context, db *gorm.DB, cfg *config.Config) error {
 	userRepo := persistence.NewUserRepository(&persistence.Database{DB: db})
 

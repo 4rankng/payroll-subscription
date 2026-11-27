@@ -260,8 +260,9 @@ function AddUserSheet({
                       <SelectContent>
                         <SelectItem value="admin">Quản trị viên</SelectItem>
                         <SelectItem value="quanly">Quản lý</SelectItem>
+                        <SelectItem value="ketoan">Kế toán</SelectItem>
                         <SelectItem value="nhanvien">Nhân viên</SelectItem>
-                        <SelectItem value="giamdoc">Kế toán</SelectItem>
+                        <SelectItem value="giamdoc">Giám đốc</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.role && <p className="text-xs text-destructive mt-0.5">{errors.role}</p>}

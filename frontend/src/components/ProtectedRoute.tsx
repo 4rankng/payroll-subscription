@@ -6,7 +6,7 @@ import { AuthLoadingScreen } from "@/components/ui/auth-loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "admin" | "quanly" | "nhanvien" | "giamdoc" | ("admin" | "quanly" | "nhanvien" | "giamdoc")[];
+  requiredRole?: "admin" | "quanly" | "ketoan" | "nhanvien" | "giamdoc" | ("admin" | "quanly" | "ketoan" | "nhanvien" | "giamdoc")[];
 }
 
 const hasRequiredRole = (userRole: string, requiredRole: ProtectedRouteProps["requiredRole"]): boolean => {
@@ -53,7 +53,7 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
           navigate("/admin", { replace: true });
         } else if (user.role === "quanly") {
           navigate("/partner/dashboard", { replace: true });
-        } else if (user.role === "giamdoc") {
+        } else if (user.role === "giamdoc" || user.role === "ketoan") {
           navigate("/partner/dashboard", { replace: true });
         } else if (user.role === "nhanvien") {
           navigate("/employee", { replace: true });

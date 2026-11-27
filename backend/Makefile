@@ -1,4 +1,4 @@
-.PHONY: backend db dev push deploy backup restore adminer-on adminer-off test api-test db-bootstrap-test sync clean frontend sandbox sandbox-logs sandbox-rebuild onepay-topup
+.PHONY: backend db dev seed push deploy backup restore adminer-on adminer-off test api-test db-bootstrap-test sync clean frontend sandbox sandbox-logs sandbox-rebuild onepay-topup
 
 # Load environment variables from .env file (optional — local dev only;
 # push/deploy must run without it: GHCR_OWNER has a ?= fallback below and the
@@ -209,6 +209,12 @@ test:
 	@go tool cover -func=coverage.out | grep total || true
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "✅ HTML report generated at: coverage.html"
+
+# Ensure the local-dev login accounts (admin/quanly/ketoan/giamdoc/nhanvien,
+# shared password Abc123) in the dev database. Non-production only (PAYSUB
+# D28: ketoan is its own role).
+seed:
+	@go run ./cmd/api-server seed-dev-users
 
 # Run integration API tests against local backend
 api-test:

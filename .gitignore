@@ -110,3 +110,4 @@ frontend/qa/ops-mcp-install/
 backups/
 HANDOFF.md
 /repomix-output.xml
+.shipmate/

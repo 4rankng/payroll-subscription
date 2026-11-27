@@ -31,7 +31,8 @@ export const UserAvatarDropdown = ({ className }: UserAvatarDropdownProps) => {
   const getRoleText = (role: AppRole): string => {
     if (role === 'admin') return 'Quản trị viên';
     if (role === 'quanly') return 'Quản lý';
-    if (role === 'giamdoc') return 'Kế toán';
+    if (role === 'ketoan') return 'Kế toán';
+    if (role === 'giamdoc') return 'Giám đốc';
     return 'Nhân viên';
   };
 

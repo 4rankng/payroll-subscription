@@ -6,7 +6,7 @@ import { Timesheet } from '@/types/api/timesheet.types';
  * Handles business rules for role-based actions
  */
 
-export type UserRole = 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
+export type UserRole = 'admin' | 'quanly' | 'ketoan' | 'nhanvien' | 'giamdoc';
 
 /**
  * Check if user can edit a timesheet entry

@@ -89,6 +89,29 @@ p, giamdoc, /api/v1/notifications/unread, GET, allow
 p, giamdoc, /api/v1/notifications/unread/count, GET, allow
 p, giamdoc, /api/v1/employees/*, GET, allow
 p, giamdoc, /api/v1/push/vapid-key, GET, allow
+
+# Ketoan — accounting clerk (PAYSUB D28): reads the same operational surfaces
+# as giamdoc but holds no approval rights; the FR-7 sao ke export/email and
+# recipient endpoints extend this block when they land.
+p, ketoan, /api/v1/auth/me, GET, allow
+p, ketoan, /api/v1/auth/logout, POST, allow
+p, ketoan, /api/v1/auth/change-password, POST, allow
+p, ketoan, /api/v1/timesheets, GET, allow
+p, ketoan, /api/v1/timesheets/:id, GET, allow
+p, ketoan, /api/v1/timesheets/summary, GET, allow
+p, ketoan, /api/v1/timesheets/grouped, GET, allow
+p, ketoan, /api/v1/projects, GET, allow
+p, ketoan, /api/v1/employees, GET, allow
+p, ketoan, /api/v1/billing/reports, GET, allow
+p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
+p, ketoan, /api/v1/billing/uploads, GET, allow
+p, ketoan, /api/v1/dashboard/*, GET, allow
+p, ketoan, /api/v1/notifications, GET, allow
+p, ketoan, /api/v1/notifications/*, GET, allow
+p, ketoan, /api/v1/notifications/unread, GET, allow
+p, ketoan, /api/v1/notifications/unread/count, GET, allow
+p, ketoan, /api/v1/employees/*, GET, allow
+p, ketoan, /api/v1/push/vapid-key, GET, allow
 p, quanly, /api/v1/notifications, GET, allow
 p, quanly, /api/v1/notifications/*, GET, allow
 p, quanly, /api/v1/notifications/unread, GET, allow

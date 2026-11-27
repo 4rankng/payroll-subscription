@@ -11,6 +11,7 @@ type UserRole string
 const (
 	RoleAdmin    UserRole = "admin"
 	RoleQuanly   UserRole = "quanly"
+	RoleKetoan   UserRole = "ketoan"
 	RoleGiamdoc  UserRole = "giamdoc"
 	RoleNhanvien UserRole = "nhanvien"
 )
@@ -114,10 +115,10 @@ func (u *User) ValidateFullname() error {
 // ValidateRole validates the user's role
 func (u *User) ValidateRole() error {
 	switch u.Role {
-	case RoleAdmin, RoleQuanly, RoleGiamdoc, RoleNhanvien:
+	case RoleAdmin, RoleQuanly, RoleKetoan, RoleGiamdoc, RoleNhanvien:
 		return nil
 	default:
-		return NewValidationError("role must be either 'admin', 'quanly', 'giamdoc', or 'nhanvien'")
+		return NewValidationError("role must be either 'admin', 'quanly', 'ketoan', 'giamdoc', or 'nhanvien'")
 	}
 }
 
@@ -154,7 +155,16 @@ func (u *User) IsNhanvien() bool {
 }
 
 // IsGiamdoc returns true if user role is giamdoc (director — owns the
-// billing-report export). Casbin, not this predicate, enforces routes.
+// billing-report export and timesheet approval). Casbin, not this predicate,
+// enforces routes.
 func (u *User) IsGiamdoc() bool {
 	return u.Role == RoleGiamdoc
+}
+
+// IsKetoan returns true if user role is ketoan (accounting clerk — weekly
+// sao kê export/email and recipient configuration per PAYSUB D28; the FR-7
+// endpoints it owns land with that ticket). Casbin, not this predicate,
+// enforces routes.
+func (u *User) IsKetoan() bool {
+	return u.Role == RoleKetoan
 }

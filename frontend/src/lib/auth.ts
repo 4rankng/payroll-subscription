@@ -1,4 +1,4 @@
-export type AppRole = 'admin' | 'quanly' | 'nhanvien' | 'giamdoc';
+export type AppRole = 'admin' | 'quanly' | 'ketoan' | 'nhanvien' | 'giamdoc';
 
 // PAYR-37B item 4: the JWT no longer lives in localStorage. The server sets it
 // as an HttpOnly cookie (SameSite=Lax, Secure in production) and client JS

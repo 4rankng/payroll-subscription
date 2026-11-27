@@ -323,7 +323,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đổi mật khẩu tài khoản',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly', 'giamdoc', 'nhanvien'],
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc', 'nhanvien'],
     componentPath: '/src/components/modals/ChangePasswordModal',
     hasParams: false
   }

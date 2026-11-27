@@ -25,7 +25,7 @@ CREATE TABLE `users` (
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `password` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `fullname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `role` enum('admin','quanly','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien',
+  `role` enum('admin','quanly','ketoan','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien',
   `last_login` datetime(3) DEFAULT NULL,
   `tokens_invalid_before` datetime(3) DEFAULT NULL COMMENT 'when set, any JWT issued before this instant is rejected on validate; used by RevokeUserTokens',
   `otp_failed_attempts` int NOT NULL DEFAULT '0' COMMENT 'consecutive failed OTP verifies; reset on success',
