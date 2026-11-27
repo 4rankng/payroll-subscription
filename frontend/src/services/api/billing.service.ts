@@ -16,7 +16,7 @@ const ENDPOINTS = {
   generateReport: '/billing/reports/generate',
   saokeRecipients: '/billing/saoke/recipients',
   saokeExport: '/billing/saoke/export',
-  saokeSendEmail: '/billing/saoke/send-email',
+  saokeSendEmail: '/billing/saoke/email',
 } as const;
 
 export interface TransferUploadResult {
@@ -41,6 +41,8 @@ export interface TransferUploadSummary {
   /** Rows parsed from the workbook / matched to approved timesheets. */
   parsed_rows: number;
   matched_rows: number;
+  /** SUM(employee_pay_cycles.paid_amount) for this upload (Sổ cái Tổng tiền). */
+  matched_amount: number;
 }
 
 export interface EmployeePayCycleRow {
@@ -182,32 +184,46 @@ class BillingService {
     return { ...payload.report, lines: payload.lines ?? [] };
   }
 
-  /** Sao kê recipient lists (To/CC) shared by the export/email dialogs. */
+  /**
+   * Sao kê recipient lists (To/CC) shared by the export/email dialogs.
+   * The API persists a JSON array under the wire key `recipients`; the
+   * frontend speaks `to` — mapped here so dialogs stay unchanged.
+   */
   async getSaokeRecipients(): Promise<SaokeRecipients> {
-    const response = await apiClient.get<SaokeRecipients>(ENDPOINTS.saokeRecipients);
-    return { to: response.data?.to ?? [], cc: response.data?.cc ?? [] };
+    const response = await apiClient.get<{ recipients?: string[]; cc?: string[] }>(ENDPOINTS.saokeRecipients);
+    return { to: response.data?.recipients ?? [], cc: response.data?.cc ?? [] };
   }
 
   /** Replace the persisted sao kê recipient lists. */
   async updateSaokeRecipients(params: { to: string[]; cc: string[] }): Promise<SaokeRecipients> {
-    const response = await apiClient.put<SaokeRecipients>(ENDPOINTS.saokeRecipients, params);
+    const response = await apiClient.put<{ recipients?: string[]; cc?: string[] }>(
+      ENDPOINTS.saokeRecipients,
+      { recipients: params.to, cc: params.cc },
+    );
     return {
-      to: response.data?.to ?? params.to,
+      to: response.data?.recipients ?? params.to,
       cc: response.data?.cc ?? params.cc,
     };
   }
 
   /** Download the sao kê Excel workbook for one report date. */
   async exportSaoke(date: string): Promise<void> {
-    const qs = new URLSearchParams({ date });
+    const qs = new URLSearchParams({ report_date: date });
     await apiClient.download(`${ENDPOINTS.saokeExport}?${qs}`, `saoke_${date}.xlsx`);
   }
 
-  /** Send the sao kê email for one report date to the given To/CC lists. */
+  /**
+   * Send the sao kê email for one report date to the given To/CC lists.
+   * The API body keys are `recipients`/`cc` — mapped from the frontend `to`.
+   */
   async sendSaokeEmail(params: SendSaokeEmailParams): Promise<SendSaokeEmailResult> {
     const response = await apiClient.post<SendSaokeEmailResult>(
       ENDPOINTS.saokeSendEmail,
-      params,
+      {
+        report_date: params.report_date,
+        recipients: params.to,
+        cc: params.cc ?? [],
+      },
       {
         headers: {
           'Idempotency-Key': createIdempotencyKey('saoke-email'),

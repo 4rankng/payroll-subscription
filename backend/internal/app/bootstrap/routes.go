@@ -62,5 +62,6 @@ func setupProtectedRoutes(v1 *gin.RouterGroup, container *Container) {
 	setupAuditRoutes(protected, container)
 	setupSettingsRoutes(v1, container) // Admin-only routes, use v1 directly
 	setupBillingRoutes(v1, container)
+	setupPaymentHistoryRoutes(v1, container)
 	setupDBExportRoutes(protected, container)
 }

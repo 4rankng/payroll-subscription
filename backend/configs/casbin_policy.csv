@@ -143,3 +143,12 @@ p, quanly, /api/v1/notifications/*, GET, allow
 p, quanly, /api/v1/notifications/unread, GET, allow
 p, quanly, /api/v1/notifications/unread/count, GET, allow
 p, quanly, /api/v1/push/vapid-key, GET, allow
+
+# Payment history (Lịch sử trả lương): bank-entry ledger + per-project Excel
+# export — read-only; quanly / ketoan / giamdoc (admin wildcard covers admin).
+p, quanly, /api/v1/payrolls/bank-transfer-histories, GET, allow
+p, quanly, /api/v1/payrolls/bank-transfer-histories/export, GET, allow
+p, ketoan, /api/v1/payrolls/bank-transfer-histories, GET, allow
+p, ketoan, /api/v1/payrolls/bank-transfer-histories/export, GET, allow
+p, giamdoc, /api/v1/payrolls/bank-transfer-histories, GET, allow
+p, giamdoc, /api/v1/payrolls/bank-transfer-histories/export, GET, allow

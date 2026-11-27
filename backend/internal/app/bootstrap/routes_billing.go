@@ -39,3 +39,19 @@ func setupBillingRoutes(v1 *gin.RouterGroup, container *Container) {
 		saoKe.POST("/email", container.Middleware.Authorization.Authorize(), container.Handlers.SaoKe.SendEmail)
 	}
 }
+
+// setupPaymentHistoryRoutes mounts the read-only payment history (Lịch sử trả
+// lương): the bank-entry ledger of a work month and its per-project Excel
+// export. Every route is casbin-gated — quanly / ketoan / giamdoc (admin
+// wildcard covers admin; see configs/casbin_policy.csv).
+func setupPaymentHistoryRoutes(v1 *gin.RouterGroup, container *Container) {
+	if container == nil || container.Handlers == nil || container.Handlers.PaymentHistory == nil {
+		return
+	}
+	payrolls := v1.Group("/payrolls")
+	payrolls.Use(container.Middleware.Auth.Authenticate())
+	{
+		payrolls.GET("/bank-transfer-histories", container.Middleware.Authorization.Authorize(), container.Handlers.PaymentHistory.List)
+		payrolls.GET("/bank-transfer-histories/export", container.Middleware.Authorization.Authorize(), container.Handlers.PaymentHistory.Export)
+	}
+}

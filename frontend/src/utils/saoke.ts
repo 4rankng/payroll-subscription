@@ -4,6 +4,12 @@
  */
 import type { EmployeePayCycleRow, SaokeRecipients, TransferUploadSummary } from '@/services/api/billing.service';
 import { DEFAULT_SAOKE_CC, DEFAULT_SAOKE_RECIPIENTS } from '@/constants/emailDefaults';
+import { format, parseISO } from 'date-fns';
+
+/** YYYY-MM-DD → dd/MM/yyyy without UTC day-shift. */
+export function formatReportDate(date: string): string {
+  return format(parseISO(date), 'dd/MM/yyyy');
+}
 
 /** One transfer-upload batch plus the money it settled (from ky-paid rows). */
 export interface LedgerBatch extends TransferUploadSummary {

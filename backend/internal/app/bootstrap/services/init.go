@@ -58,6 +58,7 @@ type Services struct {
 	EmployeeNotifier        notification.EmployeeNotifier
 	Billing                 *billing.TransferUploadService
 	BillingReport           *billing.BillingReportService
+	PaymentHistory          *billing.PaymentHistoryService
 	SaoKe                   *billing.SaoKeService
 	Settings                *config.SettingsService
 	SettingsConfig          *config.SettingsConfigService
@@ -100,6 +101,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	fileStorage := storage.NewLocalFileStorage(cfg.Asset.StoragePath, cfg.Asset.BaseURL)
 	assetService := asset.NewAssetService(repos.Asset, fileStorage, cfg.Asset.MaxFileSize, eventBus)
 	billingReportService := billing.NewBillingReportService(repos.BillingReport, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, settingsConfigService, assetService, notificationService, logger)
+	paymentHistoryService := billing.NewPaymentHistoryService(repos.Timesheet, repos.Employee, repos.Project, repos.EmployeePayCycle, repos.TransferUpload, repos.ProjectEmployee, logger)
 
 	// Step 4: Create domain services using infrastructure ports
 	timesheetService := timesheet.NewTimesheetService(repos.Timesheet, repos.Employee, repos.Project, repos.ProjectEmployee, repos.Payrate, transactionManager, cachePort, eventBus)
@@ -262,6 +264,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		EmployeeNotifier:        employeeNotificationService,
 		Billing:                 billingService,
 		BillingReport:           billingReportService,
+		PaymentHistory:          paymentHistoryService,
 		SaoKe:                   saoKeService,
 		Settings:                settingsService,
 		SettingsConfig:          settingsConfigService,

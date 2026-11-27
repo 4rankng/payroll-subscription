@@ -45,6 +45,8 @@ const FeeInsightsPageMobile = lazy(() =>
   import("./pages/partner/OverviewPage/Mobile").then((m) => ({ default: m.FeeInsightsPageMobile })),
 );
 const PartnerBillingPage = lazy(() => import("./pages/partner/BillingPage"));
+const PartnerLedgerPage = lazy(() => import("./pages/partner/LedgerPage"));
+const PartnerLedgerPageMobile = lazy(() => import("./pages/mobile/partner/LedgerPage"));
 
 // Partner Mobile Pages (lazy-loaded)
 const PartnerProjectsPageMobile = lazy(() => import("./pages/mobile/partner/ProjectsPage"));
@@ -260,6 +262,8 @@ const AppContent = () => {
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
           <Route path="billing" element={<ResponsivePage desktopComponent={PartnerBillingPage} mobileComponent={PartnerBillingPage} />} />
+          {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
+          <Route path="ledger" element={<ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} />} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
 
