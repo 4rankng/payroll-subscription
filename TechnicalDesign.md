@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| Status | Draft v10 (single consolidated schema; hard DELETE only; effective-from only; RESTRICT on referenced records — D18; roles admin/quanly/giamdoc/nhanvien — D19; Zalo ZNS removed — D20; no customer/partner concept — D21; dead logic purged — D22; old reports removed — D23; FR-6 Tổng quan dashboard added; D1–D24 + FR-6) |
-| Date | 2026-11-19 |
-| Input | `NewAppIdea.md` (PRD v11, decisions D1–D14, no open questions) |
+| Status | Draft v12 (single consolidated schema; hard DELETE only; effective-from only; RESTRICT on referenced records — D18; roles admin/quanly/ketoan/giamdoc/nhanvien — D19 as amended by D28; Zalo ZNS removed — D20; no customer/partner concept — D21; dead logic purged — D22; FR-6 Tổng quan + FR-7 sao kê lương tuần export/email; founder scope note 2026-11-27: lương tuần only, no OnePay/9Pay — D27. Refreshed against donor HEAD `090e4463`, window 2026-11-17…26) |
+| Date | 2026-11-27 (donor + founder-note refresh; originally drafted 2026-11-19) |
+| Input | `NewAppIdea.md` (PRD v13, decisions D1–D28, no open questions) |
 | Scope | How to refactor this monorepo in place into the subscription model: schema surgery + demolition sequencing + new-model build. Requirements are in the PRD; this doc is the execution design. |
 | Board | plan.tingting.vip/tingtingsoft/PAYSUB (tickets PAYSUB-1…9) |
-| Session rule | Requirements/design only — no code written from this doc in this session |
+| Session rule | Requirements/design first; PAYSUB execution (Track A billing, PAYSUB-10/11/1344) started 2026-11-27 under accepted founder decisions |
 
 ## 1. Strategy
 
@@ -30,7 +30,7 @@ Decision: the database is created by **one SQL script** — `backend/migrations/
 - Donor migrations `backend/migrations/001…146` are **not carried over**; the whole numbered-migration history is replaced by this single baseline. `schema_migrations` table is not recreated.
 - gorm `AutoMigrate` is **removed** from `bootstrap/infrastructure/init.go`: `schema.sql` is the only schema authority (running both would let AutoMigrate resurrect dropped tables/columns and drift from the script).
 - Seed row `subscription_fee_per_employee_per_ky_vnd` ships inside the script (`partner_company` removed, D21); runtime seed code in `backend/internal/seed/` stays only for non-schema defaults.
-- Donor DDL source: the running dev database (`payroll-mysql`, `SHOW CREATE TABLE`) — the script below is that DDL with the removals applied, so column types/indexes match what the code actually runs on today.
+- Donor DDL source: the running dev database (`payroll-mysql`, `SHOW CREATE TABLE`) — the script below is that DDL with the removals applied, so column types/indexes match what the code actually runs on today. Re-verified 2026-11-27: no donor migrations landed 2026-11-17…26, so the DDL base is unchanged at donor HEAD `090e4463`.
 
 ## 3. Final Schema (consolidated, 23 tables)
 
@@ -44,7 +44,8 @@ Surgery applied to donor DDL:
 | `timesheets` | `revenue_receivable`, `revenue_paid`, `transaction_id` + its index | D5/D14; `payment_status/payment_date/paid_amount/paid_at/payment_reference` kept, re-meant customer-paid (D11) |
 | `timesheets` | `force_payroll` (bulk-transfer forcing) + `idx_timesheets_force_payroll`; `'failed'` enum value — `payment_status` shrunk to `pending/paid/cancelled` | D22 (fresh schema keeps no dead logic). `payment_reference` **kept, re-meant** (grill correction): stores the bank transaction reference from the customer's uploaded transfer result; written only by verification alongside `paid` |
 | EDIT-REQUEST REMOVAL | Drop table `timesheet_edit_requests` + FK/indexes; `timesheets` drops `allowed_edit`, `request_edit_id` (+ `idx_timesheets_request_edit_id`, `idx_timesheets_access_control_edit`, `idx_timesheets_updated_at_filter` which reference them) — D25; schema.sql already excludes them (keep it that way) |
-| ALL kept tables | `deleted_at` columns, every `deleted_at`-containing index, gorm soft-delete machinery (D16): deletes are hard DELETEs. Generated soft-delete helpers dropped: `payrates.live_from_date` → `UNIQUE(project_id, from_date)`; `settings.active_key` → `UNIQUE(key)`. Rebuilt uniques: `users` UNIQUE(cccd)/UNIQUE(mobile); `employees` UNIQUE(email)/UNIQUE(cccd); `project_users` UNIQUE(project_id, user_id); `employee_users` UNIQUE(employee_id, user_id) | D16 |
+| `payrates` | `live_from_date` dropped → `UNIQUE(project_id, from_date)` (soft-delete row below). Timeline semantics re-anchored at donor HEAD (2026-11-18…23): a config with ANY linked timesheet is frozen (update/delete blocked, create-new only); creates may backdate only to a strictly earlier unoccupied date (no mutable timesheet on/after); `payrate_json` shift buckets may overlap — rate lookup is exact-key per shift name, overlap validation removed (`domain/payrate.go`) | D17/D18 — donor behavior already matches (referenced rows immutable, effective-from only) |
+| ALL kept tables | `deleted_at` columns, every `deleted_at`-containing index, gorm soft-delete machinery (D16): deletes are hard DELETEs. Generated soft-delete helpers dropped: `settings.active_key` → `UNIQUE(key)`. Rebuilt uniques: `users` UNIQUE(cccd)/UNIQUE(mobile); `employees` UNIQUE(email)/UNIQUE(cccd); `project_users` UNIQUE(project_id, user_id); `employee_users` UNIQUE(employee_id, user_id) | D16 |
 | excluded entirely | `attendances`, `attendance_failed_attempts`, `banks`, `zns_messages`, ledger/wallet/loan/advance/bulk-transfer/gateway/ads/API-key/health tables | D13/D14/D15/D20 + PRD §6.3 |
 | added | `transfer_uploads`, `employee_pay_cycles`, `billing_reports`, `billing_report_lines` | FR-1…FR-4 |
 
@@ -68,7 +69,7 @@ CREATE TABLE `users` (
   `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `password` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `fullname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `role` enum('admin','quanly','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien' (D19),
+  `role` enum('admin','quanly','ketoan','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien' (D19 as amended by D28),
   `last_login` datetime(3) DEFAULT NULL,
   `tokens_invalid_before` datetime(3) DEFAULT NULL COMMENT 'when set, any JWT issued before this instant is rejected on validate; used by RevokeUserTokens',
   `otp_failed_attempts` int NOT NULL DEFAULT '0' COMMENT 'consecutive failed OTP verifies; reset on success',
@@ -532,7 +533,7 @@ SET FOREIGN_KEY_CHECKS=1;
 | Step | Design | Reuses |
 |---|---|---|
 | A1 Fee setting | Add key to `services/config/settings_config.go` (constant + getter + validation: integer ≥ 0), seed row | Existing settings cache pattern |
-| A2 Upload pipeline | Format: the existing weekly-payment **result Excel** — rows keyed by CCCD (donor matching: `bcc_import_weekly_payment.go:58-98` — CCCD first, then STK-by-name, then name fallback). Job-based ingest: `POST /api/v1/billing/uploads` (multipart) → job row → parse → verify. Job states, locks, result/audit copied from the bcc_import file family; FileHash idempotency from `domain/settlement_upload.go` (identical hash → return prior result) | bcc_import lifecycle files |
+| A2 Upload pipeline | Format: the existing weekly-payment **result Excel** — rows keyed by CCCD (donor matching: `bcc_import_weekly_payment.go:94-98` — the row's own CCCD, then the workbook's STK CCCD for that name, then the project-employee name). Parser accepts POURIN weekly-payment templates since 2026-11-18 (row-8 identity labels, `Lương/8h` spellings, TC/LE shift codes, empty day-31 scaffolding skipped) — FR-2 inherits that tolerance. Job-based ingest: `POST /api/v1/billing/uploads` (multipart) → job row → parse → verify. Job states, locks, result/audit copied from the bcc_import file family; FileHash idempotency from `domain/settlement_upload.go` (identical hash → return prior result) | bcc_import lifecycle files |
 | A3 Verification | **Per-row processing (current donor behaviour)**: each parsed row (CCCD + amount) is processed independently against approved timesheets whose `KyFromWorkDay(Date)` = upload's Kỳ and month. Matched row → same-tx `timesheets SET payment_status='paid', payment_date=…` + upsert `employee_pay_cycles` (amount summed per employee-Kỳ). Failed row (unknown CCCD, no timesheet) → per-row error, upload continues; upload status `verified` when ≥1 row processed, `rejected` only when every row failed → then all-admin push (D10) via the `WalletBalanceAlertService` fan-out mechanism (keep the push util, delete the alert job). Timesheets not in the file stay `pending` | clock/pay_cycle, bcc validation style, settlement per-row iteration |
 | A4 Kỳ read model | **One row per employee per Kỳ** (founder: the billing atom): `UNIQUE(employee_id, cycle, work_month)`; `paid_amount` = SUM of the employee's customer-paid timesheet amounts across all projects in that Kỳ. Monthly billing = rows of the month × fee; distinct-CCCD is the row count | — |
 | A5 Billing report | Scheduler job `generate_monthly_billing_report` (cron `0 9 1 * *`, replaces the removed `daily_receivable_reconciliation` slot): builds `billing_reports` + lines with fee snapshot → renders Excel via `app/services/excel/` with the D24 layout — **Summary sheet** (per-Kỳ distinct × fee + total) + **one sheet per project** listing that project's payment history (employee, CCCD, Kỳ, amount, payment date/reference) → stores file → push/portal notice. Manual regenerate endpoint for admin | excel exporters, scheduler pattern |
@@ -551,18 +552,18 @@ Each wave ends with the gate: `go build ./... && go test ./... -race` + `pnpm li
 - Delete dirs: `components/ledger/`, `components/transaction/`, `components/advance-payment/`, `components/cron-health/`, `components/admin/WeeklyPaymentFeeSchedule/`, `components/settings/{ApiKeysSection,McpApiKeysSection,OpsApiKeysSection,AdBannerSection,FeeScheduleSection,DisbursementFeeScheduleSection}`, `components/admin-dashboard/FinancialChart.tsx`, accountant/loans/admin-dashboard surplus pages.
 - Sidebar: remove Sổ Cái (`AdminSidebar.tsx:86`) + removed-feature entries; mobile equivalents in `pages/mobile/**`.
 - Replace `PaymentHistoryPage` guts with the Track A6 pages (do this **after** A6 exists).
-- Remove AccountantPage **entirely** (both halves — bulk-transfer export AND payroll report export/payroll email dialogs, D23) + `components/timesheet/{PayrollReportExportDialog,PayrollReportEmailDialog}.tsx` + `hooks/api/useExportPayrollReport`.
+- AccountantPage: remove the **bulk-transfer half** (D23/D27); the payroll-report half (sao kê lương tuần) is **kept and re-homed** for ketoan/giamdoc (D28) — keep `components/timesheet/{PayrollReportExportDialog,PayrollReportEmailDialog}.tsx` + `hooks/api/useExportPayrollReport` and mount them on the ketoan/giamdoc surfaces (FR-7).
 - Frontend API clients: prune `services/api/ledger.service.ts` + every client hitting removed endpoints.
 
 ### Wave 2 — Transport + wiring
 
 - Delete `bootstrap/routes_ad_banner.go`, `routes_advance_payment.go`, `routes_api_key_admin.go`, `routes_disbursement.go`, `routes_integration.go`, `routes_mcp.go`, `routes_wallet.go`, `routes_weekly_payment_fee.go`; `setupLedgerRoutes` + its group in `routes_misc.go:58+`; `setupCronRoutes` in `routes_admin.go:118-123`; drop their `routes.go` call sites (line ~70 area).
 - `container.go`: remove handler/repo/service wiring for all removed stacks (Ledger `:95,492`, OnePayFeeImport, wallet, loans, ads, MCP, api keys, disbursement, flex pay, advance payment, cron handler if health pages die).
-- `configs/casbin_policy.csv`: delete policies for removed endpoints (partner + admin rows referencing `/advance-payments`, `/wallet`, `/ledger`, `/api-keys`, `/mcp`, `/disbursement`, ad banners, weekly payment fees, cron-jobs).
+- `configs/casbin_policy.csv`: delete policies for removed endpoints (partner + admin rows referencing `/advance-payments`, `/wallet`, `/ledger`, `/api-keys`, `/mcp`, `/disbursement`, ad banners, weekly payment fees, cron-jobs). Ketoan rows already landed with PAYSUB-1344 (D28): reads mirror giamdoc minus approval; extend the block when FR-7 endpoints land.
 
 ### Wave 3 — App services, jobs, async tasks
 
-- Delete service dirs: `app/services/{advance_payment,flex_pay,loan,ledger,wallet_bulk,disbursement,settlement,mcpapikey,apikey,opsapikey,ad_banner,integration}` + `app/services/payroll/bulktransfer/` + `app/services/payroll/report_by_project_exporter.go` (D23); keep `app/services/payroll` core (salary computation) and `app/services/excel` (billing-report export).
+- Delete service dirs: `app/services/{advance_payment,flex_pay,loan,ledger,wallet_bulk,disbursement,settlement,mcpapikey,apikey,opsapikey,ad_banner,integration}` + `app/services/payroll/bulktransfer/` + `app/services/payroll/report_by_project_exporter.go` (D23 — **amended by D28: `report_by_project_exporter.go` + `report_by_project_service.go` are kept**, the weekly sao kê lương tuần exporter for FR-7); keep `app/services/payroll` core (salary computation, payrate freeze) and `app/services/excel` (billing-report export + timesheet-import parser family: monthly BCC, weekly block 2026-11-19, POURIN weekly-payment 2026-11-18, format auto-detection).
 - `bootstrap/scheduler_jobs.go`: remove jobs `advance_payment_reminder`, `sync_wallet_balance`, `wallet_balance_alert` (keep its push fan-out util for A3), `loan_repayment_reminder`, `daily_receivable_reconciliation` (replaced by A5 job), `apply_payment_schedule_changes` + `apply_pending_check_in_changes` + `check_in_activation_reminder` + `prepare_check_in_roster` + `cleanup_check_in_roster` + `cancel_flexible_pending_requests` + `send_flexible_sao_ke_reminder` (check-in/pay-cycle-switch machinery, D12/D8), `vfic_funding_reminder` (front-fund), `monitor_high_error_rates` + `cleanup_old_api_metrics` (ops/api-metric surface). Keep `recompute_project_aggregates` (redefined, §6); `zalo_token_renew` removed (D20).
 - Prune `initScheduler` parameter list in the same commit (it wires the removed services).
 - `infra/asynq/mux.go` + `handlers.go`: unregister `TaskFlexPay*`, `TaskBulkTransfer*`, `TaskNinePay*`, `TaskWallet*` handlers and their workers; delete task constants.

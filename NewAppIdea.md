@@ -2,14 +2,16 @@
 
 | Field | Value |
 |---|---|
-| Status | Draft v11 (codebase-grounded, ask-reviewed; founder decisions D1–D14 resolved 2026-11-19 — no open questions. Requirements only — no code written from this doc this session) |
-| Date | 2026-11-19 |
+| Status | Draft v13 (codebase-grounded, ask-reviewed; decisions D1–D28 resolved — no open questions. Founder scope note 2026-11-27: the app manages **lương tuần only** — weekly payment schedule, no OnePay/9Pay (D27); Kế Toán role restored with weekly-sao-kê duties, Giám Đốc approves/rejects timesheets (D28, amends D19/D23/D26). Refreshed against donor HEAD `090e4463`, window 2026-11-17…26. Requirements only — no code written from this doc) |
+| Date | 2026-11-27 (donor refresh; originally drafted 2026-11-19) |
 | Source | Founder idea notes (raw paste preserved at `local://paste-1.md`) |
 | Context | New app built from scratch; this monorepo is the donor codebase. Ask interrogation 2026-11-19 surfaced 5 design gaps, folded in below |
 
 ## 1. Summary
 
 The operator today front-funds salaries and recovers capital + fee later (per-timesheet `revenue_receivable`, a % service fee). The new app drops money movement entirely: salaries are paid externally from the paying company's own bank account, the platform records who was paid in each Kỳ (pay cycle), counts distinct employees per Kỳ by CCCD, and bills a flat per-employee-per-Kỳ fee at month end. One deployment, one database — no customer/partner entity exists at all (D21). The platform's terminal deliverable is the monthly billing report export; collecting the fee is manual, outside the system (D9).
+
+**Scope lock (founder 2026-11-27, D27):** the app is purely for managing **lương tuần** — the weekly payment schedule end-to-end (timesheets per Kỳ → weekly transfer-result upload → sao kê lương tuần export/email → month-end subscription billing). It has **no connection to OnePay or 9Pay** or any other gateway; those stacks stay removed (§6.3).
 
 ```
 Customer pays salaries ──► uploads bank transfer result ──► platform verifies
@@ -65,6 +67,7 @@ Source: `backend/internal/pkg/clock/pay_cycle.go` — `TimesheetKyCount = 4`, `k
 | BR-2 | "Distinct" = unique CCCD within one Kỳ (one deployment = one billable entity, D21); same employee in N Kỳ bills N × X. CCCD is globally unique, hard-enforced by `UNIQUE(cccd)` (no soft delete, D16) |
 | BR-3 | A Kỳ's count is included only after its transfer result is uploaded and verified (the customer-paid marker is the only counting gate) |
 | BR-4 | The §5.1 calendar is the only definition of "round"/Kỳ — fixed for the deployment (D8). The donor's per-project monthly period overrides (`Project.SalaryPeriodFrom/To`) are not carried over |
+| BR-5 | Role permissions (founder 2026-11-27, D28): `ketoan` and `giamdoc` can export the weekly sao kê lương tuần (FR-7), send it by email, and configure the recipient list (To + CC); `giamdoc` can also approve/reject timesheets. Role enum: `admin/quanly/ketoan/giamdoc/nhanvien` (D19 amended by D28) |
 
 Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/month.
 
@@ -79,11 +82,13 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | Employee registry | `domain/employee.go` (CCCD globally unique — plain UNIQUE constraint under hard-delete, D16; `GetByCCCD`/`ListByCCCDs`) |
 | Projects & assignments | `domain/project.go`, `domain/project_employee.go` (minus the check-in config columns dropped in §6.3) |
 | Timesheets | `domain/timesheet.go` — salary amounts + work dates + approval-by-admin flow, the substrate for counting (edit-request flow removed, D25/D26) |
+| Payrate configs | `domain/payrate.go` (`payrate_json`; overlapping shift buckets allowed since 2026-11-23 — rate lookup is exact-key per shift name), `pkg/services/payrate_temporal_service.go` (a config freezes once ANY timesheet links to it — update/delete blocked, only a new config row allowed; creates may backdate only to a strictly earlier unoccupied date, 2026-11-18) — salary substrate for timesheet amounts; `payrates` survives the rebuild (§7) |
 | Paid marker fields | `Timesheet.PaymentStatus` enum + `PaymentDate` + `PaidAmount` (`domain/timesheet.go:51-56`) — in the rebuilt schema they mean exactly one thing: customer-paid, verified from the transfer upload (D11); only FR-2 verification writes them |
-| Auth, RBAC, audit | `routes_auth.go`, casbin policy (roles admin/quanly/ketoan/nhanvien, D19), `domain/audit_log*` |
-| Client file upload pipeline | `app/services/bcc_import_service.go` — job lifecycle, locks, replacement, result/audit; template for FR-2 |
+| Auth, RBAC, audit | `routes_auth.go`, casbin policy (roles admin/quanly/ketoan/nhanvien, D19), `domain/audit_log*`; login is now gated by ALTCHA captcha — challenge issued after repeated OTP failures, widget mounted on rejection, employee-CCCD identifier resolved in preflight (donor 2026-11-25, `CaptchaService` in `app/services/auth/`) |
+| Client file upload pipeline | `app/services/bcc_import_service.go` — job lifecycle, locks, replacement, result/audit; template for FR-2. Parser family at donor HEAD: monthly BCC, weekly block (`excel/weekly_block_bcc_parser.go`, 2026-11-19), POURIN weekly-payment template (`bcc_import_weekly_payment.go` — row-8 identity labels, `Lương/8h` spellings, TC/LE shift codes, 2026-11-18…25), format auto-detection (`excel/format_detector.go`), stk header-collapse hardening (`excel/stk_parser.go`) |
 | Idempotent upload receipt | `domain/settlement_upload.go` — FileHash (SHA-256) idempotency pattern; reuse for transfer uploads |
 | Report/export infra | `app/services/excel/` — template for the FR-3 billing-report export (old report exporters removed, D23) |
+| Weekly sao kê export/email | `app/services/payroll/report_by_project_exporter.go` + `report_by_project_service.go`, `frontend/src/components/timesheet/PayrollReportExportDialog.tsx` + `PayrollReportEmailDialog.tsx` (To/CC recipient lists, defaults in `constants/emailDefaults.ts` — refreshed donor 2026-11-26), `notifications.email_recipients` column — restored by founder note 2026-11-27 (D28; had been removed by D23 in v11) |
 | Quanly portal | `frontend/src/pages/partner/` dir (Dashboard, Employees, PaymentHistory, Projects, Timesheets) — paying-company self-service home; report-ready notice surfaces here (dir name kept as legacy path, D19) |
 | Notifications | `domain/notification.go`, `domain/push_subscription.go`; admin-wide push fan-out already exists (wallet balance alert behavior) — reuse for FR-2 rejection notices (D10) |
 
@@ -96,6 +101,7 @@ Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/mo
 | FR-3 | Month-end consolidated billing report: distinct employees per Kỳ × fee, per project and total; Excel export is the terminal deliverable the operator sends out (D9); workbook layout per D24: Summary sheet + one sheet per project with payment-history rows; titled by work month + fee — no customer/partner header (D21); optional portal/push notice that the report is ready |
 | FR-4 | Subscription fee setting: `subscription_fee_per_employee_per_ky_vnd`, default 10000; admin-configurable; snapshot the fee into each billing report so later price changes don't rewrite history |
 | FR-6 | Tổng quan page (replaces the removed old-model dashboard widgets): (1) time series of paid-employee count per project; (2) time series of paid amount per project; (3) per-month per-Kỳ table — distinct employees per Kỳ × fee (BR-1: 10,000 VND/employee/Kỳ default) with monthly fee total |
+| FR-7 | Sao kê lương tuần (weekly salary statement, founder note 2026-11-27): per-project weekly sao kê Excel (employee, CCCD, Kỳ, hours/paytype, amounts) exportable by `ketoan`/`giamdoc` and sendable by email to a configurable recipient list (To + CC). Recipient list persists server-side (settings keys, §6.4), seeded from donor `constants/emailDefaults.ts`; ketoan and giamdoc can both edit it; every export/send is audit-logged (BR-5, D28) |
 
 ### 6.3 Remove (with code evidence)
 
@@ -129,11 +135,11 @@ Keep a reduced Settings page (`frontend/src/pages/admin/SettingsPage/`); tabs `g
 - `self_check_in_advance_percentage`, `self_check_in_advance_hold_hours`, `self_check_in_advance_window_open_day`, `advance_request_stop_day`
 - `transfer_bank_account_{holder,number,name,visible}`, `flexpay_transfer_bank_account_{holder,number,name,visible}`
 
-Add: `subscription_fee_per_employee_per_ky_vnd` (default 10000; BR-1).
+Add: `subscription_fee_per_employee_per_ky_vnd` (default 10000; BR-1). Also add `saoke_email_recipients` + `saoke_email_cc` (JSON email arrays; configurable by ketoan/giamdoc — FR-7/BR-5).
 
 ## 7. Data Model Implications
 
-- Keep: employees, projects, project_employees, timesheets, users/auth/audit, notifications, settings (reduced key set). No soft-delete columns anywhere — deletes are hard DELETEs (D16). No effective-to columns/logic anywhere — effective-from only (D17).
+- Keep: employees, projects, project_employees, payrates (freeze/backdating semantics ride along — §6.1), timesheets, users/auth/audit, notifications, settings (reduced key set). No soft-delete columns anywhere — deletes are hard DELETEs (D16). No effective-to columns/logic anywhere — effective-from only (D17).
 - New tables: per-Kỳ paid-records read model (FR-1); transfer uploads with content hash + verification state (FR-2, settlement-upload pattern); billing reports with fee snapshots (FR-3/4). No `customers` table and no customer/partner entity — one deployment is one billable entity (D21).
 - Dropped Project columns: `salary_period_from/to` (D8), `is_flexible`, `geofence_gates`, `shift_names` (D12).
 - Employee `BankID`/`BankAccount*` fields and the OnePay account-verification status (`BankAccountStatus`) lose their consumer once disbursement dies — drop with the schema rebuild unless payroll export needs bank details (appendix).
@@ -168,11 +174,11 @@ Add: `subscription_fee_per_employee_per_ky_vnd` (default 10000; BR-1).
 | D23 | All old-model report surfaces are removed (founder requirement 2026-11-19, grill): payroll report export/email by project (`report_by_project_exporter.go`, `PayrollReportExportDialog`, `PayrollReportEmailDialog`, `useExportPayrollReport`), the whole AccountantPage (bulk-transfer half + payroll half), and old payment-history content. The only reports in the new model: the FR-3 billing report (Excel) and the upload/report history view (A6). Data pages (timesheets, employees) stay as views, not exports. |
 | D24 | Billing report workbook layout (founder decision 2026-11-19, grill Q8): first sheet = Summary (per-Kỳ distinct × fee + total), then N sheets — one per project — each listing that project's payment history (employee, CCCD, Kỳ, amount, payment date/reference). |
 | D25 | No timesheet edit requests (founder decision 2026-11-19, grill): approved timesheets are immutable. The `timesheet_edit_requests` table, `allowed_edit`/`request_edit_id` columns, edit-request endpoints/UI, and the approval detour are removed. Corrections to a pending timesheet = direct edit by its owner; a paid timesheet is never edited (D11/D18). |
-| D26 | `approval_requests` table removed (founder decision 2026-11-19, grill): every guarded type it gated (sao-kê email, payroll-report email, reminders, void-timesheet detour) belongs to the removed old model (D20/D23/D25). Admin voiding a timesheet is a direct hard delete — no approval detour. Approval service/handler/routes/ApprovalsPage deleted. |
+| D26 | `approval_requests` table removed (founder decision 2026-11-19, grill): every guarded type it gated (sao-kê email, payroll-report email, reminders, void-timesheet detour) belongs to the removed old model (D20/D23/D25). Admin voiding a timesheet is a direct hard delete — no approval detour. Approval service/handler/routes/ApprovalsPage deleted. Donor ADR-014 (2026-11-24) independently confirms the pattern: employee/project access claim/release are instant self-grants — "requesting is granting", no approval state anywhere — so nothing in the new model needs an approval queue. |
 
 ## 9. Open Questions
 
-None — all questions are resolved and recorded in the decision log (D1–D20).
+None — all questions are resolved and recorded in the decision log (D1–D28).
 
 ## 10. Appendix — Parked / Out-of-Scope Notes
 
