@@ -25,7 +25,7 @@ type User struct {
 	Fullname            string     `json:"fullname" gorm:"type:varchar(255);not null"`
 	CCCD                *string    `json:"cccd,omitempty" gorm:"type:varchar(20);comment:'Citizen ID for admin/quanly login'"`
 	Mobile              *string    `json:"mobile,omitempty" gorm:"type:varchar(15)"`
-	Role                UserRole   `json:"role" gorm:"type:enum('admin','quanly','giamdoc','nhanvien');not null;default:'nhanvien'"`
+	Role                UserRole   `json:"role" gorm:"type:enum('admin','quanly','ketoan','giamdoc','nhanvien');not null;default:'nhanvien'"`
 	LastLogin           *time.Time `json:"last_login" gorm:"type:datetime(3)"`
 	TokensInvalidBefore *time.Time `json:"-" gorm:"type:datetime(3);comment:'When non-null, any JWT issued before this instant is rejected. Used by RevokeUserTokens.'"`
 	OTPFailedAttempts   int        `json:"-" gorm:"type:int;not null;default:0;comment:'consecutive failed OTP verifies; reset on success'"`

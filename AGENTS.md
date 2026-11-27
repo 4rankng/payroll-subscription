@@ -1,9 +1,9 @@
-<!-- Generated: 2026-06-07 | Updated: 2026-07-26 -->
+<!-- Generated: 2026-06-07 | Updated: 2026-11-27 -->
 
 # Payroll
 
 ## Purpose
-Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, per-Kỳ distinct-employee counting, customer transfer-upload verification, and month-end billing reports; the platform bills a subscription fee per distinct employee per Kỳ. Four roles: admin, quanly, giamdoc, nhanvien (with mobile-first views).
+Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go backend (DDD / Clean Architecture) and a React frontend (Vite + TanStack Query + shadcn/ui). Handles employee timesheets, per-Kỳ distinct-employee counting, customer transfer-upload verification, and month-end billing reports; the platform bills a subscription fee per distinct employee per Kỳ. Five roles: admin, quanly, ketoan, giamdoc, nhanvien (with mobile-first views).
 
 ## Key Files
 | File | Description |

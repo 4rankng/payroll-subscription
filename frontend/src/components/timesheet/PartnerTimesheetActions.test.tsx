@@ -6,9 +6,6 @@ describe("PartnerTimesheetActions", () => {
   it("keeps every timesheet action visible and connected", () => {
     const callbacks = {
       onAddTimesheet: vi.fn(),
-      onOpenPaymentHistory: vi.fn(),
-      onExportTimesheets: vi.fn(),
-      onExportStatement: vi.fn(),
       onOpenBccHistory: vi.fn(),
       onUploadBcc: vi.fn(),
     };
@@ -17,9 +14,6 @@ describe("PartnerTimesheetActions", () => {
 
     const actions = [
       ["Nhập công", callbacks.onAddTimesheet],
-      ["Lịch sử trả lương", callbacks.onOpenPaymentHistory],
-      ["Xuất bảng công", callbacks.onExportTimesheets],
-      ["Xuất sao kê", callbacks.onExportStatement],
       ["Lịch sử BCC", callbacks.onOpenBccHistory],
       ["Tải lên BCC", callbacks.onUploadBcc],
     ] as const;

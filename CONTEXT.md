@@ -45,8 +45,16 @@ The month-end Excel artifact: distinct employees per Kỳ × fee, with the fee s
 _Avoid_: invoice, hóa đơn, payment report
 
 **Roles**:
-`admin` (full control), `quanly` (paying-company manager), `giamdoc` (director — billing-report export), `nhanvien` (read-only own pay history).
-_Avoid_: partner, customer, accountant, ketoan, adv_partner
+`admin` (full control — settings, fee K, users), `quanly` (paying-company manager), `ketoan` (accountant — broad read access like giamdoc, but no approvals, no report generation, no settings), `giamdoc` (director — approves timesheets, triggers billing-report generation, exports reports), `nhanvien` (read-only own pay history).
+_Avoid_: partner, customer, `ke_toan`/`ke toan` spelling (canonical: `ketoan`), adv_partner
+
+**Sổ cái (ledger)**:
+The paying company's own record of its bank bulk transfers: one entry per uploaded transfer result, grouped by Kỳ, exportable as sao kê. Pure record-keeping for ketoan and giamdoc. It tracks no fee collection, no capital, no loans, no expenses.
+_Avoid_: general ledger (in the accounting sense of expenses/capital), accounts payable
+
+**Sao kê (payment statement)**:
+The salary-payment statement for one payment date: an Excel built with the payroll project's sao kê logic, minus the disbursement summary (tổng tiền giải ngân, phí dịch vụ, tiền công ty phải trả, hạn thanh toán), the beneficiary-account block, and platform branding. Sent by email to a persisted recipient list; the email body is only the transaction-detail table (STT, Kỳ lương tháng from–to, Dự án, Số tiền) plus the attachment. There is no platform service fee in this model — the paying company pays its own employees.
+_Avoid_: transfer result (that is the uploaded evidence), fee report (that is the billing report)
 
 **Hard delete**:
 Every delete physically removes the row. Records referenced by salary history cannot be deleted at all.
