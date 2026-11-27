@@ -5,7 +5,6 @@ go 1.26.0
 require (
 	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/alicebob/miniredis/v2 v2.38.0
-	github.com/altcha-org/altcha-lib-go/v2 v2.4.1
 	github.com/brianvoe/gofakeit/v7 v7.5.1
 	github.com/casbin/casbin/v2 v2.122.0
 	github.com/cespedes/accounting v0.0.0-20230225055409-0f48b5944834

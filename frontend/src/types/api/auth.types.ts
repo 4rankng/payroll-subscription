@@ -27,13 +27,6 @@ export interface BasicUserProfile {
 export interface LoginCredentials {
   username: string;
   password: string;
-  /**
-   * Base64 ALTCHA proof-of-work payload, required when the server demands a
-   * captcha (after N failed logins). Produced by the official <altcha-widget>;
-   * the legacy captcha_id/captcha_code fields are gone — a stale cached bundle
-   * that still sends them is rejected server-side (fail-closed).
-   */
-  captcha_payload?: string;
 }
 
 export interface LoginResponse {

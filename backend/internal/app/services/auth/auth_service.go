@@ -24,7 +24,6 @@ import (
 	"api-server/internal/pkg/ipgeo"
 	"api-server/internal/pkg/phone"
 
-	"github.com/altcha-org/altcha-lib-go/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/api/idtoken"
@@ -42,7 +41,6 @@ type AuthService struct {
 	otpConfig            config.OTPConfig
 	googleClientID       string
 	nonceStore           *cache.NonceStore
-	captchaService       *CaptchaService
 	// lookupCache fronts the per-request blacklist and tokens_invalid_before
 	// DB lookups with a 5s cache. Nil disables caching (test constructions).
 	lookupCache *infrastructure.CacheService
@@ -61,7 +59,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewAuthService(userService *user.UserService, employeeRepo domain.EmployeeRepository, blacklistedTokenRepo domain.BlacklistedTokenRepository, eventBus domain.EventBus, jwtSecret string, accessTTL time.Duration, otpService *otp.OTPService, otpCfg config.OTPConfig, googleClientID string, nonceStore *cache.NonceStore, captchaService *CaptchaService, lookupCache *infrastructure.CacheService, logger *slog.Logger) *AuthService {
+func NewAuthService(userService *user.UserService, employeeRepo domain.EmployeeRepository, blacklistedTokenRepo domain.BlacklistedTokenRepository, eventBus domain.EventBus, jwtSecret string, accessTTL time.Duration, otpService *otp.OTPService, otpCfg config.OTPConfig, googleClientID string, nonceStore *cache.NonceStore, lookupCache *infrastructure.CacheService, logger *slog.Logger) *AuthService {
 	return &AuthService{
 		userService:          userService,
 		employeeRepo:         employeeRepo,
@@ -73,7 +71,6 @@ func NewAuthService(userService *user.UserService, employeeRepo domain.EmployeeR
 		otpConfig:            otpCfg,
 		googleClientID:       googleClientID,
 		nonceStore:           nonceStore,
-		captchaService:       captchaService,
 		lookupCache:          lookupCache,
 		logger:               logger,
 	}
@@ -91,26 +88,6 @@ func (s *AuthService) requiresOTP(user *domain.User) bool {
 	return user.IsAdmin() || user.IsQuanly() || user.IsGiamdoc()
 }
 
-// CaptchaRequiredForUsername checks whether a CAPTCHA is needed for the next
-// login attempt on this account (based on consecutive failures). Used by the
-// frontend to decide whether to show the CAPTCHA widget before submitting.
-func (s *AuthService) CaptchaRequiredForUsername(ctx context.Context, username string) bool {
-	if s.captchaService == nil || !s.captchaService.Enabled() {
-		return false
-	}
-	user, err := s.userService.UserRepo.GetByUsername(ctx, username)
-	if err != nil && phone.IsCCCDFormat(username) {
-		user, err = s.userService.UserRepo.GetByCCCD(ctx, username)
-	}
-	if err != nil {
-		user, err = s.findUserByMobileIdentifier(ctx, username)
-	}
-	if err != nil || user == nil {
-		return false
-	}
-	return s.captchaService.RequiredForFailures(user.OTPFailedAttempts)
-}
-
 // findUserByMobileIdentifier resolves a login identifier that is a phone
 // number. The lookup order (users.mobile for admin/partner/adv_partner, then
 // employees.mobile through employees.user_id) and the fail-closed rules live in
@@ -119,16 +96,6 @@ func (s *AuthService) CaptchaRequiredForUsername(ctx context.Context, username s
 // conflict error; Login then reports invalid credentials and mints no token.
 func (s *AuthService) findUserByMobileIdentifier(ctx context.Context, identifier string) (*domain.User, error) {
 	return identity.New(s.userService.UserRepo, s.employeeRepo).ResolveUserByMobile(ctx, identifier)
-}
-
-// GenerateCaptcha creates a new ALTCHA proof-of-work challenge for the login
-// widget. The client solves it in the background and submits the signed
-// payload with the login request.
-func (s *AuthService) GenerateCaptcha(ctx context.Context) (altcha.Challenge, error) {
-	if s.captchaService == nil {
-		return altcha.Challenge{}, domain.NewInternalError("captcha not configured", nil)
-	}
-	return s.captchaService.Generate(ctx)
 }
 
 // mapOTPError translates an OTPService error into the domain error a handler
@@ -302,27 +269,9 @@ func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest, ipAddress
 		}
 	}
 
-	// CAPTCHA gate: after `threshold` consecutive failed logins on this account,
-	// require a valid ALTCHA proof-of-work payload before the password is even
-	// checked. Prevents automated brute-force tools from hammering the password
-	// check. Reuses the otp_failed_attempts counter as the consecutive-failure
-	// tracker (reset on successful login below).
-	if s.captchaService != nil && s.captchaService.RequiredForFailures(user.OTPFailedAttempts) {
-		if !s.captchaService.Verify(ctx, req.CaptchaPayload) {
-			s.writeFailedLoginAudit(ctx, user.ID, req.Username, ipAddress, userAgent, "thất bại: captcha không hợp lệ")
-			// Keep the failure counter climbing so the account continues to
-			// escalate toward OTP-lockout; a sustained captcha-failed flood must
-			// not freeze the counter at the threshold indefinitely.
-			if err := s.userService.UserRepo.UpdateOTPLockout(ctx, user.ID, user.OTPFailedAttempts+1, nil); err != nil {
-				return nil, domain.NewInternalError("Không thể cập nhật trạng thái bảo mật tài khoản", err)
-			}
-			return nil, domain.NewValidationError(constants.MsgCaptchaFailedVN)
-		}
-	}
-
 	if !s.userService.VerifyPasswordHash(req.Password, user.Password) {
 		s.writeFailedLoginAudit(ctx, user.ID, req.Username, ipAddress, userAgent, "thất bại: sai mật khẩu")
-		// Increment consecutive failure count (used by CAPTCHA threshold + brute-force tracking).
+		// Increment consecutive failure count (used by OTP-lockout tracking).
 		if err := s.userService.UserRepo.UpdateOTPLockout(ctx, user.ID, user.OTPFailedAttempts+1, nil); err != nil {
 			return nil, domain.NewInternalError("Không thể cập nhật trạng thái bảo mật tài khoản", err)
 		}
@@ -350,10 +299,9 @@ func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest, ipAddress
 	// NOTE: only the counter is cleared — an existing OTP lockout
 	// (user.OTPLockedUntil in the future, set by the OTP brute-force backoff) is
 	// preserved so a correct password cannot unlock an account the OTP subsystem
-	// locked. The shared counter is reused for CAPTCHA-threshold tracking, which
-	// is safe here: an attacker without the password can never reach this reset
+	// locked. An attacker without the password can never reach this reset
 	// (it requires a valid password) nor the OTP increment path (also behind the
-	// password check), so they cannot deplete the counter to dodge the CAPTCHA.
+	// password check), so they cannot deplete the counter to dodge OTP lockout.
 	if user.OTPFailedAttempts > 0 {
 		if err := s.userService.UserRepo.UpdateOTPLockout(ctx, user.ID, 0, user.OTPLockedUntil); err != nil {
 			return nil, domain.NewInternalError("Không thể cập nhật trạng thái bảo mật tài khoản", err)

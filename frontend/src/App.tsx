@@ -92,6 +92,9 @@ const RootRedirect = () => {
   if (hasSession && userRole === "quanly") {
     return <Navigate to="/partner/dashboard" replace />;
   }
+  if (hasSession && (userRole === "ketoan" || userRole === "giamdoc")) {
+    return <Navigate to="/partner/overview" replace />;
+  }
   if (hasSession && userRole === "nhanvien") {
     return <Navigate to="/employee" replace />;
   }

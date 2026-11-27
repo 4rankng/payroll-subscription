@@ -45,9 +45,9 @@ export const useLogin = () => {
       if (data.user.role === 'admin') {
 
         navigate('/admin');
-      } else if (data.user.role === 'quanly') {
+      } else if (data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
 
-        navigate('/partner/dashboard');
+        navigate('/partner/overview');
       } else if (data.user.role === 'nhanvien') {
 
         navigate('/employee');
@@ -97,6 +97,8 @@ export const useGoogleLogin = () => {
         navigate('/admin');
       } else if (data.user.role === 'quanly') {
         navigate('/partner/dashboard');
+      } else if (data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
+        navigate('/partner/overview');
       } else if (data.user.role === 'nhanvien') {
         navigate('/employee');
       } else {
