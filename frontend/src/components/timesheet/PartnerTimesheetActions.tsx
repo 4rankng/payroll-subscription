@@ -5,6 +5,7 @@ import {
   Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts";
 
 interface PartnerTimesheetActionsProps {
   onAddTimesheet: () => void;
@@ -32,6 +33,12 @@ export function PartnerTimesheetActions({
   onOpenBccHistory,
   onUploadBcc,
 }: PartnerTimesheetActionsProps) {
+  // D28: timesheet operations (manual entry, BCC upload/history) are quanly-only —
+  // ketoan/giamdoc hold read-only timesheet access, so hide the whole panel
+  // instead of serving 403 toasts on click.
+  const { user } = useAuth();
+  if (user?.role !== "quanly") return null;
+
   const handlers = {
     onOpenBccHistory,
     onUploadBcc,
