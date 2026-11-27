@@ -48,14 +48,14 @@ const UsersPage = () => {
   };
 
   const handleRoleSelect = useCallback(
-    (role?: "admin" | "quanly" | "nhanvien" | "giamdoc") => {
+    (role?: "admin" | "quanly" | "ketoan" | "nhanvien" | "giamdoc") => {
       filterState.setRole(role);
     },
     [filterState],
   );
 
   const handleDropdownRoleChange = useCallback(
-    (role: "admin" | "quanly" | "nhanvien" | "giamdoc" | undefined) => {
+    (role: "admin" | "quanly" | "ketoan" | "nhanvien" | "giamdoc" | undefined) => {
       filterState.setRole(role);
     },
     [filterState],

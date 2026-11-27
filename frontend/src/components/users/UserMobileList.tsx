@@ -24,12 +24,19 @@ const ROLE_CONFIG = {
     name: "text-blue-900",
     sub: "text-blue-700",
   },
-  giamdoc: {
+  ketoan: {
     label: "Kế toán",
     dot: "bg-amber-500",
     card: "border-amber-200 bg-amber-50/60",
     name: "text-amber-900",
     sub: "text-amber-800",
+  },
+  giamdoc: {
+    label: "Giám đốc",
+    dot: "bg-purple-500",
+    card: "border-purple-200 bg-purple-50/60",
+    name: "text-purple-900",
+    sub: "text-purple-800",
   },
   nhanvien: {
     label: "Nhân viên",

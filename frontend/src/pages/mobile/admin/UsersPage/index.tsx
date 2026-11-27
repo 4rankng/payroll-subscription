@@ -225,8 +225,9 @@ const UsersPageMobile = () => {
                 {
                   admin: "Quản trị viên",
                   quanly: "Quản lý",
+                  ketoan: "Kế toán",
                   nhanvien: "Nhân viên",
-                  giamdoc: "Kế toán",
+                  giamdoc: "Giám đốc",
                 }[filterState.role]
               }
               <XClose className="h-3 w-3" aria-hidden="true" />
@@ -330,7 +331,7 @@ const UsersPageMobile = () => {
                   filterState.setRole(
                     v === "all"
                       ? undefined
-                      : (v as "admin" | "quanly" | "nhanvien" | "giamdoc"),
+                      : (v as "admin" | "quanly" | "ketoan" | "nhanvien" | "giamdoc"),
                   )
                 }
               >
@@ -341,8 +342,9 @@ const UsersPageMobile = () => {
                   <SelectItem value="all">Tất cả vai trò</SelectItem>
                   <SelectItem value="admin">Quản trị viên</SelectItem>
                   <SelectItem value="quanly">Quản lý</SelectItem>
+                  <SelectItem value="ketoan">Kế toán</SelectItem>
                   <SelectItem value="nhanvien">Nhân viên</SelectItem>
-                  <SelectItem value="giamdoc">Kế toán</SelectItem>
+                  <SelectItem value="giamdoc">Giám đốc</SelectItem>
                 </SelectContent>
               </Select>
             </div>

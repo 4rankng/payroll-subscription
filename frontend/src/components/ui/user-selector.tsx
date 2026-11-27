@@ -178,7 +178,8 @@ export function UserSelector({
                     {user.email} • {
                       user.role === 'admin' ? 'Quản trị viên' :
                       user.role === 'quanly' ? 'Quản lý' :
-                      user.role === 'giamdoc' ? 'Kế toán' :
+                      user.role === 'ketoan' ? 'Kế toán' :
+                      user.role === 'giamdoc' ? 'Giám đốc' :
                       'Nhân viên'
                     }
                   </span>
