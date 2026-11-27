@@ -3,6 +3,7 @@ package billing
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/xuri/excelize/v2"
@@ -183,10 +184,17 @@ func renderSaoKeEmailBody(data *SaoKeData) string {
 	b.WriteString(`<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">`)
 	b.WriteString("<tr><th>STT</th><th>Kỳ lương tháng</th><th>Dự án</th><th>Số tiền</th></tr>")
 	kyLabel := data.Cycle.KyLabel()
-	for i, row := range data.Rows {
+	// PRD §6.3: the body carries ONLY the CHI TIẾT GIAO DỊCH table — one
+	// aggregated row per project (the Summary-sheet table), never the
+	// per-timesheet detail. Detail rows live in the attached workbook, and
+	// the aggregate keeps the body far under the 100KB email cap.
+	projects := make([]SaoKeProjectGroup, 0, len(data.Groups))
+	projects = append(projects, data.Groups...)
+	sort.Slice(projects, func(i, j int) bool { return projects[i].ProjectID < projects[j].ProjectID })
+	for i, g := range projects {
 		fmt.Fprintf(&b,
 			"<tr><td>%d</td><td>%s</td><td>%s</td><td style=\"text-align:right;\">%d</td></tr>",
-			i+1, kyLabel, escapeHTMLText(row.ProjectName), row.Amount)
+			i+1, kyLabel, escapeHTMLText(g.ProjectName), g.Total)
 	}
 	fmt.Fprintf(&b, "<tr><td colspan=\"3\"><strong>TỔNG CỘNG</strong></td><td style=\"text-align:right;\"><strong>%d</strong></td></tr>", data.Total)
 	b.WriteString("</table>")

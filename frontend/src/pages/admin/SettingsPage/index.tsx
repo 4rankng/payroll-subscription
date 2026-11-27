@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { SettingsGeneralPanel } from '@/components/settings/SettingsGeneralPanel';
-import { FeeSettingsCard } from '@/components/settings/FeeSettingsCard';
 import { SettingsEmployeePanel } from '@/components/settings/SettingsEmployeePanel';
 import {
   SETTINGS_TABS,
@@ -84,8 +83,7 @@ const SettingsPage = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-3">
         <SettingsTabList />
 
-        <TabsContent value={SETTINGS_TABS.general} className="mt-0 space-y-3">
-          <FeeSettingsCard />
+        <TabsContent value={SETTINGS_TABS.general} className="mt-0">
           <SettingsGeneralPanel form={form} />
         </TabsContent>
 

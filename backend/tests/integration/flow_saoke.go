@@ -190,7 +190,13 @@ func runSaoKeTests(client *APIClient, data *TestData, reporter *Reporter) {
 		if !strings.Contains(contentType, "spreadsheetml") {
 			return fmt.Errorf("content type want spreadsheetml, got %q", contentType)
 		}
-		wantFilename := "sao_ke_tt_" + time.Now().Format("02-01-2006") + ".xlsx"
+		// The filename carries the REQUESTED report date (PRD §6.2:
+		// sao_ke_tt_<date>.xlsx), here the seeded Kỳ-1 pay day of this month.
+		wantFilename := "sao_ke_tt_" + strings.ReplaceAll(reportDate, "-", "-")
+		parts := strings.Split(reportDate, "-")
+		if len(parts) == 3 {
+			wantFilename = "sao_ke_tt_" + parts[2] + "-" + parts[1] + "-" + parts[0] + ".xlsx"
+		}
 		disposition := header.Get("Content-Disposition")
 		if !strings.Contains(disposition, wantFilename) {
 			return fmt.Errorf("disposition want %s, got %q", wantFilename, disposition)

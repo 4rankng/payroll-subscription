@@ -8,71 +8,15 @@ import SettingsPageMobile from '../../mobile/admin/SettingsPage';
 const mocks = vi.hoisted(() => ({
   retryLoading: vi.fn(),
   formState: {
-    weeklyPaymentPercentage: '80',
-    originalWeeklyPayment: '80',
-    monthlyPaymentPercentage: '90',
-    originalMonthlyPayment: '90',
-    partnerCompany: 'TingTing',
-    originalPartnerCompany: 'TingTing',
-    bulkTransferWorkbookLimitVnd: '400000000',
-    originalBulkTransferWorkbookLimitVnd: '400000000',
-    selfCheckInAdvancePercentage: '70',
-    originalSelfCheckInAdvancePercentage: '70',
-    selfCheckInAdvanceHoldHours: '24',
-    originalSelfCheckInAdvanceHoldHours: '24',
-    selfCheckInAdvanceWindowOpenDay: '10',
-    originalSelfCheckInAdvanceWindowOpenDay: '10',
-    advanceRequestStopDay: '9',
-    originalAdvanceRequestStopDay: '9',
-    transferBankHolder: 'CONG TY TNHH MTV GPPM TING TING',
-    originalTransferBankHolder: 'CONG TY TNHH MTV GPPM TING TING',
-    transferBankNumber: '271866699',
-    originalTransferBankNumber: '271866699',
-    transferBankName: 'Ngân hàng Quân đội (MB)',
-    originalTransferBankName: 'Ngân hàng Quân đội (MB)',
-    transferBankVisible: true,
-    originalTransferBankVisible: true,
-    flexPayTransferBankHolder: 'CONG TY FLEXPAY',
-    originalFlexPayTransferBankHolder: 'CONG TY FLEXPAY',
-    flexPayTransferBankNumber: '444555666',
-    originalFlexPayTransferBankNumber: '444555666',
-    flexPayTransferBankName: 'Ngân hàng FlexPay',
-    originalFlexPayTransferBankName: 'Ngân hàng FlexPay',
-    flexPayTransferBankVisible: true,
-    originalFlexPayTransferBankVisible: true,
-    bulkTransferWorkbookLimitSaveError: null,
-    bulkTransferWorkbookLimitUnavailableMessage: null,
+    subscriptionFeeVnd: '10000',
+    originalSubscriptionFeeVnd: '10000',
     loadError: null as string | null,
     isSaving: false,
     isLoading: false,
-    setWeeklyPaymentPercentage: vi.fn(),
-    setMonthlyPaymentPercentage: vi.fn(),
-    setPartnerCompany: vi.fn(),
-    setBulkTransferWorkbookLimitVnd: vi.fn(),
-    setSelfCheckInAdvancePercentage: vi.fn(),
-    setSelfCheckInAdvanceHoldHours: vi.fn(),
-    setSelfCheckInAdvanceWindowOpenDay: vi.fn(),
-    setAdvanceRequestStopDay: vi.fn(),
-    setTransferBankHolder: vi.fn(),
-    setTransferBankNumber: vi.fn(),
-    setTransferBankName: vi.fn(),
-    setTransferBankVisible: vi.fn(),
-    setFlexPayTransferBankHolder: vi.fn(),
-    setFlexPayTransferBankNumber: vi.fn(),
-    setFlexPayTransferBankName: vi.fn(),
-    setFlexPayTransferBankVisible: vi.fn(),
-    handleSaveWeeklyPayment: vi.fn(),
-    handleSaveMonthlyPayment: vi.fn(),
-    handleSavePartnerCompany: vi.fn(),
-    handleSaveBulkTransferWorkbookLimitVnd: vi.fn(),
-    handleSaveSelfCheckInAdvancePercentage: vi.fn(),
-    handleSaveSelfCheckInAdvanceHoldHours: vi.fn(),
-    handleSaveSelfCheckInAdvanceWindowOpenDay: vi.fn(),
-    handleSaveAdvanceRequestStopDay: vi.fn(),
-    handleSaveTransferBank: vi.fn(),
-    handleSaveTransferBankVisible: vi.fn(),
-    handleSaveFlexPayTransferBank: vi.fn(),
-    handleSaveFlexPayTransferBankVisible: vi.fn(),
+    setSubscriptionFeeVnd: vi.fn((v: string) => {
+      mocks.formState.subscriptionFeeVnd = v;
+    }),
+    handleSaveSubscriptionFee: vi.fn(),
     retryLoading: vi.fn(),
   },
 }));
@@ -84,8 +28,9 @@ vi.mock('@/hooks/settings/useSettingsForm', () => ({
 vi.mock('@/components/email/AdminEmailComposer', () => ({
   AdminEmailComposer: () => null,
 }));
-// SettingsEmployeePanel renders for real in the parity tests below; its data
-// hooks are stubbed so the tab wiring and toggle row are what's under test.
+
+// The employee-policy panel and the fee card read the settings API directly;
+// stubbed so the tab wiring, the fee card and the toggle row are under test.
 vi.mock('@/hooks/api/useSettings', () => ({
   useSettings: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
   useSetting: () => ({ data: undefined, isLoading: false, isError: false, refetch: vi.fn() }),
@@ -106,77 +51,48 @@ describe.each([
 ] as const)('SettingsPage %s parity', (_view, PageComponent) => {
   beforeEach(() => {
     mocks.formState.loadError = null;
+    mocks.formState.subscriptionFeeVnd = '10000';
+    mocks.formState.originalSubscriptionFeeVnd = '10000';
     mocks.formState.retryLoading = mocks.retryLoading;
+    mocks.formState.setSubscriptionFeeVnd.mockClear();
+    mocks.formState.handleSaveSubscriptionFee.mockClear();
     mocks.retryLoading.mockClear();
   });
 
-  it('renders the exact Chuyển lô setting first with the full VND value', () => {
+  it('renders the subscription fee setting with the full constraints', () => {
     render(
       <MemoryRouter>
         <PageComponent />
       </MemoryRouter>,
     );
 
-    const limitSlider = screen.getByRole('slider', { name: 'Giới hạn tổng tiền mỗi file Chuyển lô' });
-    expect(limitSlider).toHaveAttribute('aria-valuenow', '400000000');
-    expect(limitSlider).toHaveAttribute('aria-valuemin', '100000000');
-    expect(limitSlider).toHaveAttribute('aria-valuemax', '500000000');
-    // The formatted value appears in the readout and again on the matching
-    // quick-stop chip; both must render the full VND figure.
-    expect(screen.getAllByText('400.000.000').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: '400.000.000' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    expect(screen.getByText(
-      'Hệ thống tự tách file để tổng tiền mỗi file luôn nhỏ hơn giới hạn này.',
-    )).toBeInTheDocument();
-    expect(limitSlider.closest('.grid')?.querySelector('input')).toBeNull();
+    const feeInput = screen.getByLabelText('Phí (VND/NV/kỳ)') as HTMLInputElement;
+    expect(feeInput).toHaveValue(10000);
+    expect(feeInput).toHaveAttribute('min', '0');
+    expect(feeInput).toHaveAttribute('max', '999999999');
+    expect(feeInput).toHaveAttribute('step', '1000');
+    expect(screen.getByText('Phí')).toBeInTheDocument();
   });
 
-  it('allows admins to configure the self-check-in advance percentage', () => {
-    render(
+  it('saves a changed fee through the settings form pipeline', () => {
+    const { rerender } = render(
       <MemoryRouter>
         <PageComponent />
       </MemoryRouter>,
     );
 
-    const percentageInput = screen.getByLabelText('Tỷ lệ ứng lương tự chấm công');
-    expect(percentageInput).toHaveValue(70);
-    expect(percentageInput).toHaveAttribute('min', '1');
-    expect(percentageInput).toHaveAttribute('max', '100');
-  });
-
-  it('allows admins to configure the post-checkout advance wait in whole hours', () => {
-    render(
+    fireEvent.change(screen.getByLabelText('Phí (VND/NV/kỳ)'), { target: { value: '12000' } });
+    expect(mocks.formState.setSubscriptionFeeVnd).toHaveBeenCalledWith('12000');
+    // The form state holder is a plain mock object: re-render to let the
+    // card observe the dirty state the change handler just recorded.
+    rerender(
       <MemoryRouter>
         <PageComponent />
       </MemoryRouter>,
     );
-
-    const holdInput = screen.getByLabelText('Thời gian chờ ứng lương tự chấm công sau khi tan ca');
-    expect(holdInput).toHaveValue(24);
-    expect(holdInput).toHaveAttribute('min', '0');
-    expect(holdInput).toHaveAttribute('max', '720');
-    expect(holdInput).toHaveAttribute('step', '1');
-  });
-
-  it('keeps both transfer account settings available in both responsive views', () => {
-    render(
-      <MemoryRouter>
-        <PageComponent />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByLabelText('Chủ tài khoản lương tuần')).toHaveValue(
-      'CONG TY TNHH MTV GPPM TING TING',
-    );
-    expect(screen.getByLabelText('Số tài khoản lương tuần')).toHaveValue('271866699');
-    expect(screen.getByLabelText('Ngân hàng lương tuần')).toHaveValue('Ngân hàng Quân đội (MB)');
-
-    expect(screen.getByLabelText('Chủ tài khoản FlexPay')).toHaveValue('CONG TY FLEXPAY');
-    expect(screen.getByLabelText('Số tài khoản FlexPay')).toHaveValue('444555666');
-    expect(screen.getByLabelText('Ngân hàng FlexPay')).toHaveValue('Ngân hàng FlexPay');
+    const save = screen.getByRole('button', { name: 'Lưu thay đổi' });
+    fireEvent.click(save);
+    expect(mocks.formState.handleSaveSubscriptionFee).toHaveBeenCalledTimes(1);
   });
 
   it('shows a page-level retry state when any required setting cannot load', () => {
@@ -189,7 +105,7 @@ describe.each([
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Không thể tải cài đặt');
-    expect(screen.queryByLabelText('Giới hạn tổng tiền mỗi file Chuyển lô')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Phí (VND/NV/kỳ)')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
     expect(mocks.retryLoading).toHaveBeenCalledOnce();
   });
