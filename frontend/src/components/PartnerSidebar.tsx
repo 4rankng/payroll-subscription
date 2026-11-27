@@ -48,19 +48,12 @@ import { useAuth } from "@/contexts";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
 import { useAdminTheme } from "@/hooks/useAdminTheme";
 import { MODAL_IDS } from "@/constants/modalRegistry";
+import { partnerNavItems, type PartnerNavItem } from "@/config/partnerNav";
 import { useUnreadNotifications } from "@/hooks/api/useNotifications";
 
 
-const menuItems = [
-  { title: "Tổng quan", icon: Grid01, path: "/partner/dashboard", end: true },
-  { title: "Dự án", icon: Briefcase01, path: "/partner/projects", end: false },
-  { title: "Nhân viên", icon: Users01, path: "/partner/employees" },
-  { title: "Bảng công", icon: Calendar, path: "/partner/timesheet", end: true },
-  { title: "Thanh toán", icon: Wallet01, path: "/partner/billing", end: true },
-];
-
 interface NavItemProps {
-  item: typeof menuItems[number];
+  item: PartnerNavItem;
   isCollapsed: boolean;
   onNavigate: () => void;
 }
@@ -134,6 +127,7 @@ NavItem.displayName = "NavItem";
 const PartnerSidebar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const menuItems = partnerNavItems(user?.role);
   const { theme, toggle: toggleTheme } = useAdminTheme();
   const dark = theme === "dark";
   const { isMobile, setOpenMobile, open, openMobile } = useSidebar();

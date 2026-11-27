@@ -53,8 +53,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
           navigate("/admin", { replace: true });
         } else if (user.role === "quanly") {
           navigate("/partner/dashboard", { replace: true });
-        } else if (user.role === "giamdoc" || user.role === "ketoan") {
-          navigate("/partner/dashboard", { replace: true });
+        } else if (user.role === "ketoan" || user.role === "giamdoc") {
+          navigate("/partner/overview", { replace: true });
         } else if (user.role === "nhanvien") {
           navigate("/employee", { replace: true });
         }

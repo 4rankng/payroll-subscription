@@ -31,6 +31,8 @@ type TransferUpload struct {
 	AssetID          *uint64              `json:"asset_id" gorm:"column:asset_id;type:bigint unsigned"`
 	UploadedBy       uint                 `json:"uploaded_by" gorm:"column:uploaded_by;type:bigint unsigned;not null"`
 	Status           TransferUploadStatus `json:"status" gorm:"column:status;type:enum('pending','verified','rejected');not null;default:'pending'"`
+	ParsedRows       int                  `json:"parsed_rows" gorm:"column:parsed_rows;not null;default:0"`
+	MatchedRows      int                  `json:"matched_rows" gorm:"column:matched_rows;not null;default:0"`
 	RejectReason     *string              `json:"reject_reason" gorm:"column:reject_reason;type:varchar(500)"`
 	VerifiedAt       *time.Time           `json:"verified_at" gorm:"column:verified_at;type:datetime(3)"`
 	VerifiedBy       *uint                `json:"verified_by" gorm:"column:verified_by;type:bigint unsigned"`

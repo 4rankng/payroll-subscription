@@ -5,18 +5,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NotificationFAB } from "@/components/notifications/NotificationFAB";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { partnerNavItems } from "@/config/partnerNav";
 import { SectionErrorBoundary } from "@/components/ErrorBoundary";
 import { Briefcase01, Calendar, Grid01, Users01, Wallet01 } from "@untitledui/icons";
 import type { NavGroup } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts";
-
-const PARTNER_NAV_GROUPS: NavGroup[] = [
-  { title: "Tổng quan", icon: Grid01, path: "/partner/dashboard", end: true },
-  { title: "Dự án", icon: Briefcase01, path: "/partner/projects" },
-  { title: "Nhân viên", icon: Users01, path: "/partner/employees" },
-  { title: "Bảng công", icon: Calendar, path: "/partner/timesheet" },
-  { title: "Thanh toán", icon: Wallet01, path: "/partner/billing", end: true },
-];
 
 const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
   useEffect(() => {
@@ -56,15 +49,15 @@ const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
 const PartnerLayout = () => {
   const { user } = useAuth();
   const isPartner = user?.role === "quanly";
+  const navGroups = partnerNavItems(user?.role);
 
   return (
-    // Mirrors the /partner route guard: quanly operates, giamdoc reads and
-    // exports reports (D19) — without giamdoc here the director role spins
-    // forever on the layout's own gate.
-    <ProtectedRoute requiredRole={["quanly", "giamdoc"]}>
+    // Mirrors the /partner route guard: quanly operates; ketoan reads;
+    // giamdoc reads, approves and exports (PRD §4 ma trận Trang × Vai trò).
+    <ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}>
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner isPartner={isPartner} />
-        <MobileBottomNav groups={PARTNER_NAV_GROUPS} />
+        <MobileBottomNav groups={navGroups} />
         <NotificationFAB />
       </SidebarProvider>
     </ProtectedRoute>

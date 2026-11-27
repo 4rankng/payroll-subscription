@@ -84,6 +84,30 @@ func (h *BillingHandler) ListUploads(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{"items": rows}})
 }
 
+// ReconStatus serves the Tổng quan reconciliation block (PRD §5.1): per-Kỳ
+// upload counts, parsed vs matched rows, and the derived state for one work
+// month. Defaults to the current work month.
+func (h *BillingHandler) ReconStatus(c *gin.Context) {
+	now := clock.Now()
+	workMonth := now.Format("2006-01")
+	if v := c.Query("work_month"); v != "" {
+		if len(v) != 7 || v[4] != '-' {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "work_month phải có dạng YYYY-MM"})
+			return
+		}
+		workMonth = v
+	}
+	states, err := h.uploads.ReconStatus(c.Request.Context(), workMonth)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "success", "data": gin.H{
+		"work_month": workMonth,
+		"kyes":       states,
+	}})
+}
+
 // KyPaidRecords returns the per-employee-per-Kỳ billing rows of one work
 // month plus the per-Kỳ distinct summary — the FR-1 read model behind the
 // FR-3 billing report.

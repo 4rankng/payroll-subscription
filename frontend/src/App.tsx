@@ -40,6 +40,10 @@ const PartnerProjectsPage = lazy(() => import("./pages/partner/ProjectsPage"));
 const PartnerEmployeesPage = lazy(() => import("./pages/partner/EmployeesPage"));
 const PartnerTimesheetsPage = lazy(() => import("./pages/partner/TimesheetsPage"));
 const PartnerDashboardPage = lazy(() => import("./pages/partner/DashboardPage"));
+const FeeInsightsPage = lazy(() => import("./pages/partner/OverviewPage"));
+const FeeInsightsPageMobile = lazy(() =>
+  import("./pages/partner/OverviewPage/Mobile").then((m) => ({ default: m.FeeInsightsPageMobile })),
+);
 const PartnerBillingPage = lazy(() => import("./pages/partner/BillingPage"));
 
 // Partner Mobile Pages (lazy-loaded)
@@ -227,7 +231,8 @@ const AppContent = () => {
 
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<ResponsivePage desktopComponent={AdminDashboard} mobileComponent={AdminDashboardMobile} />} />
+          {/* PRD §5.1: the old financial admin dashboard is replaced by the fee-insights overview. */}
+          <Route index element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
           <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
@@ -244,6 +249,10 @@ const AppContent = () => {
         <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/partner/dashboard" replace />} />
           <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
+          {/* PRD §5.1: fee-insights overview — ketoan/giamdoc landing (PRD §4). */}
+          <Route path="overview" element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
+          {/* PRD §5.3: user management — admin + giamdoc full control. */}
+          <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />

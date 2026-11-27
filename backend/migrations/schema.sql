@@ -394,6 +394,8 @@ CREATE TABLE `transfer_uploads` (
   `asset_id` bigint unsigned DEFAULT NULL COMMENT 'Stored file (assets)',
   `uploaded_by` bigint unsigned NOT NULL,
   `status` enum('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+  `parsed_rows` int NOT NULL DEFAULT '0' COMMENT 'rows parsed from the file (dashboard recon block)',
+  `matched_rows` int NOT NULL DEFAULT '0' COMMENT 'rows matched to approved timesheets (dashboard recon block)',
   `reject_reason` varchar(500) DEFAULT NULL,
   `verified_at` datetime(3) DEFAULT NULL,
   `verified_by` bigint unsigned DEFAULT NULL,

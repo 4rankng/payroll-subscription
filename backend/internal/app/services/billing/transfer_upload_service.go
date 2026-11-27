@@ -150,6 +150,11 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 		upload.Status = domain.TransferUploadStatusRejected
 		upload.RejectReason = &reason
 	}
+	// Persist the row counters the dashboard recon block reports (PRD
+	// PayrollSubscriptionPRD §5.1): parsed = rows in the file, matched = rows
+	// that resolved to approved timesheets.
+	upload.ParsedRows = result.RowsTotal
+	upload.MatchedRows = result.RowsOK
 	upload.UpdatedAt = now
 	if err := s.uploads.Update(ctx, upload); err != nil {
 		return nil, fmt.Errorf("billing: finalize upload: %w", err)
@@ -305,6 +310,66 @@ func deref(s *string) string {
 // ListUploads returns the upload history of one work month, newest first.
 func (s *TransferUploadService) ListUploads(ctx context.Context, workMonth string, limit int) ([]domain.TransferUpload, error) {
 	return s.uploads.ListByWorkMonth(ctx, workMonth, limit)
+}
+
+// KyReconStatus is one Kỳ's reconciliation snapshot for the dashboard
+// insights block (PRD §5.1): how many result files landed, how many rows they
+// carried, how many matched approved timesheets, and the derived state.
+type KyReconStatus struct {
+	Cycle       int   `json:"cycle"`
+	Uploads     int   `json:"uploads"`
+	ParsedRows  int64 `json:"parsed_rows"`
+	MatchedRows int64 `json:"matched_rows"`
+	// State: waiting_file (no outcome-producing upload yet), mismatch (a
+	// rejected upload, or verified uploads whose parsed rows exceed matched
+	// rows), reconciled (≥1 verified upload, none rejected, matched == parsed).
+	State string `json:"state"`
+}
+
+// ReconStatus aggregates the work month's uploads per Kỳ for the Tổng quan
+// reconciliation block. States derive purely from upload outcomes: a Kỳ with
+// only residue pending rows counts as waiting_file (pending is an errored
+// attempt, not a data mismatch).
+func (s *TransferUploadService) ReconStatus(ctx context.Context, workMonth string) ([]KyReconStatus, error) {
+	uploads, err := s.uploads.ListByWorkMonth(ctx, workMonth, 1000)
+	if err != nil {
+		return nil, fmt.Errorf("billing: recon status %s: %w", workMonth, err)
+	}
+
+	byCycle := make(map[int][]domain.TransferUpload, clock.TimesheetKyCount)
+	for _, up := range uploads {
+		byCycle[up.Cycle] = append(byCycle[up.Cycle], up)
+	}
+
+	out := make([]KyReconStatus, 0, clock.TimesheetKyCount)
+	for cycle := 1; cycle <= clock.TimesheetKyCount; cycle++ {
+		rows := byCycle[cycle]
+		st := KyReconStatus{Cycle: cycle, State: "waiting_file"}
+		verified, rejected := 0, 0
+		for _, up := range rows {
+			st.Uploads++
+			st.ParsedRows += int64(up.ParsedRows)
+			st.MatchedRows += int64(up.MatchedRows)
+			switch up.Status {
+			case domain.TransferUploadStatusVerified:
+				verified++
+			case domain.TransferUploadStatusRejected:
+				rejected++
+			}
+		}
+		switch {
+		case rejected > 0:
+			st.State = "mismatch"
+		case verified > 0 && st.ParsedRows > st.MatchedRows:
+			st.State = "mismatch"
+		case verified > 0:
+			st.State = "reconciled"
+		default:
+			st.State = "waiting_file"
+		}
+		out = append(out, st)
+	}
+	return out, nil
 }
 
 // ListEmployeePayCycles returns the per-employee-per-Kỳ billing rows of one work
