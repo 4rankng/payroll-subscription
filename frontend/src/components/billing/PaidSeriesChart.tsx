@@ -49,7 +49,7 @@ function formatChartDate(iso: string): string {
 
 function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
   if (rows.length === 0) {
-    return <p className="text-sm text-slate-500">Chưa có dữ liệu thanh toán</p>;
+    return <p className="text-sm text-slate-600">Chưa có dữ liệu thanh toán</p>;
   }
 
   const dates = [...new Set(rows.map((r) => r.date))].sort();
@@ -85,7 +85,7 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
           ))}
         </BarChart>
       </ResponsiveContainer>
-      <p className="mt-1 text-xs text-slate-500">{label}</p>
+      <p className="mt-1 text-xs text-slate-600">{label}</p>
     </div>
   );
 }

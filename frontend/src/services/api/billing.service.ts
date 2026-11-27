@@ -232,6 +232,21 @@ class BillingService {
     );
     return response.data ?? { status: response.status, message: response.message || '' };
   }
+
+  /** Get bank transfer payment histories with filters. */
+  async getBankTransferHistories(params?: Record<string, unknown>): Promise<unknown> {
+    const response = await apiClient.get('/payrolls/bank-transfer-histories', { params });
+    return response.data;
+  }
+
+  /** Export bank transfer payment histories as Excel. */
+  async exportBankTransferHistories(params?: Record<string, unknown>): Promise<Blob> {
+    const response = await apiClient.get<Blob>('/payrolls/bank-transfer-histories/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  }
 }
 
 export const billingService = new BillingService();

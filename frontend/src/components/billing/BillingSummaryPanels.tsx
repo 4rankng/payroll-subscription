@@ -39,7 +39,7 @@ export function UploadHistoryPanel({ workMonth }: UploadHistoryPanelProps) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-slate-500">Đang tải...</p>
+          <p className="text-sm text-slate-600">Đang tải...</p>
         ) : (
           <Table>
             <TableHeader>
@@ -69,7 +69,7 @@ export function UploadHistoryPanel({ workMonth }: UploadHistoryPanelProps) {
               })}
               {(uploads ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-slate-500">
+                  <TableCell colSpan={4} className="text-center text-slate-600">
                     Chưa có file nào
                   </TableCell>
                 </TableRow>
@@ -104,7 +104,7 @@ export function EmployeePayCycleSummary({ workMonth, feeVnd }: EmployeePayCycleS
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-slate-500">Đang tải...</p>
+          <p className="text-sm text-slate-600">Đang tải...</p>
         ) : (
           <Table>
             <TableHeader>
@@ -126,7 +126,7 @@ export function EmployeePayCycleSummary({ workMonth, feeVnd }: EmployeePayCycleS
               ))}
               {cycles.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-slate-500">
+                  <TableCell colSpan={3} className="text-center text-slate-600">
                     Chưa có dữ liệu đã xác minh
                   </TableCell>
                 </TableRow>

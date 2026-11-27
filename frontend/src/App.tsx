@@ -47,6 +47,8 @@ const FeeInsightsPageMobile = lazy(() =>
 const PartnerBillingPage = lazy(() => import("./pages/partner/BillingPage"));
 const PartnerLedgerPage = lazy(() => import("./pages/partner/LedgerPage"));
 const PartnerLedgerPageMobile = lazy(() => import("./pages/mobile/partner/LedgerPage"));
+const PartnerPaymentHistoryPage = lazy(() => import("./pages/partner/PaymentHistoryPage"));
+const PartnerPaymentHistoryPageMobile = lazy(() => import("./pages/mobile/partner/PaymentHistoryPage"));
 
 // Partner Mobile Pages (lazy-loaded)
 const PartnerProjectsPageMobile = lazy(() => import("./pages/mobile/partner/ProjectsPage"));
@@ -263,7 +265,9 @@ const AppContent = () => {
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
           <Route path="billing" element={<ResponsivePage desktopComponent={PartnerBillingPage} mobileComponent={PartnerBillingPage} />} />
           {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
-          <Route path="ledger" element={<ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} />} />
+          <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
+          {/* PRD §5.7: Lịch sử trả lương — payment history (quanly/ketoan/giamdoc). */}
+          <Route path="payment-history" element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
 
