@@ -38,7 +38,7 @@ Surgery applied to donor DDL:
 
 | Table | Removed vs donor | Decision ref |
 |---|---|---|
-| `employees` | `bank_id`, `bank_account_*` (4 cols), `bank_account_validated_at`; FK `fk_employees_bank` | OnePay verification dies |
+| `employees` | `bank_account_status`, `bank_account_invalid_reason`, `bank_account_validated_at`; FK `fk_employees_bank` (OnePay verification dies — PAYSUB-19 re-adds `bank_id`/`bank_account_number`/`bank_account_name` + `fk_employees_bank` and restores `banks` as a read-only capture reference) | OnePay verification dies; plain bank capture returns |
 | `projects` | `salary_period_from/to` (+ their CHECK constraints), `is_flexible`, `geofence_gates`, `geofence_radius_meters`, `shift_names`, `pending_receivable_vnd`, `total_received_vnd` | D8, D12, D14; `total_payout_vnd`/`pending_payable_vnd` kept and re-meant to customer-paid totals (D11) |
 | `project_employees` | `payment_schedule*` (3), `check_in_*` (4), `advance_request_enabled`, **`last_date`** (effective-to — D17) + all window/`payment_schedule` indexes; **`UNIQUE(project_id, employee_id)`** added — an assignment row IS the active assignment (no window logic) | D8, D12, D17; `start_date` stays as the only effective-from |
 | `timesheets` | `revenue_receivable`, `revenue_paid`, `transaction_id` + its index | D5/D14; `payment_status/payment_date/paid_amount/paid_at/payment_reference` kept, re-meant customer-paid (D11) |
@@ -46,7 +46,7 @@ Surgery applied to donor DDL:
 | EDIT-REQUEST REMOVAL | Drop table `timesheet_edit_requests` + FK/indexes; `timesheets` drops `allowed_edit`, `request_edit_id` (+ `idx_timesheets_request_edit_id`, `idx_timesheets_access_control_edit`, `idx_timesheets_updated_at_filter` which reference them) — D25; schema.sql already excludes them (keep it that way) |
 | `payrates` | `live_from_date` dropped → `UNIQUE(project_id, from_date)` (soft-delete row below). Timeline semantics re-anchored at donor HEAD (2026-11-18…23): a config with ANY linked timesheet is frozen (update/delete blocked, create-new only); creates may backdate only to a strictly earlier unoccupied date (no mutable timesheet on/after); `payrate_json` shift buckets may overlap — rate lookup is exact-key per shift name, overlap validation removed (`domain/payrate.go`) | D17/D18 — donor behavior already matches (referenced rows immutable, effective-from only) |
 | ALL kept tables | `deleted_at` columns, every `deleted_at`-containing index, gorm soft-delete machinery (D16): deletes are hard DELETEs. Generated soft-delete helpers dropped: `settings.active_key` → `UNIQUE(key)`. Rebuilt uniques: `users` UNIQUE(cccd)/UNIQUE(mobile); `employees` UNIQUE(email)/UNIQUE(cccd); `project_users` UNIQUE(project_id, user_id); `employee_users` UNIQUE(employee_id, user_id) | D16 |
-| excluded entirely | `attendances`, `attendance_failed_attempts`, `banks`, `zns_messages`, ledger/wallet/loan/advance/bulk-transfer/gateway/ads/API-key/health tables | D13/D14/D15/D20 + PRD §6.3 |
+| excluded entirely | `attendances`, `attendance_failed_attempts`, `zns_messages`, ledger/wallet/loan/advance/bulk-transfer/gateway/ads/API-key/health tables (`banks` restored 2026-11-28 as a read-only capture reference, PAYSUB-19) | D13/D14/D15/D20 + PRD §6.3 |
 | added | `transfer_uploads`, `employee_pay_cycles`, `billing_reports`, `billing_report_lines` | FR-1…FR-4 |
 
 ```sql
@@ -599,7 +599,7 @@ Replace `backend/migrations/` (001…146 + `embed.go` contents) with the single 
 
 | Ticket | Wave/Track |
 |---|---|
-| PAYSUB-1 Schema rebuild | §3 consolidated `schema.sql` (24 tables) + Wave 4 AutoMigrate removal |
+| PAYSUB-1 Schema rebuild | §3 consolidated `schema.sql` (23 tables) + Wave 4 AutoMigrate removal |
 | PAYSUB-2 (FR-1) | Track A A4 |
 | PAYSUB-3 (FR-2) | Track A A2–A3 |
 | PAYSUB-4 (FR-3) | Track A A5 |

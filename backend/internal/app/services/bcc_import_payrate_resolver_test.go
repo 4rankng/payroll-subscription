@@ -39,7 +39,7 @@ func oct2026(loc *time.Location) (time.Time, time.Time) {
 }
 
 // TestPayrateResolverConfigForNearestStartDate pins the owner-mandated
-// resolution rule (PAYR-36): the config for a work date is the one with the
+// resolution rule: the config for a work date is the one with the
 // NEAREST from_date at or before that date — never a file-level anchor —
 // with same-date ties broken by the higher id (matching the SQL of
 // GetActiveByProjectAndDate).
@@ -76,7 +76,7 @@ func TestPayrateResolverConfigForNearestStartDate(t *testing.T) {
 	}
 }
 
-// TestPayrateResolverMonthPositionsUnionMidMonth pins the PAYR-36 union rule:
+// TestPayrateResolverMonthPositionsUnionMidMonth pins the union rule:
 // the position vocabulary of an import month is the union across the configs
 // effective at some day of that month — a position added to a config
 // mid-month is valid for a full-month file, a config superseded before the
@@ -118,7 +118,7 @@ func TestPayrateResolverMonthPositionsUnionMidMonth(t *testing.T) {
 }
 
 // TestPayrateResolverMissingPositionMessage pins the unified actionable error
-// (PAYR-36): the position-missing text fires only when the position is absent
+// The position-missing text fires only when the position is absent
 // from EVERY config effective in the month, names the availability date when
 // one exists anywhere in the timeline, and always lists the month's available
 // positions.
@@ -157,7 +157,7 @@ func TestPayrateResolverMissingPositionMessage(t *testing.T) {
 	}
 }
 
-// TestBuildMultiPositionEntriesResolvesRatesPerWorkDate pins PAYR-36 on the
+// TestBuildMultiPositionEntriesResolvesRatesPerWorkDate pins the rule on the
 // multi-position path: (a) a position added to the config mid-month imports
 // fine from a full-month file, and (c) rows before/after the config switch
 // are priced by the config active on THEIR OWN work date.
@@ -208,7 +208,7 @@ func TestBuildMultiPositionEntriesResolvesRatesPerWorkDate(t *testing.T) {
 }
 
 // TestWeeklyBCCConfigErrorPerWorkDate pins the weekly path on the same
-// per-date rule (PAYR-36): shift validation resolves the config of each
+// per-date rule: shift validation resolves the config of each
 // worked date through the shared resolver — a shift absent on an early
 // worked date still fails that date even when a mid-month config adds it,
 // and passes once all worked dates carry it.
@@ -243,7 +243,7 @@ func TestWeeklyBCCConfigErrorPerWorkDate(t *testing.T) {
 }
 
 // TestBuildWeeklyPaymentEntriesRatesFollowWorkDate pins the weekly-payment
-// path (PAYR-36): rate resolution follows each row's own work date through
+// path: rate resolution follows each row's own work date through
 // the shared resolver — the pre-switch date prices under the old config,
 // the post-switch date demands the new one.
 func TestBuildWeeklyPaymentEntriesRatesFollowWorkDate(t *testing.T) {
@@ -285,7 +285,7 @@ func TestBuildWeeklyPaymentEntriesRatesFollowWorkDate(t *testing.T) {
 	}
 }
 
-// TestBCCCrossMonthError pins the one-file-per-month contract (PAYR-36 owner
+// TestBCCCrossMonthError pins the one-file-per-month contract (owner
 // ruling): worked full dates outside the import month fail with the
 // split-file guidance and the stray days, never with a misleading position
 // or rate error.

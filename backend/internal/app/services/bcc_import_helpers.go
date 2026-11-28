@@ -206,8 +206,8 @@ func labelRateTarget(flatRates map[string]int, label string) (rateTarget, bool) 
 }
 
 // dateRowEmployeeToSTKRows converts date-row template employees into STK rows
-// so the existing employee upsert block (create-if-missing + bank refresh +
-// project assignment) runs unchanged for the new template.
+// so the existing employee auto-creation block (create-if-missing + best-effort
+// bank capture + project assignment) runs unchanged for the new template.
 func dateRowEmployeeToSTKRows(employees []excelparser.BCCEmployeeData) []excelparser.STKRow {
 	rows := make([]excelparser.STKRow, 0, len(employees))
 	for _, emp := range employees {
@@ -298,7 +298,7 @@ func mergeSTKRows(base, stk []excelparser.STKRow) []excelparser.STKRow {
 // the position-deduction probe, which targets a day of the import month.
 // Zero-hour entries (deletion requests) are skipped too. Used only to pick
 // the probe date for assignment-position deduction — rate resolution is
-// per-entry-date through the shared payrate resolver (PAYR-36) and does not
+// per-entry-date through the shared payrate resolver and does not
 // consume this value.
 func earliestInMonthDay(employees []excelparser.BCCEmployeeData, year int, month time.Month) int {
 	earliest := 0
@@ -355,7 +355,7 @@ func resolveBCCEntryTarget(
 }
 
 // bccCrossMonthError enforces the one-file-per-month import contract
-// (PAYR-36 owner ruling 2026-11-10): a payroll cycle straddling two months
+// (owner ruling 2026-11-10): a payroll cycle straddling two months
 // (e.g. 29/10–07/11) pasted into one file is an uploader mistake, not a
 // software case — it must fail with an actionable split-file error instead of
 // silently dropping the foreign days or re-booking them under the wrong

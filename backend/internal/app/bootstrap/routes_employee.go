@@ -14,6 +14,8 @@ func setupEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
 
 		employees.POST("", container.Handlers.Employee.CreateEmployee)
 		employees.GET("", container.Handlers.Employee.ListEmployees)
+		// Bank branch reference list (seeded snapshot) for the bank capture UI.
+		protected.GET("/banks", container.Handlers.Employee.ListBanks)
 		employees.GET("/export", container.Handlers.Employee.ExportEmployees)
 		// Admin or quanly: upload the filled workbook back — fills EMPTY mobiles by CCCD, never overwrites
 		employees.POST("/import-mobiles", container.Handlers.Employee.ImportMobiles)

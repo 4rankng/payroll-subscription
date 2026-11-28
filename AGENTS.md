@@ -73,7 +73,7 @@ Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go b
 - MySQL 8 — primary database
 - Redis — caching, event bus, background jobs (asynq)
 - Docker / Docker Compose — local development and deployment
-- MySQL 8 schema: `backend/migrations/schema.sql` (TechnicalDesign §3, 21 tables)
+- MySQL 8 schema: `backend/migrations/schema.sql` (TechnicalDesign §3, 23 tables)
 
 <!-- MANUAL: Custom project notes can be added below -->
 

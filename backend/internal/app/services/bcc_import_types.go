@@ -40,7 +40,7 @@ func buildResult(stats BCCImportStats, id, uploaderID uint, createdAt time.Time)
 // bccImportContext holds the shared setup results for BCC import flows.
 // Both single-position and multi-position flows perform the same month parsing,
 // lock acquisition, and payrate resolution — this struct consolidates that setup.
-// resolver is the shared per-date payrate authority (PAYR-36): every path
+// resolver is the shared per-date payrate authority: every path
 // resolves rates through it by each entry's own work date, and position
 // validation goes through its month union.
 type bccImportContext struct {

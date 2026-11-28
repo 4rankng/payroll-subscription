@@ -59,7 +59,7 @@ func (s *BCCImportService) processMultiPositionUpload(
 	// (bccCrossMonthError) is enforceable only on full-date templates.
 
 	// All sheet positions must exist in the payrate configs effective during
-	// the import month (union rule, PAYR-36) — a position added to the config
+	// the import month (union rule) — a position added to the config
 	// mid-month is valid for a full-month file.
 	if reason := validateSheetPositions(parsed, resolver, monthStart, monthEnd); reason != "" {
 		return fail(reason)
@@ -143,7 +143,7 @@ func (s *BCCImportService) processMultiPositionUpload(
 
 // validateSheetPositions returns a failure reason when any sheet's position is
 // absent from every payrate config effective in the import month, or "" when
-// all positions are configured. PAYR-36 union rule: a position added to a
+// all positions are configured. Union rule: a position added to a
 // config mid-month is valid for a full-month file, so membership is checked
 // against the union of the month's configs — never against one anchored
 // config. The failure text is the unified missing-position message.
@@ -394,7 +394,7 @@ func (s *BCCImportService) buildMultiPositionEntries(
 	// shared package-level declarations.
 	for _, sheet := range parsed.Sheets {
 		// Position-scoped rate→target prefix; the map itself is built per
-		// entry date below (PAYR-36: rates follow each row's own work date).
+		// entry date below (rates follow each row's own work date).
 		posPrefix := bccNormName(sheet.Position) + "."
 
 		for _, emp := range sheet.Employees {
@@ -451,7 +451,7 @@ func (s *BCCImportService) buildMultiPositionEntries(
 				}
 
 				// Rate resolution follows the entry's own work date: the
-				// config active on `date` prices the row (PAYR-36).
+				// config active on `date` prices the row.
 				rateToTarget := resolver.rateToTargetFor(date, posPrefix)
 				target, ok := lookupRateTarget(rateToTarget, entry.RateVND)
 				if !ok || entry.RateVND == 0 {

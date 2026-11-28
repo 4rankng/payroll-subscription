@@ -40,9 +40,10 @@ func collectSTKRows(xf *excelize.File, parsed *excelparser.BCCImportData, format
 	return stkRows
 }
 
-// autoCreateEmployeesFromSTK upserts employee profiles, bank info, user
-// accounts, and project assignments from the effective STK rows, inside one
-// transaction. Per-row failures are collected as ImportErrors instead of
+// autoCreateEmployeesFromSTK creates missing employee profiles (with
+// best-effort bank capture), user accounts, and project assignments from the
+// effective STK rows, inside one transaction. Per-row failures are collected
+// as ImportErrors instead of
 // aborting the import. Returns the STK CCCD→Name lookup used later for
 // cross-validation.
 func (s *BCCImportService) autoCreateEmployeesFromSTK(
@@ -94,12 +95,20 @@ func (s *BCCImportService) autoCreateEmployeesFromSTK(
 
 			var emp *domain.Employee
 			if existingEmp == nil {
-				// Create new employee
+				// Create new employee. Bank capture is best-effort complete-or-
+				// none: persist only when the row carries an account number AND
+				// its bank name resolves to a seeded branch, so an import row
+				// never lands half-filled.
 				emp = &domain.Employee{
 					Fullname:  fullName,
 					CCCD:      cccd,
 					Mobile:    row.Mobile,
 					CreatedBy: uploaderID,
+				}
+				if bankID := s.employeeService.ResolveBankName(txCtx, row.BankName); bankID != nil && strings.TrimSpace(row.BankAccount) != "" {
+					emp.BankID = bankID
+					emp.BankAccountNumber = strings.TrimSpace(row.BankAccount)
+					emp.BankAccountName = fullName
 				}
 				createdEmp, createErr := s.employeeService.CreateEmployeeFromImport(txCtx, emp, uploaderID)
 				if createErr != nil {

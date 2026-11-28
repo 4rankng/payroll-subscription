@@ -40,7 +40,7 @@ func (s *BCCImportService) processWeeklyPaymentUpload(
 	}
 
 	// 2-3. Shared setup: month parsing, lock, per-date payrate resolver
-	// (PAYR-36: rates resolve by each entry's own work date, never an anchor).
+	// Rates resolve by each entry's own work date, never an anchor.
 	ictx, releaseLock, err := s.prepareImportContext(ctx, projectID, effectiveMonth)
 	if err != nil {
 		return fail(err.Error())

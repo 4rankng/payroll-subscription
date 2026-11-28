@@ -27,7 +27,7 @@ type bccPositionAvailability struct {
 }
 
 // payrateResolver is the single authority for payrate resolution in every BCC
-// import path (PAYR-36). Business rule: the config for a work date is the one
+// import path. Business rule: the config for a work date is the one
 // with the NEAREST from_date at or before that date — the same
 // MAX(from_date) WHERE from_date <= date contract as
 // PayrateRepository.GetActiveByProjectAndDate, ties broken by the higher id.
@@ -121,7 +121,7 @@ func (r *payrateResolver) coversMonth(monthStart, monthEnd time.Time) bool {
 }
 
 // monthPositions unions the positions of every config effective at some day
-// of the import month (PAYR-36 business rule). A config is effective inside
+// of the import month (business rule). A config is effective inside
 // the month when its from_date is at or before monthEnd and it is not
 // superseded before monthStart; each of its positions is available from
 // max(from_date, monthStart). The earliest config carrying a position wins
@@ -173,7 +173,7 @@ func (r *payrateResolver) positionNamesForMonth(monthStart, monthEnd time.Time) 
 }
 
 // missingPositionMessage builds the unified actionable error for a position
-// absent from every config effective in the import month (PAYR-36). When the
+// absent from every config effective in the import month. When the
 // position exists in a config outside the month the message says where:
 // a future config hints the start date, a superseded past config says the
 // position existed but no longer applies. Always lists the month's available

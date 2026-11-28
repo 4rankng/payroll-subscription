@@ -435,7 +435,7 @@ func (s *BCCImportService) updateAssetMetadata(ctx context.Context, assetID uint
 }
 
 // prepareImportContext performs the shared setup: month parsing, distributed
-// lock, and payrate resolution. PAYR-36: all import paths resolve payrates
+// lock, and payrate resolution. All import paths resolve payrates
 // through the returned shared resolver — the config for a work date is the
 // nearest from_date at or before that date, never a single file-level anchor.
 // Returns the context and a cleanup function that must be deferred by the

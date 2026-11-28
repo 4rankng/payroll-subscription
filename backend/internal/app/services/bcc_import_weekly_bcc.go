@@ -41,7 +41,7 @@ func (s *BCCImportService) processWeeklyBCCUpload(
 	}
 
 	// 2-3. Shared setup: month parsing, lock, per-date payrate resolver
-	// (PAYR-36: rates resolve by each entry's own work date, never an anchor).
+	// Rates resolve by each entry's own work date, never an anchor.
 	ictx, releaseLock, err := s.prepareImportContext(ctx, projectID, effectiveMonth)
 	if err != nil {
 		return fail(err.Error())
@@ -52,7 +52,7 @@ func (s *BCCImportService) processWeeklyBCCUpload(
 	monthEnd := monthStart.AddDate(0, 1, -1)
 	flatRatesFor := ictx.resolver.ratesFor
 
-	// One-file-per-month contract (PAYR-36 owner ruling): worked days outside
+	// One-file-per-month contract (owner ruling): worked days outside
 	// the import month fail with a split-file error before shift validation.
 	var workedDates []time.Time
 	for _, sh := range parsed.Sheets {
@@ -76,7 +76,7 @@ func (s *BCCImportService) processWeeklyBCCUpload(
 	}
 
 	// 5. STK auto-creation. Default position comes from the union of the
-	// month's config positions (PAYR-36), sorted for a deterministic pick.
+	// month's config positions, sorted for a deterministic pick.
 	blockedEmployeeCCCDs := make(map[string]struct{})
 	availablePositions := ictx.resolver.positionNamesForMonth(monthStart, monthEnd)
 	defaultPosition := ""

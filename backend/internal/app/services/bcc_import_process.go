@@ -88,7 +88,7 @@ func (s *BCCImportService) processAssetData(
 		"rates", len(parsed.ShiftRates))
 
 	// 5-6. Shared setup: month parsing, lock, per-date payrate resolver.
-	// PAYR-36: every rate lookup resolves the config nearest its own work
+	// Every rate lookup resolves the config nearest its own work
 	// date (MAX(from_date) <= date) — no file-level anchor.
 	ictx, releaseLock, err := s.prepareImportContext(ctx, projectID, effectiveMonth)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *BCCImportService) processAssetData(
 	year, month, monthStart, resolver := ictx.year, ictx.month, ictx.monthStart, ictx.resolver
 	loc := monthStart.Location()
 
-	// One-file-per-month contract (PAYR-36 owner ruling): worked days with
+	// One-file-per-month contract (owner ruling): worked days with
 	// full dates outside the import month fail with a split-file error before
 	// any rate resolution can silently skip them.
 	var workedDates []time.Time
@@ -215,7 +215,7 @@ func (s *BCCImportService) processAssetData(
 				continue
 			}
 
-			// Rates follow the entry's own work date (PAYR-36): the config
+			// Rates follow the entry's own work date: the config
 			// active on `date` prices the row.
 			target, ok := resolveBCCEntryTarget(parsed.ShiftRates, resolver.rateToTargetFor(date, ""), resolver.ratesFor(date), entry.ShiftLabel, date, ratelessFile, labelKeyedFile)
 			if !ok {
