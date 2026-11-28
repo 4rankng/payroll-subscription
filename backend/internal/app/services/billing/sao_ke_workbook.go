@@ -15,6 +15,45 @@ import (
 // the download response and the email attachment.
 const saoKeContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
+// saoKeSummarySheet is the statement's first sheet. Project sheets are named
+// after their project (via safeSheetName), so a project with the same safe
+// name makes NewSheet fail and the export errors — accepted behaviour.
+const saoKeSummarySheet = "Chi tiết giao dịch"
+
+// Visual identity of the statement workbook, matching the approved business
+// specimen: navy headers with white bold text, thin light-blue borders, and
+// thousand-grouped VND amounts.
+const (
+	saoKeFontName    = "Arial"
+	saoKeNavy        = "1F3864"
+	saoKeBlue        = "2E75B6"
+	saoKeGray        = "808080"
+	saoKeBorderColor = "B7C3D0"
+	saoKeTotalFill   = "D9E2F3"
+	saoKeMoneyFmt    = "#,##0"
+	saoKeMoneyVndFmt = `#,##0" ₫"`
+	saoKeVndSuffix   = " ₫"
+	saoKeTextFmt     = "@"
+	saoKeWidthPad    = 4
+	saoKeWidthMin    = 8.0
+	saoKeWidthMax    = 36.0
+)
+
+// saoKeStyles bundles the workbook's cell styles, created once per workbook.
+type saoKeStyles struct {
+	title      int // sheet titles: bold 14 navy
+	header     int // table header rows: bold white on navy, bordered
+	data       int // left-aligned bordered cells
+	center     int // centered bordered cells (STT, dates)
+	text       int // CCCD: text format keeps leading zeros
+	money      int // #,##0 bordered cells
+	totalMoney int // statement totals: bold ₫ on light-blue fill
+	totalLabel int // total-row labels: bold on light-blue fill
+	vndBold    int // heading-block total (project B4): bold ₫, no border
+	plain      int // unbordered info lines
+	plainBold  int // unbordered bold labels (Tổng tiền:, INTERNAL header)
+}
+
 // renderSaoKeWorkbook renders the sao kê workbook (PRD §6.2):
 //
 //   - the summary sheet holds ONLY the CHI TIẾT GIAO DỊCH table
