@@ -84,6 +84,35 @@ type SaoKeProjectGroup struct {
 	EmployeeCount int
 	Total         int64
 	Rows          []SaoKeRow
+	// Payments collapses Rows into one row per (employee, payment date), the
+	// layout the approved statement template uses for CHI TIẾT GIAO DỊCH.
+	Payments []SaoKePaymentRow
+	// TimesheetRows is the per-timesheet detail behind those payments, the
+	// CHI TIẾT CHẤM CÔNG section of the template.
+	TimesheetRows []SaoKeTimesheetRow
+}
+
+// SaoKePaymentRow is one aggregated payment line: all of one employee's
+// timesheets paid on the same date render as a single row.
+type SaoKePaymentRow struct {
+	EmployeeID   uint
+	EmployeeName string
+	CCCD         string
+	ProjectName  string
+	Amount       int64
+	PaymentDate  string // dd/mm/yyyy; empty when only paid_at carried the date
+}
+
+// SaoKeTimesheetRow is one paid timesheet backing the statement.
+type SaoKeTimesheetRow struct {
+	TimesheetID  uint
+	EmployeeName string
+	WorkDate     string // dd/mm/yyyy
+	Position     string // project assignment position; default "phổ thông"
+	DayType      string // "ngày thường"; "ngày nghỉ" on Saturdays and Sundays
+	Shift        string // timesheet paytype label (e.g. shift window, "tăng ca")
+	Hours        float64
+	Amount       int64
 }
 
 // SaoKeData is the full statement payload for one Kỳ payment window.
@@ -264,6 +293,23 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 		}
 	}
 
+	// Positions per (project, employee) assignment for the timesheet detail
+	// section; missing assignments fall back to the schema default.
+	pairs := make([]domain.ProjectEmployeePair, 0, len(paid))
+	seenPairs := make(map[domain.ProjectEmployeePair]struct{}, len(paid))
+	for _, ts := range paid {
+		pair := domain.ProjectEmployeePair{ProjectID: ts.ProjectID, EmployeeID: ts.EmployeeID}
+		if _, ok := seenPairs[pair]; ok {
+			continue
+		}
+		seenPairs[pair] = struct{}{}
+		pairs = append(pairs, pair)
+	}
+	positions, err := s.employees.GetPositionsByProjectEmployee(ctx, pairs)
+	if err != nil {
+		return nil, fmt.Errorf("sao ke: load positions: %w", err)
+	}
+
 	data.Rows = make([]SaoKeRow, 0, len(paid))
 	groups := make(map[uint]*SaoKeProjectGroup, len(projectIDs))
 	for _, ts := range paid {
@@ -293,6 +339,15 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 		data.TimesheetIDs = append(data.TimesheetIDs, ts.ID)
 		data.Total += row.Amount
 
+		dayType := "ngày thường"
+		if wd := ts.Date.In(clock.DefaultLocation).Weekday(); wd == time.Saturday || wd == time.Sunday {
+			dayType = "ngày nghỉ"
+		}
+		position := positions[domain.ProjectEmployeePair{ProjectID: ts.ProjectID, EmployeeID: ts.EmployeeID}]
+		if position == "" {
+			position = "phổ thông"
+		}
+
 		group, ok := groups[ts.ProjectID]
 		if !ok {
 			group = &SaoKeProjectGroup{ProjectID: ts.ProjectID, ProjectName: projectName}
@@ -300,6 +355,16 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 		}
 		group.Rows = append(group.Rows, row)
 		group.Total += row.Amount
+		group.TimesheetRows = append(group.TimesheetRows, SaoKeTimesheetRow{
+			TimesheetID:  ts.ID,
+			EmployeeName: row.EmployeeName,
+			WorkDate:     ts.Date.Format("02/01/2006"),
+			Position:     position,
+			DayType:      dayType,
+			Shift:        ts.PayType,
+			Hours:        ts.HoursWorked,
+			Amount:       row.Amount,
+		})
 	}
 
 	// Deterministic order: projects by id, rows by employee then timesheet.
@@ -311,11 +376,80 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 				distinct[row.EmployeeID] = struct{}{}
 			}
 			group.EmployeeCount = len(distinct)
+			group.Payments = aggregateSaoKePayments(group.Rows)
+			sortSaoKeTimesheetRows(group.TimesheetRows)
 			data.Groups = append(data.Groups, *group)
 		}
 	}
 	sortSaoKeRows(data.Rows)
 	return data, nil
+}
+
+// aggregateSaoKePayments collapses per-timesheet rows into one row per
+// (employee, payment date), summing amounts; the order is employee name,
+// then payment date (blank dates first), then employee id.
+func aggregateSaoKePayments(rows []SaoKeRow) []SaoKePaymentRow {
+	type paymentKey struct {
+		employeeID  uint
+		paymentDate string
+	}
+	index := make(map[paymentKey]int, len(rows))
+	out := make([]SaoKePaymentRow, 0, len(rows))
+	for _, r := range rows {
+		k := paymentKey{r.EmployeeID, r.PaymentDate}
+		if i, ok := index[k]; ok {
+			out[i].Amount += r.Amount
+			continue
+		}
+		index[k] = len(out)
+		out = append(out, SaoKePaymentRow{
+			EmployeeID:   r.EmployeeID,
+			EmployeeName: r.EmployeeName,
+			CCCD:         r.CCCD,
+			ProjectName:  r.ProjectName,
+			Amount:       r.Amount,
+			PaymentDate:  r.PaymentDate,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].EmployeeName != out[j].EmployeeName {
+			return out[i].EmployeeName < out[j].EmployeeName
+		}
+		ki, kj := saoKeDateSortKey(out[i].PaymentDate), saoKeDateSortKey(out[j].PaymentDate)
+		if ki != kj {
+			return ki < kj
+		}
+		return out[i].EmployeeID < out[j].EmployeeID
+	})
+	return out
+}
+
+// sortSaoKeTimesheetRows orders the detail rows by employee name, then work
+// date, then timesheet id.
+func sortSaoKeTimesheetRows(rows []SaoKeTimesheetRow) {
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].EmployeeName != rows[j].EmployeeName {
+			return rows[i].EmployeeName < rows[j].EmployeeName
+		}
+		ki, kj := saoKeDateSortKey(rows[i].WorkDate), saoKeDateSortKey(rows[j].WorkDate)
+		if ki != kj {
+			return ki < kj
+		}
+		return rows[i].TimesheetID < rows[j].TimesheetID
+	})
+}
+
+// saoKeDateSortKey converts a dd/mm/yyyy display date into a lexicographically
+// sortable yyyymmdd key; blank or malformed dates sort first.
+func saoKeDateSortKey(ddmmyyyy string) string {
+	if ddmmyyyy == "" {
+		return ""
+	}
+	parts := strings.Split(ddmmyyyy, "/")
+	if len(parts) != 3 {
+		return ddmmyyyy
+	}
+	return parts[2] + parts[1] + parts[0]
 }
 
 func sortSaoKeRows(rows []SaoKeRow) {

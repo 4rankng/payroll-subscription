@@ -113,6 +113,11 @@ type EmployeeRepository interface {
 	Create(ctx context.Context, employee *Employee) error
 	GetByID(ctx context.Context, id uint) (*Employee, error)
 	GetByIDs(ctx context.Context, ids []int64) ([]*Employee, error)
+	// GetPositionsByProjectEmployee returns the position label of each given
+	// (project, employee) assignment from project_employees. Missing
+	// assignments are absent from the map; callers fall back to the schema
+	// default ("phổ thông").
+	GetPositionsByProjectEmployee(ctx context.Context, pairs []ProjectEmployeePair) (map[ProjectEmployeePair]string, error)
 	GetByIDForUpdate(ctx context.Context, id uint) (*Employee, error)
 	GetByUserID(ctx context.Context, userID uint) (*Employee, error)
 	GetByCCCD(ctx context.Context, cccd string) (*Employee, error)
@@ -325,6 +330,13 @@ type EmployeesSummary struct {
 	EmployeesHiredThisMonth int64 `json:"employees_hired_this_month"`
 	SalaryMonthToDate       int64 `json:"salary_month_to_date"`
 	PaidMonthToDate         int64 `json:"paid_month_to_date"`
+}
+
+// ProjectEmployeePair identifies one project assignment row: the (project,
+// employee) slot on project_employees that carries the position label.
+type ProjectEmployeePair struct {
+	ProjectID  uint
+	EmployeeID uint
 }
 
 // EmployeeWithProject represents an employee with their current active project information

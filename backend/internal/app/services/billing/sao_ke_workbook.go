@@ -15,12 +15,13 @@ import (
 // the download response and the email attachment.
 const saoKeContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-// saoKeSummarySheet is the statement's first sheet. Project sheets are named
-// after their project (via safeSheetName), so a project with the same safe
-// name makes NewSheet fail and the export errors — accepted behaviour.
-const saoKeSummarySheet = "Chi tiết giao dịch"
+// saoKeSummarySheet is the statement's first sheet, per the approved template.
+// Project sheets are named after their project (via safeSheetName), so a
+// project with the same safe name makes NewSheet fail and the export errors —
+// accepted behaviour.
+const saoKeSummarySheet = "Summary"
 
-// Visual identity of the statement workbook, matching the approved business
+// Visual identity of the statement workbooks, matching the approved business
 // specimen: navy headers with white bold text, thin light-blue borders, and
 // thousand-grouped VND amounts.
 const (
@@ -39,7 +40,7 @@ const (
 	saoKeWidthMax    = 36.0
 )
 
-// saoKeStyles bundles the workbook's cell styles, created once per workbook.
+// saoKeStyles bundles the workbooks' cell styles, created once per workbook.
 type saoKeStyles struct {
 	title      int // sheet titles: bold 14 navy
 	header     int // table header rows: bold white on navy, bordered
@@ -47,26 +48,29 @@ type saoKeStyles struct {
 	center     int // centered bordered cells (STT, dates)
 	text       int // CCCD: text format keeps leading zeros
 	money      int // #,##0 bordered cells
-	totalMoney int // statement totals: bold ₫ on light-blue fill
-	totalLabel int // total-row labels: bold on light-blue fill
-	vndBold    int // heading-block total (project B4): bold ₫, no border
-	plain      int // unbordered info lines
-	plainBold  int // unbordered bold labels (Tổng tiền:, INTERNAL header)
+	moneyVnd   int // ₫ bordered cells (Số tiền columns)
+	totalMoney int // totals row: bold #,##0 on light-blue fill
+	totalLabel int // totals-row labels and counts: bold on light-blue fill
+	vndBold    int // heading-block total (Tổng tiền ứng): bold ₫, no border
+	section    int // section titles (CHI TIẾT ...): bold navy, no border
+	plain      int // unbordered info values
+	plainBold  int // unbordered bold labels (Tên dự án, INTERNAL header)
 }
 
-// renderSaoKeWorkbook renders the sao kê workbook (PRD §6.2):
+// renderSaoKeWorkbook renders the sao kê workbook per the approved template
+// (PRD §6.2):
 //
-//   - the summary sheet holds ONLY the CHI TIẾT GIAO DỊCH table
-//     (STT | Kỳ lương tháng | Dự án | Số tiền) — no summary block, no
-//     beneficiary block, no branding;
-//   - one sheet per project (tên dự án, tổng nhân viên, kỳ lương tháng,
-//     tổng tiền + per-employee STT|Họ tên|CCCD|Dự án|Số tiền|Ngày trả);
+//   - the "Summary" sheet holds one row per project (STT | from | to |
+//     Dự án | Số tiền) with the Kỳ payment-window dates as separate cells;
+//   - one sheet per project: a heading block (tên dự án, tổng nhân viên,
+//     kỳ lương tháng, tổng tiền ứng), the CHI TIẾT GIAO DỊCH payment table
+//     (one row per employee per payment date) and the CHI TIẾT CHẤM CÔNG
+//     per-timesheet detail section;
 //   - an INTERNAL sheet listing the timesheet ids behind the statement.
 //
-// Cell values and positions are a stable contract consumed by reconciliation;
+// Cell positions and totals are a stable contract consumed by reconciliation;
 // the styling layer (fonts, fills, borders, widths, panes, filters, tab
-// colors) never moves or rewrites a cell except the amount header label and
-// the summary sheet name.
+// colors) never moves or rewrites a cell.
 //
 // Returns the xlsx bytes and the download filename sao_ke_tt_<DD-MM-YYYY>.xlsx.
 func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
@@ -97,11 +101,17 @@ func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
 		if _, err := f.NewSheet("INTERNAL"); err != nil {
 			return nil, "", fmt.Errorf("sao ke: internal sheet: %w", err)
 		}
-		if err := f.SetCellValue("INTERNAL", "A1", "Timesheet IDs"); err != nil {
+		if err := f.SetCellValue("INTERNAL", "A1", "type:timesheet"); err != nil {
 			return nil, "", err
 		}
 		if err := f.SetCellStyle("INTERNAL", "A1", "A1", styles.plainBold); err != nil {
 			return nil, "", err
+		}
+		for i, id := range data.TimesheetIDs {
+			cell, _ := excelize.CoordinatesToCellName(1, i+2)
+			if err := f.SetCellValue("INTERNAL", cell, id); err != nil {
+				return nil, "", err
+			}
 		}
 		if err := f.SetColWidth("INTERNAL", "A", "A", 14); err != nil {
 			return nil, "", fmt.Errorf("sao ke: internal col width: %w", err)
@@ -118,7 +128,7 @@ func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
 	return buf.Bytes(), saoKeFilename(data.ReportDate), nil
 }
 
-// newSaoKeStyles creates every cell style used by the statement workbook.
+// newSaoKeStyles creates every cell style used by the workbooks.
 func newSaoKeStyles(f *excelize.File) (saoKeStyles, error) {
 	var out saoKeStyles
 	thinBorders := []excelize.Border{
@@ -170,12 +180,18 @@ func newSaoKeStyles(f *excelize.File) (saoKeStyles, error) {
 		Alignment:    &excelize.Alignment{Horizontal: "right", Vertical: "center"},
 		CustomNumFmt: new(saoKeMoneyFmt),
 	}, "money")
+	set(&out.moneyVnd, &excelize.Style{
+		Font:         &excelize.Font{Size: 11, Family: saoKeFontName},
+		Border:       thinBorders,
+		Alignment:    &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+		CustomNumFmt: new(saoKeMoneyVndFmt),
+	}, "moneyVnd")
 	set(&out.totalMoney, &excelize.Style{
 		Font:         &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName},
 		Fill:         totalFill,
 		Border:       thinBorders,
 		Alignment:    &excelize.Alignment{Horizontal: "right", Vertical: "center"},
-		CustomNumFmt: new(saoKeMoneyVndFmt),
+		CustomNumFmt: new(saoKeMoneyFmt),
 	}, "totalMoney")
 	set(&out.totalLabel, &excelize.Style{
 		Font:      &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName},
@@ -188,6 +204,10 @@ func newSaoKeStyles(f *excelize.File) (saoKeStyles, error) {
 		Alignment:    &excelize.Alignment{Horizontal: "left", Vertical: "center"},
 		CustomNumFmt: new(saoKeMoneyVndFmt),
 	}, "vndBold")
+	set(&out.section, &excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 12, Color: saoKeNavy, Family: saoKeFontName},
+		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center"},
+	}, "section")
 	set(&out.plain, &excelize.Style{Font: &excelize.Font{Size: 11, Family: saoKeFontName}}, "plain")
 	set(&out.plainBold, &excelize.Style{Font: &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName}}, "plainBold")
 	return out, err
@@ -208,6 +228,8 @@ func saoKeDisplayLen(v any, vnd bool) int {
 			n += utf8.RuneCountInString(saoKeVndSuffix)
 		}
 		return n
+	case float64:
+		return len(strconv.FormatFloat(t, 'f', -1, 64))
 	default:
 		return 0
 	}
@@ -238,6 +260,9 @@ func newSaoKeWidths(cols int) *saoKeWidths {
 }
 
 func (w *saoKeWidths) add(col int, v any, vnd bool) {
+	if col > len(w.max) || col < 1 {
+		return
+	}
 	if n := saoKeDisplayLen(v, vnd); n > w.max[col-1] {
 		w.max[col-1] = n
 	}
@@ -292,13 +317,19 @@ func saoKeTabColor(f *excelize.File, sheet, rgb string) error {
 	return nil
 }
 
-// renderSaoKeSummarySheet writes the transaction-detail table — and nothing
-// else — on the summary sheet.
+// saoKyWindowLabel renders the Kỳ payment window the way the template does:
+// "21/10 -> 20/11/26".
+func saoKyWindowLabel(cycle SaoKeCycle) string {
+	return cycle.From.Format("02/01") + " -> " + cycle.To.Format("02/01/06")
+}
+
+// renderSaoKeSummarySheet writes the per-project transaction overview — and
+// nothing else — on the summary sheet.
 func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, styles saoKeStyles) error {
-	if err := f.SetCellValue(sheet, "A1", "CHI TIẾT GIAO DỊCH"); err != nil {
+	if err := f.SetCellValue(sheet, "A1", "T\u1ed4NG QUAN GIAO D\u1ecaCH"); err != nil {
 		return err
 	}
-	if err := f.MergeCell(sheet, "A1", "D1"); err != nil {
+	if err := f.MergeCell(sheet, "A1", "E1"); err != nil {
 		return fmt.Errorf("sao ke: merge summary title: %w", err)
 	}
 	if err := f.SetCellStyle(sheet, "A1", "A1", styles.title); err != nil {
@@ -307,72 +338,55 @@ func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, st
 	if err := f.SetRowHeight(sheet, 1, 28); err != nil {
 		return fmt.Errorf("sao ke: summary title height: %w", err)
 	}
+	if err := f.SetCellValue(sheet, "A3", "STT"); err != nil {
+		return err
+	}
+	if err := f.SetCellValue(sheet, "B3", "K\u1ef3 l\u01b0\u01a1ng th\u00e1ng"); err != nil {
+		return err
+	}
+	if err := f.MergeCell(sheet, "B3", "C3"); err != nil {
+		return fmt.Errorf("sao ke: merge ky header: %w", err)
+	}
+	if err := f.SetCellValue(sheet, "D3", "D\u1ef1 \u00e1n"); err != nil {
+		return err
+	}
+	if err := f.SetCellValue(sheet, "E3", "S\u1ed1 ti\u1ec1n"); err != nil {
+		return err
+	}
+	if err := f.SetCellStyle(sheet, "A3", "E3", styles.header); err != nil {
+		return err
+	}
 	if err := f.SetRowHeight(sheet, 3, 24); err != nil {
 		return fmt.Errorf("sao ke: summary header height: %w", err)
 	}
-	headers := []string{"STT", "Kỳ lương tháng", "Dự án", "Số tiền (₫)"}
-	for col, header := range headers {
-		cell, _ := excelize.CoordinatesToCellName(col+1, 3)
-		if err := f.SetCellValue(sheet, cell, header); err != nil {
-			return err
-		}
-	}
-	if err := f.SetCellStyle(sheet, "A3", "D3", styles.header); err != nil {
-		return err
-	}
-	kyLabel := data.Cycle.KyLabel()
-	dataStyles := []int{styles.center, styles.data, styles.data, styles.money}
-	widths := newSaoKeWidths(4)
-	for col, header := range headers {
-		widths.add(col+1, header, false)
-	}
-	for i, row := range data.Rows {
+
+	widths := newSaoKeWidths(5)
+	widths.add(1, "STT", false)
+	widths.add(2, "K\u1ef3 l\u01b0\u01a1ng th\u00e1ng", false) // merged B3:C3 counts on B only
+	widths.add(4, "D\u1ef1 \u00e1n", false)
+	widths.add(5, "S\u1ed1 ti\u1ec1n", false)
+	dataStyles := []int{styles.center, styles.center, styles.center, styles.data, styles.moneyVnd}
+	for i, group := range data.Groups {
 		rowNum := i + 4
-		sttCell, _ := excelize.CoordinatesToCellName(1, rowNum)
-		kyCell, _ := excelize.CoordinatesToCellName(2, rowNum)
-		projectCell, _ := excelize.CoordinatesToCellName(3, rowNum)
-		amountCell, _ := excelize.CoordinatesToCellName(4, rowNum)
-		for _, v := range []struct {
-			cell  string
+		fromDate := data.Cycle.From.Format("02/01/2006")
+		toDate := data.Cycle.To.Format("02/01/2006")
+		cells := []struct {
+			col   int
 			value any
-		}{{sttCell, i + 1}, {kyCell, kyLabel}, {projectCell, row.ProjectName}, {amountCell, row.Amount}} {
-			if err := f.SetCellValue(sheet, v.cell, v.value); err != nil {
+		}{{1, i + 1}, {2, fromDate}, {3, toDate}, {4, group.ProjectName}, {5, group.Total}}
+		for _, v := range cells {
+			cell, _ := excelize.CoordinatesToCellName(v.col, rowNum)
+			if err := f.SetCellValue(sheet, cell, v.value); err != nil {
 				return err
 			}
-		}
-		// styles differ per column, so set them individually
-		for col := 1; col <= 4; col++ {
-			cell, _ := excelize.CoordinatesToCellName(col, rowNum)
-			if err := f.SetCellStyle(sheet, cell, cell, dataStyles[col-1]); err != nil {
+			if err := f.SetCellStyle(sheet, cell, cell, dataStyles[v.col-1]); err != nil {
 				return err
 			}
+			widths.add(v.col, v.value, v.col == 5)
 		}
-		widths.add(1, i+1, false)
-		widths.add(2, kyLabel, false)
-		widths.add(3, row.ProjectName, false)
-		widths.add(4, row.Amount, false)
 	}
-	totalRow := len(data.Rows) + 4
-	totalLabelCell, _ := excelize.CoordinatesToCellName(3, totalRow)
-	totalCell, _ := excelize.CoordinatesToCellName(4, totalRow)
-	if err := f.SetCellValue(sheet, totalLabelCell, "TỔNG CỘNG"); err != nil {
-		return err
-	}
-	if err := f.SetCellValue(sheet, totalCell, data.Total); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, "A"+strconv.Itoa(totalRow), "B"+strconv.Itoa(totalRow), styles.totalLabel); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, totalLabelCell, totalLabelCell, styles.totalLabel); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, totalCell, totalCell, styles.totalMoney); err != nil {
-		return err
-	}
-	widths.add(3, "TỔNG CỘNG", false)
-	widths.add(4, data.Total, true)
-	filterEnd, _ := excelize.CoordinatesToCellName(4, len(data.Rows)+3)
+	lastRow := len(data.Groups) + 3
+	filterEnd, _ := excelize.CoordinatesToCellName(5, lastRow)
 	if err := f.AutoFilter(sheet, "A3:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
 		return fmt.Errorf("sao ke: summary filter: %w", err)
 	}
@@ -388,64 +402,71 @@ func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, st
 	return widths.apply(f, sheet)
 }
 
-// renderSaoKeProjectSheet writes one project's statement sheet: the project
-// heading block (tên dự án, tổng nhân viên, kỳ lương tháng, tổng tiền)
-// followed by the per-employee payment table.
+// renderSaoKeProjectSheet writes one project's statement sheet per the
+// template: the heading block, the aggregated payment table and the
+// per-timesheet detail section.
 func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, group SaoKeProjectGroup, styles saoKeStyles) error {
 	if err := f.SetCellValue(sheet, "A1", group.ProjectName); err != nil {
 		return err
 	}
-	if err := f.MergeCell(sheet, "A1", "F1"); err != nil {
-		return fmt.Errorf("sao ke: merge project title: %w", err)
+	for _, h := range heading {
+		labelCell, _ := excelize.CoordinatesToCellName(1, h.row)
+		valueCell, _ := excelize.CoordinatesToCellName(3, h.row)
+		labelEnd, _ := excelize.CoordinatesToCellName(2, h.row)
+		if err := f.SetCellValue(sheet, labelCell, h.label); err != nil {
+			return err
+		}
+		if err := f.MergeCell(sheet, labelCell, labelEnd); err != nil {
+			return fmt.Errorf("sao ke: merge heading row %d: %w", h.row, err)
+		}
+		if err := f.SetCellStyle(sheet, labelCell, labelCell, styles.plainBold); err != nil {
+			return err
+		}
+		if err := f.SetCellValue(sheet, valueCell, h.value); err != nil {
+			return err
+		}
+		valueStyle := styles.plain
+		if h.vnd {
+			valueStyle = styles.vndBold
+		}
+		if err := f.SetCellStyle(sheet, valueCell, valueCell, valueStyle); err != nil {
+			return err
+		}
+		widths.add(1, h.label, false)
+		widths.add(3, h.value, h.vnd)
 	}
-	if err := f.SetCellStyle(sheet, "A1", "A1", styles.title); err != nil {
+
+	if err := f.SetCellValue(sheet, "A7", "CHI TI\u1ebeT GIAO D\u1ecaCH"); err != nil {
 		return err
 	}
-	if err := f.SetRowHeight(sheet, 1, 28); err != nil {
-		return fmt.Errorf("sao ke: project title height: %w", err)
+	if err := f.MergeCell(sheet, "A7", "F7"); err != nil {
+		return fmt.Errorf("sao ke: merge payment section title: %w", err)
 	}
-	if err := f.SetCellValue(sheet, "A2", fmt.Sprintf("Tổng nhân viên: %d", group.EmployeeCount)); err != nil {
+	if err := f.SetCellStyle(sheet, "A7", "A7", styles.section); err != nil {
 		return err
 	}
-	if err := f.SetCellValue(sheet, "A3", fmt.Sprintf("Kỳ lương tháng: %s", cycle.KyLabel())); err != nil {
-		return err
+	if err := f.SetRowHeight(sheet, 7, 22); err != nil {
+		return fmt.Errorf("sao ke: payment section height: %w", err)
 	}
-	if err := f.SetCellValue(sheet, "A4", "Tổng tiền:"); err != nil {
-		return err
-	}
-	if err := f.SetCellValue(sheet, "B4", group.Total); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, "A2", "A3", styles.plain); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, "A4", "A4", styles.plainBold); err != nil {
-		return err
-	}
-	if err := f.SetCellStyle(sheet, "B4", "B4", styles.vndBold); err != nil {
-		return err
-	}
-	if err := f.SetRowHeight(sheet, 6, 24); err != nil {
-		return fmt.Errorf("sao ke: project header height: %w", err)
-	}
-	headers := []string{"STT", "Họ tên", "CCCD", "Dự án", "Số tiền (₫)", "Ngày trả"}
-	for col, header := range headers {
-		cell, _ := excelize.CoordinatesToCellName(col+1, 6)
+
+	paymentHeaders := []string{"STT", "H\u1ecd t\u00ean", "CCCD", "D\u1ef1 \u00e1n", "S\u1ed1 ti\u1ec1n", "Ng\u00e0y tr\u1ea3"}
+	for col, header := range paymentHeaders {
+		cell, _ := excelize.CoordinatesToCellName(col+1, 8)
 		if err := f.SetCellValue(sheet, cell, header); err != nil {
 			return err
 		}
-	}
-	if err := f.SetCellStyle(sheet, "A6", "F6", styles.header); err != nil {
-		return err
-	}
-	dataStyles := []int{styles.center, styles.data, styles.text, styles.data, styles.money, styles.center}
-	widths := newSaoKeWidths(6)
-	for col, header := range headers {
 		widths.add(col+1, header, false)
 	}
-	widths.add(2, group.Total, true)
-	for i, row := range group.Rows {
-		rowNum := i + 7
+	if err := f.SetCellStyle(sheet, "A8", "F8", styles.header); err != nil {
+		return err
+	}
+	if err := f.SetRowHeight(sheet, 8, 24); err != nil {
+		return fmt.Errorf("sao ke: payment header height: %w", err)
+	}
+
+	paymentStyles := []int{styles.center, styles.data, styles.text, styles.data, styles.moneyVnd, styles.center}
+	for i, row := range group.Payments {
+		rowNum := i + 9
 		cells := []struct {
 			col   int
 			value any
@@ -455,19 +476,76 @@ func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, g
 			if err := f.SetCellValue(sheet, cell, v.value); err != nil {
 				return err
 			}
-			if err := f.SetCellStyle(sheet, cell, cell, dataStyles[v.col-1]); err != nil {
+			if err := f.SetCellStyle(sheet, cell, cell, paymentStyles[v.col-1]); err != nil {
 				return err
 			}
-			widths.add(v.col, v.value, false)
+			widths.add(v.col, v.value, v.col == 5)
 		}
 	}
-	filterEnd, _ := excelize.CoordinatesToCellName(6, len(group.Rows)+6)
-	if err := f.AutoFilter(sheet, "A6:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
+	lastPaymentRow := len(group.Payments) + 8
+	filterEnd, _ := excelize.CoordinatesToCellName(6, lastPaymentRow)
+	if err := f.AutoFilter(sheet, "A8:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
 		return fmt.Errorf("sao ke: project filter: %w", err)
 	}
-	if err := saoKeFreeze(f, sheet, 7); err != nil {
+	if err := saoKeFreeze(f, sheet, 9); err != nil {
 		return err
 	}
+
+	if len(group.TimesheetRows) > 0 {
+		titleRow := lastPaymentRow + 3
+		titleStart, _ := excelize.CoordinatesToCellName(1, titleRow)
+		titleEnd, _ := excelize.CoordinatesToCellName(8, titleRow)
+		if err := f.SetCellValue(sheet, titleStart, "CHI TI\u1ebeT CH\u1ea4M C\u00d4NG"); err != nil {
+			return err
+		}
+		if err := f.MergeCell(sheet, titleStart, titleEnd); err != nil {
+			return fmt.Errorf("sao ke: merge timesheet section title: %w", err)
+		}
+		if err := f.SetCellStyle(sheet, titleStart, titleStart, styles.section); err != nil {
+			return err
+		}
+		if err := f.SetRowHeight(sheet, titleRow, 22); err != nil {
+			return fmt.Errorf("sao ke: timesheet section height: %w", err)
+		}
+
+		timesheetHeaders := []string{"STT", "H\u1ecd t\u00ean", "Ng\u00e0y c\u00f4ng", "V\u1ecb tr\u00ed", "Ng\u00e0y l\u00e0m", "Ca l\u00e0m", "Gi\u1edd", "S\u1ed1 ti\u1ec1n"}
+		headerRow := titleRow + 1
+		for col, header := range timesheetHeaders {
+			cell, _ := excelize.CoordinatesToCellName(col+1, headerRow)
+			if err := f.SetCellValue(sheet, cell, header); err != nil {
+				return err
+			}
+			widths.add(col+1, header, false)
+		}
+		headerStart, _ := excelize.CoordinatesToCellName(1, headerRow)
+		headerEnd, _ := excelize.CoordinatesToCellName(8, headerRow)
+		if err := f.SetCellStyle(sheet, headerStart, headerEnd, styles.header); err != nil {
+			return err
+		}
+		if err := f.SetRowHeight(sheet, headerRow, 24); err != nil {
+			return fmt.Errorf("sao ke: timesheet header height: %w", err)
+		}
+
+		timesheetStyles := []int{styles.center, styles.data, styles.center, styles.center, styles.center, styles.center, styles.center, styles.moneyVnd}
+		for i, row := range group.TimesheetRows {
+			rowNum := headerRow + 1 + i
+			cells := []struct {
+				col   int
+				value any
+			}{{1, i + 1}, {2, row.EmployeeName}, {3, row.WorkDate}, {4, row.Position}, {5, row.DayType}, {6, row.Shift}, {7, row.Hours}, {8, row.Amount}}
+			for _, v := range cells {
+				cell, _ := excelize.CoordinatesToCellName(v.col, rowNum)
+				if err := f.SetCellValue(sheet, cell, v.value); err != nil {
+					return err
+				}
+				if err := f.SetCellStyle(sheet, cell, cell, timesheetStyles[v.col-1]); err != nil {
+					return err
+				}
+				widths.add(v.col, v.value, v.col == 8)
+			}
+		}
+	}
+
 	if err := saoKeHideGridlines(f, sheet); err != nil {
 		return err
 	}

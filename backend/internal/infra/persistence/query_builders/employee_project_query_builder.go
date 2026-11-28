@@ -49,6 +49,49 @@ type ProjectAssignmentWithPayment struct {
 	StartDate         time.Time `gorm:"column:start_date"`
 }
 
+// FetchPositionsByProjectEmployee returns the position label of each given
+// (project, employee) assignment from project_employees. Missing assignments
+// are absent from the returned map.
+func (b *EmployeeProjectQueryBuilder) FetchPositionsByProjectEmployee(ctx context.Context, pairs []domain.ProjectEmployeePair) (map[domain.ProjectEmployeePair]string, error) {
+	out := make(map[domain.ProjectEmployeePair]string, len(pairs))
+	if len(pairs) == 0 {
+		return out, nil
+	}
+	projectIDs := make([]uint, 0, 8)
+	employeeIDs := make([]int64, 0, 16)
+	seenProjects := make(map[uint]struct{}, len(pairs))
+	seenEmployees := make(map[int64]struct{}, len(pairs))
+	for _, p := range pairs {
+		if _, ok := seenProjects[p.ProjectID]; !ok {
+			seenProjects[p.ProjectID] = struct{}{}
+			projectIDs = append(projectIDs, p.ProjectID)
+		}
+		id := int64(p.EmployeeID)
+		if _, ok := seenEmployees[id]; !ok {
+			seenEmployees[id] = struct{}{}
+			employeeIDs = append(employeeIDs, id)
+		}
+	}
+	var rows []struct {
+		ProjectID  uint
+		EmployeeID uint
+		Position   string
+	}
+	err := b.db.WithContext(ctx).
+		Table("project_employees").
+		Select("project_id, employee_id, position").
+		Where("project_id IN ?", projectIDs).
+		Where("employee_id IN ?", employeeIDs).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		out[domain.ProjectEmployeePair{ProjectID: row.ProjectID, EmployeeID: row.EmployeeID}] = row.Position
+	}
+	return out, nil
+}
+
 // BuildListWithProjectsQuery builds the employee query for ListWithProjects
 func (b *EmployeeProjectQueryBuilder) BuildListWithProjectsQuery(filters domain.EmployeeFilters) *gorm.DB {
 	query := b.db.Model(&domain.Employee{}).Preload("User").Preload("Creator").Preload("Bank")

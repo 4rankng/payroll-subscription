@@ -179,6 +179,11 @@ func (m *MockEmployeeRepository) GetByIDs(ctx context.Context, ids []int64) ([]*
 	return args.Get(0).([]*domain.Employee), args.Error(1)
 }
 
+func (m *MockEmployeeRepository) GetPositionsByProjectEmployee(ctx context.Context, pairs []domain.ProjectEmployeePair) (map[domain.ProjectEmployeePair]string, error) {
+	args := m.Called(ctx, pairs)
+	return args.Get(0).(map[domain.ProjectEmployeePair]string), args.Error(1)
+}
+
 func (m *MockEmployeeRepository) GetByIDForUpdate(ctx context.Context, id uint) (*domain.Employee, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).(*domain.Employee), args.Error(1)

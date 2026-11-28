@@ -644,3 +644,18 @@ func (mr *MockEmployeeRepositoryMockRecorder) UpdateColumns(ctx, id, columns int
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateColumns", reflect.TypeOf((*MockEmployeeRepository)(nil).UpdateColumns), ctx, id, columns)
 }
+
+// GetPositionsByProjectEmployee mocks base method.
+func (m *MockEmployeeRepository) GetPositionsByProjectEmployee(ctx context.Context, pairs []domain.ProjectEmployeePair) (map[domain.ProjectEmployeePair]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPositionsByProjectEmployee", ctx, pairs)
+	ret0, _ := ret[0].(map[domain.ProjectEmployeePair]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPositionsByProjectEmployee indicates an expected call of GetPositionsByProjectEmployee.
+func (mr *MockEmployeeRepositoryMockRecorder) GetPositionsByProjectEmployee(ctx, pairs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByProjectEmployee", reflect.TypeOf((*MockEmployeeRepository)(nil).GetPositionsByProjectEmployee), ctx, pairs)
+}

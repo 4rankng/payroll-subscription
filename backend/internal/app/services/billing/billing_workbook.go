@@ -16,43 +16,85 @@ func renderBillingWorkbook(workMonth string, fee int64, lines []domain.BillingRe
 	f := excelize.NewFile()
 	defer f.Close()
 
+	styles, err := newSaoKeStyles(f)
+	if err != nil {
+		return nil, err
+	}
+
 	summary := f.GetSheetName(0)
 	summaryTitle := fmt.Sprintf("Báo cáo phí subscription — tháng %s", workMonth)
-	cells := []struct{ cell, value string }{
-		{"A1", summaryTitle},
-		{"A3", "Kỳ"},
-		{"B3", "Số nhân viên (distinct CCCD)"},
-		{"C3", "Đơn giá / nhân viên / kỳ (VND)"},
-		{"D3", "Thành tiền (VND)"},
+	if err := f.SetCellValue(summary, "A1", summaryTitle); err != nil {
+		return nil, err
 	}
-	for _, c := range cells {
-		if err := f.SetCellValue(summary, c.cell, c.value); err != nil {
+	if err := f.MergeCell(summary, "A1", "D1"); err != nil {
+		return nil, fmt.Errorf("billing report: merge summary title: %w", err)
+	}
+	if err := f.SetCellStyle(summary, "A1", "A1", styles.title); err != nil {
+		return nil, err
+	}
+	if err := f.SetRowHeight(summary, 1, 28); err != nil {
+		return nil, fmt.Errorf("billing report: summary title height: %w", err)
+	}
+
+	headers := []string{"Kỳ", "Số nhân viên (distinct CCCD)", "Đơn giá / nhân viên / kỳ (VND)", "Thành tiền (VND)"}
+	for col, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(col+1, 3)
+		if err := f.SetCellValue(summary, cell, header); err != nil {
 			return nil, err
 		}
 	}
 	rowIdx := 4
+	lineStyles := []int{styles.center, styles.center, styles.money, styles.money}
 	for _, line := range lines {
-		if err := f.SetCellValue(summary, fmt.Sprintf("A%d", rowIdx), fmt.Sprintf("Kỳ %d", line.Cycle)); err != nil {
-			return nil, err
-		}
-		if err := f.SetCellValue(summary, fmt.Sprintf("B%d", rowIdx), line.DistinctCount); err != nil {
-			return nil, err
-		}
-		if err := f.SetCellValue(summary, fmt.Sprintf("C%d", rowIdx), fee); err != nil {
-			return nil, err
-		}
-		if err := f.SetCellValue(summary, fmt.Sprintf("D%d", rowIdx), line.AmountVnd); err != nil {
-			return nil, err
+		values := []any{fmt.Sprintf("Kỳ %d", line.Cycle), line.DistinctCount, fee, line.AmountVnd}
+		for col, v := range values {
+			cell, _ := excelize.CoordinatesToCellName(col+1, rowIdx)
+			if err := f.SetCellValue(summary, cell, v); err != nil {
+				return nil, err
+			}
+			if err := f.SetCellStyle(summary, cell, cell, lineStyles[col]); err != nil {
+				return nil, err
+			}
+			widths.add(col+1, v, false)
 		}
 		rowIdx++
 	}
-	if err := f.SetCellValue(summary, fmt.Sprintf("A%d", rowIdx), "TỔNG"); err != nil {
+	totalRow := rowIdx
+	totalValues := []any{"TỔNG", totalDistinct, nil, totalVnd}
+	for col, v := range totalValues {
+		cell, _ := excelize.CoordinatesToCellName(col+1, totalRow)
+		if v != nil {
+			if err := f.SetCellValue(summary, cell, v); err != nil {
+				return nil, err
+			}
+		}
+		style := styles.totalLabel
+		if col == 3 {
+			style = styles.totalMoney
+		}
+		if err := f.SetCellStyle(summary, cell, cell, style); err != nil {
+			return nil, err
+		}
+		widths.add(col+1, v, false)
+	}
+	if err := f.SetRowHeight(summary, totalRow, 20); err != nil {
+		return nil, fmt.Errorf("billing report: total row height: %w", err)
+	}
+	lastKyRow := rowIdx - 1
+	filterEnd, _ := excelize.CoordinatesToCellName(4, lastKyRow)
+	if err := f.AutoFilter(summary, "A3:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
+		return nil, fmt.Errorf("billing report: summary filter: %w", err)
+	}
+	if err := saoKeFreeze(f, summary, 4); err != nil {
 		return nil, err
 	}
-	if err := f.SetCellValue(summary, fmt.Sprintf("B%d", rowIdx), totalDistinct); err != nil {
+	if err := saoKeHideGridlines(f, summary); err != nil {
 		return nil, err
 	}
-	if err := f.SetCellValue(summary, fmt.Sprintf("D%d", rowIdx), totalVnd); err != nil {
+	if err := saoKeTabColor(f, summary, saoKeNavy); err != nil {
+		return nil, err
+	}
+	if err := widths.apply(f, summary); err != nil {
 		return nil, err
 	}
 
@@ -62,22 +104,54 @@ func renderBillingWorkbook(workMonth string, fee int64, lines []domain.BillingRe
 			return nil, err
 		}
 		header := []string{"STT", "Họ tên", "CCCD", "Kỳ", "Ngày làm việc", "Số tiền (VND)", "Ngày thanh toán", "Mã tham chiếu"}
+		widths := newSaoKeWidths(8)
 		for j, h := range header {
-			if err := f.SetCellValue(safe, fmt.Sprintf("%s1", colLetter(j)), h); err != nil {
+			cell, _ := excelize.CoordinatesToCellName(j+1, 1)
+			if err := f.SetCellValue(safe, cell, h); err != nil {
 				return nil, err
 			}
+			widths.add(j+1, h, false)
 		}
+		if err := f.SetCellStyle(safe, "A1", "H1", styles.header); err != nil {
+			return nil, err
+		}
+		if err := f.SetRowHeight(safe, 1, 24); err != nil {
+			return nil, fmt.Errorf("billing report: project header height: %w", err)
+		}
+		rowStyles := []int{styles.center, styles.data, styles.text, styles.center, styles.center, styles.money, styles.center, styles.data}
 		for i, row := range sheet.Rows {
 			r := i + 2
-			values := []interface{}{
+			values := []any{
 				i + 1, row.EmployeeName, row.CCCD, fmt.Sprintf("Kỳ %d", row.Cycle),
 				row.Date, row.Amount, row.PaymentDate, row.PaymentReference,
 			}
 			for j, v := range values {
-				if err := f.SetCellValue(safe, fmt.Sprintf("%s%d", colLetter(j), r), v); err != nil {
+				cell, _ := excelize.CoordinatesToCellName(j+1, r)
+				if err := f.SetCellValue(safe, cell, v); err != nil {
 					return nil, err
 				}
+				if err := f.SetCellStyle(safe, cell, cell, rowStyles[j]); err != nil {
+					return nil, err
+				}
+				widths.add(j+1, v, false)
 			}
+		}
+		lastRow := len(sheet.Rows) + 1
+		filterEnd, _ := excelize.CoordinatesToCellName(8, lastRow)
+		if err := f.AutoFilter(safe, "A1:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
+			return nil, fmt.Errorf("billing report: project filter: %w", err)
+		}
+		if err := saoKeFreeze(f, safe, 2); err != nil {
+			return nil, err
+		}
+		if err := saoKeHideGridlines(f, safe); err != nil {
+			return nil, err
+		}
+		if err := saoKeTabColor(f, safe, saoKeBlue); err != nil {
+			return nil, err
+		}
+		if err := widths.apply(f, safe); err != nil {
+			return nil, err
 		}
 	}
 
