@@ -19,7 +19,7 @@ describe("useDashboardNavigation", () => {
 
     act(() => result.current.navigateToPendingApprovals());
 
-    expect(navigate).toHaveBeenCalledWith("/admin/timesheet?status=pending_approval");
+    expect(navigate).toHaveBeenCalledWith("/timesheet?status=pending_approval");
   });
 
   it("routes active-employee drill-down to the working status filter", () => {

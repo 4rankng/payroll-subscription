@@ -10,8 +10,9 @@ interface TimesheetEntrySheetWrapperProps {
 }
 
 /**
- * On mobile, timesheet entry is a full-page view handled by TimesheetsPageMobile
- * (which intercepts ?modal=timesheet_entry in the URL).
+ * On mobile, timesheet entry is a full-page view handled by the shared
+ * TimesheetPage mobile view (pages/shared/TimesheetPage/Mobile), which
+ * intercepts ?modal=timesheet_entry in the URL.
  * ModalRouter still mounts this component, so we return null on mobile to avoid
  * rendering the desktop sheet on top of the page.
  */

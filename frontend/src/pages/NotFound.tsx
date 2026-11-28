@@ -34,7 +34,7 @@ const NotFound = () => {
   const handleAdminProjects = useCallback(() => navigate('/admin/projects'), [navigate]);
   const handleAdminEmployees = useCallback(() => navigate('/admin/employees'), [navigate]);
   const handlePartnerEmployees = useCallback(() => navigate('/partner/employees'), [navigate]);
-  const handlePartnerTimesheet = useCallback(() => navigate('/partner/timesheet'), [navigate]);
+  const handlePartnerTimesheet = useCallback(() => navigate('/timesheet'), [navigate]);
 
   return (
     <div id="main-content" className="min-h-screen flex items-center justify-center bg-card p-4">

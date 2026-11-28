@@ -60,7 +60,7 @@ export function useDashboardNavigation() {
     navigateToPendingApprovals: useCallback(() => {
       const params = new URLSearchParams();
       params.set('status', 'pending_approval');
-      navigate(`/admin/timesheet?${params.toString()}`);
+      navigate(`/timesheet?${params.toString()}`);
     }, [navigate])
   };
 }

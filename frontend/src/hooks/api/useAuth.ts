@@ -33,12 +33,9 @@ export const useLogin = () => {
       });
 
       // Navigate based on role
-      if (data.user.role === 'admin') {
+      if (data.user.role === 'admin' || data.user.role === 'quanly' || data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
 
-        navigate('/admin');
-      } else if (data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
-
-        navigate('/partner/overview');
+        navigate('/dashboard');
       } else if (data.user.role === 'nhanvien') {
 
         navigate('/employee');
@@ -77,12 +74,8 @@ export const useGoogleLogin = () => {
       });
 
       // Navigate based on role
-      if (data.user.role === 'admin') {
-        navigate('/admin');
-      } else if (data.user.role === 'quanly') {
-        navigate('/partner/dashboard');
-      } else if (data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
-        navigate('/partner/overview');
+      if (data.user.role === 'admin' || data.user.role === 'quanly' || data.user.role === 'ketoan' || data.user.role === 'giamdoc') {
+        navigate('/dashboard');
       } else if (data.user.role === 'nhanvien') {
         navigate('/employee');
       } else {

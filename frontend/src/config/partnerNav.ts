@@ -27,12 +27,12 @@ const ALL_STAFF: AppRole[] = ["quanly", "ketoan", "giamdoc"];
 export const PARTNER_NAV_ITEMS: PartnerNavItem[] = [
   // Tổng quan is role-split per PRD §5.1/§5.2: quanly keeps the partner
   // mirror dashboard; ketoan/giamdoc land on the fee-insights overview.
-  { title: "Tổng quan", icon: Grid01, path: "/partner/dashboard", end: true, roles: ["quanly"] },
-  { title: "Tổng quan", icon: Grid01, path: "/partner/overview", end: true, roles: ["ketoan", "giamdoc"] },
+  { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["quanly"] },
+  { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["ketoan", "giamdoc"] },
   { title: "Người dùng", icon: Users01, path: "/partner/users", end: true, roles: ["giamdoc"] },
   { title: "Dự án", icon: Briefcase01, path: "/partner/projects", roles: ALL_STAFF },
   { title: "Nhân viên", icon: Users01, path: "/partner/employees", roles: ALL_STAFF },
-  { title: "Bảng công", icon: Calendar, path: "/partner/timesheet", end: true, roles: ALL_STAFF },
+  { title: "Bảng công", icon: Calendar, path: "/timesheet", end: true, roles: ALL_STAFF },
   // PAYR-42: rebuilt payroll payment history; PAYR-123: canonical
   // /payment-history shared by all staff roles plus admin.
   { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", roles: ["quanly", "ketoan", "giamdoc", "admin"] },

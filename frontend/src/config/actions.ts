@@ -88,7 +88,7 @@ export const allActions: Action[] = [
     label: 'Chấm công',
     description: 'Quản lý thời gian làm việc',
     icon: Clock,
-    href: '/admin/timesheet',
+    href: '/timesheet',
     category: 'navigation',
     permissions: ['admin']
   },
@@ -97,7 +97,7 @@ export const allActions: Action[] = [
     label: 'Chấm công',
     description: 'Bảng công cá nhân',
     icon: Clock,
-    href: '/partner/timesheet',
+    href: '/timesheet',
     category: 'navigation',
     permissions: ['quanly']
   },
@@ -135,7 +135,7 @@ export const allActions: Action[] = [
     label: 'Tạo chấm công',
     description: 'Tạo bảng chấm công mới',
     icon: CalendarPlus,
-    href: '/admin/timesheet?modal=timesheet_entry',
+    href: '/timesheet?modal=timesheet_entry',
     category: 'creation',
     permissions: ['admin', 'quanly'],
   },

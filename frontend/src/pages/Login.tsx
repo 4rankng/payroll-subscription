@@ -28,9 +28,7 @@ const Login = () => {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const role = authManager.getUserRole();
-      if (role === "admin") navigate("/admin", { replace: true });
-      else if (role === "quanly") navigate("/partner/dashboard", { replace: true });
-      else if (role === "ketoan" || role === "giamdoc") navigate("/partner/overview", { replace: true });
+      if (role === "admin" || role === "quanly" || role === "ketoan" || role === "giamdoc") navigate("/dashboard", { replace: true });
       else if (role === "nhanvien") navigate("/employee", { replace: true });
       else navigate("/", { replace: true });
     }

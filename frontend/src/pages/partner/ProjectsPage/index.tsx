@@ -392,7 +392,7 @@ const ProjectsPage = () => {
   );
 
   const handleTimesheet = useCallback(
-    (project: Project) => navigate(`/partner/timesheet?project=${project.id}`),
+    (project: Project) => navigate(`/timesheet?project=${project.id}`),
     [navigate],
   );
 

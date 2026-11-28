@@ -64,7 +64,7 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
       id: 'create-timesheet',
       label: 'Tạo chấm công',
       icon: () => <IconImage src="/icons/add-event.png" alt="Add timesheet" />,
-      href: '/admin/timesheet?modal=timesheet_entry',
+      href: '/timesheet?modal=timesheet_entry',
       permissions: ['admin', 'quanly'],
     },
   ];
@@ -86,9 +86,8 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
           targetHref = '/partner/projects?modal=project_create';
         } else if (action.id === 'create-employee') {
           targetHref = '/partner/employees?modal=add_employee';
-        } else if (action.id === 'create-timesheet') {
-          targetHref = '/partner/timesheet?modal=timesheet_entry';
         }
+        // create-timesheet needs no role branch: /timesheet is role-shared (PAYR-134).
       }
 
       navigate(targetHref);

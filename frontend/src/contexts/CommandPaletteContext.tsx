@@ -122,7 +122,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Clock',
         category: 'navigation',
         keywords: ['timesheet', 'bảng công', 'chấm công'],
-        action: () => navigate('/admin/timesheet'),
+        action: () => navigate('/timesheet'),
         role: 'admin'
       },
       // Admin actions
@@ -177,7 +177,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Clock',
         category: 'navigation',
         keywords: ['timesheet', 'bảng công', 'chấm công'],
-        action: () => navigate('/partner/timesheet'),
+        action: () => navigate('/timesheet'),
         role: 'quanly'
       },
       // Partner actions
@@ -188,7 +188,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Send',
         category: 'action',
         keywords: ['submit timesheet', 'nộp bảng công', 'gửi bảng công'],
-        action: () => navigate('/partner/timesheet?action=submit'),
+        action: () => navigate('/timesheet?action=submit'),
         role: 'quanly'
       }
     ];

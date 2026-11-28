@@ -98,13 +98,13 @@ const ADMIN_SURFACES: Surface[] = [
   { title: "admin/users", path: "/admin/users" },
   { title: "admin/projects", path: "/admin/projects" },
   { title: "admin/employees", path: "/admin/employees" },
-  { title: "admin/timesheet", path: "/admin/timesheet" },
+  { title: "admin/timesheet", path: "/timesheet" },
   { title: "admin/ledger", path: "/admin/ledger" },
 ];
 
 const PARTNER_SURFACES: Surface[] = [
   { title: "partner/dashboard", path: "/partner/dashboard" },
-  { title: "partner/timesheets", path: "/partner/timesheet" },
+  { title: "partner/timesheets", path: "/timesheet" },
   { title: "partner/projects", path: "/partner/projects" },
   { title: "partner/payment-history", path: "/payment-history" },
 ];

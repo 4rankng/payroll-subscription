@@ -20,7 +20,7 @@ import type { NavGroup, NavLeaf } from "@/components/MobileBottomNav";
 
 const ADMIN_NAV_GROUPS: NavGroup[] = [
   { title: "Tổng quan", icon: Home01, path: "/admin", end: true },
-  { title: "Lương tuần", icon: Clock, path: "/admin/timesheet" },
+  { title: "Lương tuần", icon: Clock, path: "/timesheet" },
 ];
 
 export const ADMIN_MORE_ITEMS: NavLeaf[] = [

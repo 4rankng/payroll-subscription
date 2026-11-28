@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { lazyWithReload as lazy } from "@/lib/lazy";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppProviders } from "@/contexts";
+import { AppProviders, useAuth } from "@/contexts";
 import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -17,7 +17,6 @@ import PartnerLayout from "./layouts/PartnerLayout";
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
 const ProjectsPage = lazy(() => import("./pages/admin/ProjectsPage"));
 const EmployeesPage = lazy(() => import("./pages/admin/EmployeesPage"));
-const TimesheetPage = lazy(() => import("./pages/admin/TimesheetPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 const EmailPage = lazy(() => import("./pages/admin/EmailPage"));
 const PayrateEditPage = lazy(() => import("./pages/admin/PayrateEditPage"));
@@ -27,7 +26,6 @@ const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
 const UsersPageMobile = lazy(() => import("./pages/mobile/admin/UsersPage"));
 const ProjectsPageMobile = lazy(() => import("./pages/mobile/admin/ProjectsPage"));
 const EmployeesPageMobile = lazy(() => import("./pages/mobile/admin/EmployeesPage"));
-const TimesheetPageMobile = lazy(() => import("./pages/mobile/admin/TimesheetPage"));
 const SettingsPageMobile = lazy(() => import("./pages/mobile/admin/SettingsPage"));
 const AuditLogPageMobile = lazy(() => import("./pages/mobile/admin/AuditLogPage"));
 const PayrateEditPageMobile = lazy(() => import("./pages/mobile/admin/PayrateEditPage"));
@@ -35,7 +33,6 @@ const PayrateEditPageMobile = lazy(() => import("./pages/mobile/admin/PayrateEdi
 // Partner Desktop Pages (lazy-loaded)
 const PartnerProjectsPage = lazy(() => import("./pages/partner/ProjectsPage"));
 const PartnerEmployeesPage = lazy(() => import("./pages/partner/EmployeesPage"));
-const PartnerTimesheetsPage = lazy(() => import("./pages/partner/TimesheetsPage"));
 const PartnerDashboardPage = lazy(() => import("./pages/partner/DashboardPage"));
 const FeeInsightsPage = lazy(() => import("./pages/partner/OverviewPage"));
 const FeeInsightsPageMobile = lazy(() =>
@@ -49,8 +46,12 @@ const PartnerPaymentHistoryPageMobile = lazy(() => import("./pages/mobile/partne
 // Partner Mobile Pages (lazy-loaded)
 const PartnerProjectsPageMobile = lazy(() => import("./pages/mobile/partner/ProjectsPage"));
 const PartnerEmployeesPageMobile = lazy(() => import("./pages/mobile/partner/EmployeesPage"));
-const PartnerTimesheetsPageMobile = lazy(() => import("./pages/mobile/partner/TimesheetsPage"));
 const PartnerDashboardMobile = lazy(() => import("./pages/mobile/partner/DashboardPage"));
+
+// Shared Timesheet Page — one canonical /timesheet for admin + partner
+// roles (PAYR-134); desktop and mobile render role-adaptively.
+const TimesheetPage = lazy(() => import("./pages/shared/TimesheetPage"));
+const TimesheetPageMobile = lazy(() => import("./pages/shared/TimesheetPage/Mobile"));
 
 // Employee Pages (lazy-loaded)
 const EmployeeRouter = lazy(() => import("./pages/employee/EmployeeRouter"));
@@ -85,19 +86,29 @@ const RootRedirect = () => {
   const hasSession = authManager.hasSession();
   const userRole = hasSession ? authManager.getUserRole() : null;
 
-  if (hasSession && userRole === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-  if (hasSession && userRole === "quanly") {
-    return <Navigate to="/partner/dashboard" replace />;
-  }
-  if (hasSession && (userRole === "ketoan" || userRole === "giamdoc")) {
-    return <Navigate to="/partner/overview" replace />;
+  if (hasSession && (userRole === "admin" || userRole === "quanly" || userRole === "ketoan" || userRole === "giamdoc")) {
+    return <Navigate to="/dashboard" replace />;
   }
   if (hasSession && userRole === "nhanvien") {
     return <Navigate to="/employee" replace />;
   }
   return <Navigate to="/login" replace />;
+};
+
+// One canonical /dashboard URL for every company role: the layout and the
+// page split by role (PRD §5.1/§5.2), the URL stays the same.
+const DashboardLayoutRouter = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout />;
+};
+
+const DashboardRoleRouter = () => {
+  const role = authManager.getUserRole();
+  if (role === "quanly") {
+    return <ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />;
+  }
+  // admin + ketoan + giamdoc land on the fee-insights overview.
+  return <ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />;
 };
 
 const queryClient = new QueryClient({
@@ -172,6 +183,27 @@ const PaymentHistoryRedirect = () => {
   return <Navigate replace to={{ pathname: "/payment-history", search }} />;
 };
 
+/** Legacy /admin|/partner timesheet bookmarks → canonical URL, query kept (PAYR-134). */
+const TimesheetRedirect = () => {
+  const search = useLocation().search;
+  return <Navigate replace to={{ pathname: "/timesheet", search }} />;
+};
+
+/** PAYR-134: /timesheet shell follows the signed-in role — admin keeps the
+ *  admin console nav (PartnerLayout would strand it: partnerNavItems('admin')
+ *  grants no /admin links and skips admin theming); partner roles keep the
+ *  partner nav. One URL, two shells. */
+const TimesheetShell = () => {
+  const { user } = useAuth();
+  return user?.role === "admin" ? (
+    <ProtectedRoute requiredRole="admin">
+      <AdminLayout />
+    </ProtectedRoute>
+  ) : (
+    <PartnerLayout />
+  );
+};
+
 const AppContent = () => {
   const location = useLocation();
 
@@ -235,15 +267,20 @@ const AppContent = () => {
         {/* Logout */}
         <Route path="/logout" element={<LogoutRedirect />} />
 
+        {/* Canonical dashboard — one URL for every company role */}
+        <Route path="/dashboard" element={<DashboardLayoutRouter />}>
+          <Route index element={<DashboardRoleRouter />} />
+        </Route>
+
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
           {/* PRD §5.1: the old financial admin dashboard is replaced by the fee-insights overview. */}
           <Route index element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
+          <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
-          <Route path="timesheet" element={<ResponsivePage desktopComponent={TimesheetPage} mobileComponent={TimesheetPageMobile} />} />
-          <Route path="timesheets" element={<Navigate to="/admin/timesheet" replace />} />
+          {/* PAYR-134: Bảng công moved to the canonical /timesheet route below. */}
           <Route path="settings" element={<ResponsivePage desktopComponent={SettingsPage} mobileComponent={SettingsPageMobile} />} />
           <Route path="audit-log" element={<ResponsivePage desktopComponent={AuditLogPage} mobileComponent={AuditLogPageMobile} />} />
           <Route path="email" element={<EmailPage />} />
@@ -253,8 +290,8 @@ const AppContent = () => {
 
         {/* Partner Routes — quanly operates; giamdoc + ketoan read and export reports (D28) */}
         <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/partner/dashboard" replace />} />
-          <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
           {/* PRD §5.1: fee-insights overview — ketoan/giamdoc landing (PRD §4). */}
           <Route path="overview" element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
           {/* PRD §5.3: user directory — giamdoc reads /partner/users read-only;
@@ -262,7 +299,6 @@ const AppContent = () => {
           <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
-          <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
           {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
           <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
@@ -277,6 +313,17 @@ const AppContent = () => {
         {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
         <Route path="/partner/payment-history" element={<PaymentHistoryRedirect />} />
         <Route path="/admin/payment-history" element={<PaymentHistoryRedirect />} />
+
+        {/* PAYR-134: Bảng công — one canonical /timesheet shared by admin +
+            partner roles. The shell follows the signed-in role (see
+            TimesheetShell); PartnerLayout carries the partner-role guard. */}
+        <Route path="/timesheet" element={<TimesheetShell />}>
+          <Route index element={<ResponsivePage desktopComponent={TimesheetPage} mobileComponent={TimesheetPageMobile} />} />
+        </Route>
+        {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
+        <Route path="/admin/timesheet" element={<TimesheetRedirect />} />
+        <Route path="/admin/timesheets" element={<TimesheetRedirect />} />
+        <Route path="/partner/timesheet" element={<TimesheetRedirect />} />
 
         {/* Employee Routes */}
         <Route path="/employee" element={<ProtectedRoute requiredRole="nhanvien"><EmployeeRouter /></ProtectedRoute>} />

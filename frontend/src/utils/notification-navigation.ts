@@ -10,14 +10,14 @@ interface NavigationTarget {
 // Whitelist of valid navigation paths
 const SAFE_ROUTES = {
   admin: [
-    '/admin/timesheet',
+    '/timesheet',
     '/admin/approvals',
     '/admin/employees',
     '/admin/projects',
     '/admin/settings',
   ],
   quanly: [
-    '/partner/timesheet',
+    '/timesheet',
     '/partner/employees',
     '/partner/project',
   ],
@@ -35,7 +35,7 @@ export const getNotificationNavigation = (notification: Notification): Navigatio
 
   switch (type) {
     case 'timesheet_reminder': {
-      const path = userRole === 'admin' ? '/admin/timesheet' : '/partner/timesheet';
+      const path = '/timesheet';
       return {
         path,
         params: metadata?.employee_id ? { employee: String(metadata.employee_id) } : {},
@@ -54,7 +54,7 @@ export const getNotificationNavigation = (notification: Notification): Navigatio
       } else {
         // Partners see approval items in their timesheet
         return {
-          path: '/partner/timesheet',
+          path: '/timesheet',
           params: metadata?.timesheet_id ? { timesheet: String(metadata.timesheet_id) } : {},
           highlight: metadata?.approval_id ? `approval-${metadata.approval_id}` : undefined
         };
@@ -63,7 +63,7 @@ export const getNotificationNavigation = (notification: Notification): Navigatio
 
     case 'payroll_complete': {
       // Redirect payroll notifications to timesheet since payroll pages are removed
-      const path = userRole === 'admin' ? '/admin/timesheet' : '/partner/timesheet';
+      const path = '/timesheet';
       return {
         path,
         params: {},

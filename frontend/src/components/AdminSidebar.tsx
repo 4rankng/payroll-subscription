@@ -70,11 +70,11 @@ type MenuItem = {
 };
 
 export const ADMIN_MENU_ITEMS: MenuItem[] = [
-  { title: "Tổng quan", icon: Home01, path: "/admin", end: true, group: "top" },
+  { title: "Tổng quan", icon: Home01, path: "/dashboard", end: true, group: "top" },
   { title: "Người dùng", icon: UserEdit, path: "/admin/users", group: "quan-ly" },
   { title: "Dự án", icon: Briefcase01, path: "/admin/projects", group: "quan-ly" },
   { title: "Nhân viên", icon: Users01, path: "/admin/employees", group: "quan-ly" },
-  { title: "Bảng công", icon: CalendarCheck01, path: "/admin/timesheet", group: "quan-ly" },
+  { title: "Bảng công", icon: CalendarCheck01, path: "/timesheet", group: "quan-ly" },
   { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", group: "quan-ly" },
   { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log", group: "he-thong" },
   { title: "Cài đặt", icon: Settings01, path: "/admin/settings", group: "he-thong" },
@@ -453,50 +453,6 @@ const AdminSidebar = () => {
         {/* Footer — user menu */}
         <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
         <SidebarFooter className="p-2 shrink-0">
-          {/* Quick actions: notifications + appearance — reachable directly,
-              outside the account menu (collapsed rail stacks them). */}
-          <div className={cn("mb-1.5 flex", isCollapsed ? "flex-col items-center gap-1" : "items-center gap-1.5")}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
-                  onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
-                  className={quickActionButtonClass}
-                >
-                  <Bell01 className="h-4 w-4" aria-hidden="true" />
-                  {unreadCount > 0 && (
-                    <span className={cn(
-                      "absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1",
-                      "text-xs font-semibold rounded-full bg-utility-error-600 text-white",
-                      "animate-badge-pulse"
-                    )}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Thông báo</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={dark ? "Chế độ sáng" : "Chế độ tối"}
-                  onClick={toggleTheme}
-                  className={quickActionButtonClass}
-                >
-                  {dark ? (
-                    <Sun className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Moon01 className="h-4 w-4" aria-hidden="true" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{dark ? "Chế độ sáng" : "Chế độ tối"}</TooltipContent>
-            </Tooltip>
-          </div>
-
           <div className={cn("flex gap-2", isCollapsed ? "flex-col items-center" : "items-center")}>
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -568,11 +524,57 @@ const AdminSidebar = () => {
             </DropdownMenu>
           </div>
 
-          {!isCollapsed && (
-            <p className="text-xs text-white/70 text-center pt-1 pb-1 tracking-wide select-none">
-              v{__APP_VERSION__}
-            </p>
-          )}
+          {/* PAYR-136: quick actions (notifications + appearance) share the
+              bottom row with the version string, reachable directly outside
+              the account menu; the collapsed rail keeps them stacked. */}
+          <div className={cn("mt-1.5 flex", isCollapsed ? "flex-col items-center gap-1" : "items-center justify-between gap-1.5")}>
+            {!isCollapsed && (
+              <p className="text-xs text-white/70 tracking-wide select-none">
+                v{__APP_VERSION__}
+              </p>
+            )}
+            <div className={cn("flex", isCollapsed ? "flex-col items-center gap-1" : "items-center gap-1.5")}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : "Thông báo"}
+                    onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
+                    className={quickActionButtonClass}
+                  >
+                    <Bell01 className="h-4 w-4" aria-hidden="true" />
+                    {unreadCount > 0 && (
+                      <span className={cn(
+                        "absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1",
+                        "text-xs font-semibold rounded-full bg-utility-error-600 text-white",
+                        "animate-badge-pulse"
+                      )}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side={isCollapsed ? "right" : "left"}>Thông báo</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={dark ? "Chế độ sáng" : "Chế độ tối"}
+                    onClick={toggleTheme}
+                    className={quickActionButtonClass}
+                  >
+                    {dark ? (
+                      <Sun className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Moon01 className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side={isCollapsed ? "right" : "left"}>{dark ? "Chế độ sáng" : "Chế độ tối"}</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
         </SidebarFooter>
       </Sidebar>
 

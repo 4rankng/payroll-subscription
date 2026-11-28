@@ -260,7 +260,6 @@ function ProjectCard({
   onEditStateChange,
   onApplyChanges
 }: ProjectCardProps) {
-  const canEditFields = isProjectEditing;
   const canRemoveProject = isProjectEditing || allowProjectLinking;
   const baselineSchedule = project.pending_payment_schedule ?? project.payment_schedule ?? 'weekly';
   const showCode = Boolean(project.code) && project.code !== project.name;
@@ -369,7 +368,7 @@ function ProjectCard({
   };
 
   return (
-    <div className="border rounded-lg p-3 space-y-2 min-h-[120px] flex flex-col">
+    <div className="border rounded-lg p-3 space-y-2 flex flex-col">
       {/* Project Header */}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
@@ -447,135 +446,99 @@ function ProjectCard({
         </div>
       </div>
 
-      {/* Project Details */}
-      <div className="typography-body-small text-foreground flex-1 space-y-2">
-        {/* Payment schedule controller */}
-        <div>
-          <label className="block typography-label-medium font-medium mb-1 text-foreground">Chu kỳ trả lương:</label>
-          <ProjectPaymentScheduleControl
-            assignmentId={assignmentId}
-            currentSchedule={project.payment_schedule}
-            pendingSchedule={project.pending_payment_schedule}
-            effectiveFrom={project.schedule_effective_from}
-            draftSchedule={changes?.payment_schedule}
-            isEditing={canEditFields && !isSubmitting}
-            onScheduleChange={handleScheduleDraftChange}
-          />
-        </div>
-
-        {/* Check-in toggle for flexible projects */}
-        {project.is_flexible && (
-          <div className="flex items-center justify-between">
-            <label className="typography-label-medium font-medium text-foreground">Điểm danh:</label>
-            <CheckInToggle
-              assignment={{
-                project_id: project.project_id,
-                employee_id: employeeId ?? 0,
-                check_in_enabled: project.check_in_enabled,
-                pending_check_in_enabled: project.pending_check_in_enabled ?? null,
-                check_in_effective_from: project.check_in_effective_from ?? null,
-              } as ProjectEmployeeAssignment}
+      {isProjectEditing ? (
+        <div className="typography-body-small text-foreground flex-1 space-y-2">
+          {/* Payment schedule controller */}
+          <div>
+            <label className="block typography-label-medium font-medium mb-1 text-foreground">Chu kỳ trả lương:</label>
+            <ProjectPaymentScheduleControl
+              assignmentId={assignmentId}
+              currentSchedule={project.payment_schedule}
+              pendingSchedule={project.pending_payment_schedule}
+              effectiveFrom={project.schedule_effective_from}
+              draftSchedule={changes?.payment_schedule}
+              isEditing={!isSubmitting}
+              onScheduleChange={handleScheduleDraftChange}
             />
           </div>
-        )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {/* Position Selector */}
-          <div>
-            <label className="block typography-label-medium font-medium mb-1 text-foreground">Vị trí:</label>
-            {canEditFields && availablePositions.length === 0 ? (
-              <Input
-                value={(changes?.position ?? project.position) || ""}
-                onChange={(e) => handlePositionChange(e.target.value)}
-                placeholder="Nhập vị trí công việc"
-                aria-label="Vị trí công việc"
-                disabled={!canEditFields || isSubmitting}
-                className={cn(
-                  "h-11 typography-body-small sm:h-7",
-                  !canEditFields && "opacity-100" // Ensure proper contrast in read-only mode
-                )}
+          {/* Check-in toggle for flexible projects */}
+          {project.is_flexible && (
+            <div className="flex items-center justify-between">
+              <label className="typography-label-medium font-medium text-foreground">Điểm danh:</label>
+              <CheckInToggle
+                assignment={{
+                  project_id: project.project_id,
+                  employee_id: employeeId ?? 0,
+                  check_in_enabled: project.check_in_enabled,
+                  pending_check_in_enabled: project.pending_check_in_enabled ?? null,
+                  check_in_effective_from: project.check_in_effective_from ?? null,
+                } as ProjectEmployeeAssignment}
               />
-            ) : (
-              <Select
-                value={changes?.position ?? project.position ?? undefined}
-                onValueChange={handlePositionChange}
-                disabled={!canEditFields || isSubmitting}
-              >
-                <SelectTrigger aria-label="Vị trí công việc" className={cn(
-                  "h-11 typography-body-small sm:h-7",
-                  !canEditFields && "opacity-100" // Ensure proper contrast in read-only mode
-                )}>
-                  <SelectValue
-                    placeholder={
-                      availablePositions.length === 0
-                        ? "Chưa có bảng lương"
-                        : "Chưa chọn vị trí"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availablePositions.map((position: string) => (
-                    <SelectItem key={position} value={position} className="typography-body-small">
-                      {position}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {canEditFields && availablePositions.length === 0 && (
-              <p className="typography-body-small text-financial-pending mt-1">
-                Dự án chưa có bảng lương. Vui lòng nhập vị trí thủ công.
-              </p>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Start Date Picker with Unlink Button */}
-          <div>
-            <label className="block typography-label-medium font-medium mb-1 text-foreground">Ngày bắt đầu:</label>
-            <div className="flex items-center gap-2">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* Position Selector */}
+            <div>
+              <label className="block typography-label-medium font-medium mb-1 text-foreground">Vị trí:</label>
+              {availablePositions.length === 0 ? (
+                <Input
+                  value={(changes?.position ?? project.position) || ""}
+                  onChange={(e) => handlePositionChange(e.target.value)}
+                  placeholder="Nhập vị trí công việc"
+                  aria-label="Vị trí công việc"
+                  disabled={isSubmitting}
+                  className="h-11 typography-body-small sm:h-7"
+                />
+              ) : (
+                <Select
+                  value={changes?.position ?? project.position ?? undefined}
+                  onValueChange={handlePositionChange}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger aria-label="Vị trí công việc" className="h-11 typography-body-small sm:h-7">
+                    <SelectValue
+                      placeholder={
+                        availablePositions.length === 0
+                          ? "Chưa có bảng lương"
+                          : "Chưa chọn vị trí"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePositions.map((position: string) => (
+                      <SelectItem key={position} value={position} className="typography-body-small">
+                        {position}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {availablePositions.length === 0 && (
+                <p className="typography-body-small text-financial-pending mt-1">
+                  Dự án chưa có bảng lương. Vui lòng nhập vị trí thủ công.
+                </p>
+              )}
+            </div>
+
+            {/* Start Date */}
+            <div>
+              <label className="block typography-label-medium font-medium mb-1 text-foreground">Ngày bắt đầu:</label>
               <Input
                 type="date"
                 value={(changes?.start_date ?? project.start_date) || ''}
                 onChange={handleDateChange}
                 aria-label="Ngày bắt đầu phân công"
-                disabled={!canEditFields || isSubmitting}
-                className={cn(
-                  // min-w + pr keep the DD/MM/YYYY value and the native
-                  // calendar indicator intact in narrow drawer columns.
-                  "h-11 min-w-[140px] pr-8 typography-body-small sm:h-7",
-                  !canEditFields && "opacity-100" // Ensure proper contrast in read-only mode
-                )}
+                disabled={isSubmitting}
+                className="h-11 min-w-[140px] pr-8 typography-body-small sm:h-7"
               />
-            {canRemoveProject && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-11 w-11 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0 sm:h-7 sm:w-7"
-                        onClick={() => onRemove?.(project.project_id)}
-                        disabled={isRemoving || isSubmitting}
-                        aria-label="Gỡ khỏi dự án"
-                      >
-                        <Unlink className="h-3 w-3" aria-hidden="true" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      Gỡ khỏi dự án
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
             </div>
           </div>
 
-        </div>
-
-        {/* End Date */}
-        <div>
-          <label className="block typography-label-medium font-medium mb-1 text-foreground">Ngày kết thúc:</label>
-          {canEditFields ? (
+          {/* End Date */}
+          <div>
+            <label className="block typography-label-medium font-medium mb-1 text-foreground">Ngày kết thúc:</label>
             <div className="space-y-1">
               <Input
                 type="date"
@@ -589,17 +552,44 @@ function ProjectCard({
                 Để trống = vô thời hạn
               </p>
             </div>
-          ) : (
-            <div className="flex items-center gap-1 text-foreground/80 typography-body-small">
-              {project.last_date ? (
-                <span>{format(new Date(project.last_date), 'dd/MM/yyyy')}</span>
-              ) : (
-                <span className="text-primary font-medium">Vô thời hạn</span>
-              )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 space-y-1.5">
+          <ProjectScheduleReadRow project={project} assignmentId={assignmentId} />
+          {project.is_flexible && (
+            <div className="flex items-center justify-between">
+              <span className="typography-label-small text-muted-foreground shrink-0">Điểm danh</span>
+              <CheckInToggle
+                assignment={{
+                  project_id: project.project_id,
+                  employee_id: employeeId ?? 0,
+                  check_in_enabled: project.check_in_enabled,
+                  pending_check_in_enabled: project.pending_check_in_enabled ?? null,
+                  check_in_effective_from: project.check_in_effective_from ?? null,
+                } as ProjectEmployeeAssignment}
+              />
             </div>
           )}
+          <ReadRow label="Vị trí">
+            {project.position || <span className="text-muted-foreground">—</span>}
+          </ReadRow>
+          <ReadRow label="Ngày bắt đầu">
+            {project.start_date ? (
+              format(new Date(project.start_date), 'dd/MM/yyyy')
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </ReadRow>
+          <ReadRow label="Ngày kết thúc">
+            {project.last_date ? (
+              format(new Date(project.last_date), 'dd/MM/yyyy')
+            ) : (
+              <span className="text-primary font-medium">Vô thời hạn</span>
+            )}
+          </ReadRow>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -653,17 +643,16 @@ export function EmployeeProjectSection({
   const canAssignProjects = allowProjectLinking;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Projects Header */}
-      <div className="flex items-center gap-3">
-        <Building className="w-4 h-4 text-muted-foreground" />
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Dự án hiện tại
         </h3>
         {projectCount > 0 && (
-          <Badge variant="secondary">
+          <span className="text-xs text-muted-foreground shrink-0">
             {projectCount} dự án
-          </Badge>
+          </span>
         )}
       </div>
 
@@ -688,7 +677,7 @@ export function EmployeeProjectSection({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {currentProjects.map((project) => (
             <ProjectCard
               key={project.project_id}
@@ -709,7 +698,7 @@ export function EmployeeProjectSection({
           {/* Add Project Card - Show in edit mode or when project linking is allowed */}
           {canAssignProjects && (
             <div
-              className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-3 min-h-[120px] flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors group"
+              className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors group"
               onClick={handleAssignClick}
               role="button"
               tabIndex={0}

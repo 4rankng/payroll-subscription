@@ -337,7 +337,7 @@ const EmployeesPageMobile = () => {
                   employee={employee}
                   onClick={handleEmployeeClick}
                   onPendingTimesheets={(selectedEmployee) =>
-                    navigate(`/partner/timesheet?employee=${selectedEmployee.id}`)
+                    navigate(`/timesheet?employee=${selectedEmployee.id}`)
                   }
                   action={
                     canClaim && employee.is_accessible === false ? (

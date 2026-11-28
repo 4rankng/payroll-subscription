@@ -223,7 +223,7 @@ const ProjectsPageMobile = () => {
           projects={projects}
           onRowClick={handleProjectClick}
           onTimesheet={(project) =>
-            navigate(`/partner/timesheet?project=${project.id}`)
+            navigate(`/timesheet?project=${project.id}`)
           }
           emptyState={
             <EmptyState

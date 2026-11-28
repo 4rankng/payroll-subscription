@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ArrowLeft, Check, ChevronsUpDown } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { vietnameseIncludes } from '@/utils/vietnameseNormalization';
@@ -111,7 +111,7 @@ export const SearchableDropdown = ({
       )}
     >
       <span>{isActive ? (selectedOption?.label ?? placeholder) : placeholder}</span>
-      <ChevronsUpDown className="size-3 shrink-0 opacity-50" />
+      <ChevronDown className="size-3 shrink-0 opacity-50" />
     </button>
   ) : (
     <Button

@@ -6,13 +6,12 @@ describe('getConsoleKicker', () => {
   it('returns no kicker for staff dashboards and ops routes (owner 28/11)', () => {
     expect(getConsoleKicker('/admin')).toBe('');
     expect(getConsoleKicker('/admin/projects')).toBe('');
-    expect(getConsoleKicker('/admin/timesheet')).toBe('');
+    expect(getConsoleKicker('/timesheet')).toBe('');
     expect(getConsoleKicker('/admin/settings')).toBe('');
     expect(getConsoleKicker('/admin/audit-log')).toBe('');
     expect(getConsoleKicker('/admin/email')).toBe('');
-    expect(getConsoleKicker('/partner/dashboard')).toBe('');
+    expect(getConsoleKicker('/dashboard')).toBe('');
     expect(getConsoleKicker('/partner/overview')).toBe('');
-    expect(getConsoleKicker('/partner/timesheet')).toBe('');
     expect(getConsoleKicker('/')).toBe('');
   });
 

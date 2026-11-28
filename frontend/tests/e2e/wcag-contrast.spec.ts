@@ -34,7 +34,7 @@ const ROUTES: RouteSpec[] = [
   { path: '/admin', role: 'admin', template: 'dashboard' },
   { path: '/admin/users', role: 'admin', template: 'list' },
   { path: '/admin/employees', role: 'admin', template: 'list' },
-  { path: '/admin/timesheet', role: 'admin', template: 'list' },
+  { path: '/timesheet', role: 'admin', template: 'list' },
   { path: '/admin/ledger', role: 'admin', template: 'list' },
   { path: '/admin/settings', role: 'admin', template: 'settings' },
   { path: '/admin/wallet', role: 'admin', template: 'list' },
@@ -42,7 +42,7 @@ const ROUTES: RouteSpec[] = [
   { path: '/partner/dashboard', role: 'partner', template: 'dashboard' },
   { path: '/partner/projects', role: 'partner', template: 'list' },
   { path: '/partner/employees', role: 'partner', template: 'list' },
-  { path: '/partner/timesheet', role: 'partner', template: 'list' },
+  { path: '/timesheet', role: 'partner', template: 'list' },
 ];
 
 const VIEWPORTS = [

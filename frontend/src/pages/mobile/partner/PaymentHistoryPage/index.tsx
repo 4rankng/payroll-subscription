@@ -13,7 +13,7 @@ import { formatFullCurrency, formatInt } from '@/utils/formatters';
 import type { PaymentHistoryFilters as FiltersType } from '@/types/api/payroll.types';
 
 /** The statement-upload entry (Tải lên kết quả chuyển khoản) lives here. */
-const STATEMENT_UPLOAD_PATH = '/partner/timesheet';
+const STATEMENT_UPLOAD_PATH = '/timesheet';
 
 export default function PaymentHistoryMobilePage() {
   const navigate = useNavigate();

@@ -49,12 +49,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
           variant: "destructive",
         });
 
-        if (user.role === "admin") {
-          navigate("/admin", { replace: true });
-        } else if (user.role === "quanly") {
-          navigate("/partner/dashboard", { replace: true });
-        } else if (user.role === "ketoan" || user.role === "giamdoc") {
-          navigate("/partner/overview", { replace: true });
+        if (user.role === "admin" || user.role === "quanly" || user.role === "ketoan" || user.role === "giamdoc") {
+          navigate("/dashboard", { replace: true });
         } else if (user.role === "nhanvien") {
           navigate("/employee", { replace: true });
         }

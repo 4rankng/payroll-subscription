@@ -1,9 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MonthPicker } from '@/components/ui/month-picker';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, parse } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface TimesheetMonthSelectorProps {
@@ -49,10 +48,8 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
     onChange('all');
   }, [onChange]);
 
-  // "Tháng 5" / "2026"
-  const monthLabel = format(selectedDate, 'MMMM', { locale: vi });   // "tháng 5"
-  const monthShort = format(selectedDate, 'MM/yy');                   // "05/26"
-  const yearLabel  = format(selectedDate, 'yyyy');
+  // "T5/2026" compact label (PAYR-134); "Chọn tháng" when Tất cả
+  const monthShort = `T${format(selectedDate, 'M/yyyy')}`;
 
   return (
     <div
@@ -66,7 +63,7 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
           type="button"
           onClick={handleShowAll}
           className={cn(
-            'h-11 border-r border-border/70 px-3 text-xs font-semibold transition-colors whitespace-nowrap sm:px-2.5 md:h-9',
+            'h-11 border-r border-border/70 px-3 text-xs font-semibold transition-colors whitespace-nowrap sm:px-2.5 sm:h-8',
             value === 'all'
               ? 'bg-foreground text-background'
               : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -80,7 +77,7 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
         type="button"
         onClick={handlePreviousMonth}
         aria-label="Tháng trước"
-        className="-ml-px flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-9 md:w-9"
+        className="-ml-px flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
@@ -89,23 +86,15 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="-ml-px flex h-11 min-w-0 items-center justify-center gap-1.5 bg-muted/35 px-2.5 transition-colors hover:bg-muted md:h-9"
+            className="-ml-px flex h-11 min-w-0 items-center justify-center bg-muted/35 px-2.5 transition-colors hover:bg-muted sm:h-8"
             aria-label="Chọn tháng"
           >
-            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             {value === 'all' ? (
-              <span className="whitespace-nowrap text-sm font-semibold">Chọn tháng</span>
+              <span className="whitespace-nowrap text-xs font-semibold">Chọn tháng</span>
             ) : (
-              <>
-                <span className="hidden items-baseline gap-1 whitespace-nowrap text-sm sm:flex">
-                  <span className="capitalize font-medium text-muted-foreground">{monthLabel}</span>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="font-semibold text-foreground">{yearLabel}</span>
-                </span>
-                <span className="whitespace-nowrap text-sm font-semibold text-foreground sm:hidden">
-                  {monthShort}
-                </span>
-              </>
+              <span className="whitespace-nowrap text-xs font-semibold tabular-nums text-foreground">
+                {monthShort}
+              </span>
             )}
           </button>
         </PopoverTrigger>
@@ -118,7 +107,7 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
         type="button"
         onClick={handleNextMonth}
         aria-label="Tháng sau"
-        className="-ml-px flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-9 md:w-9"
+        className="-ml-px flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
       >
         <ChevronRight className="h-3.5 w-3.5" />
       </button>

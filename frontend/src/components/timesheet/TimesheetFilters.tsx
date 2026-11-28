@@ -31,7 +31,7 @@ const SolidStatusFilter = ({ className }: { className?: string }) => {
       <SelectTrigger
         aria-label="Trạng thái"
         className={cn(
-          'inline-flex h-11 min-h-11 w-auto items-center gap-1.5 rounded-lg border px-3 py-0 text-sm font-medium whitespace-nowrap select-none outline-brand transition-colors duration-100 sm:h-9 sm:min-h-9 sm:px-2.5',
+          'inline-flex h-11 min-h-11 w-auto items-center gap-1.5 rounded-lg border px-3 py-0 text-sm font-medium whitespace-nowrap select-none outline-brand transition-colors duration-100 sm:h-8 sm:min-h-8 sm:rounded-md sm:px-2.5 sm:text-xs',
           statusFilter !== 'all'
             ? 'border-primary/30 bg-primary/8 text-primary hover:bg-primary/12'
             : 'border-border/60 bg-card text-muted-foreground hover:border-border hover:text-foreground hover:bg-accent/40',
@@ -160,7 +160,7 @@ export const TimesheetFilters = () => {
           searchTerm={searchTerm}
           onSearchChange={onSearchChange}
           placeholder="Tìm nhân viên, dự án..."
-          className="w-64"
+          className="w-52 sm:min-h-8 sm:text-xs"
         />
       )}
 
@@ -175,7 +175,7 @@ export const TimesheetFilters = () => {
         placeholder="Dự án"
         searchPlaceholder="Tìm dự án..."
         emptyMessage="Không tìm thấy dự án nào."
-        className="h-11 min-h-11 rounded-lg bg-card px-3 text-sm sm:h-9 sm:min-h-9 sm:px-2.5"
+        className="h-11 min-h-11 rounded-lg bg-card px-3 text-sm sm:h-8 sm:min-h-8 sm:rounded-md sm:px-2.5 sm:text-xs"
         allOption={{ value: 'all', label: 'Dự án' }}
         pillStyle
       />
@@ -185,7 +185,7 @@ export const TimesheetFilters = () => {
         onChange={onEmployeeChange}
         selectedProject={selectedProject}
         placeholder="Nhân viên"
-        className="inline-flex h-11 min-h-11 items-center gap-1 rounded-lg border border-border/60 bg-card px-3 py-0 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors duration-100 hover:border-border hover:bg-accent/40 hover:text-foreground sm:h-9 sm:min-h-9 sm:px-2.5 [&>svg]:h-3.5 [&>svg]:w-3.5"
+        className="inline-flex h-11 min-h-11 items-center gap-1 rounded-lg border border-border/60 bg-card px-3 py-0 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors duration-100 hover:border-border hover:bg-accent/40 hover:text-foreground sm:h-8 sm:min-h-8 sm:rounded-md sm:px-2.5 sm:text-xs [&>svg]:h-3.5 [&>svg]:w-3.5"
         availableEmployees={(shouldUseProjectEmployees ? projectEmployees : []) as unknown as Employee[]}
         includeAvailableOnly={shouldUseProjectEmployees}
         pillStyle

@@ -13,7 +13,7 @@ import type { SortingState } from '@tanstack/react-table';
 import type { PaymentHistoryFilters as FiltersType } from '@/types/api/payroll.types';
 
 /** The statement-upload entry (Tải lên kết quả chuyển khoản) lives here. */
-const STATEMENT_UPLOAD_PATH = '/partner/timesheet';
+const STATEMENT_UPLOAD_PATH = '/timesheet';
 
 function SummaryStrip({ summary, isLoading }: { summary?: { total_amount_vnd: number; bank_entry_count: number; employee_count: number }; isLoading: boolean }) {
   if (isLoading) {

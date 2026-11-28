@@ -227,7 +227,7 @@ const EmployeesPage = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/partner/timesheet?employee=${employee.id}`);
+                              navigate(`/timesheet?employee=${employee.id}`);
                             }}
                             className="inline-flex items-center gap-0.5 shrink-0 text-xs font-semibold text-warning bg-warning/10 border border-warning/30 rounded px-1.5 py-0.5 outline-brand hover:bg-warning/20 transition-colors cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
                           >

@@ -102,7 +102,7 @@ describe.each([["desktop", PartnerProjectsPage], ["mobile", PartnerProjectsPageM
     fireEvent.keyDown(timesheet, { key: "Enter" });
     fireEvent.click(timesheet);
     expect(mocks.openPartnerProjectDetails).not.toHaveBeenCalled();
-    expect(mocks.navigate).toHaveBeenCalledWith("/partner/timesheet?project=101");
+    expect(mocks.navigate).toHaveBeenCalledWith("/timesheet?project=101");
     fireEvent.click(screen.getByRole("button", { name: "Xem chi tiết dự án Dự án 101" }));
     expect(mocks.openPartnerProjectDetails).toHaveBeenCalledWith("101");
   });
