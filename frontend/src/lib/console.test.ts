@@ -32,7 +32,7 @@ describe('getConsoleKicker', () => {
     expect(getConsoleKicker('/admin/loans/lenders')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/advance-payments/check-in-settings')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/wallet')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/partner/timesheet/payment-history')).toBe('TÀI CHÍNH');
+    expect(getConsoleKicker('/partner/payment-history')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/adv-partner/advance-payments')).toBe('TÀI CHÍNH');
   });
 

@@ -26,7 +26,7 @@ const ROUTE_KICKERS: ReadonlyArray<{ prefix: string; kicker: ConsoleKicker }> = 
   { prefix: '/admin/loans', kicker: 'TÀI CHÍNH' },
   { prefix: '/admin/advance-payments', kicker: 'TÀI CHÍNH' },
   { prefix: '/admin/wallet', kicker: 'TÀI CHÍNH' },
-  { prefix: '/partner/timesheet/payment-history', kicker: 'TÀI CHÍNH' },
+  { prefix: '/partner/payment-history', kicker: 'TÀI CHÍNH' },
   { prefix: '/adv-partner', kicker: 'TÀI CHÍNH' },
 ];
 

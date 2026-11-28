@@ -213,6 +213,7 @@ CREATE TABLE `timesheets` (
   KEY `idx_timesheets_approved_by` (`approved_by`),
   KEY `idx_timesheets_project_created` (`project_id`,`created_at`),
   KEY `idx_timesheets_payment_paid_at` (`payment_status`,`paid_at`),
+  KEY `idx_timesheets_payment_date` (`payment_status`,`date`),
   KEY `idx_timesheets_employee_payment_paid` (`employee_id`,`payment_status`,`paid_at`),
   CONSTRAINT `fk_timesheets_approved_user` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_timesheets_created_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
