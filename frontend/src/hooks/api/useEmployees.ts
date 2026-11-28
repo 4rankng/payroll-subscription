@@ -34,11 +34,12 @@ import {
 } from "@/utils/error-handler";
 import { invalidateCache } from "@/lib/cache/invalidationService";
 import { authManager } from "@/lib/auth";
+import { canViewEmployees } from "@/lib/permissions";
 
 // Get employees summary
 export const useEmployeesSummary = () => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
+  const hasPermission = canViewEmployees(userRole);
 
   return useQuery({
     queryKey: QueryKeys.employees.summary(),
@@ -51,7 +52,9 @@ export const useEmployeesSummary = () => {
 // Get paginated employees list
 export const useEmployees = (filters?: EmployeeFilters) => {
   const userRole = authManager.getUserRole();
-  const hasPermission = (userRole === 'admin' || userRole === 'quanly') && userRole !== null;
+  // Read access: ketoan/giamdoc read the same list (incl. the global pool);
+  // writes are gated separately at the action sites.
+  const hasPermission = canViewEmployees(userRole);
 
   return useQuery({
     queryKey: QueryKeys.employees.list(filters),

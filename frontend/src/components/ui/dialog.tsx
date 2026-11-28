@@ -24,13 +24,12 @@ const DialogClose = DialogPrimitive.Close
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay> & { mobileOverlay?: boolean }
->(({ className, mobileOverlay, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      mobileOverlay ? "bg-black/40 dark:bg-black/60" : "bg-black/80",
+      "fixed inset-0 z-[60] bg-[var(--overlay-scrim)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -54,11 +53,11 @@ const DialogContent = React.forwardRef<
 
   return (
     <DialogPortal>
-      <DialogOverlay mobileOverlay={isMobile} />
+      <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed z-50 flex flex-col gap-4 overflow-hidden border border-utility-gray-200 bg-card shadow-2xl",
+          "fixed z-[60] flex flex-col gap-4 overflow-hidden border border-utility-gray-200 bg-card shadow-2xl",
           contentPadding === 'default' && "p-4 sm:p-6",
           isMobile
             ? /* Mobile: bottom sheet */

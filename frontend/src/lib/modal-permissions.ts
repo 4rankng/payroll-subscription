@@ -53,7 +53,21 @@ const defineAbilityFor = (role: string): AppAbility => {
   }
 
   // Self-account password changes never grant access to user administration.
-  else if (['giamdoc', 'nhanvien'].includes(role)) {
+  // ketoan reads the surfaces its oversight role opens: employee/project
+  // detail sheets and the notification sheet — mirroring the read-only casbin
+  // grants. No write abilities beyond its own account.
+  else if (role === 'ketoan') {
+    can(['read', 'update'], 'SelfAccount');
+    can('read', ['Project', 'Employee', 'Notification']);
+  }
+  // Director: same read surfaces plus PRD §5.3 full-control user management
+  // (backend casbin grants users read/create/update/delete to giamdoc).
+  else if (role === 'giamdoc') {
+    can(['read', 'update'], 'SelfAccount');
+    can('read', ['Project', 'Employee', 'Notification']);
+    can(['read', 'create', 'update', 'delete'], 'User');
+  }
+  else if (role === 'nhanvien') {
     can(['read', 'update'], 'SelfAccount');
   }
 
@@ -107,30 +121,31 @@ export interface ModalPermission {
  * Simple and reliable approach
  */
 export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
-  // User Management
+  // User Management — backend enforcement: user writes are admin + giamdoc
+  // (PRD §5.3); quanly/ketoan hold read-only user access.
   user_details: {
     modalId: 'user_details',
     action: 'read',
     subject: 'User',
-    roles: ['admin', 'quanly']
+    roles: ['admin', 'quanly', 'giamdoc']
   },
   add_user: {
     modalId: 'add_user',
     action: 'create',
     subject: 'User',
-    roles: ['admin', 'quanly']
+    roles: ['admin', 'giamdoc']
   },
   edit_user: {
     modalId: 'edit_user',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'quanly']
+    roles: ['admin', 'giamdoc']
   },
   reset_password: {
     modalId: 'reset_password',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'quanly']
+    roles: ['admin', 'giamdoc']
   },
 
   // Employee Management
@@ -138,7 +153,7 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'employee_details',
     action: 'read',
     subject: 'Employee',
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc'],
     additionalChecks: (params) => {
       // Allow modal to open even without params (for initial state)
       if (!params || Object.keys(params).length === 0) return true;
@@ -170,7 +185,7 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'project_details',
     action: 'read',
     subject: 'Project',
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc'],
     additionalChecks: (params) => {
       // Allow modal to open even without params (for initial state)
       if (!params || Object.keys(params).length === 0) return true;
@@ -312,7 +327,7 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'notification_sheet',
     action: 'read',
     subject: 'Notification',
-    roles: ['admin', 'quanly']
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc']
   },
   user_profile: {
     modalId: 'user_profile',
@@ -320,11 +335,12 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     subject: 'SelfAccount',
     roles: ['admin', 'quanly']
   },
+  // Self-service password change is open to every authenticated role.
   change_password: {
     modalId: 'change_password',
     action: 'update',
     subject: 'SelfAccount',
-    roles: ['admin', 'quanly', 'giamdoc', 'nhanvien']
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc', 'nhanvien']
   }
 };
 

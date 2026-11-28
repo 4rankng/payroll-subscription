@@ -16,13 +16,6 @@ import (
 // wallet-alert/transfer-bank keys died with the money-movement model
 // (PRD v11 §6.4); the subscription fee is the only pricing setting left.
 const (
-	// Employee data-quality policy: when on, every employee CREATE path
-	// (manual form, Excel import, BCC import) must carry a mobile number.
-	// The row is absent until an admin first flips the settings toggle, so
-	// the default is OFF — rollout is an admin decision, not a deploy
-	// artifact. (Duplicate mobiles are rejected regardless.)
-	SettingKeyEmployeeMobileRequired = "employee.mobile_required"
-
 	// Subscription fee (FR-4, PAYSUB-5): flat VND charged per distinct
 	// employee per Kỳ (PRD BR-1, default 10,000). Admin-configurable via the
 	// generic settings API; the value is snapshotted into each billing
@@ -138,15 +131,6 @@ func (s *SettingsConfigService) getBoolSetting(ctx context.Context, key string, 
 	s.setCache(key, value)
 
 	return value
-}
-
-// IsEmployeeMobileRequired reports whether new employees must carry a mobile
-// number on every create path (manual form, Excel import, BCC import).
-// The settings row is absent until an admin first flips the toggle, so the
-// policy is OFF by default. Committed toggles invalidate the shared cache, so
-// this is hot — no redeploy needed.
-func (s *SettingsConfigService) IsEmployeeMobileRequired(ctx context.Context) bool {
-	return s.getBoolSetting(ctx, SettingKeyEmployeeMobileRequired, false)
 }
 
 // GetSubscriptionFeePerEmployeePerKy retrieves the flat subscription fee in

@@ -382,7 +382,7 @@ export const modalConfig: ModalConfig = {
   permissions: {
     action: 'create',
     subject: 'User',
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'giamdoc'],
   },
   deeplink: {
     enabled: false,

@@ -28,7 +28,7 @@ function hasHttpStatus(error: unknown, status: number): boolean {
   return false;
 }
 
-function isNotFoundError(error: unknown): boolean {
+export function isNotFoundError(error: unknown): boolean {
   return hasHttpStatus(error, 404);
 }
 

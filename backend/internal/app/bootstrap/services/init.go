@@ -186,7 +186,6 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		Events:                   eventBus,
 		Cache:                    cacheService,
 		Logger:                   logger,
-		IsEmployeeMobileRequired: settingsConfigService.IsEmployeeMobileRequired,
 	}
 
 	employeeService := employee.NewEmployeeService(employeeConfig)

@@ -6,7 +6,8 @@ import { NoEmployeesFound, NoSearchResults } from '@/components/ui/loading-state
 interface EmployeeEmptyStatesProps {
   searchTerm: string;
   onClearSearch: () => void;
-  onAddEmployee: () => void;
+  /** Omit for read-only roles — hides the add call-to-action. */
+  onAddEmployee?: () => void;
 }
 
 export const EmployeeEmptyStates = ({

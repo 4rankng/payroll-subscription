@@ -442,3 +442,10 @@
     min-height: 40px;
   }
 }
+
+/* ── Overlay contract (staging UI audit §2 / F-01) ──────────────
+   Single dimmed scrim token shared by every dialog/sheet/drawer
+   overlay. Surfaces themselves stay opaque via --popover / --card. */
+:root {
+  --overlay-scrim: rgba(15, 23, 42, 0.48);
+}

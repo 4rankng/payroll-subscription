@@ -69,7 +69,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem và chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'quanly', 'giamdoc'],
     componentPath: '/src/components/sheets/UserDetailsSheet',
     hasParams: true,
     paramSchema: 'userDetails'
@@ -81,7 +81,9 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo tài khoản người dùng mới',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    // Backend enforcement: POST /users is admin + giamdoc (PRD §5.3);
+    // quanly holds read-only user access.
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/sheets/AddUserSheet',
     hasParams: false
   },
@@ -92,7 +94,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/sheets/EditUserSheet',
     hasParams: true,
     paramSchema: 'userEdit'
@@ -104,7 +106,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đặt lại mật khẩu cho người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/modals/ResetPasswordModal',
     hasParams: true,
     paramSchema: 'resetPassword'
@@ -117,7 +119,9 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông tin chi tiết nhân viên',
     category: 'employee',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    // Read access mirrors GET /employees/:id: ketoan/giamdoc read, writes stay
+    // admin/quanly.
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc'],
     componentPath: '/src/components/sheets/EmployeeDetailsSheet',
     hasParams: true,
     paramSchema: 'employeeDetails'
@@ -164,7 +168,8 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông tin chi tiết dự án',
     category: 'project',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    // Read access mirrors GET /projects/:id (now granted to ketoan/giamdoc).
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc'],
     componentPath: '/src/components/sheets/ProjectDetailsSheet',
     hasParams: true,
     paramSchema: 'projectDetails'
@@ -301,7 +306,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem thông báo',
     category: 'general',
     requiresAuth: true,
-    roles: ['admin', 'quanly'],
+    roles: ['admin', 'quanly', 'ketoan', 'giamdoc'],
     componentPath: '/src/components/notifications/NotificationSheet',
     hasParams: false
   },

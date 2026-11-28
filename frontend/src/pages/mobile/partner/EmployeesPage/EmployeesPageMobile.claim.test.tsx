@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import EmployeesPageMobile from "./index";
 
@@ -88,6 +88,12 @@ vi.mock("@/components/employees/EmployeeMobileCard", () => ({
 describe("EmployeesPageMobile partner claim (PAYR-22)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Yêu cầu quản lý is a quanly capability — authenticate as quanly.
+    localStorage.setItem("userRole", "quanly");
+  });
+
+  afterEach(() => {
+    localStorage.removeItem("userRole");
   });
 
   it("pool dùng chung có 'Yêu cầu quản lý' → requestEmployeeAccess rồi mở detail; row managed mở thẳng detail", () => {

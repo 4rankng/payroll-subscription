@@ -3,6 +3,7 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { NuqsAdapter } from 'nuqs/adapters/react-router';
 import { validateModalPermissionSync } from '@/lib/modal-permissions';
 import { getSecurityContext, type SecurityContext } from '@/lib/modal-security';
+import { getModalMetadata, type ModalId } from '@/constants/modalRegistry';
 import { toast } from '@/components/ui/sonner';
 
 /**
@@ -78,9 +79,14 @@ export function SecureModalProvider({ children }: SecureModalProviderProps) {
     const hasAccess = canAccessModal(currentModal);
 
     if (!hasAccess) {
+      // Human name from the modal registry when available — never surface the
+      // raw internal modal key in user-facing copy.
+      const label = getModalMetadata(currentModal as ModalId)?.name;
       toast({
         title: "Không có quyền truy cập",
-        description: `Bạn không có quyền truy cập modal: ${currentModal}`,
+        description: label
+          ? `Bạn không có quyền truy cập chức năng "${label}".`
+          : "Bạn không có quyền truy cập chức năng này.",
         variant: "destructive"
       });
 

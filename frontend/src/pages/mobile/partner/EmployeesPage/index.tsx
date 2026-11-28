@@ -30,6 +30,7 @@ import { useEmployeeModals } from "@/hooks/useModalNavigation";
 import { useAssignableProjects } from "@/hooks/api/useProjects";
 import { useEmployeeExport } from "@/hooks/employees/useEmployeeExport";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
+import { canClaimEmployee, canPartnerManageProject } from "@/lib/permissions";
 import { Users } from "lucide-react";
 import { Download01, FilterLines, Plus, UserPlus01, XClose } from "@untitledui/icons";
 import type { Employee } from "@/types/api/employee.types";
@@ -81,6 +82,8 @@ const EmployeesPageMobile = () => {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const { openEmployeeDetails, openAddEmployee } = useEmployeeModals();
   const requestAccess = useRequestEmployeeAccess();
+  const canClaim = canClaimEmployee();
+  const canCreateEmployee = canPartnerManageProject();
   const handleClaim = useCallback(
     (employee: Employee) => {
       requestAccess.mutate(employee.id, {
@@ -201,14 +204,16 @@ const EmployeesPageMobile = () => {
               <Download01 className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">{isExporting ? "Đang xuất" : "Xuất"}</span>
             </Button>
-            <Button
-              size="sm"
-              className="h-11 px-3 shrink-0 rounded-xl"
-              onClick={() => openAddEmployee()}
-            >
-              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-              Thêm
-            </Button>
+            {canCreateEmployee && (
+              <Button
+                size="sm"
+                className="h-11 px-3 shrink-0 rounded-xl"
+                onClick={() => openAddEmployee()}
+              >
+                <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+                Thêm
+              </Button>
+            )}
           </div>
         }
       />
@@ -321,7 +326,7 @@ const EmployeesPageMobile = () => {
           <EmployeeEmptyStates
             searchTerm={searchTerm}
             onClearSearch={() => searchEmployees("")}
-            onAddEmployee={() => openAddEmployee()}
+            onAddEmployee={canCreateEmployee ? () => openAddEmployee() : undefined}
           />
         ) : (
           <>
@@ -335,7 +340,7 @@ const EmployeesPageMobile = () => {
                     navigate(`/partner/timesheet?employee=${selectedEmployee.id}`)
                   }
                   action={
-                    employee.is_accessible === false ? (
+                    canClaim && employee.is_accessible === false ? (
                       <Button
                         type="button"
                         variant="outline"

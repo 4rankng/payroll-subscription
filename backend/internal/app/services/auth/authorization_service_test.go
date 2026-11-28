@@ -299,3 +299,38 @@ func TestQuanlyRole_GetTimesheet(t *testing.T) {
 	assert.True(t, svc.CanAccess("admin", "/api/v1/timesheets/1", "GET"),
 		"admin should be allowed GET /timesheets/:id")
 }
+
+// TestFinanceRoles_ProjectSubresourceRead asserts ketoan/giamdoc hold READ
+// access to project subresources (detail, current payrate, assignments) so the
+// timesheet detail modal and project inspection work for the read-only
+// finance roles, while every write on those subresources stays denied.
+func TestFinanceRoles_ProjectSubresourceRead(t *testing.T) {
+	svc := newTestAuthorizationService(t)
+
+	readAllow := []string{
+		"/api/v1/projects/1",
+		"/api/v1/projects/1/payrate",
+		"/api/v1/projects/1/employees",
+		"/api/v1/projects/1/timesheets",
+	}
+	writeDeny := []struct {
+		path   string
+		method string
+	}{
+		{"/api/v1/projects/1/payrate", "POST"},
+		{"/api/v1/projects/1/employees", "POST"},
+		{"/api/v1/projects/1", "PUT"},
+		{"/api/v1/projects/1", "DELETE"},
+	}
+
+	for _, role := range []string{"ketoan", "giamdoc"} {
+		for _, path := range readAllow {
+			assert.True(t, svc.CanAccess(role, path, "GET"),
+				"%s should be allowed GET %s", role, path)
+		}
+		for _, tc := range writeDeny {
+			assert.False(t, svc.CanAccess(role, tc.path, tc.method),
+				"%s should be DENIED %s %s", role, tc.method, tc.path)
+		}
+	}
+}

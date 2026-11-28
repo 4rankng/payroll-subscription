@@ -7,7 +7,7 @@ import { getModalMetadata } from '@/constants/modalRegistry/index';
 vi.mock('@/lib/auth', () => ({ authManager: { getUserRole: vi.fn() } }));
 
 describe('self-account modal permissions', () => {
-  it.each(['admin', 'quanly', 'giamdoc', 'nhanvien'] as const)(
+  it.each(['admin', 'quanly', 'ketoan', 'giamdoc', 'nhanvien'] as const)(
     'allows %s to open their own password form', (role) => {
       vi.mocked(authManager.getUserRole).mockReturnValue(role);
       expect(validateModalPermissionSync('change_password')).toBe(true);
@@ -21,7 +21,18 @@ describe('self-account modal permissions', () => {
     expect(validateModalPermissionSync('user_profile')).toBe(true);
   });
 
-  it.each(['giamdoc', 'nhanvien'] as const)(
+  it('grants giamdoc its read surfaces and PRD §5.3 user management', () => {
+    vi.mocked(authManager.getUserRole).mockReturnValue('giamdoc');
+    expect(canAccess('read', 'User')).toBe(true);
+    expect(canAccess('create', 'User')).toBe(true);
+    for (const modal of ['user_details', 'add_user', 'edit_user', 'reset_password']) {
+      expect(validateModalPermissionSync(modal)).toBe(true);
+    }
+    expect(validateModalPermissionSync('user_profile')).toBe(false);
+    expect(canAccess('update', 'Project')).toBe(false);
+  });
+
+  it.each(['nhanvien', 'ketoan'] as const)(
     'does not grant %s user administration or new profile routes', (role) => {
       vi.mocked(authManager.getUserRole).mockReturnValue(role);
       expect(canAccess('update', 'User')).toBe(false);

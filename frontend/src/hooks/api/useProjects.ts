@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/api/project.service';
+import { isForbiddenError, isNotFoundError } from '@/hooks/api/usePayRates';
 import { useDebounce } from '@/hooks/useDebounce';
 import { QueryKeys } from '@/lib/queryKeys';
 import { showErrorNotification, showSuccessNotification } from '@/utils/error-handler';
@@ -176,6 +177,11 @@ export const useProject = (id: number, enabled = true) => {
     queryKey: QueryKeys.projects.detail(id),
     queryFn: () => projectService.getProjectById(id),
     enabled,
+    // 403 (role has no project access) and 404 are terminal — the default
+    // retry chain kept skeleton states visibly "stuck" for seconds in
+    // consumers like the timesheet detail modal.
+    retry: (failureCount, error) =>
+      !isForbiddenError(error) && !isNotFoundError(error) && failureCount < 2,
   });
 };
 

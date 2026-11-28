@@ -222,9 +222,9 @@ func (s *SettingsService) UpdateSetting(ctx context.Context, settingID uint, upd
 }
 
 func validateBusinessSetting(setting *domain.Settings) error {
-	// Kept business settings (employee.mobile_required,
-	// subscription_fee_per_employee_per_ky_vnd) tolerate any stored text:
-	// readers fall back to their defaults when the value does not parse.
+	// Kept business settings (subscription_fee_per_employee_per_ky_vnd)
+	// tolerate any stored text: readers fall back to their defaults when the
+	// value does not parse.
 	_ = setting
 	return nil
 }

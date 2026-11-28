@@ -12,7 +12,7 @@ export const SettingsGeneralPanel = ({ form }: SettingsGeneralPanelProps) => (
   <div className="columns-1 gap-3 xl:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
     <SettingsSection kicker="PAYSUB" title="Phí">
       <SettingCard
-        title="Phí (VND/NV/kỳ)"
+        title="Phí (đ/NV/kỳ)"
         description="Số tiền tính phí cho mỗi NV trong mỗi kỳ trả của một tháng làm việc."
         value={form.subscriptionFeeVnd}
         originalValue={form.originalSubscriptionFeeVnd}
@@ -25,7 +25,7 @@ export const SettingsGeneralPanel = ({ form }: SettingsGeneralPanelProps) => (
         min={0}
         max={999999999}
         step={1000}
-        suffix="VND"
+        suffix="đ"
       />
     </SettingsSection>
   </div>

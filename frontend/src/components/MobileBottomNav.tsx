@@ -96,7 +96,7 @@ export const MobileBottomNav = ({ groups, moreItems }: MobileBottomNavProps) => 
     ) : null;
 
   const sheetSurfaceClass =
-    "admin-mobile-sheet flex h-auto max-h-[78dvh] flex-col overflow-hidden rounded-t-[30px] border-x-0 border-b-0 border-t border-border bg-card/95 px-0 pb-0 pt-0 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.25)] backdrop-blur-xl";
+    "admin-mobile-sheet flex h-auto max-h-[78dvh] flex-col overflow-hidden rounded-t-[30px] border-x-0 border-b-0 border-t border-border bg-card px-0 pb-0 pt-0 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.25)]";
 
   const openGroupTitle = openGroup?.title ?? "Điều hướng";
 

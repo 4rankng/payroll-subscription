@@ -19,15 +19,10 @@ type settingRow struct {
 // bootFlags are the settings rows the server ensures at every boot
 // (bootstrap.NewContainer → EnsureSettings). These flags are read by clients
 // before an admin ever saves the owning panel, and GET /settings/key/{key}
-// answers 404 for a missing row — the exact shape that fed the
-// high-error-rate alert for employee.mobile_required (85× 404 in 24h). Every
-// seeded default equals the documented missing-row behavior, so creating the
-// row never changes what clients see, and FirstOrCreate never overwrites an
-// admin-saved value.
+// answers 404 for a missing row. Every seeded default equals the documented
+// missing-row behavior, so creating the row never changes what clients see,
+// and FirstOrCreate never overwrites an admin-saved value.
 var bootFlags = []settingRow{
-	// Missing row = OFF (docs/api.md). Seeded so the Add-Employee sheet's
-	// first GET reads 200 "false" instead of 404.
-	{key: "employee.mobile_required", value: "false", valueType: "boolean"},
 	// Seeded so GET /settings/key/transfer_bank_visible stops 404ing for
 	// environments where the admin has never saved the sao kê bank panel
 	// (the settings form creates the row on first save; its missing-row

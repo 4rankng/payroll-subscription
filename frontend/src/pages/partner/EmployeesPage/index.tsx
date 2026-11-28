@@ -38,6 +38,7 @@ import { generateMonthOptions } from "@/utils/dateHelpers";
 import { getConsoleKicker } from "@/lib/console";
 import { useMediaQuery } from "@/hooks/useBreakpoint";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { canClaimEmployee, canPartnerManageProject } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -67,6 +68,8 @@ const EmployeesPage = () => {
     employees,
     pagination,
     isLoading,
+    error: listError,
+    refetch,
     searchEmployees,
     searchTerm,
     projectId,
@@ -82,6 +85,9 @@ const EmployeesPage = () => {
     sortOrder,
     handleSortChange,
   } = usePartnerEmployeesData(poolView === "global" ? "global" : undefined);
+
+  const canClaim = canClaimEmployee();
+  const canCreateEmployee = canPartnerManageProject();
 
   const { openEmployeeDetails, openAddEmployee } = useEmployeeModals();
   const requestAccess = useRequestEmployeeAccess();
@@ -110,13 +116,13 @@ const EmployeesPage = () => {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const handleEmployeeClick = useCallback(
     (employee: Employee) => {
-      if (poolView === "global" && employee.is_accessible === false) {
+      if (canClaim && poolView === "global" && employee.is_accessible === false) {
         handleClaim(employee);
         return;
       }
       openEmployeeDetails(employee.id.toString());
     },
-    [handleClaim, openEmployeeDetails, poolView],
+    [canClaim, handleClaim, openEmployeeDetails, poolView],
   );
 
   const activeEmployees = useMemo(
@@ -164,7 +170,7 @@ const EmployeesPage = () => {
                       <CheckCircle className="h-3 w-3" aria-hidden="true" />
                       Đang quản lý
                     </span>
-                  ) : (
+                  ) : canClaim ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -176,7 +182,7 @@ const EmployeesPage = () => {
                       <UserPlus01 className="h-3.5 w-3.5" aria-hidden="true" />
                       Yêu cầu quản lý
                     </button>
-                  )}
+                  ) : null}
                 </div>
               );
             },
@@ -366,7 +372,7 @@ const EmployeesPage = () => {
         ),
       },
     ],
-    [navigate, handleEmployeeClick, poolView, handleClaim, requestAccess.isPending],
+    [navigate, handleEmployeeClick, poolView, handleClaim, requestAccess.isPending, canClaim],
   );
 
   // Console table contract: Ngày tạo is the lowest-value column — hide it at
@@ -488,12 +494,12 @@ const EmployeesPage = () => {
                 variant: 'outline' as const,
                 className: isExporting ? 'opacity-50 pointer-events-none' : '',
               },
-              {
+              ...(canCreateEmployee ? [{
                 label: 'Thêm',
                 onClick: () => openAddEmployee(),
                 icon: Plus,
                 variant: 'default' as const,
-              },
+              }] : []),
             ]}
           />
         </div>
@@ -637,43 +643,73 @@ const EmployeesPage = () => {
           </div>
         )}
 
-        {poolView !== "global" && (
-          <div className="console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
+        <div className="console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
           <div className="console-panel-header justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="console-kicker">Danh sách nhân sự</span>
+              <span className="console-kicker">{poolView === "global" ? "Toàn bộ nhân viên" : "Danh sách nhân sự"}</span>
               <span className="hidden truncate text-xs text-muted-foreground min-[420px]:block">
-                Chọn một nhân viên để xem hồ sơ chi tiết
+                {poolView === "global"
+                  ? "Danh sách mọi nhân viên trong hệ thống"
+                  : "Chọn một nhân viên để xem hồ sơ chi tiết"}
               </span>
             </div>
             <span className="shrink-0 font-financial text-xs tabular-nums text-muted-foreground">{pagination?.totalRecords ?? employees.length} người</span>
           </div>
-          <ResponsiveTable
-            data={employees}
-            columns={desktopColumns}
-            mobileFields={mobileConfig.mobileFields}
-            rowTitle={mobileConfig.rowTitle}
-            rowSubtitle={mobileConfig.rowSubtitle}
-            getRowId={(row) => row.id.toString()}
-            onRowClick={handleEmployeeClick}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            sorting={sorting}
-            onSortingChange={onSortingChange}
-            variant="console"
-            embedded
-            emptyState={
-              <EmptyState
-                title="Không có nhân viên nào"
-                description="Chưa có nhân viên nào trong các dự án được phân quyền."
-                size="sm"
-              />
-            }
-            accordionType="single"
-          />
+          {listError && employees.length === 0 ? (
+            <EmptyState
+              title="Không thể tải danh sách nhân viên"
+              description="Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại."
+              size="sm"
+              action={{ label: "Thử lại", onClick: () => refetch() }}
+            >
+              {hasFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground outline-brand transition-colors hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                >
+                  <XClose className="h-3 w-3" aria-hidden="true" />
+                  Xóa lọc
+                </button>
+              )}
+            </EmptyState>
+          ) : (
+            <ResponsiveTable
+              data={employees}
+              columns={desktopColumns}
+              mobileFields={mobileConfig.mobileFields}
+              rowTitle={mobileConfig.rowTitle}
+              rowSubtitle={mobileConfig.rowSubtitle}
+              getRowId={(row) => row.id.toString()}
+              onRowClick={handleEmployeeClick}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              sorting={sorting}
+              onSortingChange={onSortingChange}
+              variant="console"
+              embedded
+              emptyState={
+                <EmptyState
+                  title={hasFilters ? "Không tìm thấy nhân viên nào" : poolView === "global" ? "Hệ thống chưa có nhân viên nào" : "Không có nhân viên nào"}
+                  description={
+                    hasFilters
+                      ? "Không có kết quả phù hợp với bộ lọc của bạn."
+                      : poolView === "global"
+                        ? "Chưa có nhân viên nào trong hệ thống."
+                        : "Chưa có nhân viên nào trong các dự án được phân quyền."
+                  }
+                  size="sm"
+                  action={
+                    hasFilters
+                      ? { label: "Xóa lọc", onClick: () => clearAllFilters() }
+                      : undefined
+                  }
+                />
+              }
+              accordionType="single"
+            />
+          )}
         </div>
-        )}
 
       </div>
 

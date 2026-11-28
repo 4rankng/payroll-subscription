@@ -1,17 +1,15 @@
-import { Settings, Users } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const SETTINGS_TABS = {
   general: 'general',
-  employees: 'employees',
 } as const;
 
 export const VALID_SETTINGS_TABS = new Set<string>(Object.values(SETTINGS_TABS));
 
 const tabs = [
   { value: SETTINGS_TABS.general, label: 'Trả lương', icon: Settings },
-  { value: SETTINGS_TABS.employees, label: 'Nhân viên', icon: Users },
 ] as const;
 
 /**

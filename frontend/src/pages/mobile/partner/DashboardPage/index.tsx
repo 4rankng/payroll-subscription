@@ -34,6 +34,20 @@ import { formatFullCurrency as formatVND } from '@/utils/formatters';
 
 const ALL_VALUE = 'all';
 
+/**
+ * KPI wrap-safety (staging UI audit F-03): full VND strings beyond ~10 digits
+ * ("18.151.395.905 ₫") overflow the narrow metric cells. Values that long get
+ * the compact scale ("18,2 Tr ₫"); shorter ones keep their full digits.
+ */
+function formatKpiValue(value: number): string {
+  const full = formatVND(value);
+  if (full.replace(/[^\d]/g, '').length <= 10) return full;
+  return `${new Intl.NumberFormat('vi-VN', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value)} ₫`;
+}
+
 /* ───────────────────────────────────────────────
    TopEmployeeRow — clean leaderboard row
    ─────────────────────────────────────────────── */
@@ -157,7 +171,7 @@ const PartnerDashboardMobile = () => {
   const operationMetrics = useMemo<MobileOperationMetric[]>(() => [
     {
       label: 'Tổng chi trả',
-      value: formatVND(summary?.total_paid_salary ?? 0),
+      value: formatKpiValue(summary?.total_paid_salary ?? 0),
       helper: periodLabel,
       icon: Banknote,
       tone: 'primary',
@@ -178,7 +192,7 @@ const PartnerDashboardMobile = () => {
     },
     {
       label: 'Đã thanh toán',
-      value: formatVND(summary?.paid_salary_this_month ?? 0),
+      value: formatKpiValue(summary?.paid_salary_this_month ?? 0),
       helper: periodLabel,
       icon: Wallet,
       tone: 'neutral',
@@ -207,8 +221,8 @@ const PartnerDashboardMobile = () => {
           eyebrow={periodLabel}
           title="Theo dõi chi trả"
           primaryLabel="Tổng chi trả"
-          primaryValue={formatVND(summary?.total_paid_salary ?? 0)}
-          primaryHint={`Đã thanh toán ${formatVND(summary?.paid_salary_this_month ?? 0)}`}
+          primaryValue={formatKpiValue(summary?.total_paid_salary ?? 0)}
+          primaryHint={`Đã thanh toán ${formatKpiValue(summary?.paid_salary_this_month ?? 0)}`}
           metrics={operationMetrics}
           actions={quickActions}
           className="rounded-lg bg-card"
@@ -219,7 +233,7 @@ const PartnerDashboardMobile = () => {
       <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
 
       <KyFeeSummaryTable variant="mobile" />
-      <PaidSeriesSection />
+      <PaidSeriesSection compactLegend />
 
       <MobileSurface className="p-4">
         <div className="mb-3 flex items-baseline gap-2">

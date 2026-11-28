@@ -24,6 +24,14 @@ interface PaidSeriesChartProps {
   projects: ProjectLabel[];
   metric: 'employee_count' | 'amount';
   label: string;
+  /**
+   * Opt-in legend cap (mobile dashboards): rank projects by their total over
+   * the window, keep the top `legendLimit` series and aggregate everything
+   * else into one "Khác" series. The legend renders in a bounded scroll
+   * container so it can never overflow into the section below. Default is
+   * off — the desktop admin surface keeps the full per-project legend.
+   */
+  legendLimit?: number;
 }
 
 function metricOf(row: PaidSeriesRow, metric: 'employee_count' | 'amount'): number {
@@ -47,7 +55,33 @@ function formatChartDate(iso: string): string {
   }
 }
 
-function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
+interface SeriesDef {
+  name: string;
+  /** Project ids aggregated into this series (one, or many for "Khác"). */
+  projectIds: number[];
+  color: string;
+}
+
+/** Bounded vertical legend: scrolls instead of pushing into the next section. */
+function BoundedLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
+  if (!payload?.length) return null;
+  return (
+    <ul className="mx-auto mt-1 flex max-h-24 max-w-full flex-col gap-0.5 overflow-y-auto px-2 text-[11px] leading-4">
+      {payload.map((entry) => (
+        <li key={entry.value} className="flex min-w-0 items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="min-w-0 truncate text-slate-600">{entry.value}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SeriesChart({ rows, projects, metric, label, legendLimit }: PaidSeriesChartProps) {
   if (rows.length === 0) {
     return <p className="text-sm text-slate-600">Chưa có dữ liệu thanh toán</p>;
   }
@@ -66,14 +100,51 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
     slot[row.date] = (slot[row.date] ?? 0) + metricOf(row, metric);
     byProject.set(row.project_id, slot);
   }
+
+  // Rank projects by their window total so the legend cap keeps the
+  // heaviest payers and folds the long tail into "Khác".
+  const totals = new Map<number, number>();
+  for (const [projectId, slot] of byProject) {
+    totals.set(projectId, Object.values(slot).reduce((sum, v) => sum + v, 0));
+  }
+  const ranked = [...byProject.keys()].sort(
+    (a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0),
+  );
+
+  let series: SeriesDef[];
+  if (legendLimit && ranked.length > legendLimit) {
+    const top = ranked.slice(0, legendLimit);
+    const rest = ranked.slice(legendLimit);
+    series = [
+      ...top.map((projectId, i) => ({
+        name: projectNameOf(projects, projectId, rowNames.get(projectId)),
+        projectIds: [projectId],
+        color: PROJECT_COLORS[i % PROJECT_COLORS.length],
+      })),
+      {
+        name: 'Khác',
+        projectIds: rest,
+        color: PROJECT_COLORS[legendLimit % PROJECT_COLORS.length],
+      },
+    ];
+  } else {
+    series = ranked.map((projectId, i) => ({
+      name: projectNameOf(projects, projectId, rowNames.get(projectId)),
+      projectIds: [projectId],
+      color: PROJECT_COLORS[i % PROJECT_COLORS.length],
+    }));
+  }
+
   const data = dates.map((d) => {
     const point: Record<string, string | number> = { date: formatChartDate(d) };
-    for (const [projectId, slot] of byProject) {
-      point[projectNameOf(projects, projectId, rowNames.get(projectId))] = slot[d] ?? 0;
+    for (const def of series) {
+      point[def.name] = def.projectIds.reduce(
+        (sum, projectId) => sum + (byProject.get(projectId)?.[d] ?? 0),
+        0,
+      );
     }
     return point;
   });
-  const names = [...byProject.keys()].map((id) => projectNameOf(projects, id, rowNames.get(id)));
 
   return (
     <div className="h-72 w-full">
@@ -83,12 +154,17 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
           <XAxis dataKey="date" tickFormatter={formatChartDate} fontSize={12} />
           <YAxis
             fontSize={12}
+            width={metric === 'amount' ? 76 : 40}
             tickFormatter={(v: number) => (metric === 'amount' ? formatCurrency(v) : String(v))}
           />
           <Tooltip />
-          <Legend />
-          {names.map((name, i) => (
-            <Bar key={name} dataKey={name} fill={PROJECT_COLORS[i % PROJECT_COLORS.length]} />
+          {legendLimit ? (
+            <Legend content={<BoundedLegend />} />
+          ) : (
+            <Legend />
+          )}
+          {series.map((def) => (
+            <Bar key={def.name} dataKey={def.name} fill={def.color} />
           ))}
         </BarChart>
       </ResponsiveContainer>

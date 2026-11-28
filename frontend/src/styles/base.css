@@ -969,3 +969,21 @@
   .checkpoint-marker-emphasis { animation: none; }
   .checkpoint-route-dot { transition: none; }
 }
+
+/* ============================================================================
+ * Overlay contract (staging UI audit §2, F-01): opaque portal surfaces and the
+ * z-index ladder — sticky header 20 · dropdown/popover 40 · drawer/sheet 50 ·
+ * modal/dialog 60 · toast 70.
+ * Radix portals land at the end of <body>, outside every theme scope, so the
+ * surface rule is the token-level guarantee: any dialog/menu/listbox/popover
+ * that a caller did not explicitly style gets a solid themed surface, never a
+ * translucent one. Class utilities (same specificity, later cascade layer)
+ * still let callers opt into a deliberate surface (e.g. themed drawers).
+ * ========================================================================== */
+[data-radix-popper-content-wrapper] { z-index: 40 !important; }
+
+:is([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper] > *) {
+  background-color: hsl(var(--popover));
+}
+
+section[data-sonner-toaster] { z-index: 70 !important; }

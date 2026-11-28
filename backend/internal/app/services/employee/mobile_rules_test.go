@@ -24,62 +24,27 @@ func (r *mobileRulesRepo) ListByMobile(_ context.Context, mobile string) ([]*dom
 
 // newMobileRulesService wires the same minimal harness the create tests use
 // (create_after_commit_test.go): direct transactions, no-op events, in-memory
-// user repo. required is the policy toggle; nil means off, matching runtime
-// wiring where an unset settings row disables the policy.
-func newMobileRulesService(repo *mobileRulesRepo, required func(context.Context) bool) *EmployeeService {
+// user repo.
+func newMobileRulesService(repo *mobileRulesRepo) *EmployeeService {
 	users := &createEmployeeTestUserRepo{}
 	events := createEmployeeTestEventBus{}
 	return &EmployeeService{
-		EmployeeRepo:             repo,
-		UserRepo:                 users,
-		UserService:              userservice.NewUserService(users, nil, events, "test-secret", "test-salt", nil),
-		TransactionManager:       directTransactionManager{},
-		events:                   events,
-		isEmployeeMobileRequired: required,
+		EmployeeRepo:       repo,
+		UserRepo:           users,
+		UserService:        userservice.NewUserService(users, nil, events, "test-secret", "test-salt", nil),
+		TransactionManager: directTransactionManager{},
+		events:             events,
 	}
 }
 
-func mobileRulesValidEmployee() *domain.Employee {
-	return &domain.Employee{Fullname: "Nguyen Van A", CCCD: "012345678901"}
-}
-
-func TestCreateEmployee_MobileRequiredToggle(t *testing.T) {
-	t.Run("policy on rejects a missing mobile on manual and import paths", func(t *testing.T) {
-		service := newMobileRulesService(&mobileRulesRepo{}, func(context.Context) bool { return true })
-
-		_, err := service.CreateEmployee(context.Background(), mobileRulesValidEmployee(), 9)
-		require.ErrorContains(t, err, constants.MsgEmployeeMobileRequiredVN)
-
-		// Imports share createEmployeeCore, so the toggle gates them too.
-		_, err = service.CreateEmployeeFromImport(context.Background(), mobileRulesValidEmployee(), 9)
-		require.ErrorContains(t, err, constants.MsgEmployeeMobileRequiredVN)
-	})
-
-	t.Run("policy on accepts a create with a mobile", func(t *testing.T) {
-		service := newMobileRulesService(&mobileRulesRepo{}, func(context.Context) bool { return true })
-
-		emp := mobileRulesValidEmployee()
-		emp.Mobile = "0912345678"
-		created, err := service.CreateEmployee(context.Background(), emp, 9)
-		require.NoError(t, err)
-		require.Equal(t, "0912345678", created.Mobile)
-	})
-
-	t.Run("policy off accepts a missing mobile", func(t *testing.T) {
-		service := newMobileRulesService(&mobileRulesRepo{}, nil)
-		_, err := service.CreateEmployee(context.Background(), mobileRulesValidEmployee(), 9)
-		require.NoError(t, err)
-	})
-}
 
 func TestCreateEmployee_RejectsDuplicateMobile(t *testing.T) {
 	repo := &mobileRulesRepo{holdersByMobile: map[string][]*domain.Employee{
 		"0912345678": {{ID: 7, Fullname: "Existing Holder", CCCD: "001179010398"}},
 	}}
-	// nil toggle: the uniqueness rule is always on.
-	service := newMobileRulesService(repo, nil)
+	service := newMobileRulesService(repo)
 
-	t.Run("explicit collision is a conflict regardless of the toggle", func(t *testing.T) {
+	t.Run("explicit collision is a conflict", func(t *testing.T) {
 		emp := &domain.Employee{Fullname: "Nguyen Van B", CCCD: "012345678902", Mobile: "0912345678"}
 		_, err := service.CreateEmployee(context.Background(), emp, 9)
 		require.ErrorContains(t, err, constants.MsgEmployeeMobileTakenVN)
@@ -110,7 +75,7 @@ func TestUpdateEmployee_MobileDuplicateSelfExclusion(t *testing.T) {
 				"0922222222": {{ID: 2, Fullname: "Other", CCCD: "012345678902"}},
 			},
 		}
-		service := newMobileRulesService(repo, nil)
+		service := newMobileRulesService(repo)
 
 		emp := base()
 		emp.Mobile = "0922222222"
@@ -128,7 +93,7 @@ func TestUpdateEmployee_MobileDuplicateSelfExclusion(t *testing.T) {
 				},
 			},
 		}
-		service := newMobileRulesService(repo, nil)
+		service := newMobileRulesService(repo)
 
 		require.NoError(t, service.UpdateEmployee(context.Background(), base(), 9))
 		require.Equal(t, 1, repo.updateCalls)
@@ -141,7 +106,7 @@ func TestUpdateEmployee_MobileDuplicateSelfExclusion(t *testing.T) {
 				"0922222222": {{ID: 1, Fullname: "Nguyen Van A", CCCD: "012345678901"}},
 			},
 		}
-		service := newMobileRulesService(repo, nil)
+		service := newMobileRulesService(repo)
 
 		emp := base()
 		emp.Mobile = "0922222222"

@@ -69,6 +69,9 @@ p, giamdoc, /api/v1/timesheets/grouped, GET, allow
 p, giamdoc, /api/v1/timesheets/bulk-approve, POST, allow
 p, giamdoc, /api/v1/projects, GET, allow
 p, giamdoc, /api/v1/employees, GET, allow
+# Read-only project subresources (detail, current payrate, assignments): the
+# timesheet detail modal and project inspection need these for oversight roles.
+p, giamdoc, /api/v1/projects/*, GET, allow
 p, giamdoc, /api/v1/billing/reports/generate, POST, allow
 p, giamdoc, /api/v1/billing/reports, GET, allow
 p, giamdoc, /api/v1/billing/ky-paid-records, GET, allow
@@ -127,6 +130,9 @@ p, ketoan, /api/v1/timesheets/summary, GET, allow
 p, ketoan, /api/v1/timesheets/grouped, GET, allow
 p, ketoan, /api/v1/projects, GET, allow
 p, ketoan, /api/v1/employees, GET, allow
+# Read-only project subresources (detail, current payrate, assignments): the
+# timesheet detail modal needs the payrate matrix and project pay unit.
+p, ketoan, /api/v1/projects/*, GET, allow
 p, ketoan, /api/v1/billing/reports, GET, allow
 p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
 p, ketoan, /api/v1/billing/uploads, GET, allow

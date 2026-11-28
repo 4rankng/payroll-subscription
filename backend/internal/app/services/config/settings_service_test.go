@@ -212,7 +212,7 @@ func (f *fakeConfigCacheInvalidator) InvalidateCache() { f.calls++ }
 func TestSettingsServiceUpdateSettingInvalidatesConfigCache(t *testing.T) {
 	settingsRepo := newFakeSettingsRepoForUpdate(&domain.Settings{
 		ID:        1,
-		Key:       SettingKeyEmployeeMobileRequired,
+		Key:       SettingKeySubscriptionFeePerEmployeePerKyVnd,
 		Value:     new("false"),
 		ValueType: domain.ValueTypeString,
 	})

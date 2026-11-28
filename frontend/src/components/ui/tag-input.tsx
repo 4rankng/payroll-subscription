@@ -98,7 +98,7 @@ export function TagInput({
     <div className={cn('space-y-2', className)}>
       <div
         className={cn(
-          'flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-card px-2 py-1.5 shadow-xs',
+          'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-card p-2 shadow-xs',
           'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
           error && 'border-utility-error-300',
           disabled && 'cursor-not-allowed opacity-50',
@@ -107,7 +107,7 @@ export function TagInput({
         {value.map((token) => (
           <span
             key={token}
-            className="inline-flex h-9 max-w-full items-center gap-1 rounded-full bg-muted px-2.5 text-xs font-medium text-foreground"
+            className="inline-flex h-7 max-w-full items-center gap-1 rounded-md border border-border/60 bg-muted px-2 py-0.5 text-[13px] font-medium text-foreground"
           >
             <span className="truncate">{token}</span>
             <button
@@ -115,9 +115,9 @@ export function TagInput({
               disabled={disabled}
               onClick={() => removeTag(token)}
               aria-label={`Xoá ${token}`}
-              className="relative -mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand after:absolute after:-inset-[6px] after:content-['']"
+              className="relative -mr-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-destructive focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
+              <X className="h-3 w-3" aria-hidden="true" />
             </button>
           </span>
         ))}
@@ -133,7 +133,7 @@ export function TagInput({
           }}
           onKeyDown={handleKeyDown}
           onBlur={() => commit(draft)}
-          className="h-9 min-h-9 w-full min-w-40 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:outline-none sm:h-9"
+          className="h-7 min-h-7 w-full min-w-40 flex-1 border-0 bg-transparent px-0.5 text-[13px] shadow-none focus-visible:outline-none"
         />
       </div>
       {error && (

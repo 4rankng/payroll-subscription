@@ -23,6 +23,7 @@ import { useCallback, useMemo } from "react";
 import { useTableSorting } from "@/utils/sorting";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useMediaQuery } from "@/hooks/useBreakpoint";
+import { canCreateUser } from "@/lib/permissions";
 
 const UsersPage = () => {
   const filterState = useUserFiltersWithBackend();
@@ -120,7 +121,7 @@ const UsersPage = () => {
     <AdminPageCanvas>
       <AdminPageHeaderCard>
         <UserPageHeader
-          onAddUser={() => openAddUser()}
+          onAddUser={canCreateUser() ? () => openAddUser() : undefined}
           onExportUsers={() => exportUsers(filterState.filters)}
           isExporting={isExporting}
           totalUsers={summaryData?.total_users}

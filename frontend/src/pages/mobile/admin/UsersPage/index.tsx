@@ -28,6 +28,7 @@ import { useAllProjects } from "@/hooks/api/useProjects";
 import { useUsersSummary } from "@/hooks/api/useUsers";
 import { useLocation } from "react-router-dom";
 import { getConsoleKicker } from "@/lib/console";
+import { canCreateUser } from "@/lib/permissions";
 import { Download01, FilterLines, Plus, Users01, XClose } from "@untitledui/icons";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
@@ -141,14 +142,16 @@ const UsersPageMobile = () => {
             >
               <Download01 className="h-4 w-4" aria-hidden="true" />
             </Button>
-            <Button
-              size="sm"
-              className="h-11 px-4 btn-admin-primary shrink-0"
-              onClick={() => openAddUser()}
-            >
-              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-              Thêm
-            </Button>
+            {canCreateUser() && (
+              <Button
+                size="sm"
+                className="h-11 px-4 btn-admin-primary shrink-0"
+                onClick={() => openAddUser()}
+              >
+                <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+                Thêm
+              </Button>
+            )}
           </div>
         }
       />

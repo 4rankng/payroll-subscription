@@ -1,7 +1,6 @@
 package employee
 
 import (
-	"context"
 	"log/slog"
 
 	"api-server/internal/app/services/user"
@@ -28,10 +27,4 @@ type Config struct {
 	Events             domain.EventBus
 	Cache              domain.CacheServiceUseCase
 	Logger             *slog.Logger
-
-	// IsEmployeeMobileRequired reports the admin policy toggle that makes the
-	// phone number mandatory on employee creation. Nil (tests, partial wiring)
-	// means the policy is off. Wired at bootstrap to
-	// config.SettingsConfigService.IsEmployeeMobileRequired.
-	IsEmployeeMobileRequired func(ctx context.Context) bool
 }

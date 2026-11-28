@@ -35,10 +35,6 @@ type EmployeeService struct {
 	TransactionManager domain.TransactionManager
 	events             domain.EventBus
 	cache              domain.CacheServiceUseCase
-
-	// isEmployeeMobileRequired reports the admin policy toggle that makes the
-	// phone number mandatory on create. Nil (tests, partial wiring) = off.
-	isEmployeeMobileRequired func(ctx context.Context) bool
 }
 
 func NewEmployeeService(cfg *Config) *EmployeeService {
@@ -53,8 +49,6 @@ func NewEmployeeService(cfg *Config) *EmployeeService {
 		TransactionManager:    cfg.TransactionManager,
 		events:                cfg.Events,
 		cache:                 cfg.Cache,
-
-		isEmployeeMobileRequired: cfg.IsEmployeeMobileRequired,
 	}
 }
 
@@ -158,16 +152,7 @@ func (s *EmployeeService) createEmployeeCore(
 		return nil, err
 	}
 
-	// 1a. Admin policy: when the settings toggle is on, EVERY create path
-	// (manual form, Excel import, BCC/FlexPay import) must carry a mobile
-	// number — a phone-less record created here would be unfixable by the
-	// bulk backfill that only fills empty numbers on existing rows. Format
-	// rules live in ValidateMobile; this only decides whether empty is legal.
-	if employee.Mobile == "" && s.isEmployeeMobileRequired != nil && s.isEmployeeMobileRequired(ctx) {
-		return nil, domain.NewValidationError(constants.MsgEmployeeMobileRequiredVN)
-	}
-
-	// 1b. Duplicate mobile guard (always on, toggle-independent).
+	// Duplicate mobile guard (always on).
 	if employee.Mobile != "" {
 		holders, err := s.EmployeeRepo.ListByMobile(ctx, employee.Mobile)
 		if err != nil {

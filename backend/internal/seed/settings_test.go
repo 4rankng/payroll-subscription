@@ -46,18 +46,13 @@ func settingsValue(t *testing.T, db *gorm.DB, key string) (string, bool) {
 }
 
 // EnsureSettings exists so a never-saved flag reads 200 with its documented
-// missing-row default instead of 404 (the shape that fed the
-// high-error-rate alert for employee.mobile_required).
+// missing-row default instead of 404.
 func TestEnsureSettingsCreatesBootFlagsWithMissingRowDefaults(t *testing.T) {
 	db := newSettingsTestDB(t)
 
 	require.NoError(t, EnsureSettings(context.Background(), db))
 
-	value, ok := settingsValue(t, db, "employee.mobile_required")
-	require.True(t, ok)
-	require.Equal(t, "false", value)
-
-	value, ok = settingsValue(t, db, "transfer_bank_visible")
+	value, ok := settingsValue(t, db, "transfer_bank_visible")
 	require.True(t, ok)
 	require.Equal(t, "true", value)
 
@@ -79,20 +74,20 @@ func TestEnsureSettingsDoesNotSeedDevDefaults(t *testing.T) {
 	require.False(t, ok)
 }
 
-// FirstOrCreate semantics: an admin-saved value (e.g. mobile_required=true,
-// the live prod row) must survive a reboot.
+// FirstOrCreate semantics: an admin-saved value (e.g. transfer_bank_visible=false)
+// must survive a reboot.
 func TestEnsureSettingsPreservesExistingValue(t *testing.T) {
 	db := newSettingsTestDB(t)
-	required := "true"
+	visible := "false"
 	require.NoError(t, db.Create(&domain.Settings{
-		Key:       "employee.mobile_required",
-		Value:     &required,
+		Key:       "transfer_bank_visible",
+		Value:     &visible,
 		ValueType: domain.ValueTypeBoolean,
 	}).Error)
 
 	require.NoError(t, EnsureSettings(context.Background(), db))
 
-	value, ok := settingsValue(t, db, "employee.mobile_required")
+	value, ok := settingsValue(t, db, "transfer_bank_visible")
 	require.True(t, ok)
-	require.Equal(t, "true", value)
+	require.Equal(t, "false", value)
 }
