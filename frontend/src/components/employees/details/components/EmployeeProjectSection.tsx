@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { useMemo, useState, useEffect, useCallback } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -187,6 +188,65 @@ function ProjectPaymentScheduleControl({
   );
 }
 
+function ReadRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="typography-label-small text-muted-foreground shrink-0">{label}</span>
+      <span className="typography-body-small text-foreground text-right min-w-0">{children}</span>
+    </div>
+  );
+}
+
+// Read-only projection of the pay schedule: plain text + pending badge/cancel,
+// so the drawer never shows a disabled ToggleGroup in view mode.
+function ProjectScheduleReadRow({ project, assignmentId }: { project: CurrentProject; assignmentId?: number }) {
+  const cancelScheduleMutation = useCancelScheduleChange();
+  const baselineSchedule = project.pending_payment_schedule ?? project.payment_schedule ?? 'weekly';
+  const hasPendingChange = Boolean(project.pending_payment_schedule);
+
+  const handleCancelPending = useCallback(async () => {
+    if (!assignmentId) {
+      return;
+    }
+    try {
+      await cancelScheduleMutation.mutateAsync({ assignmentId });
+    } catch (error) {
+      // Notification already handled in hook
+    }
+  }, [assignmentId, cancelScheduleMutation]);
+
+  return (
+    <ReadRow label="Chu kỳ trả lương">
+      <span className="inline-flex items-center justify-end gap-1.5 flex-wrap">
+        <span>{VIETNAMESE_ASSIGNMENT_LABELS.payment_schedule[baselineSchedule]}</span>
+        {hasPendingChange && (
+          <Badge variant="outline" className="text-financial-pending border-warning flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Chờ: {project.pending_payment_schedule ? VIETNAMESE_ASSIGNMENT_LABELS.payment_schedule[project.pending_payment_schedule] : ''}
+          </Badge>
+        )}
+        {hasPendingChange && project.schedule_effective_from && (
+          <span className="typography-label-small text-foreground/80">
+            từ {format(new Date(project.schedule_effective_from), 'dd/MM/yyyy')}
+          </span>
+        )}
+        {hasPendingChange && assignmentId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-11 w-11 p-0 sm:h-6 sm:w-6"
+            onClick={handleCancelPending}
+            disabled={cancelScheduleMutation.isPending}
+          >
+            <X className="h-3 w-3" />
+            <span className="sr-only">Hủy thay đổi chu kỳ</span>
+          </Button>
+        )}
+      </span>
+    </ReadRow>
+  );
+}
+
 function ProjectCard({
   project,
   employeeId,
@@ -203,6 +263,8 @@ function ProjectCard({
   const canEditFields = isProjectEditing;
   const canRemoveProject = isProjectEditing || allowProjectLinking;
   const baselineSchedule = project.pending_payment_schedule ?? project.payment_schedule ?? 'weekly';
+  const showCode = Boolean(project.code) && project.code !== project.name;
+  const showClient = Boolean(project.client_name) && project.client_name !== project.name && project.client_name !== project.code;
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Fetch current payrate for this project to get available positions
   const { data: payrateData } = useCurrentPayRate(
@@ -314,43 +376,41 @@ function ProjectCard({
           <div className="font-medium typography-body-small truncate text-foreground" title={project.name}>
             {project.name}
           </div>
-          <div className="typography-label-small text-foreground/80 mt-0.5 flex flex-wrap items-center gap-3">
-            <span className="truncate text-foreground/80">{project.code}</span>
-            {project.client_name && (
-              <span className="truncate text-foreground/80">
-                KH: {project.client_name}
-              </span>
-            )}
-          </div>
+          {(showCode || showClient) && (
+            <div className="typography-label-small text-foreground/80 mt-0.5 flex flex-wrap items-center gap-3">
+              {showCode && <span className="truncate">{project.code}</span>}
+              {showClient && <span className="truncate">KH: {project.client_name}</span>}
+            </div>
+          )}
         </div>
-        {onEditStateChange && (
-          <div className="flex items-center gap-1">
-            {isProjectEditing ? (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-11 w-11 shrink-0 sm:h-7 sm:w-7"
-                  onClick={handleCancelEditing}
-                  disabled={isSubmitting}
-                  title="Hủy chỉnh sửa"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  <span className="sr-only">Hủy chỉnh sửa</span>
-                </Button>
-                <Button
-                  size="icon"
-                  variant="default"
-                  className="h-11 w-11 shrink-0 sm:h-7 sm:w-7"
-                  onClick={handleApplyEditing}
-                  disabled={isSubmitting}
-                  title="Áp dụng thay đổi"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  <span className="sr-only">Áp dụng thay đổi</span>
-                </Button>
-              </>
-            ) : (
+        <div className="flex items-center gap-1 shrink-0">
+          {isProjectEditing ? (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-11 w-11 shrink-0 sm:h-7 sm:w-7"
+                onClick={handleCancelEditing}
+                disabled={isSubmitting}
+                title="Hủy chỉnh sửa"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span className="sr-only">Hủy chỉnh sửa</span>
+              </Button>
+              <Button
+                size="icon"
+                variant="default"
+                className="h-11 w-11 shrink-0 sm:h-7 sm:w-7"
+                onClick={handleApplyEditing}
+                disabled={isSubmitting}
+                title="Áp dụng thay đổi"
+              >
+                <Check className="h-3.5 w-3.5" />
+                <span className="sr-only">Áp dụng thay đổi</span>
+              </Button>
+            </>
+          ) : (
+            onEditStateChange && (
               <Button
                 size="icon"
                 variant="ghost"
@@ -361,9 +421,30 @@ function ProjectCard({
                 <Pencil className="h-3.5 w-3.5" />
                 <span className="sr-only">Chỉnh sửa phân công</span>
               </Button>
-            )}
-          </div>
-        )}
+            )
+          )}
+          {canRemoveProject && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-11 w-11 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 sm:h-7 sm:w-7"
+                    onClick={() => onRemove?.(project.project_id)}
+                    disabled={isRemoving || isSubmitting}
+                    aria-label="Gỡ khỏi dự án"
+                  >
+                    <Unlink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Gỡ khỏi dự án
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </div>
 
       {/* Project Details */}

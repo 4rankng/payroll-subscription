@@ -557,7 +557,7 @@ Each wave ends with the gate: `go build ./... && go test ./... -race` + `pnpm li
 
 - Delete `bootstrap/routes_ad_banner.go`, `routes_advance_payment.go`, `routes_api_key_admin.go`, `routes_disbursement.go`, `routes_integration.go`, `routes_mcp.go`, `routes_wallet.go`, `routes_weekly_payment_fee.go`; `setupLedgerRoutes` + its group in `routes_misc.go:58+`; `setupCronRoutes` in `routes_admin.go:118-123`; drop their `routes.go` call sites (line ~70 area).
 - `container.go`: remove handler/repo/service wiring for all removed stacks (Ledger `:95,492`, OnePayFeeImport, wallet, loans, ads, MCP, api keys, disbursement, flex pay, advance payment, cron handler if health pages die).
-- `configs/casbin_policy.csv`: delete policies for removed endpoints (partner + admin rows referencing `/advance-payments`, `/wallet`, `/ledger`, `/api-keys`, `/mcp`, `/disbursement`, ad banners, weekly payment fees, cron-jobs). Ketoan rows already landed with PAYSUB-1344 (D28): reads mirror giamdoc minus approval; extend the block when FR-7 endpoints land.
+- `configs/casbin_policy.csv`: delete policies for removed endpoints (partner + admin rows referencing `/advance-payments`, `/wallet`, `/ledger`, `/api-keys`, `/mcp`, `/disbursement`, ad banners, weekly payment fees, cron-jobs). Ketoan rows already landed with PAYSUB-1344 (D28): reads mirror giamdoc; approval widened to quanly + ketoan on single entries and the pending selection per D29 (global bulk ops stay admin-only).
 
 ### Wave 3 — App services, jobs, async tasks
 

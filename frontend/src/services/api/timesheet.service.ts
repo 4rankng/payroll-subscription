@@ -4,6 +4,7 @@ import type { CashReadinessResponse, CashReadinessParams } from '@/types/api/cas
 import { API_ENDPOINTS, API_CONFIG } from '@/config/api.config';
 import { authManager } from '@/lib/auth';
 import {
+  canAdminTimesheetOps,
   canApproveTimesheet
 } from '@/lib/permissions';
 import { extractFilenameFromHeaders } from '@/utils/file-download';
@@ -285,7 +286,7 @@ class TimesheetService {
    * Manually add timesheet to next payroll run (Admin only)
    */
   async addToPayroll(id: number): Promise<{ status: string; message?: string }> {
-    if (!canApproveTimesheet()) {
+    if (!canAdminTimesheetOps()) {
       throw new Error('Chỉ Admin mới có thể thêm timesheet vào kỳ lương');
     }
 
@@ -314,7 +315,7 @@ class TimesheetService {
    */
   async approveAll(): Promise<BulkApproveResult> {
     // Validate approval permissions
-    if (!canApproveTimesheet()) {
+    if (!canAdminTimesheetOps()) {
       throw new Error('Chỉ Admin mới có thể phê duyệt timesheet');
     }
 
@@ -332,7 +333,7 @@ class TimesheetService {
    * Paid timesheets are skipped by the backend.
    */
   async resetAll(): Promise<BulkResetResult> {
-    if (!canApproveTimesheet()) {
+    if (!canAdminTimesheetOps()) {
       throw new Error('Chỉ Admin mới có thể bỏ duyệt timesheet');
     }
 
@@ -350,7 +351,7 @@ class TimesheetService {
    * Resets approved/rejected timesheets back to pending_approval status
    */
   async bulkReset(data: BulkResetData): Promise<BulkResetResult> {
-    if (!canApproveTimesheet()) {
+    if (!canAdminTimesheetOps()) {
       throw new Error('Chỉ Admin mới có thể đặt lại trạng thái timesheet');
     }
 
@@ -624,7 +625,7 @@ class TimesheetService {
    * The backend re-evaluates payment state atomically before updating rows.
    */
   async rejectUnpaid(data: RejectUnpaidTimesheetsData): Promise<RejectUnpaidTimesheetsResult> {
-    if (!canApproveTimesheet()) {
+    if (!canAdminTimesheetOps()) {
       throw new Error('Chỉ Admin mới có thể loại bảng công chưa thanh toán');
     }
 

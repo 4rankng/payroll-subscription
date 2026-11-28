@@ -63,10 +63,23 @@ export const canPartnerManageProject = (userRole?: UserRole | null): boolean => 
 };
 
 /**
- * Check if user can approve/reject timesheets
- * Only Admins can approve/reject timesheets
+ * Check if user can approve/reject timesheets — single entries, the entry
+ * modal's "Duyệt & Lưu", and the pending-selection bulk actions. Admin,
+ * quanly and ketoan hold this right; the global/destructive ops
+ * (approve-all, reset-all, bulk-reset, reject-unpaid, add-to-payroll) stay
+ * admin-only via canAdminTimesheetOps and are re-enforced by casbin.
  */
 export const canApproveTimesheet = (userRole?: UserRole | null): boolean => {
+  const role = userRole || authManager.getUserRole();
+
+  return role === 'admin' || role === 'quanly' || role === 'ketoan';
+};
+
+/**
+ * Check if user can run global/destructive timesheet ops (approve-all,
+ * reset-all, bulk-reset, reject-unpaid, add-to-payroll). Admin-only.
+ */
+export const canAdminTimesheetOps = (userRole?: UserRole | null): boolean => {
   const role = userRole || authManager.getUserRole();
 
   return role === 'admin';

@@ -249,6 +249,13 @@
   background: hsl(var(--muted) / 0.78);
 }
 
+/* The sticky first-column header cell must sit on the same muted surface as
+   the thead band it belongs to; the primitive's bg-card/90 reads white next
+   to the muted band and splits the header row into two tones. */
+[data-partner-ui] [data-slot="data-table-desktop"] thead th:first-child {
+  background-color: hsl(var(--muted) / 0.78);
+}
+
 [data-partner-ui] [data-slot="data-table-desktop"] th {
   height: 3rem;
   color: hsl(var(--muted-foreground));

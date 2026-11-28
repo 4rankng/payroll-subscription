@@ -35,8 +35,12 @@ p, quanly, /api/v1/timesheets/import, POST, allow
 p, quanly, /api/v1/timesheets/projects/*, GET, allow
 p, quanly, /api/v1/timesheets/*/request-edit, POST, allow
 p, quanly, /api/v1/timesheets/*/request-edit-cancel, POST, allow
-p, quanly, /api/v1/timesheets/bulk-approve, *, deny
-p, quanly, /api/v1/timesheets/bulk-reject, *, deny
+# Duyệt/loại công: quanly approves and rejects single entries and the
+# pending selection. Global/destructive ops stay admin-only (deny-overrides).
+p, quanly, /api/v1/timesheets/:id/approve, PUT, allow
+p, quanly, /api/v1/timesheets/:id/reject, PUT, allow
+p, quanly, /api/v1/timesheets/bulk-approve, POST, allow
+p, quanly, /api/v1/timesheets/bulk-reject, POST, allow
 p, quanly, /api/v1/timesheets/reject-unpaid, *, deny
 p, quanly, /api/v1/timesheets/bulk-reset, *, deny
 p, quanly, /api/v1/timesheets/approve-all, *, deny
@@ -118,13 +122,19 @@ p, giamdoc, /api/v1/users/*, GET, allow
 p, giamdoc, /api/v1/users/reset-first-time-login-password, GET, allow
 
 # Ketoan — accounting clerk (PAYSUB D28): reads the same operational surfaces
-# as giamdoc but holds no approval rights.
+# as giamdoc and runs the bank-transfer workflow on Bảng công. Duyệt/loại công
+# on single entries and the pending selection; global/destructive bulk ops
+# stay admin-only (deny-overrides).
 p, ketoan, /api/v1/auth/me, GET, allow
 p, ketoan, /api/v1/auth/logout, POST, allow
 p, ketoan, /api/v1/auth/change-password, POST, allow
 p, ketoan, /api/v1/me/password, PUT, allow
 p, ketoan, /api/v1/timesheets, GET, allow
 p, ketoan, /api/v1/timesheets/:id, GET, allow
+p, ketoan, /api/v1/timesheets/:id/approve, PUT, allow
+p, ketoan, /api/v1/timesheets/:id/reject, PUT, allow
+p, ketoan, /api/v1/timesheets/bulk-approve, POST, allow
+p, ketoan, /api/v1/timesheets/bulk-reject, POST, allow
 p, ketoan, /api/v1/timesheets/summary, GET, allow
 p, ketoan, /api/v1/timesheets/grouped, GET, allow
 p, ketoan, /api/v1/projects, GET, allow

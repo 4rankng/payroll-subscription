@@ -165,7 +165,7 @@ export const ForceChangePasswordDialog = () => {
           <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white/12 ring-1 ring-inset ring-white/20">
             <ShieldAlert className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
           </span>
-          <DialogTitle className="employee-type-strong text-white">Đổi mật khẩu bắt buộc</DialogTitle>
+          <DialogTitle className="employee-type-strong text-white">Đổi mật khẩu</DialogTitle>
           <p className="employee-type-body-sm mt-1.5 text-white/70">
             Tài khoản đang dùng mật khẩu mặc định. Đặt mật khẩu mới để tiếp tục.
           </p>

@@ -401,32 +401,34 @@ export default function TimesheetsPage() {
                     <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                     Lịch sử BCC
                   </Button>
-                  {pendingTimesheets.length > 0 && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setBulkApproveOpen(true)}
-                        disabled={timesheetManagement.isLoading}
-                        className="h-8 gap-1.5 border-green-600/40 px-2.5 text-xs text-green-700 hover:bg-green-50"
-                      >
-                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                        Duyệt {pendingTimesheets.length}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => { setBulkRejectReason(""); setBulkRejectOpen(true); }}
-                        disabled={timesheetManagement.isLoading}
-                        className="h-8 gap-1.5 border-red-600/40 px-2.5 text-xs text-red-700 hover:bg-red-50"
-                      >
-                        <X className="h-3.5 w-3.5" aria-hidden="true" />
-                        Loại {pendingTimesheets.length}
-                      </Button>
-                    </>
-                  )}
+                </>
+              )}
+              {/* Duyệt/loại công: quanly and ketoan (backend casbin grants
+                  single + pending-selection approval to both roles). */}
+              {(isQuanly || isKetoan) && pendingTimesheets.length > 0 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBulkApproveOpen(true)}
+                    disabled={timesheetManagement.isLoading}
+                    className="h-8 gap-1.5 border-green-600/40 px-2.5 text-xs text-green-700 hover:bg-green-50"
+                  >
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    Duyệt {pendingTimesheets.length}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setBulkRejectReason(""); setBulkRejectOpen(true); }}
+                    disabled={timesheetManagement.isLoading}
+                    className="h-8 gap-1.5 border-red-600/40 px-2.5 text-xs text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    Loại {pendingTimesheets.length}
+                  </Button>
                 </>
               )}
               <Button

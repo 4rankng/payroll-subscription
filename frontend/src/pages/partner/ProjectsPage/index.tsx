@@ -11,7 +11,7 @@ import {
   Clock,
   File02,
   FilterFunnel02,
-  FolderClosed,
+  Folder,
   PauseCircle,
   Users01,
   XClose,
@@ -425,14 +425,12 @@ const ProjectsPage = () => {
           />
           <div className="mt-6 grid gap-2 sm:grid-cols-3">
             {[
-              { label: 'Tổng dự án', value: totalProjectCount, icon: FolderClosed, tone: 'text-muted-foreground bg-muted' },
-              { label: 'Đang hoạt động', value: activeCount, icon: CheckCircle, tone: 'text-success bg-success/10' },
-              { label: 'Đang xem', value: visibleProjectCount, icon: Clock, tone: 'text-warning bg-warning/10' },
+              { label: 'Tổng dự án', value: totalProjectCount, icon: Folder, tone: 'text-muted-foreground' },
+              { label: 'Đang hoạt động', value: activeCount, icon: CheckCircle, tone: 'text-success' },
+              { label: 'Đang xem', value: visibleProjectCount, icon: Clock, tone: 'text-warning' },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/25 px-3.5 py-3">
-                <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', item.tone)}>
-                  <item.icon className="h-4 w-4" aria-hidden="true" />
-                </div>
+                <item.icon className={cn('h-5 w-5 shrink-0', item.tone)} aria-hidden="true" />
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground">{item.label}</p>
                   <p className="mt-0.5 text-xl font-bold tabular-nums text-foreground">{item.value.toLocaleString('vi-VN')}</p>

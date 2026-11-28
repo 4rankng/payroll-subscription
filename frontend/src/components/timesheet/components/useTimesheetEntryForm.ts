@@ -197,7 +197,9 @@ export function useTimesheetEntryForm({
     } catch (error) { console.error("Timesheet operation failed:", error); }
   }, [performSave, onSuccess, onClose]);
 
-  const canSaveAndApprove = user?.role === "admin" && existingEntry?.status === "pending_approval";
+  const canSaveAndApprove =
+    (user?.role === "admin" || user?.role === "quanly" || user?.role === "ketoan") &&
+    existingEntry?.status === "pending_approval";
 
   const handleSaveAndApprove = useCallback(async () => {
     if (!existingEntry) return;

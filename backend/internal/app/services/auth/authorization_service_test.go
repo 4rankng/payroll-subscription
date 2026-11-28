@@ -156,7 +156,9 @@ func TestExistingRoles_NotRegressed(t *testing.T) {
 	assert.True(t, svc.CanAccess("quanly", "/api/v1/projects/1", "PUT"))
 	assert.False(t, svc.CanAccess("quanly", "/api/v1/settings/1", "PUT"))
 	assert.False(t, svc.CanAccess("quanly", "/api/v1/audit/logs", "GET"))
-	assert.False(t, svc.CanAccess("quanly", "/api/v1/timesheets/bulk-approve", "POST"))
+	// Duyệt/loại công is quanly work: approve/reject single entries and the
+	// pending selection; approve-all/reset-all/bulk-reset/reject-unpaid stay denied.
+	assert.True(t, svc.CanAccess("quanly", "/api/v1/timesheets/bulk-approve", "POST"))
 
 	// Giamdoc reads timesheets and drives the billing-report pipeline, denied on writes
 	assert.True(t, svc.CanAccess("giamdoc", "/api/v1/timesheets", "GET"))
@@ -252,13 +254,13 @@ func TestQuanlyRole_DeleteTimesheet(t *testing.T) {
 	assert.True(t, svc.CanAccess("quanly", "/api/v1/timesheets/1", "DELETE"),
 		"quanly should be allowed DELETE /timesheets/:id (handler enforces status)")
 
-	// The :id allow must NOT weaken admin-only actions — explicit deny wins (deny-overrides)
+	// The :id allow must NOT weaken the global ops — explicit deny wins (deny-overrides).
+	// bulk-approve/bulk-reject are approved for quanly since the duyệt/loại công
+	// grant; they are asserted in TestQuanlyKetoan_ApproveRejectTimesheets.
 	adminOnly := []struct {
 		path   string
 		method string
 	}{
-		{"/api/v1/timesheets/bulk-approve", "POST"},
-		{"/api/v1/timesheets/bulk-reject", "POST"},
 		{"/api/v1/timesheets/reject-unpaid", "POST"},
 		{"/api/v1/timesheets/bulk-reset", "POST"},
 		{"/api/v1/timesheets/approve-all", "POST"},
@@ -287,11 +289,11 @@ func TestQuanlyRole_GetTimesheet(t *testing.T) {
 	assert.True(t, svc.CanAccess("quanly", "/api/v1/timesheets/1", "GET"),
 		"quanly should be allowed GET /timesheets/:id")
 
-	// The :id allow must NOT weaken admin-only actions — explicit deny wins (deny-overrides).
-	// bulk-* and edit-requests/* are denied with "*" (all methods), which covers GET too.
+	// The :id allow must NOT weaken the global ops — explicit deny wins (deny-overrides).
+	// bulk-approve/bulk-reject are POST-only routes granted to quanly for the
+	// pending selection; their GET form matches the /:id read allow and is not
+	// a registered route.
 	adminOnlyGET := []string{
-		"/api/v1/timesheets/bulk-approve",
-		"/api/v1/timesheets/bulk-reject",
 		"/api/v1/timesheets/reject-unpaid",
 		"/api/v1/timesheets/bulk-reset",
 		"/api/v1/timesheets/approve-all",
@@ -305,6 +307,54 @@ func TestQuanlyRole_GetTimesheet(t *testing.T) {
 	// Admin retains full read access (no regression)
 	assert.True(t, svc.CanAccess("admin", "/api/v1/timesheets/1", "GET"),
 		"admin should be allowed GET /timesheets/:id")
+}
+
+// TestQuanlyKetoan_ApproveRejectTimesheets asserts the duyệt/loại công
+// contract: quanly and ketoan approve and reject single entries (PUT
+// /:id/approve, /:id/reject) and the pending selection (POST bulk-approve,
+// bulk-reject), the global destructive ops stay admin-only for both, and
+// giamdoc keeps its bulk-approve-only grant (no reject, no single PUT).
+func TestQuanlyKetoan_ApproveRejectTimesheets(t *testing.T) {
+	svc := newTestAuthorizationService(t)
+
+	approveAllow := []struct {
+		path   string
+		method string
+	}{
+		{"/api/v1/timesheets/5/approve", "PUT"},
+		{"/api/v1/timesheets/5/reject", "PUT"},
+		{"/api/v1/timesheets/bulk-approve", "POST"},
+		{"/api/v1/timesheets/bulk-reject", "POST"},
+	}
+	for _, role := range []string{"quanly", "ketoan"} {
+		for _, tc := range approveAllow {
+			assert.True(t, svc.CanAccess(role, tc.path, tc.method),
+				"%s should be allowed %s %s (duyệt/loại công)", role, tc.method, tc.path)
+		}
+	}
+
+	globalDeny := []struct {
+		path   string
+		method string
+	}{
+		{"/api/v1/timesheets/reject-unpaid", "POST"},
+		{"/api/v1/timesheets/bulk-reset", "POST"},
+		{"/api/v1/timesheets/approve-all", "POST"},
+		{"/api/v1/timesheets/reset-all", "POST"},
+	}
+	for _, role := range []string{"quanly", "ketoan"} {
+		for _, tc := range globalDeny {
+			assert.False(t, svc.CanAccess(role, tc.path, tc.method),
+				"%s should be DENIED %s %s (admin-only, deny-overrides)", role, tc.method, tc.path)
+		}
+	}
+
+	assert.True(t, svc.CanAccess("giamdoc", "/api/v1/timesheets/bulk-approve", "POST"),
+		"giamdoc should keep bulk-approve (D19)")
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/timesheets/bulk-reject", "POST"),
+		"giamdoc should be DENIED bulk-reject")
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/timesheets/5/approve", "PUT"),
+		"giamdoc should be DENIED single approve PUT")
 }
 
 // TestFinanceRoles_ProjectSubresourceRead asserts ketoan/giamdoc hold READ

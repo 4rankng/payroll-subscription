@@ -67,7 +67,7 @@ Source: `backend/internal/pkg/clock/pay_cycle.go` — `TimesheetKyCount = 4`, `k
 | BR-2 | "Distinct" = unique CCCD within one Kỳ (one deployment = one billable entity, D21); same employee in N Kỳ bills N × X. CCCD is globally unique, hard-enforced by `UNIQUE(cccd)` (no soft delete, D16) |
 | BR-3 | A Kỳ's count is included only after its transfer result is uploaded and verified (the customer-paid marker is the only counting gate) |
 | BR-4 | The §5.1 calendar is the only definition of "round"/Kỳ — fixed for the deployment (D8). The donor's per-project monthly period overrides (`Project.SalaryPeriodFrom/To`) are not carried over |
-| BR-5 | Role permissions (founder 2026-11-27, D28): `ketoan` and `giamdoc` can export the weekly sao kê lương tuần (FR-7), send it by email, and configure the recipient list (To + CC); `giamdoc` can also approve/reject timesheets. Role enum: `admin/quanly/ketoan/giamdoc/nhanvien` (D19 amended by D28) |
+| BR-5 | Role permissions (founder 2026-11-27, D28; approval widened 2026-11-28, D29): `ketoan` and `giamdoc` can export the weekly sao kê lương tuần (FR-7), send it by email, and configure the recipient list (To + CC); `quanly`, `ketoan` and `giamdoc` can approve/reject timesheets (single entries and the pending selection; `approve-all`/`reset-all`/`bulk-reset`/`reject-unpaid` stay admin-only). Role enum: `admin/quanly/ketoan/giamdoc/nhanvien` (D19 amended by D28) |
 
 Worked example: 4 Kỳ × 50 distinct employees × 10,000 VND = 2,000,000 VND/month.
 
@@ -175,10 +175,11 @@ Add: `subscription_fee_per_employee_per_ky_vnd` (default 10000; BR-1). Also add 
 | D24 | Billing report workbook layout (founder decision 2026-11-19, grill Q8): first sheet = Summary (per-Kỳ distinct × fee + total), then N sheets — one per project — each listing that project's payment history (employee, CCCD, Kỳ, amount, payment date/reference). |
 | D25 | No timesheet edit requests (founder decision 2026-11-19, grill): approved timesheets are immutable. The `timesheet_edit_requests` table, `allowed_edit`/`request_edit_id` columns, edit-request endpoints/UI, and the approval detour are removed. Corrections to a pending timesheet = direct edit by its owner; a paid timesheet is never edited (D11/D18). |
 | D26 | `approval_requests` table removed (founder decision 2026-11-19, grill): every guarded type it gated (sao-kê email, payroll-report email, reminders, void-timesheet detour) belongs to the removed old model (D20/D23/D25). Admin voiding a timesheet is a direct hard delete — no approval detour. Approval service/handler/routes/ApprovalsPage deleted. Donor ADR-014 (2026-11-24) independently confirms the pattern: employee/project access claim/release are instant self-grants — "requesting is granting", no approval state anywhere — so nothing in the new model needs an approval queue. |
+| D29 | Duyệt/loại công widened to `quanly` and `ketoan` (founder ruling 2026-11-28, amends D28's giamdoc-only approval): both roles approve/reject single timesheet entries (`PUT /timesheets/:id/approve`, `/reject`) and the pending selection (`POST /timesheets/bulk-approve`, `/bulk-reject`); the global/destructive ops (`approve-all`, `reset-all`, `bulk-reset`, `reject-unpaid`) stay admin-only (casbin deny-overrides). `CanAccessTimesheet` still blocks quanly PUT/DELETE on already-approved sheets. |
 
 ## 9. Open Questions
 
-None — all questions are resolved and recorded in the decision log (D1–D28).
+None — all questions are resolved and recorded in the decision log (D1–D29).
 
 ## 10. Appendix — Parked / Out-of-Scope Notes
 
