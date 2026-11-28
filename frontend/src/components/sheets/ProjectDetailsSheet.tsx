@@ -291,6 +291,7 @@ function ProjectDetailsSheet({
           )
         }}
         size="large"
+        className="w-[min(560px,100vw)]"
       >
         <div className="p-4 space-y-4">
           <Skeleton className="h-6 w-48" />
@@ -331,6 +332,7 @@ function ProjectDetailsSheet({
         onClose={handleClose}
         avatar={avatar}
         size="large"
+        className="w-[min(560px,100vw)]"
       >
         <Tabs
           value={effectiveTab}

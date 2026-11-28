@@ -1,3 +1,5 @@
+import { formatCurrency } from '@/utils/formatters';
+
 const SHIFT_RANGE_RE =
   /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -60,5 +62,19 @@ export function extractShiftPaySummaries(rates: unknown): ShiftPaySummary[] {
 }
 
 export function formatShiftPay(amount: number): string {
-  return `${amount.toLocaleString("vi-VN")} ₫`;
+  return formatCurrency(amount);
+}
+
+/**
+ * Sentence-case a position label for display: "phổ thông" → "Phổ thông",
+ * "THỢ ĐIỆN" → "Thợ điện". Display-only — config keys stay untouched.
+ */
+export function formatPositionLabel(position: string): string {
+  const words = position.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return position.trim();
+  const [first, ...rest] = words;
+  return [
+    first.charAt(0).toLocaleUpperCase('vi') + first.slice(1).toLocaleLowerCase('vi'),
+    ...rest.map((word) => word.toLocaleLowerCase('vi')),
+  ].join(' ');
 }

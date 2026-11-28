@@ -4,6 +4,8 @@
  * Much denser than the full PayrateMatrixEditor table.
  */
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/utils/formatters';
+import { formatPositionLabel } from '@/components/projects/details/shift-pay-summary';
 import type { PayrateStructure } from '../types';
 import { getPositionsFromRates, getAllHourTypes } from '../types';
 
@@ -56,7 +58,7 @@ export function PayrateRateGrid({ rates, isFlexible = false }: PayrateRateGridPr
           <div key={position} className={cn("rounded-xl border border-border/60 overflow-hidden", pi > 0 && "mt-2")}>
             {/* Position header */}
             <div className="px-3 py-1.5 bg-muted/40 border-b border-border/40 flex items-center gap-2">
-              <span className="text-xs font-semibold text-foreground capitalize">{position}</span>
+              <span className="text-xs font-semibold text-foreground">{formatPositionLabel(position)}</span>
             </div>
 
             {/* Day type rows */}
@@ -87,9 +89,9 @@ export function PayrateRateGrid({ rates, isFlexible = false }: PayrateRateGridPr
                         <div key={hourType} className="whitespace-nowrap text-center">
                           {active ? (
                             <span className="text-xs font-semibold tabular-nums text-foreground">
-                              {rate.toLocaleString('vi-VN')}
+                              {formatCurrency(rate)}
                               <span className="ml-0.5 text-xs font-normal text-muted-foreground">
-                                {isFlexible ? "₫/ca" : "₫/giờ"}
+                                {isFlexible ? "/ca" : "/giờ"}
                               </span>
                             </span>
                           ) : (

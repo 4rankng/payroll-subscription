@@ -10,6 +10,7 @@ import { dateToString } from "@/utils/dateHelpers";
 import {
   extractShiftPaySummaries,
   formatShiftPay,
+  formatPositionLabel,
 } from "./shift-pay-summary";
 
 interface ShiftNamesSectionProps {
@@ -198,7 +199,7 @@ export function ShiftNamesSection({
                       >
                         {positionPays.length > 1 && (
                           <span className="truncate text-muted-foreground">
-                            {position}
+                            {formatPositionLabel(position)}
                           </span>
                         )}
                         <span className="shrink-0 font-semibold tabular-nums text-fg-success-primary">

@@ -1,6 +1,6 @@
-import { useMemo, useCallback } from 'react';
+import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { LayoutGrid, Plus, Table2 } from 'lucide-react';
 import {
   ArrowRight,
   Building01,
@@ -71,6 +71,11 @@ const STATUS_META: Record<
   },
 };
 
+// Dense pill shell shared by every status badge in this route (PAYR-75):
+// never wraps to two lines, 11px semibold per the data-dense contract.
+const STATUS_PILL_CLASS =
+  'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold';
+
 // ─── Project avatar (color identity) ───────────────────────────────────────
 // Restrained project identities: distinct enough to scan, cohesive enough to
 // remain part of the TingTing partner workspace.
@@ -125,7 +130,7 @@ function ProjectAvatar({ project, size = 'md' }: { project: Project; size?: 'sm'
 function SalaryPeriodChip({ project }: { project: Project }) {
   if (project.is_weekly) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-info/10 px-2 py-0.5 text-xs font-semibold text-info ring-1 ring-inset ring-info/30">
+      <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-info/10 px-2 py-0.5 text-[11px] font-semibold text-info ring-1 ring-inset ring-info/30">
         <CalendarDate className="h-3 w-3" aria-hidden="true" />
         Lương tuần
       </span>
@@ -137,7 +142,7 @@ function SalaryPeriodChip({ project }: { project: Project }) {
         ? `· ngày ${project.salary_period_from}–${project.salary_period_to}`
         : '';
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-inset ring-primary/30">
+      <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-inset ring-primary/30">
         <Calendar className="h-3 w-3" aria-hidden="true" />
         Lương tháng {period}
       </span>
@@ -159,34 +164,46 @@ function ProjectCard({
   const status = STATUS_META[project.status] ?? STATUS_META.active;
   const StatusIcon = status.icon;
 
+  // PAYR-74: the whole card body is one semantic interactive element that
+  // opens ?modal=project_details&id=<projectId>. Nested action buttons stop
+  // propagation; the keydown guard ignores events from inside them.
+  const handleCardKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Xem chi tiết dự án ${project.name}`}
+      onClick={onOpen}
+      onKeyDown={handleCardKeyDown}
       className={cn(
-        'group relative w-full overflow-hidden rounded-2xl border border-border/70 bg-card cursor-pointer',
+        'group relative w-full overflow-hidden rounded-2xl border border-border/70 bg-card cursor-pointer outline-none',
         'shadow-[0_1px_2px_-1px_rgba(15,15,30,0.06),0_8px_18px_-16px_rgba(15,15,30,0.18)]',
-        'hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_18px_34px_-22px_rgba(6,101,52,0.38)] transition-all duration-200',
+        'hover:border-emerald-500/60 hover:shadow-sm',
+        'focus-visible:ring-2 focus-visible:ring-emerald-600',
+        'transition',
       )}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Xem chi tiết dự án ${project.name}`}
-        className="absolute inset-0 z-10 rounded-2xl outline-brand focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
-      />
       <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-primary via-primary/65 to-primary/30" />
       <div className="p-4 pl-5 md:p-5 md:pl-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-start gap-3">
             <ProjectAvatar project={project} />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-bold', status.pill)}>
-                  <StatusIcon className="h-3 w-3" aria-hidden="true" />
+                <span className={cn(STATUS_PILL_CLASS, status.pill)}>
+                  <StatusIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
                   {status.label}
                 </span>
                 {project.code && <span className="font-mono text-xs font-semibold tracking-wide text-muted-foreground">{project.code}</span>}
               </div>
-              <h3 className="mt-2 line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-foreground">
+              <h3 title={project.name} className="mt-2 truncate text-[15px] font-bold leading-snug tracking-tight text-foreground">
                 {project.name}
               </h3>
             </div>
@@ -218,7 +235,7 @@ function ProjectCard({
               e.stopPropagation();
               onTimesheet();
             }}
-            className="relative z-20 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-primary/8 px-2.5 text-xs font-bold text-primary outline-brand transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-primary/8 px-2.5 text-xs font-bold text-primary outline-brand transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 md:min-h-8"
           >
             <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
             Bảng công
@@ -239,15 +256,172 @@ const STATUS_FILTERS: Array<{ value: ProjectStatus | 'all'; label: string }> = [
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
+// ─── Salary period label (Kỳ gần nhất column) ──────────────────────────────
+function salaryPeriodLabel(project: Project): string {
+  if (project.is_weekly) return 'Lương tuần';
+  if (project.is_monthly) {
+    if (project.salary_period_from != null && project.salary_period_to != null) {
+      return `Tháng ${project.salary_period_from}–${project.salary_period_to}`;
+    }
+    return 'Lương tháng';
+  }
+  return '—';
+}
+
+// ─── Dense table view (PAYR-75) ─────────────────────────────────────────────
+const TABLE_TH_CLASS =
+  'h-9 px-3 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-muted-foreground whitespace-nowrap';
+
+function ProjectTable({
+  projects,
+  onOpen,
+  onTimesheet,
+}: {
+  projects: Project[];
+  onOpen: (project: Project) => void;
+  onTimesheet: (project: Project) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
+      {/* Internal vertical scroll keeps the sticky header usable on long
+          lists; horizontal scroll preserves the dense column layout. */}
+      <div className="max-h-[65dvh] overflow-auto">
+        <table className="w-full min-w-[760px] border-collapse text-left">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-border bg-muted">
+              <th className={cn(TABLE_TH_CLASS, 'w-[90px] font-mono')}>Mã DA</th>
+              <th className={cn(TABLE_TH_CLASS, 'min-w-[200px]')}>Tên dự án</th>
+              <th className={TABLE_TH_CLASS}>Trạng thái</th>
+              <th className={cn(TABLE_TH_CLASS, 'text-right')}>Nhân sự</th>
+              <th className={TABLE_TH_CLASS}>Kỳ gần nhất</th>
+              <th className={cn(TABLE_TH_CLASS, 'text-right')}>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {projects.map((project) => {
+              const status = STATUS_META[project.status] ?? STATUS_META.active;
+              const StatusIcon = status.icon;
+              return (
+                <tr
+                  key={project.id}
+                  onClick={() => onOpen(project)}
+                  className="cursor-pointer transition-colors hover:bg-muted/40"
+                >
+                  <td className="px-3 py-2 font-mono text-[12px] font-semibold tabular-nums text-muted-foreground align-middle">
+                    {project.code || '—'}
+                  </td>
+                  <td className="min-w-[200px] max-w-[280px] px-3 py-2 align-middle">
+                    <button
+                      type="button"
+                      aria-label={`Xem chi tiết dự án ${project.name}`}
+                      title={project.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpen(project);
+                      }}
+                      className="block max-w-full truncate text-left text-[12px] font-semibold text-foreground outline-brand transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    >
+                      {project.name}
+                    </button>
+                    {project.client_name && (
+                      <p title={project.client_name} className="truncate text-[11px] text-muted-foreground">
+                        {project.client_name}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 align-middle">
+                    <span className={cn(STATUS_PILL_CLASS, status.pill)}>
+                      <StatusIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      {status.label}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right text-[12px] tabular-nums text-foreground align-middle">
+                    {project.employee_count}
+                  </td>
+                  <td className="px-3 py-2 text-[12px] whitespace-nowrap text-muted-foreground align-middle">
+                    {salaryPeriodLabel(project)}
+                  </td>
+                  <td className="px-3 py-2 text-right align-middle">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTimesheet(project);
+                      }}
+                      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary/8 px-2.5 text-[11px] font-semibold text-primary outline-brand transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    >
+                      <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                      Bảng công
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── View toggle (PAYR-75) ──────────────────────────────────────────────────
+const VIEW_OPTIONS: Array<{ key: 'table' | 'cards'; label: string; icon: typeof Table2 }> = [
+  { key: 'table', label: 'Bảng', icon: Table2 },
+  { key: 'cards', label: 'Thẻ', icon: LayoutGrid },
+];
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: 'table' | 'cards';
+  onChange: (view: 'table' | 'cards') => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Chế độ hiển thị"
+      className="inline-flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-muted/40 p-0.5"
+    >
+      {VIEW_OPTIONS.map((option) => {
+        const active = view === option.key;
+        return (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => onChange(option.key)}
+            aria-pressed={active}
+            className={cn(
+              'inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-semibold transition-colors outline-brand focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2',
+              active ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <option.icon className="h-3.5 w-3.5" aria-hidden="true" />
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────
 const ProjectsPage = () => {
   const navigate = useNavigate();
   const filterControls = useProjectFilters({
-    initialFilters: { page: 1, pageSize: 10 },
+    initialFilters: { page: 1, pageSize: 50 },
   });
   const { data: response, isLoading, isError, isFetching, refetch } = useProjects(filterControls.apiFilters);
+  // PAYR-74: count active projects with the same status enum the card badge
+  // uses (`status === 'active'`) instead of trusting the summary endpoint's
+  // separate counter, which disagrees with the visible badges.
+  const { data: activeProjectsPage } = useProjects({ page: 1, pageSize: 1, status: ['active'] });
   const { data: summary } = usePartnerProjectSummary();
   const { openCreateProject, openPartnerProjectDetails } = useProjectModals();
+
+  // PAYR-75: view mode defaults to the dense table for large datasets; the
+  // explicit choice persists in component state (no router changes).
+  const [viewMode, setViewMode] = useState<'table' | 'cards' | null>(null);
 
   const allProjects = useMemo(() => response?.data || [], [response?.data]);
   const projects = allProjects;
@@ -270,8 +444,12 @@ const ProjectsPage = () => {
   const totalPages = pagination?.totalPages ?? 1;
   const currentPage = pagination?.page ?? 1;
   const totalProjectCount = summary?.total_projects ?? pagination?.totalRecords ?? 0;
-  const activeCount = summary?.active_projects ?? 0;
+  const activeCount = activeProjectsPage?.pagination?.totalRecords ?? summary?.active_projects ?? 0;
   const visibleProjectCount = pagination?.totalRecords ?? projects.length;
+  const activeView = viewMode ?? (totalProjectCount > 12 ? 'table' : 'cards');
+  // Write capability gate: quanly (and admin) only — read-only partner roles
+  // must never see a create button that would 403.
+  const canCreateProject = canPartnerManageProject();
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top_right,rgba(8,120,62,0.10),transparent_31rem)] px-4 py-5 lg:px-8 lg:py-7">
@@ -280,9 +458,9 @@ const ProjectsPage = () => {
           <PageHeader
             title="Dự án"
             description="Quản lý và theo dõi các dự án được phân quyền"
-            actions={canPartnerManageProject() ? [
+            actions={canCreateProject ? [
               {
-                label: 'Thêm dự án',
+                label: 'Tạo dự án',
                 onClick: () => openCreateProject(),
                 icon: Plus,
                 variant: 'default' as const,
@@ -321,7 +499,11 @@ const ProjectsPage = () => {
             }
             placeholder="Trạng thái"
             options={STATUS_FILTERS.filter(f => f.value !== 'all').map(f => ({ value: f.value, label: f.label }))}
+            contentClassName="bg-white border-gray-200 shadow-lg"
           />
+
+          {/* View toggle: dense table vs. card grid (PAYR-75) */}
+          <ViewToggle view={activeView} onChange={setViewMode} />
 
           <div className="hidden md:block h-6 w-px bg-border mx-0.5" />
 
@@ -346,13 +528,21 @@ const ProjectsPage = () => {
         </div>
       </div>
 
-      {/* ── PROJECT CARDS LIST ── */}
+      {/* ── PROJECT LIST (dense table or card grid) ── */}
       {isLoading ? (
-        <div className="space-y-2.5">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[108px] w-full rounded-xl bg-card" />
-          ))}
-        </div>
+        activeView === 'table' ? (
+          <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-none border-b border-border/40 bg-muted/30" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-[108px] w-full rounded-xl bg-card" />
+            ))}
+          </div>
+        )
       ) : isError ? (
         <div role="alert">
           <ErrorState message="Không thể tải danh sách dự án. Vui lòng thử lại." onRetry={() => void refetch()} />
@@ -374,16 +564,24 @@ const ProjectsPage = () => {
             <ArrowRight className="h-3 w-3" aria-hidden="true" />
             <span>Nhấn vào dự án để xem chi tiết</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onOpen={() => handleProjectClick(project)}
-                onTimesheet={() => handleTimesheet(project)}
-              />
-            ))}
-          </div>
+          {activeView === 'table' ? (
+            <ProjectTable
+              projects={projects}
+              onOpen={handleProjectClick}
+              onTimesheet={handleTimesheet}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onOpen={() => handleProjectClick(project)}
+                  onTimesheet={() => handleTimesheet(project)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
