@@ -5,8 +5,9 @@ import { RotateCw, Upload } from 'lucide-react';
 import { formatDateVn, formatDateTimeVn, formatFullCurrency } from '@/utils/formatters';
 import type { PaymentHistory } from '@/types/api/payroll.types';
 
-// Dense ledger rows (UU bridge tokens): identity + amount on the first line,
-// metadata on the second — no cards, no icon chips, no wasted vertical space.
+// PRD §5.7 mobile blocks: dense ledger lines — identity + amount first, then
+// Kỳ window, pay/processing dates, note and bank code. Nothing hidden behind
+// a tap-open; no cards, no icon chips.
 
 interface PaymentHistoryMobileListProps {
   data: PaymentHistory[];
@@ -41,7 +42,7 @@ export function PaymentHistoryMobileList({
           <Button
             variant="outline"
             size="sm"
-            className="mt-3 h-8 text-[12px]"
+            className="mt-3 min-h-[44px] text-[12px]"
             onClick={onRetry}
           >
             <RotateCw className="mr-1.5 size-3.5" />
@@ -56,7 +57,7 @@ export function PaymentHistoryMobileList({
     return (
       <div className="space-y-1" aria-label="Đang tải lịch sử thanh toán" aria-busy="true">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-md" />
+          <Skeleton key={i} className="h-16 w-full rounded-md" />
         ))}
         {slowLoading && (
           <p role="status" aria-live="polite" className="px-1 text-[12px] tabular-nums text-muted-foreground">
@@ -71,11 +72,11 @@ export function PaymentHistoryMobileList({
     return (
       <EmptyState
         title="Không tìm thấy lịch sử thanh toán"
-        description="Chưa có lịch sử thanh toán nào trong khoảng thời gian này."
+        description="Chưa có bút toán nào được đối chiếu trong tháng này."
         size="sm"
         action={
           onPickDateRange
-            ? { label: 'Chọn khoảng thời gian khác', onClick: onPickDateRange }
+            ? { label: 'Chọn tháng khác', onClick: onPickDateRange }
             : undefined
         }
       >
@@ -87,7 +88,7 @@ export function PaymentHistoryMobileList({
             onClick={onUploadStatement}
           >
             <Upload className="mr-1.5 size-3.5" />
-            Tải lên sao kê
+            Tải lên kết quả chuyển khoản
           </Button>
         )}
       </EmptyState>
@@ -95,48 +96,69 @@ export function PaymentHistoryMobileList({
   }
 
   return (
-    <div className="divide-y divide-utility-gray-300" role="list" aria-label="Lịch sử thanh toán">
-      {data.map((payment, index) => (
+    <div className="divide-y divide-utility-gray-300" role="list" aria-label="Sổ cái bút toán chuyển khoản">
+      {data.map((payment) => (
         <div
-          key={`${payment.employee_id}-${payment.paid_date}-${payment.bank_transaction_code ?? ''}-${index}`}
+          key={`${payment.employee_id}-${payment.stt ?? 0}-${payment.bank_transaction_code ?? ''}`}
           role="listitem"
           className="px-1 py-2"
         >
           <div className="flex items-baseline justify-between gap-3">
             <p className="min-w-0 break-words font-display text-[13px] font-bold leading-tight text-fg-primary">
+              <span className="mr-1 tabular-nums text-fg-tertiary">
+                {String(payment.stt ?? 0).padStart(2, '0')}
+              </span>
               {payment.employee_name}
             </p>
-            <p className="shrink-0 whitespace-nowrap font-financial text-[15px] font-bold tabular-nums leading-tight text-emerald-700">
+            <p className="shrink-0 whitespace-nowrap text-right font-financial text-[15px] font-bold tabular-nums leading-tight text-emerald-700">
               {formatFullCurrency(payment.total_paid_amount)}
             </p>
           </div>
 
           <p className="mt-0.5 break-words text-[11px] leading-snug text-fg-tertiary">
-            <time
-              dateTime={payment.processed_at || payment.paid_date || undefined}
-              className="tabular-nums"
-            >
-              {payment.processed_at
-                ? formatDateTimeVn(payment.processed_at)
-                : payment.paid_date
-                  ? formatDateVn(payment.paid_date)
-                  : '—'}
-            </time>
+            CCCD {payment.employee_cccd || '—'}
             {payment.project_name && <> · {payment.project_name}</>}
           </p>
 
-          {(payment.bank_transaction_code || payment.transfer_note) && (
-            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] leading-snug text-fg-tertiary">
-              {payment.bank_transaction_code && (
-                <span className="shrink-0 font-mono">{payment.bank_transaction_code}</span>
-              )}
-              {payment.transfer_note && (
-                <span className="min-w-0 truncate" title={payment.transfer_note}>
-                  {payment.transfer_note}
-                </span>
-              )}
-            </p>
-          )}
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] leading-snug text-fg-tertiary">
+            {payment.ky_window && (
+              <span className="tabular-nums">
+                {payment.ky_window}
+                {payment.ky ? (
+                  <span className="ml-1 font-semibold text-fg-secondary">Kỳ {payment.ky}</span>
+                ) : null}
+              </span>
+            )}
+            {payment.paid_date && (
+              <time dateTime={payment.paid_date} className="tabular-nums">
+                Trả {formatDateVn(payment.paid_date)}
+              </time>
+            )}
+            {payment.processed_at && (
+              <time dateTime={payment.processed_at} className="tabular-nums">
+                XL {formatDateTimeVn(payment.processed_at)}
+              </time>
+            )}
+          </p>
+
+          <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[11px] leading-snug text-fg-tertiary">
+            {payment.transfer_note && (
+              <span className="min-w-0 truncate" title={payment.transfer_note}>
+                CK: {payment.transfer_note}
+              </span>
+            )}
+            {payment.bank_transaction_code && (
+              <span className="shrink-0 break-all font-mono text-fg-secondary">
+                {payment.bank_transaction_code}
+              </span>
+            )}
+            <span className="ml-auto shrink-0 whitespace-nowrap tabular-nums text-fg-secondary">
+              Thực nhận:{' '}
+              {payment.actual_received_vnd !== undefined && payment.actual_received_vnd !== null
+                ? formatFullCurrency(payment.actual_received_vnd)
+                : '—'}
+            </span>
+          </p>
         </div>
       ))}
     </div>

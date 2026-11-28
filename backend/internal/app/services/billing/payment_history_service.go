@@ -69,6 +69,7 @@ type PaymentHistoryQuery struct {
 // payment history.
 type PaymentHistoryRow struct {
 	Stt                 int    `json:"stt"`
+	EmployeeID          int    `json:"employee_id"`
 	EmployeeName        string `json:"employee_name"`
 	CCCD                string `json:"cccd"`
 	ProjectName         string `json:"project_name"`
@@ -492,6 +493,7 @@ func (s *PaymentHistoryService) loadPositions(ctx context.Context, entries []pay
 func projectPaymentHistoryRow(e paymentHistoryEntry, stt int) PaymentHistoryRow {
 	row := PaymentHistoryRow{
 		Stt:                 stt,
+		EmployeeID:          int(e.employeeID),
 		EmployeeName:        e.employeeName,
 		CCCD:                e.cccd,
 		ProjectName:         strings.Join(e.projectNames, ", "),

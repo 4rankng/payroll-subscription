@@ -37,6 +37,13 @@
   text-rendering: optimizeLegibility;
 }
 
+/* PRD §5.7 ledger: nine dense columns — fixed layout makes the tanstack
+   size hints authoritative so every column stays visible at 1280px instead
+   of letting the employee cell swallow the row. */
+.ph-ledger-page [data-slot="data-table-desktop"] table {
+  table-layout: fixed;
+}
+
 /* ::selection lives in base.css (one product-wide rule, --selection token). */
 
 /* Inline popper content rendered inside the wrapper.

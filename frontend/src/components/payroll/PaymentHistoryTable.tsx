@@ -29,16 +29,23 @@ interface PaymentHistoryTableProps {
   onPageSizeChange?: (pageSize: number) => void;
 }
 
-/** Sort keys for the client-side sort over merged month ledgers. */
+/** Sort keys for the client-side sort over the merged month ledger. */
 const sortValueGetters: Record<string, (row: PaymentHistory) => string | number> = {
-  processed_at: (row) => row.processed_at || row.paid_date || '',
-  bank_transaction_code: (row) => row.bank_transaction_code ?? '',
+  stt: (row) => row.stt ?? 0,
   employee_name: (row) => row.employee_name ?? '',
-  project_name: (row) => row.project_name ?? '',
+  ky: (row) => row.ky ?? 0,
+  paid_date: (row) => row.paid_date || '',
   transfer_note: (row) => row.transfer_note ?? '',
+  bank_transaction_code: (row) => row.bank_transaction_code ?? '',
+  processed_at: (row) => row.processed_at || '',
   total_paid_amount: (row) => row.total_paid_amount ?? 0,
+  actual_received_vnd: (row) => row.actual_received_vnd ?? 0,
 };
 
+const STT_CELL = 'tabular-nums text-muted-foreground';
+const NUMERIC_CELL = 'whitespace-nowrap tabular-nums';
+
+/** PRD §5.7 ledger columns: STT · Nhân viên · Kỳ · Ngày · Ghi chú CK · Mã GD · Xử lý · Số tiền · Thực nhận. */
 export function PaymentHistoryTable({
   data,
   isLoading,
@@ -55,38 +62,93 @@ export function PaymentHistoryTable({
 }: PaymentHistoryTableProps) {
   const columns: ColumnDef<PaymentHistory>[] = useMemo(() => [
     {
-      id: 'processed_at',
-      header: 'Ngày CK',
+      accessorKey: 'stt',
+      header: 'STT',
       enableSorting: true,
-      size: 150,
-      cell: ({ row }) => {
-        const payment = row.original;
-        const text = payment.processed_at
-          ? formatDateTimeVn(payment.processed_at)
-          : payment.paid_date
-            ? formatDateVn(payment.paid_date)
-            : '—';
-        return (
-          <time
-            dateTime={payment.processed_at || payment.paid_date || undefined}
-            className="whitespace-nowrap tabular-nums text-muted-foreground"
+      size: 40,
+      cell: ({ row }) => (
+        <span className={STT_CELL}>{String(row.original.stt ?? 0).padStart(2, '0')}</span>
+      ),
+    },
+    {
+      accessorKey: 'employee_name',
+      header: 'Nhân viên',
+      enableSorting: true,
+      size: 200,
+      cell: ({ row }) => (
+        <div>
+          <p className="max-w-[170px] truncate font-medium text-foreground" title={row.original.employee_name}>
+            {row.original.employee_name}
+          </p>
+          <p
+            className="max-w-[170px] truncate text-[11px] leading-tight tabular-nums text-muted-foreground"
+            title={`${row.original.employee_cccd || '—'} · ${row.original.project_name || ''}`}
           >
-            {text}
+            {row.original.employee_cccd || '—'}
+            {row.original.project_name && (
+              <span> · {row.original.project_name}</span>
+            )}
+          </p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'ky',
+      header: 'Kỳ thanh toán',
+      enableSorting: true,
+      size: 110,
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <p className={`whitespace-nowrap ${STT_CELL}`}>{row.original.ky_window || '—'}</p>
+          {row.original.ky ? (
+            <span className="mt-0.5 inline-block rounded-full border border-utility-gray-300 bg-utility-gray-50 px-1.5 py-0 text-[10px] font-bold text-foreground/80">
+              Kỳ {row.original.ky}
+            </span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'paid_date',
+      header: 'Ngày thanh toán',
+      enableSorting: true,
+      size: 100,
+      cell: ({ row }) => {
+        const paidDate = row.original.paid_date;
+        if (!paidDate) return <span className="text-muted-foreground">—</span>;
+        return (
+          <time dateTime={paidDate} className={NUMERIC_CELL} title={paidDate}>
+            {formatDateVn(paidDate)}
           </time>
         );
       },
     },
     {
-      accessorKey: 'bank_transaction_code',
-      header: 'Mã bút toán',
+      accessorKey: 'transfer_note',
+      header: 'Ghi chú CK',
       enableSorting: true,
-      size: 150,
+      size: 120,
+      cell: ({ row }) => {
+        const note = row.original.transfer_note;
+        if (!note) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span className="block max-w-[110px] truncate text-muted-foreground" title={note}>
+            {note}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'bank_transaction_code',
+      header: 'Mã GD ngân hàng',
+      enableSorting: true,
+      size: 130,
       cell: ({ row }) => {
         const code = row.original.bank_transaction_code;
         if (!code) return <span className="text-muted-foreground">—</span>;
         return (
           <span
-            className="block max-w-[150px] truncate font-mono text-[12px] text-foreground"
+            className="block max-w-[130px] truncate font-mono text-[12px] text-foreground"
             title={code}
           >
             {code}
@@ -95,49 +157,17 @@ export function PaymentHistoryTable({
       },
     },
     {
-      accessorKey: 'employee_name',
-      header: 'Nhân viên',
+      accessorKey: 'processed_at',
+      header: 'Thời gian xử lý',
       enableSorting: true,
-      size: 170,
-      cell: ({ row }) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-foreground" title={row.original.employee_name}>
-            {row.original.employee_name}
-          </p>
-          {row.original.employee_cccd && (
-            <p
-              className="truncate text-[11px] leading-tight text-muted-foreground tabular-nums"
-              title={row.original.employee_cccd}
-            >
-              {row.original.employee_cccd}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'project_name',
-      header: 'Dự án',
-      enableSorting: true,
-      size: 140,
-      cell: ({ row }) => (
-        <span className="line-clamp-2 text-foreground" title={row.original.project_name}>
-          {row.original.project_name || '—'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'transfer_note',
-      header: 'Ngân hàng',
-      enableSorting: true,
-      size: 160,
+      size: 110,
       cell: ({ row }) => {
-        const note = row.original.transfer_note;
-        if (!note) return <span className="text-muted-foreground">—</span>;
+        const processedAt = row.original.processed_at;
+        if (!processedAt) return <span className="text-muted-foreground">—</span>;
         return (
-          <span className="block max-w-[160px] truncate text-muted-foreground" title={note}>
-            {note}
-          </span>
+          <time dateTime={processedAt} className={NUMERIC_CELL}>
+            {formatDateTimeVn(processedAt)}
+          </time>
         );
       },
     },
@@ -145,18 +175,34 @@ export function PaymentHistoryTable({
       accessorKey: 'total_paid_amount',
       header: 'Số tiền (₫)',
       enableSorting: true,
-      size: 130,
+      size: 105,
       meta: { align: 'right', num: true },
       cell: ({ row }) => (
-        <span className="whitespace-nowrap font-semibold tabular-nums text-emerald-700">
+        <span className={`${NUMERIC_CELL} font-semibold text-emerald-700`}>
           {formatFullCurrency(row.original.total_paid_amount)}
         </span>
       ),
     },
+    {
+      accessorKey: 'actual_received_vnd',
+      header: 'Thực nhận (kỳ)',
+      enableSorting: true,
+      size: 105,
+      meta: { align: 'right', num: true },
+      cell: ({ row }) => {
+        const actual = row.original.actual_received_vnd;
+        if (actual === undefined || actual === null) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+        return (
+          <span className={`${NUMERIC_CELL} text-foreground`}>{formatFullCurrency(actual)}</span>
+        );
+      },
+    },
   ], []);
 
-  // Months are merged in the hook and paginated client-side, so sorting also
-  // applies here before slicing the requested page.
+  // The ledger is paginated client-side, so sorting applies before slicing
+  // the requested page.
   const pageRows = useMemo(() => {
     const first = sorting?.[0];
     const getter = first ? sortValueGetters[first.id] : undefined;
@@ -218,11 +264,11 @@ export function PaymentHistoryTable({
     return (
       <EmptyState
         title="Không tìm thấy lịch sử thanh toán"
-        description="Chưa có lịch sử thanh toán nào trong khoảng thời gian này."
+        description="Chưa có bút toán nào được đối chiếu trong tháng này."
         size="sm"
         action={
           onPickDateRange
-            ? { label: 'Chọn khoảng thời gian khác', onClick: onPickDateRange }
+            ? { label: 'Chọn tháng khác', onClick: onPickDateRange }
             : undefined
         }
       >
@@ -234,7 +280,7 @@ export function PaymentHistoryTable({
             onClick={onUploadStatement}
           >
             <Upload className="mr-1.5 size-3.5" />
-            Tải lên sao kê
+            Tải lên kết quả chuyển khoản
           </Button>
         )}
       </EmptyState>
@@ -252,7 +298,7 @@ export function PaymentHistoryTable({
       onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       density="dense"
-      caption="Bảng lịch sử đối chiếu chuyển khoản"
+      caption="Sổ cái bút toán chuyển khoản đã đối chiếu"
     />
   );
 }

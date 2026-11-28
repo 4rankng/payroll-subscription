@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import { MobilePageShell, MobileSurface } from '@/components/shared/MobilePageShell';
@@ -9,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentHistoryMobileList } from '@/components/payroll/mobile/PaymentHistoryMobileList';
 import { PaymentHistoryFilters } from '@/components/payroll/PaymentHistoryFilters';
 import { useBankTransferHistories, useExportBankTransferHistories } from '@/hooks/api/usePaymentHistory';
+import { getCurrentMonthValue } from '@/utils/bankTransferHistoryHelpers';
 import { formatFullCurrency, formatInt } from '@/utils/formatters';
 import type { PaymentHistoryFilters as FiltersType } from '@/types/api/payroll.types';
 
@@ -18,12 +18,10 @@ const STATEMENT_UPLOAD_PATH = '/timesheet';
 export default function PaymentHistoryMobilePage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<FiltersType>(() => ({
-    fromDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-    toDate: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
+    month: getCurrentMonthValue(),
     page: 1,
     pageSize: 50,
   }));
-  const [dateFocusSignal, setDateFocusSignal] = useState(0);
 
   const { data, isLoading, isError, error, refetch } = useBankTransferHistories(filters);
   const exportMutation = useExportBankTransferHistories();
@@ -50,20 +48,15 @@ export default function PaymentHistoryMobilePage() {
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setFilters({
-      fromDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
-      toDate: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
-      page: 1,
-      pageSize: 50,
-    });
+    setFilters({ month: getCurrentMonthValue(), page: 1, pageSize: 50 });
   }, []);
 
   const handleExport = useCallback(() => {
     exportMutation.mutate(filters);
   }, [exportMutation, filters]);
 
-  const handlePickDateRange = useCallback(() => {
-    setDateFocusSignal((signal) => signal + 1);
+  const handlePickMonth = useCallback(() => {
+    setFilters({ month: getCurrentMonthValue(), page: 1, pageSize: 50 });
   }, []);
 
   const handleUploadStatement = useCallback(() => {
@@ -71,7 +64,7 @@ export default function PaymentHistoryMobilePage() {
   }, [navigate]);
 
   const hasFilters = useMemo(() => {
-    return !!(filters.search || filters.projectId?.length || filters.employeeId?.length);
+    return !!(filters.search || filters.ky || filters.month !== getCurrentMonthValue());
   }, [filters]);
 
   const listError = isError
@@ -102,15 +95,15 @@ export default function PaymentHistoryMobilePage() {
         ) : (
           <div className="grid grid-cols-3 gap-2">
             <MobileSurface className="px-2.5 py-2">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tổng chuyển</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Tổng chuyển</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums">{formatFullCurrency(data?.summary?.total_amount_vnd ?? 0)}</p>
             </MobileSurface>
             <MobileSurface className="px-2.5 py-2">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Bút toán</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Bút toán</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums">{formatInt(data?.summary?.bank_entry_count ?? 0)}</p>
             </MobileSurface>
             <MobileSurface className="px-2.5 py-2">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Nhân viên</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Nhân viên</p>
               <p className="mt-0.5 text-sm font-semibold tabular-nums">{formatInt(data?.summary?.employee_count ?? 0)}</p>
             </MobileSurface>
           </div>
@@ -122,7 +115,6 @@ export default function PaymentHistoryMobilePage() {
         onFiltersChange={handleFiltersChange}
         onClearFilters={handleClearFilters}
         hasFilters={hasFilters}
-        dateFocusSignal={dateFocusSignal}
       />
 
       <PaymentHistoryMobileList
@@ -131,7 +123,7 @@ export default function PaymentHistoryMobilePage() {
         slowLoading={slowLoading}
         error={listError}
         onRetry={() => void refetch()}
-        onPickDateRange={handlePickDateRange}
+        onPickDateRange={handlePickMonth}
         onUploadStatement={handleUploadStatement}
       />
     </MobilePageShell>
