@@ -118,7 +118,9 @@ export const FeeInsightsPageMobile = () => {
 
       <ReconStatusStrip workMonth={getCurrentMonthValue()} />
 
-      {(authManager.getUserRole() === 'admin' || authManager.getUserRole() === 'giamdoc') && (
+      {(authManager.getUserRole() === 'admin' ||
+        authManager.getUserRole() === 'giamdoc' ||
+        authManager.getUserRole() === 'ketoan') && (
         <ReportPanel workMonth={format(subMonths(new Date(), 1), 'yyyy-MM')} canGenerate />
       )}
 

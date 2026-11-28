@@ -119,6 +119,40 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		return nil
 	})
 
+	// PAYSUB-25: ketoan is the billing operator (FR-3 PAYSUB-4) — generating
+	// the month-end report and downloading its workbook must be allowed (both
+	// routes answered 403 before the policy fix).
+	ketoanClient := NewAPIClient(client.BaseURL)
+	if _, err := ketoanClient.Login("ketoan", cfg.CommonPassword); err != nil {
+		reporter.Skip(flowRoleEnforcement, "RBAC allow: ketoan billing report pipeline", fmt.Sprintf("login ketoan: %v", err))
+	} else {
+		reporter.RunTest(flowRoleEnforcement, "RBAC allow: ketoan generates billing report and downloads workbook", func() error {
+			// A scratch month with no payroll data proves the permission
+			// without overwriting any real report.
+			const scratchMonth = "2020-01"
+			var gen struct {
+				Report struct {
+					AssetID *uint64 `json:"asset_id"`
+				} `json:"report"`
+			}
+			if _, err := ketoanClient.PostInto("/api/v1/billing/reports/generate", map[string]string{"work_month": scratchMonth}, &gen); err != nil {
+				return fmt.Errorf("ketoan generate report: %w", err)
+			}
+			if gen.Report.AssetID == nil {
+				return fmt.Errorf("generated report carries no workbook asset")
+			}
+			bin, _, status, err := ketoanClient.DownloadFile("GET", fmt.Sprintf("/api/v1/assets/%d/download", *gen.Report.AssetID), nil)
+			if err != nil {
+				return fmt.Errorf("ketoan download workbook: %w", err)
+			}
+			if status != http.StatusOK || len(bin) == 0 {
+				return fmt.Errorf("ketoan workbook download: HTTP %d with %d bytes", status, len(bin))
+			}
+			return nil
+		})
+		_ = execPayrollSQL("DELETE FROM billing_reports WHERE work_month = '2020-01'")
+	}
+
 	// --- Cookie channel: same RBAC verdicts, cookie-only ---
 
 	empCookie := NewAPIClient(client.BaseURL)

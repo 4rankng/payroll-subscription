@@ -23,7 +23,8 @@ interface ReportPanelProps {
 }
 
 /**
- * FR-3/D24: month-end billing report. Generate (giamdoc/admin) then read the
+ * FR-3/D24: month-end billing report. Generate (admin/giamdoc/ketoan — the
+ * billing operator owns the customer send-off) then read the
  * per-Kỳ lines; the Excel file path comes back on the report row for the
  * export flow.
  */

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { billingService } from '@/services/api/billing.service';
 import { showErrorNotification, showSuccessNotification } from '@/utils/error-handler';
@@ -54,12 +54,17 @@ export const useTransferUpload = (workMonth: string) => {
 };
 
 export const useGenerateBillingReport = (workMonth: string) => {
+  const queryClient = useQueryClient();
   const generate = useMutation({
     mutationFn: () => billingService.generateReport(workMonth),
-    onSuccess: ({ report }) =>
+    onSuccess: ({ report, lines }) => {
+      // Seed the report cache so the panel shows the fresh report (and its
+      // Excel link) right away instead of staying on "Chưa có báo cáo".
+      queryClient.setQueryData(billingKeys.report(workMonth), { ...report, lines });
       showSuccessNotification(
         `Báo cáo phí tháng ${report.work_month} đã tạo: ${report.total_distinct} nhân viên × các kỳ, tổng ${report.total_vnd} VND`,
-      ),
+      );
+    },
     onError: (error: Error) => showErrorNotification(error),
   });
   return generate;

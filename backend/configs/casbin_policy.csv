@@ -89,6 +89,9 @@ p, giamdoc, /api/v1/billing/saoke/export, GET, allow
 p, giamdoc, /api/v1/billing/saoke/recipients, GET, allow
 p, giamdoc, /api/v1/billing/saoke/recipients, PUT, allow
 p, giamdoc, /api/v1/billing/saoke/email, POST, allow
+# Download the generated billing workbook and the Sổ cái transfer files.
+p, giamdoc, /api/v1/assets/:id, GET, allow
+p, giamdoc, /api/v1/assets/:id/download, GET, allow
 
 # Nhanvien — read-only self-service (own profile; pay history endpoint lands with FR-6/A7)
 p, nhanvien, /api/v1/notifications, GET, allow
@@ -150,6 +153,12 @@ p, ketoan, /api/v1/employees, GET, allow
 # timesheet detail modal needs the payrate matrix and project pay unit.
 p, ketoan, /api/v1/projects/*, GET, allow
 p, ketoan, /api/v1/billing/reports, GET, allow
+# FR-3 PAYSUB-4: ketoan is the billing operator — generate the month-end
+# report and download its workbook (and the Sổ cái transfer files) to send
+# to the customer.
+p, ketoan, /api/v1/billing/reports/generate, POST, allow
+p, ketoan, /api/v1/assets/:id, GET, allow
+p, ketoan, /api/v1/assets/:id/download, GET, allow
 p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
 p, ketoan, /api/v1/billing/uploads, GET, allow
 # Ketoan runs the bank-transfer workflow on Bảng công: upload the bank's

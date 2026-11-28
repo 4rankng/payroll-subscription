@@ -190,7 +190,7 @@ class BillingService {
     return response.data ?? { months: [], fee_per_employee_per_ky_vnd: 0 };
   }
 
-  /** Generate (or regenerate) the monthly billing report. Giamdoc/admin. */
+  /** Generate (or regenerate) the monthly billing report. Admin/giamdoc/ketoan. */
   async generateReport(workMonth: string): Promise<{ report: BillingReport; lines: BillingReportLine[] }> {
     const response = await apiClient.post<{ report: BillingReport; lines: BillingReportLine[] }>(
       ENDPOINTS.generateReport,
