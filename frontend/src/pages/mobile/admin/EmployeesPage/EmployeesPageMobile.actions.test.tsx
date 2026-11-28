@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import EmployeesPageMobile from "./index";
 
 const mocks = vi.hoisted(() => ({
-  exportPaidWithoutMobile: vi.fn(),
   exportEmployees: vi.fn(),
 }));
 
@@ -33,7 +32,6 @@ vi.mock("@/hooks/api/useProjects", () => ({
 vi.mock("@/hooks/employees/useEmployeeExport", () => ({
   useEmployeeExport: () => ({
     exportEmployees: mocks.exportEmployees,
-    exportPaidWithoutMobile: mocks.exportPaidWithoutMobile,
     isExporting: false,
   }),
 }));
@@ -57,17 +55,6 @@ vi.mock("@/components/employees/MissingBankDetailsSection", () => ({
 }));
 vi.mock("@/components/ui/searchable-select", () => ({ SearchableSelect: () => null }));
 vi.mock("@/components/modals/ExportEmployeesModal", () => ({ ExportEmployeesModal: () => null }));
-vi.mock("@/components/modals/ExportPaidNoMobileModal", () => ({
-  ExportPaidNoMobileModal: ({ open, onExport }: { open: boolean; onExport: (m: number) => void }) =>
-    open ? (
-      <div>
-        <p>modal-paid-no-mobile</p>
-        <button type="button" onClick={() => onExport(3)}>
-          confirm-export-no-mobile
-        </button>
-      </div>
-    ) : null,
-}));
 vi.mock("@/components/modals/ImportMobilesModal", () => ({
   ImportMobilesModal: ({ open }: { open: boolean }) =>
     open ? <p>modal-import-mobiles</p> : null,
@@ -78,19 +65,12 @@ describe("EmployeesPageMobile admin actions (PAYR-22)", () => {
     vi.clearAllMocks();
   });
 
-  it("action sheet có 'NV chưa có SĐT' + 'Nhập SĐT'; mở đúng modal; export gọi exportPaidWithoutMobile", () => {
+  it("action sheet có 'Nhập SĐT'; mở đúng modal import", () => {
     render(
       <MemoryRouter>
         <EmployeesPageMobile />
       </MemoryRouter>,
     );
-
-    fireEvent.click(screen.getByRole("button", { name: "Thao tác khác" }));
-    fireEvent.click(screen.getByRole("button", { name: /NV chưa có SĐT/ }));
-    expect(screen.getByText("modal-paid-no-mobile")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "confirm-export-no-mobile" }));
-    expect(mocks.exportPaidWithoutMobile).toHaveBeenCalledWith(3);
 
     fireEvent.click(screen.getByRole("button", { name: "Thao tác khác" }));
     fireEvent.click(screen.getByRole("button", { name: /Nhập SĐT/ }));

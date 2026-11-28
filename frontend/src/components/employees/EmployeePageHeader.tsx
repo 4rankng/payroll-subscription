@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getConsoleKicker } from '@/lib/console';
 import { useLocation } from 'react-router-dom';
-import { Plus, Download, PhoneOff, PhoneIncoming } from 'lucide-react';
+import { Plus, Download, PhoneIncoming } from 'lucide-react';
 import { useAuth } from '@/contexts';
 import { cn } from '@/lib/utils';
 import type { ComponentType, SVGProps } from 'react';
@@ -10,7 +10,6 @@ interface EmployeePageHeaderProps {
   totalEmployees: number;
   onAddEmployeeClick: () => void;
   onExportClick?: () => void;
-  onExportNoMobileClick?: () => void;
   onImportMobilesClick?: () => void;
   onSearchFocus?: () => void;
   isExporting?: boolean;
@@ -35,7 +34,6 @@ export const EmployeePageHeader = ({
   totalEmployees,
   onAddEmployeeClick,
   onExportClick,
-  onExportNoMobileClick,
   onImportMobilesClick,
   isExporting = false,
 }: EmployeePageHeaderProps) => {
@@ -50,15 +48,6 @@ export const EmployeePageHeader = ({
       label: isExporting ? 'Đang xuất...' : 'Xuất Excel',
       onClick: onExportClick,
       icon: Download,
-      inert: isExporting,
-    });
-  }
-  if (onExportNoMobileClick && isAdmin) {
-    segments.push({
-      key: 'export-no-mobile',
-      label: isExporting ? 'Đang xuất...' : 'NV chưa có SĐT',
-      onClick: onExportNoMobileClick,
-      icon: PhoneOff,
       inert: isExporting,
     });
   }

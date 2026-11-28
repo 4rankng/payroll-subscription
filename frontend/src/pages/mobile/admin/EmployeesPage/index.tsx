@@ -23,7 +23,6 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { EmployeeMobileCard } from "@/components/employees/EmployeeMobileCard";
 import { EmployeeEmptyStates } from "@/components/employees/EmployeeEmptyStates";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
-import { ExportPaidNoMobileModal } from "@/components/modals/ExportPaidNoMobileModal";
 import { ImportMobilesModal } from "@/components/modals/ImportMobilesModal";
 import { MobilePageHeader } from "@/components/shared/MobilePageHeader";
 import { useEmployeeDataInfinite } from "@/hooks/employees/useEmployeeDataInfinite";
@@ -64,7 +63,6 @@ const EmployeesPageMobile = () => {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
-  const [paidNoMobileModalOpen, setPaidNoMobileModalOpen] = useState(false);
   const [importMobilesModalOpen, setImportMobilesModalOpen] = useState(false);
 
   const {
@@ -84,7 +82,7 @@ const EmployeesPageMobile = () => {
   const { data: employeesSummary, isLoading: summaryLoading } =
     useEmployeesSummary();
   const { data: projectsData } = useAssignableProjects();
-  const { exportEmployees, exportPaidWithoutMobile, isExporting } = useEmployeeExport();
+  const { exportEmployees, isExporting } = useEmployeeExport();
   const { openEmployeeDetails, openAddEmployee } = useEmployeeModals();
 
   useEffect(() => {
@@ -614,17 +612,6 @@ const EmployeesPageMobile = () => {
               className="h-12 w-full justify-start gap-3"
               onClick={() => {
                 setMoreActionsOpen(false);
-                setPaidNoMobileModalOpen(true);
-              }}
-            >
-              <PhoneOff className="h-4 w-4" aria-hidden="true" />
-              NV chưa có SĐT
-            </Button>
-            <Button
-              variant="outline"
-              className="h-12 w-full justify-start gap-3"
-              onClick={() => {
-                setMoreActionsOpen(false);
                 setImportMobilesModalOpen(true);
               }}
             >
@@ -635,12 +622,6 @@ const EmployeesPageMobile = () => {
         </SheetContent>
       </Sheet>
 
-      <ExportPaidNoMobileModal
-        open={paidNoMobileModalOpen}
-        onClose={() => setPaidNoMobileModalOpen(false)}
-        onExport={(months) => exportPaidWithoutMobile(months)}
-        isExporting={isExporting}
-      />
       <ImportMobilesModal
         open={importMobilesModalOpen}
         onClose={() => setImportMobilesModalOpen(false)}

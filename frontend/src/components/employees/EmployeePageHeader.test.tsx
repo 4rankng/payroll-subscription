@@ -15,7 +15,6 @@ const renderHeader = (props: Partial<Parameters<typeof EmployeePageHeader>[0]> =
         totalEmployees={1632}
         onAddEmployeeClick={() => {}}
         onExportClick={() => {}}
-        onExportNoMobileClick={() => {}}
         onImportMobilesClick={() => {}}
         {...props}
       />
@@ -34,7 +33,6 @@ describe('EmployeePageHeader', () => {
     const segments = within(toolbar).getAllByRole('button');
     expect(segments.map((segment) => segment.textContent)).toEqual([
       'Xuất Excel',
-      'NV chưa có SĐT',
       'Nhập SĐT',
       'Thêm nhân viên',
     ]);
@@ -62,10 +60,11 @@ describe('EmployeePageHeader', () => {
     const segments = within(toolbar).getAllByRole('button');
 
     expect(segments[0]).toHaveTextContent('Đang xuất...');
-    expect(segments[1]).toHaveTextContent('Đang xuất...');
-    for (const exporting of segments.slice(0, 2)) {
-      expect(exporting).toHaveClass('pointer-events-none', 'opacity-50');
-      expect(exporting).toHaveAttribute('aria-busy', 'true');
+    expect(segments[0]).toHaveClass('pointer-events-none', 'opacity-50');
+    expect(segments[0]).toHaveAttribute('aria-busy', 'true');
+    for (const live of segments.slice(1)) {
+      expect(live).not.toHaveClass('pointer-events-none');
+      expect(live).not.toHaveAttribute('aria-busy', 'true');
     }
     expect(segments[segments.length - 1]).not.toHaveClass('pointer-events-none');
     expect(segments[segments.length - 1]).not.toHaveAttribute('aria-busy');

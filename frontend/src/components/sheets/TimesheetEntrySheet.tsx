@@ -266,7 +266,6 @@ function TimesheetEntrySheetComponent({
 
   // Auto-populate entries when project is selected and has employees
   useEffect(() => {
-    console.log("AUTOPOP", JSON.stringify({ isOpen, projectId: formData.projectId, emp: availableEmployees.length, ready: isPayRateReady, closing: isClosing, entries: formData.entries.length }));
     if (!isOpen || !formData.projectId || availableEmployees.length === 0 || !isPayRateReady || isClosing) {
       return;
     }
@@ -301,6 +300,11 @@ function TimesheetEntrySheetComponent({
     }
 
     // Create one entry per day in date range for each employee of this project (limited to current month)
+    // Future dates are skipped: the backend preview rejects them ("Ngày không thể là ngày trong tương lai"),
+    // and rows the user cannot save would keep Lưu chấm công permanently disabled.
+    const formatLocalDate = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const todayIso = formatLocalDate(new Date());
     const start = new Date(dateRange.startDate);
     const end = new Date(dateRange.endDate);
 
@@ -310,7 +314,8 @@ function TimesheetEntrySheetComponent({
       for (let i = 0; i < days; i++) {
         const currentDate = new Date(start);
         currentDate.setDate(start.getDate() + i);
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(currentDate);
+        if (dateStr > todayIso) continue;
 
         // Use the hook helper to create the entry with the correct date
         handleAddEntry(employee, dateStr);

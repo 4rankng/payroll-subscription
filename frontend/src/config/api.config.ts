@@ -42,7 +42,6 @@ export const API_ENDPOINTS = {
     duplicateMobiles: '/employees/duplicate-mobiles',
     search: '/employees/search',
     export: '/employees/export',
-    exportPaidWithoutMobile: '/employees/export-paid-without-mobile',
     exportDetail: (id: number) => `/employees/${id}/export`,
     import: '/employees/import',
     importStatus: (id: string) => `/employees/import/${id}/status`,

@@ -430,25 +430,6 @@ class EmployeeService {
   }
 
   /**
-   * Export employees who received salary or a completed FlexPay advance in the
-   * last N months but have no mobile number on file (admin only).
-   */
-  async exportPaidWithoutMobile(months: number): Promise<void> {
-    const response = await apiClient['client'].post(
-      API_ENDPOINTS.employees.exportPaidWithoutMobile,
-      { months },
-      { responseType: 'blob' }
-    );
-
-    const filename = extractFilenameFromHeaders(response.headers) ||
-      `employees_paid_without_mobile_${new Date().toISOString().split('T')[0]}.xlsx`;
-    const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-    triggerBlobDownload(blob, filename);
-  }
-
-  /**
    * Check for duplicate employees by CCCD, mobile, or email before creating.
    * Global by design — surfaces employees created by other partners.
    * Only identifiers the requester typed are revealed, masked.
