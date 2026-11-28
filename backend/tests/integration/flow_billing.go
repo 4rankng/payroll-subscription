@@ -18,7 +18,7 @@ const flowBilling = "Billing"
 // GET /billing/dashboard/ky-summary.
 type billingKySummary struct {
 	Months []struct {
-		WorkMonth string         `json:"work_month"`
+		WorkMonth string           `json:"work_month"`
 		Counts    map[string]int64 `json:"counts"`
 	} `json:"months"`
 	FeePerEmployeePerKyVnd int64 `json:"fee_per_employee_per_ky_vnd"`
@@ -27,12 +27,12 @@ type billingKySummary struct {
 // billingKyPaidRecords is the GET /billing/ky-paid-records payload.
 type billingKyPaidRecords struct {
 	Items []struct {
-		ID        uint   `json:"id"`
-		Cycle     int    `json:"cycle"`
-		WorkMonth string `json:"work_month"`
-		EmployeeID uint  `json:"employee_id"`
-		ProjectID uint   `json:"project_id"`
-		PaidAmount int64 `json:"paid_amount"`
+		ID         uint   `json:"id"`
+		Cycle      int    `json:"cycle"`
+		WorkMonth  string `json:"work_month"`
+		EmployeeID uint   `json:"employee_id"`
+		ProjectID  uint   `json:"project_id"`
+		PaidAmount int64  `json:"paid_amount"`
 	} `json:"items"`
 	SummaryByCycle map[string]int64 `json:"summary_by_cycle"`
 }

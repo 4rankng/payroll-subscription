@@ -160,6 +160,11 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	employeeUserCreatedHandler := events.NewEmployeeUserCreatedHandler(repos.Employee, employeeUserService)
 	eventBus.SubscribeAll(employeeUserCreatedHandler)
 
+	// Provision the linked employee shell when a nhanvien account is created
+	// or converted (PAYSUB-28) — see UserEmployeeProfileHandler.
+	userEmployeeProfileHandler := events.NewUserEmployeeProfileHandler(employeeProfileService)
+	eventBus.SubscribeAll(userEmployeeProfileHandler)
+
 	// Cascade employee profile identity (fullname, CCCD) onto project
 	// assignment denormalized copies. The BCC import resolver indexes
 	// assignments by the copied CCCD; without this subscription a profile edit
@@ -172,6 +177,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		"audit", true,
 		"cache_invalidation", true,
 		"employee_user_created", true,
+		"user_employee_profile", true,
 		"employee_identity_sync", true,
 	)
 

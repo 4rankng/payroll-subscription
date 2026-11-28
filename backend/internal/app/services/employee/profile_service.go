@@ -42,9 +42,66 @@ func NewEmployeeProfileService(
 	}
 }
 
+// EnsureProfileForUser enforces the "every nhanvien account has a linked
+// employee profile" invariant. Role conversions that predate provisioning
+// (PAYSUB-28) left accounts with no employee row — their self-service page
+// dead-ended with 404. The missing shell profile is created exactly once from
+// the user record; accounts that already have a profile get it back untouched.
+func (s *EmployeeProfileService) EnsureProfileForUser(ctx context.Context, userID uint) (*domain.Employee, error) {
+	employee, err := s.EmployeeRepo.GetByUserID(ctx, userID)
+	if err == nil {
+		return employee, nil
+	}
+	if !domain.IsNotFoundError(err) {
+		return nil, err
+	}
+	user, err := s.UserService.GetUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.Role != domain.RoleNhanvien {
+		// Staff roles keep no employee profile — preserve the not-found answer.
+		return nil, domain.NewNotFoundError("employee not found")
+	}
+
+	cccd := ""
+	if user.CCCD != nil {
+		cccd = strings.TrimSpace(*user.CCCD)
+	}
+	if cccd == "" {
+		// Not yet identified: a deterministic non-identity placeholder keeps
+		// the unique CCCD key intact until management fills the real one. It
+		// can never collide with a real citizen ID.
+		cccd = fmt.Sprintf("PENDING-%d", user.ID)
+	}
+	mobile := ""
+	if user.Mobile != nil {
+		mobile = *user.Mobile
+	}
+	linked := user.ID
+	shell := &domain.Employee{
+		Fullname:  user.Fullname,
+		CCCD:      cccd,
+		Mobile:    mobile,
+		UserID:    &linked,
+		CreatedBy: user.ID,
+	}
+	if err := s.EmployeeRepo.Create(ctx, shell); err != nil {
+		// Concurrent provisioning (write path vs first login) may have won the
+		// race — the link lookup settles it.
+		if existing, findErr := s.EmployeeRepo.GetByUserID(ctx, userID); findErr == nil {
+			return existing, nil
+		}
+		return nil, fmt.Errorf("employee profile: provision for user %d: %w", userID, err)
+	}
+	observability.GetLogger().Info("employee profile provisioned for nhanvien account",
+		"user_id", userID, "employee_id", shell.ID)
+	return shell, nil
+}
+
 // GetMyProfile gets the employee profile for the authenticated user
 func (s *EmployeeProfileService) GetMyProfile(ctx context.Context, userID uint) (*domain.Employee, error) {
-	employee, err := s.EmployeeRepo.GetByUserID(ctx, userID)
+	employee, err := s.EnsureProfileForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +112,7 @@ func (s *EmployeeProfileService) GetMyProfile(ctx context.Context, userID uint) 
 // UpdateMyProfile updates the employee's own profile (name, email, username)
 func (s *EmployeeProfileService) UpdateMyProfile(ctx context.Context, userID uint, fullname *string, email *string, username *string) (*domain.Employee, error) {
 	// Get employee and user
-	employee, err := s.EmployeeRepo.GetByUserID(ctx, userID)
+	employee, err := s.EnsureProfileForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +219,7 @@ type TimesheetApproverInfo struct {
 // GetMyTimesheets gets timesheets for the authenticated employee
 func (s *EmployeeProfileService) GetMyTimesheets(ctx context.Context, userID uint, filters domain.TimesheetFilters) ([]*TimesheetEntry, int64, error) {
 	// Get employee
-	employee, err := s.EmployeeRepo.GetByUserID(ctx, userID)
+	employee, err := s.EnsureProfileForUser(ctx, userID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -259,7 +316,7 @@ type CurrentProjectAssignment struct {
 // GetMySummary gets salary summary statistics for the authenticated employee
 func (s *EmployeeProfileService) GetMySummary(ctx context.Context, userID uint, weeks int) (*EmployeeSummaryData, error) {
 	// Get employee
-	employee, err := s.EmployeeRepo.GetByUserID(ctx, userID)
+	employee, err := s.EnsureProfileForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
