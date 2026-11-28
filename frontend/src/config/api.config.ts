@@ -1,6 +1,15 @@
 // API Configuration
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : ''),
+  // Dev must serve the API from the SAME host the page is opened on
+  // (127.0.0.1:3000 page → 127.0.0.1:8080 API): the session cookie is
+  // SameSite=Lax, so a page on 127.0.0.1 fetching a cookie stored for
+  // localhost is cross-site and Chrome withholds it on every request —
+  // login returns 200 but every authed call 401s.
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ??
+    (import.meta.env.DEV
+      ? `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:8080`
+      : ''),
   apiV1: '/api/v1',
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30000,
 };
@@ -9,8 +18,6 @@ export const API_ENDPOINTS = {
   // Authentication
   auth: {
     login: '/auth/login',
-    loginVerifyOtp: '/auth/login/verify',
-    loginResendOtp: '/auth/login/resend',
     logout: '/auth/logout',
     me: '/auth/me',
     updateProfile: '/auth/me',
