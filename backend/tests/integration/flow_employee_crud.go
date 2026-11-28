@@ -33,11 +33,89 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 		return AssertGreaterThan("id", uint(0), resp.ID)
 	})
 
+	var bankedEmpID uint
+
 	defer func() {
 		if testEmpID != 0 {
 			_, _, _ = admin.Delete(fmt.Sprintf("/api/v1/employees/%d", testEmpID))
 		}
+		if bankedEmpID != 0 {
+			_, _, _ = admin.Delete(fmt.Sprintf("/api/v1/employees/%d", bankedEmpID))
+		}
 	}()
+
+	reporter.RunTest(flowEmployee, "Banks reference list returns seeded branches", func() error {
+		var resp BanksResponse
+		if _, err := admin.GetInto("/api/v1/banks", &resp); err != nil {
+			return fmt.Errorf("list banks: %w", err)
+		}
+		if err := AssertSliceMinLen("banks", len(resp.Banks), 1); err != nil {
+			return err
+		}
+		fmt.Printf("    Found %d bank branches\n", len(resp.Banks))
+		return nil
+	})
+
+	reporter.RunTest(flowEmployee, "Create employee with complete bank set", func() error {
+		var banks BanksResponse
+		if _, err := admin.GetInto("/api/v1/banks", &banks); err != nil {
+			return fmt.Errorf("list banks: %w", err)
+		}
+		if len(banks.Banks) == 0 {
+			return fmt.Errorf("no seeded bank branches")
+		}
+		body := CreateEmployeeRequest{
+			Fullname:          prefix + " Banked",
+			CCCD:              testCCCD + "B",
+			Mobile:            uniqueMobile(),
+			BankID:            &banks.Banks[0].ID,
+			BankAccountNumber: "0123456789",
+			BankAccountName:   prefix + " BANKED",
+		}
+		var resp EmployeeResponse
+		if _, err := admin.PostInto("/api/v1/employees", body, &resp); err != nil {
+			return fmt.Errorf("create employee: %w", err)
+		}
+		bankedEmpID = resp.ID
+		if resp.Bank == nil || resp.Bank.ID != banks.Banks[0].ID {
+			return fmt.Errorf("create response did not echo bank branch")
+		}
+		return AssertEqual("bank_account_number", "0123456789", resp.BankAccountNumber)
+	})
+
+	reporter.RunTest(flowEmployee, "Bank fields round-trip through detail", func() error {
+		if bankedEmpID == 0 {
+			return fmt.Errorf("no banked employee ID")
+		}
+		var resp EmployeeResponse
+		if _, err := admin.GetInto(fmt.Sprintf("/api/v1/employees/%d", bankedEmpID), &resp); err != nil {
+			return fmt.Errorf("get employee: %w", err)
+		}
+		if resp.Bank == nil {
+			return fmt.Errorf("bank branch missing on detail response")
+		}
+		if err := AssertGreaterThan("bank_id", uint(0), resp.Bank.ID); err != nil {
+			return err
+		}
+		return AssertEqual("bank_account_name", prefix+" BANKED", resp.BankAccountName)
+	})
+
+	reporter.RunTest(flowEmployee, "Partial bank set is rejected with 400", func() error {
+		body := CreateEmployeeRequest{
+			Fullname:          prefix + " Partial",
+			CCCD:              testCCCD + "P",
+			Mobile:            uniqueMobile(),
+			BankAccountNumber: "9876543210",
+		}
+		_, statusCode, err := admin.Post("/api/v1/employees", body)
+		if statusCode == 400 {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("partial bank create: %w", err)
+		}
+		return fmt.Errorf("expected 400 for partial bank set, got %d", statusCode)
+	})
 
 	// --- Read ---
 

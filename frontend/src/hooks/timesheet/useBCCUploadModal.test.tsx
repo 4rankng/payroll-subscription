@@ -126,13 +126,13 @@ describe('useBCCUploadModal', () => {
         expect(result.current.result?.status).toBe(terminalStatus);
       });
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: QueryKeys.employees.missingBankDetails(),
+        queryKey: QueryKeys.employees.missingMobile(),
       });
     },
   );
 
 	it.each(['completed', 'failed'] as const)(
-    'refreshes the invalid-bank-information list when upload returns %s directly',
+    'refreshes the mobile-gap list when upload returns %s directly',
     async (terminalStatus) => {
       const queryClient = new QueryClient({
         defaultOptions: {
@@ -170,13 +170,13 @@ describe('useBCCUploadModal', () => {
         expect(result.current.result?.status).toBe(terminalStatus);
       });
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: QueryKeys.employees.missingBankDetails(),
+        queryKey: QueryKeys.employees.missingMobile(),
       });
     },
   );
 
   it.each(['completed', 'failed'] as const)(
-    'refreshes the invalid-bank-information list when upload returns %s directly',
+    'refreshes the mobile-gap list when upload returns %s directly',
     async (terminalStatus) => {
       const queryClient = new QueryClient({
         defaultOptions: {
@@ -214,7 +214,7 @@ describe('useBCCUploadModal', () => {
         expect(result.current.result?.status).toBe(terminalStatus);
       });
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: QueryKeys.employees.missingBankDetails(),
+        queryKey: QueryKeys.employees.missingMobile(),
       });
     },
 	);

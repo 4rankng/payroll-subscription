@@ -82,7 +82,6 @@ export const InvalidationGroups = {
   EMPLOYEE_LISTS: [
     QueryKeys.employees.lists(),
     QueryKeys.employees.search(),
-    QueryKeys.employees.missingBankDetails(),
     QueryKeys.employees.missingMobile(),
     QueryKeys.employees.duplicateMobiles(),
   ],

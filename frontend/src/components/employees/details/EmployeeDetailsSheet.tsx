@@ -164,8 +164,9 @@ export function EmployeeDetailsSheet({
   const canManageEmployeeAccess = isAdmin || isEmployeeCreator;
 
   // Preview mode: partner viewing an employee they don't manage (global pool).
-  // Backend already masks bank/address and omits summaries; hide all mutating
-  // actions and offer the one action that makes sense: request management.
+  // Backend withholds bank/contact fields and omits summaries for rows the
+  // partner doesn't manage; hide all mutating actions and offer the one
+  // action that makes sense: request management.
   const isPreviewOnly = !isAdmin && employee?.is_accessible === false;
   const requestAccess = useRequestEmployeeAccess();
   const handleClaimAccess = useCallback(() => {

@@ -116,9 +116,6 @@ function invalidateTerminalImportQueries(
 
   queryClient.invalidateQueries({ queryKey: ['partner-imports'] });
   queryClient.invalidateQueries({
-    queryKey: QueryKeys.employees.missingBankDetails(),
-  });
-  queryClient.invalidateQueries({
     queryKey: QueryKeys.employees.missingMobile(),
   });
   queryClient.invalidateQueries({

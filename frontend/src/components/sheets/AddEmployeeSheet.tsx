@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { X, User, UserPlus, Plus, Loader2, AlertTriangle, Search, HandHeart } from 'lucide-react';
+import { X, User, UserPlus, Plus, Loader2, AlertTriangle, Search, HandHeart, Landmark } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { CreateEmployeeData, DuplicateCheckMatch } from '@/types/api/employee.types';
 import { useCreateEmployee, useDuplicateCheck, useRequestEmployeeAccess } from '@/hooks/api/useEmployees';
+import { useBanks } from '@/hooks/api/useBanks';
 import { useDebounce } from '@/hooks/useDebounce';
 import { SlideSheetTemplate } from './templates/SlideSheetTemplate';
 import { useModalNavigation } from '@/hooks/useModalNavigation';
@@ -154,8 +155,11 @@ function AddEmployeeSheetComponent({
     cccd: '',
     address: '',
     mobile: '',
-    date_of_birth: ''
+    date_of_birth: '',
+    bank_account_number: '',
+    bank_account_name: ''
   });
+  const banksQuery = useBanks();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -214,7 +218,9 @@ function AddEmployeeSheetComponent({
         cccd: '',
         address: '',
         mobile: '',
-        date_of_birth: ''
+        date_of_birth: '',
+        bank_account_number: '',
+        bank_account_name: ''
       });
       setErrors({});
     }
@@ -253,6 +259,24 @@ function AddEmployeeSheetComponent({
       newErrors.date_of_birth = 'Ngày sinh phải có định dạng YYYY-MM-DD';
     }
 
+    // Optional bank capture is complete-or-none: all three fields together or
+    // all empty — a half-filled account never satisfies the missing-bank check.
+    const bankId = formData.bank_id;
+    const bankAccount = formData.bank_account_number?.trim() || '';
+    const bankName = formData.bank_account_name?.trim() || '';
+    const hasAnyBankField = bankId != null || bankAccount !== '' || bankName !== '';
+    if (hasAnyBankField) {
+      if (bankId == null) {
+        newErrors.bank_id = 'Vui lòng chọn ngân hàng';
+      }
+      if (bankAccount === '') {
+        newErrors.bank_account_number = 'Số tài khoản là bắt buộc khi đã nhập thông tin ngân hàng';
+      }
+      if (bankName === '') {
+        newErrors.bank_account_name = 'Tên chủ tài khoản là bắt buộc khi đã nhập thông tin ngân hàng';
+      }
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
@@ -277,6 +301,11 @@ function AddEmployeeSheetComponent({
     }
     if (formData.date_of_birth?.trim()) {
       requestData.date_of_birth = formData.date_of_birth.trim();
+    }
+    if (hasAnyBankField && bankId != null) {
+      requestData.bank_id = bankId;
+      requestData.bank_account_number = bankAccount;
+      requestData.bank_account_name = bankName;
     }
 
     try {
@@ -407,6 +436,67 @@ function AddEmployeeSheetComponent({
               className="h-11 typography-body-medium"
             />
           </Field>
+        </FieldGroup>
+
+        {/* Optional bank account — complete-or-none, validated below */}
+        <FieldGroup>
+          <SectionTitle icon={Landmark} label="Tài khoản ngân hàng (không bắt buộc)" />
+          <p className="typography-body-small text-muted-foreground -mt-1">
+            Nhập đủ cả ba trường hoặc bỏ trống hoàn toàn.
+          </p>
+
+          <Field id="bank_id" label="Ngân hàng">
+            <select
+              id="bank_id"
+              value={formData.bank_id ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData(prev => ({
+                  ...prev,
+                  bank_id: value === '' ? undefined : Number(value)
+                }));
+                if (errors.bank_id) {
+                  setErrors(prev => ({ ...prev, bank_id: '' }));
+                }
+              }}
+              className={cn(
+                "h-11 w-full rounded-md border border-input bg-background px-3 typography-body-medium",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                errors.bank_id && "border-destructive"
+              )}
+            >
+              <option value="">— Chọn ngân hàng —</option>
+              {(banksQuery.data ?? []).map((bank) => (
+                <option key={bank.id} value={bank.id}>{bank.branch_name}</option>
+              ))}
+            </select>
+            {errors.bank_id && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_id}</p>}
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field id="bank_account_number" label="Số tài khoản">
+              <Input
+                id="bank_account_number"
+                placeholder="0123456789"
+                inputMode="numeric"
+                value={formData.bank_account_number || ''}
+                onChange={(e) => handleInputChange("bank_account_number", e.target.value)}
+                className={cn("h-11 typography-body-medium font-mono tracking-wide", errors.bank_account_number && "border-destructive")}
+              />
+              {errors.bank_account_number && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_account_number}</p>}
+            </Field>
+
+            <Field id="bank_account_name" label="Tên chủ tài khoản">
+              <Input
+                id="bank_account_name"
+                placeholder="NGUYEN VAN A"
+                value={formData.bank_account_name || ''}
+                onChange={(e) => handleInputChange("bank_account_name", e.target.value)}
+                className={cn("h-11 typography-body-medium uppercase", errors.bank_account_name && "border-destructive")}
+              />
+              {errors.bank_account_name && <p role="alert" className="typography-body-small text-financial-negative">{errors.bank_account_name}</p>}
+            </Field>
+          </div>
         </FieldGroup>
 
         {/* Duplicate detection results */}

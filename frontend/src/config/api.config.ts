@@ -44,7 +44,6 @@ export const API_ENDPOINTS = {
   employees: {
     base: '/employees',
     summary: '/employees/summary',
-    missingBankDetails: '/employees/missing-bank-details',
     missingMobile: '/employees/missing-mobile',
     duplicateMobiles: '/employees/duplicate-mobiles',
     search: '/employees/search',
@@ -500,12 +499,6 @@ export const API_ENDPOINTS = {
     reconciliationDownload: '/admin/manual-disbursement/reconciliation/download',
   },
 
-  // Lenders
-
-  // Adv Partner
-  advPartner: {
-    updateUser: (id: number) => `/adv-partner/users/${id}`,
-  },
 };
 
 // Rate limit configuration

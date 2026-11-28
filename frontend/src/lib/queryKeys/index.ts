@@ -114,7 +114,6 @@ export const QueryKeys = {
     assignments: (id: number) => [...QueryKeys.employees.all, id, 'assignments'] as const,
     stats: (id: number) => [...QueryKeys.employees.all, id, 'stats'] as const,
     payrates: (id: number) => [...QueryKeys.employees.all, id, 'payrates'] as const,
-    missingBankDetails: (filters?: EmployeeFilters) => [...QueryKeys.employees.all, 'missing-bank-details', filters] as const,
     missingMobile: (filters?: EmployeeFilters) => [...QueryKeys.employees.all, 'missing-mobile', filters] as const,
     duplicateMobiles: () => [...QueryKeys.employees.all, 'duplicate-mobiles'] as const,
     timesheet: (id: number, filters?: TimesheetFilters) =>

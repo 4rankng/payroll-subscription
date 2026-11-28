@@ -102,12 +102,24 @@ type DisableCheckInEmployeesResponse struct {
 // --- Employees ---
 
 type EmployeeResponse struct {
-	ID              uint                  `json:"id"`
-	Fullname        string                `json:"fullname"`
-	Email           *string               `json:"email"`
-	CCCD            string                `json:"cccd"`
-	Mobile          string                `json:"mobile"`
-	CurrentProjects []EmployeeProjectInfo `json:"current_projects"`
+	ID                uint                  `json:"id"`
+	Fullname          string                `json:"fullname"`
+	Email             *string               `json:"email"`
+	CCCD              string                `json:"cccd"`
+	Mobile            string                `json:"mobile"`
+	Bank              *EmployeeBankInfo     `json:"bank,omitempty"`
+	BankAccountNumber string                `json:"bank_account_number"`
+	BankAccountName   string                `json:"bank_account_name"`
+	CurrentProjects   []EmployeeProjectInfo `json:"current_projects"`
+}
+
+type EmployeeBankInfo struct {
+	ID         uint   `json:"id"`
+	BranchName string `json:"branch_name"`
+}
+
+type BanksResponse struct {
+	Banks []EmployeeBankInfo `json:"banks"`
 }
 
 type EmployeeDetailedResponse struct {

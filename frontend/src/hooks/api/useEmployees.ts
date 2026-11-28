@@ -95,16 +95,6 @@ export const useEmployeesInfinite = (
   });
 };
 
-// Get employees with missing bank details
-export const useEmployeesWithMissingBankDetails = (
-  filters?: EmployeeFilters,
-) => {
-  return useQuery({
-    queryKey: QueryKeys.employees.missingBankDetails(filters),
-    queryFn: () => employeeService.getEmployeesWithMissingBankDetails(filters),
-  });
-};
-
 // Get active employees with an empty mobile
 export const useEmployeesWithMissingMobile = (
   filters?: EmployeeFilters,

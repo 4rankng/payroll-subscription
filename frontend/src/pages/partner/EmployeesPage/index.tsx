@@ -19,7 +19,6 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { AlertTriangle, Plus, Download } from "lucide-react";
 import {
   Bank,
-  CheckCircle,
   Clock,
   CreditCard01,
   Globe01,
@@ -171,12 +170,7 @@ const EmployeesPage = () => {
                         : ""}
                     </span>
                   </div>
-                  {accessible ? (
-                    <span className="inline-flex items-center gap-1 shrink-0 text-xs font-semibold text-success bg-success/10 border border-success/30 rounded-full px-2 py-0.5">
-                      <CheckCircle className="h-3 w-3" aria-hidden="true" />
-                      Đang quản lý
-                    </span>
-                  ) : canClaim ? (
+                  {!accessible && canClaim ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

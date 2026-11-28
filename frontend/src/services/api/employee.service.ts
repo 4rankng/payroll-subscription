@@ -80,42 +80,8 @@ class EmployeeService {
   }
 
   /**
-   * Get employees with missing bank details
-   */
-  async getEmployeesWithMissingBankDetails(filters?: EmployeeFilters): Promise<EmployeesResponse> {
-    // Convert month to date range if provided and no explicit fromDate/toDate
-    let apiFilters = filters;
-    if (filters?.month && !filters.fromDate && !filters.toDate) {
-      const { fromDate, toDate } = this.convertMonthToDateRange(filters.month);
-      apiFilters = {
-        ...filters,
-        fromDate,
-        toDate,
-        month: undefined
-      };
-    }
-
-    const queryString = apiFilters ? buildQueryString(apiFilters as Record<string, unknown>) : '';
-    const response = await apiClient.get<Employee[]>(
-      `${API_ENDPOINTS.employees.missingBankDetails}${queryString}`
-    );
-
-    return {
-      status: 'success' as const,
-      data: (response.data as Employee[]) || [],
-      pagination: response.pagination || {
-        page: 1,
-        pageSize: 100,
-        totalPages: 1,
-        totalRecords: 0
-      },
-      message: response.message || '',
-    };
-  }
-
-  /**
    * Get active employees with an empty mobile (same envelope and item shape
-   * as getEmployeesWithMissingBankDetails). Already partner-scoped server-side.
+   * as the legacy missing-bank list). Already partner-scoped server-side.
    */
   async getEmployeesWithMissingMobile(filters?: EmployeeFilters): Promise<EmployeesResponse> {
     // Convert month to date range if provided and no explicit fromDate/toDate
@@ -561,31 +527,6 @@ class EmployeeService {
   ): Promise<ApiResponse<void>> {
     const response = await apiClient.put<void>(
       API_ENDPOINTS.employees.changePassword(id),
-      data
-    );
-    return response;
-  }
-
-  /**
-   * Combined update: employee info + username + password in one call.
-   * Uses the dedicated adv-partner endpoint.
-   */
-  async updateAdvPartnerUser(
-    id: number,
-    data: {
-      fullname?: string;
-      email?: string;
-      cccd?: string;
-      mobile?: string;
-      bank_id?: number;
-      bank_account_number?: string;
-      bank_account_name?: string;
-      username?: string;
-      password?: string;
-    }
-  ): Promise<ApiResponse<Employee>> {
-    const response = await apiClient.put<Employee>(
-      API_ENDPOINTS.advPartner.updateUser(id),
       data
     );
     return response;
