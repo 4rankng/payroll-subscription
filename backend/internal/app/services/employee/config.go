@@ -13,6 +13,7 @@ import (
 type Config struct {
 	// Repositories
 	EmployeeRepo        domain.EmployeeRepository
+	BankRepo            domain.BankRepository
 	TimesheetRepo       domain.TimesheetRepository
 	ProjectEmployeeRepo domain.ProjectEmployeeRepository
 	EmployeeUserRepo    domain.EmployeeUserRepository

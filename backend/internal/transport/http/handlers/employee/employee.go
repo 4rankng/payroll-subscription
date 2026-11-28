@@ -79,17 +79,22 @@ func (h *Handler) buildEmployeeResponse(ctx context.Context, employee *domain.Em
 	}
 
 	response := dto.EmployeeResponse{
-		ID:              employee.ID,
-		Username:        username,
-		Fullname:        employee.Fullname,
-		Email:           employee.Email,
-		CCCD:            employee.CCCD,
-		Mobile:          employee.Mobile,
-		CreatedBy:       employee.CreatedBy,
-		CreatedAt:       employee.CreatedAt,
-		UpdatedAt:       employee.UpdatedAt,
-		CanDelete:       true,
-		CurrentProjects: []dto.EmployeeProjectInfo{}, // Initialize empty array
+		ID:                employee.ID,
+		Username:          username,
+		Fullname:          employee.Fullname,
+		Email:             employee.Email,
+		CCCD:              employee.CCCD,
+		Address:           employee.Address,
+		Mobile:            employee.Mobile,
+		Bank:              buildEmployeeBankInfo(employee.Bank),
+		BankAccountNumber: employee.BankAccountNumber,
+		BankAccountName:   employee.BankAccountName,
+		DateOfBirth:       formatOptionalDate(employee.DateOfBirth),
+		CreatedBy:         employee.CreatedBy,
+		CreatedAt:         employee.CreatedAt,
+		UpdatedAt:         employee.UpdatedAt,
+		CanDelete:         true,
+		CurrentProjects:   []dto.EmployeeProjectInfo{}, // Initialize empty array
 	}
 
 	// Get current project assignments if service is available
@@ -129,15 +134,20 @@ func (h *Handler) buildDetailedEmployeeResponse(ctx context.Context, emp *domain
 	}
 
 	resp := &dto.EmployeeDetailedResponse{
-		ID:        emp.ID,
-		Username:  username,
-		Fullname:  emp.Fullname,
-		Email:     emp.Email,
-		CCCD:      emp.CCCD,
-		Mobile:    emp.Mobile,
-		CreatedBy: emp.CreatedBy,
-		CreatedAt: emp.CreatedAt,
-		UpdatedAt: emp.UpdatedAt,
+		ID:                emp.ID,
+		Username:          username,
+		Fullname:          emp.Fullname,
+		Email:             emp.Email,
+		CCCD:              emp.CCCD,
+		Address:           emp.Address,
+		Mobile:            emp.Mobile,
+		Bank:              buildEmployeeBankInfo(emp.Bank),
+		BankAccountNumber: emp.BankAccountNumber,
+		BankAccountName:   emp.BankAccountName,
+		DateOfBirth:       formatOptionalDate(emp.DateOfBirth),
+		CreatedBy:         emp.CreatedBy,
+		CreatedAt:         emp.CreatedAt,
+		UpdatedAt:         emp.UpdatedAt,
 	}
 
 	// Fetch payroll summary, timesheet summary, and project assignments concurrently.
@@ -271,12 +281,28 @@ func (h *Handler) CreateEmployee(c *gin.Context) {
 		return
 	}
 
-	// 3. Convert DTO to domain entity (HTTP concern - data transformation)
+	// 3. Parse optional date field (HTTP concern - date format conversion)
+	var dateOfBirth *time.Time
+	if req.DateOfBirth != "" {
+		if parsed, parseErr := time.Parse("2006-01-02", req.DateOfBirth); parseErr == nil {
+			dateOfBirth = &parsed
+		} else {
+			response.BadRequest(c, constants.MsgInvalidDateFormatVN)
+			return
+		}
+	}
+
+	// 4. Convert DTO to domain entity (HTTP concern - data transformation)
 	employee := &domain.Employee{
-		Fullname: req.Fullname,
-		Email:    req.Email,
-		CCCD:     req.CCCD,
-		Mobile:   req.Mobile,
+		Fullname:          req.Fullname,
+		Email:             req.Email,
+		CCCD:              req.CCCD,
+		Address:           req.Address,
+		Mobile:            req.Mobile,
+		BankID:            req.BankID,
+		BankAccountNumber: req.BankAccountNumber,
+		BankAccountName:   req.BankAccountName,
+		DateOfBirth:       dateOfBirth,
 	}
 
 	// 5. Delegate to service layer (orchestration)
@@ -338,10 +364,16 @@ func (h *Handler) GetEmployee(c *gin.Context) {
 		}
 		employeeResponse.IsAccessible = &accessible
 		if !accessible {
-			// Management data (earnings, work history) stays with the managing
-			// partner; a preview only needs identity + current projects.
+			// Management data (earnings, work history) and personal contact
+			// details stay with the managing partner; a preview only needs
+			// identity + current projects.
 			employeeResponse.PayrollSummary = nil
 			employeeResponse.TimesheetSummary = nil
+			employeeResponse.Address = ""
+			employeeResponse.DateOfBirth = nil
+			employeeResponse.Bank = nil
+			employeeResponse.BankAccountNumber = ""
+			employeeResponse.BankAccountName = ""
 		}
 	}
 
@@ -407,7 +439,8 @@ func (h *Handler) UpdateEmployee(c *gin.Context) {
 		return
 	}
 
-	// Reload the employee with updated bank relationship
+	// Reload via GetByID: it preloads the Bank branch reference, so the
+	// response carries the current bank info.
 	updatedEmployee, err := h.employeeService.GetEmployee(c.Request.Context(), uint(id))
 	if err != nil {
 		logger := observability.GetLogger()

@@ -20,6 +20,7 @@ import (
 type EmployeeService struct {
 	// Repositories - for data access only
 	EmployeeRepo        domain.EmployeeRepository
+	BankRepo            domain.BankRepository
 	TimesheetRepo       domain.TimesheetRepository
 	ProjectEmployeeRepo domain.ProjectEmployeeRepository
 	EmployeeUserRepo    domain.EmployeeUserRepository
@@ -40,6 +41,7 @@ type EmployeeService struct {
 func NewEmployeeService(cfg *Config) *EmployeeService {
 	return &EmployeeService{
 		EmployeeRepo:          cfg.EmployeeRepo,
+		BankRepo:              cfg.BankRepo,
 		TimesheetRepo:         cfg.TimesheetRepo,
 		ProjectEmployeeRepo:   cfg.ProjectEmployeeRepo,
 		EmployeeUserRepo:      cfg.EmployeeUserRepo,
@@ -61,6 +63,29 @@ func (s *EmployeeService) CreateEmployee(ctx context.Context, employee *domain.E
 // workflow. It shares the transactional core with the manual write path.
 func (s *EmployeeService) CreateEmployeeFromImport(ctx context.Context, employee *domain.Employee, createdBy uint) (*domain.Employee, error) {
 	return s.createEmployee(ctx, employee, createdBy)
+}
+
+// ListBanks returns the seeded branch reference list for the /banks endpoint.
+func (s *EmployeeService) ListBanks(ctx context.Context) ([]domain.Bank, error) {
+	return s.BankRepo.List(ctx)
+}
+
+// ResolveBankName maps a raw bank name from an Excel import row to a seeded
+// branch id. Unresolvable names return nil — non-fatal: the row stays
+// bankless rather than half-filled.
+func (s *EmployeeService) ResolveBankName(ctx context.Context, bankName string) *uint {
+	if bankName == "" || s.BankRepo == nil {
+		return nil
+	}
+	banks, err := s.BankRepo.SearchByBranchName(ctx, bankName, 1)
+	if err != nil {
+		observability.GetLogger().Warn("bank search failed", "bank_name", bankName, "error", err)
+		return nil
+	}
+	if len(banks) == 0 {
+		return nil
+	}
+	return &banks[0].ID
 }
 
 // EnsureEmployeeUserAccount creates and links a login account for an existing
@@ -135,12 +160,24 @@ func (s *EmployeeService) createEmployeeCore(
 	// Sanitize identifiers and contact fields
 	employee.CCCD = strings.TrimSpace(employee.CCCD)
 	employee.Mobile = strings.TrimSpace(employee.Mobile)
+	employee.Address = strings.TrimSpace(employee.Address)
 	if employee.Email != nil {
 		trimmedEmail := strings.TrimSpace(*employee.Email)
 		if trimmedEmail == "" {
 			employee.Email = nil
 		} else {
 			employee.Email = &trimmedEmail
+		}
+	}
+
+	// Optional bank capture is complete-or-none, and a supplied bank must be
+	// a seeded branch so a bogus id surfaces as a 400 instead of a FK failure.
+	if err := employee.ValidateBankingInfo(); err != nil {
+		return nil, err
+	}
+	if employee.BankID != nil {
+		if _, err := s.BankRepo.GetByID(ctx, *employee.BankID); err != nil {
+			return nil, domain.NewValidationError(fmt.Sprintf("bank %d does not exist", *employee.BankID))
 		}
 	}
 
@@ -189,6 +226,13 @@ func (s *EmployeeService) createEmployeeCore(
 		logger := observability.GetLogger()
 		logger.Error("Failed to create employee", "cccd", employee.CCCD, "error", err)
 		return nil, fmt.Errorf("%s: %w", constants.MsgFailedToCreateEmployeeVN, err)
+	}
+
+	// Load the referenced branch so the create response carries bank info.
+	if employee.BankID != nil {
+		if bank, bankErr := s.BankRepo.GetByID(ctx, *employee.BankID); bankErr == nil {
+			employee.Bank = bank
+		}
 	}
 
 	return employee, nil

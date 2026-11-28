@@ -42,14 +42,24 @@ UNIQUE KEY `uq_users_mobile` (`mobile`),
 KEY `idx_users_role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE `banks` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `branch_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_banks_branch_name` (`branch_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE `employees` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `fullname` varchar(255) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `cccd` varchar(255) NOT NULL COMMENT '''Citizen ID - Can cong cong dan (12 digits)''',
+  `cccd` varchar(255) NOT NULL COMMENT '''Citizen ID - Can cuoc cong dan (12 digits)''',
   `address` text,
   `mobile` varchar(15) DEFAULT NULL,
   `date_of_birth` date DEFAULT NULL,
+  `bank_id` bigint unsigned DEFAULT NULL,
+  `bank_account_number` varchar(30) DEFAULT NULL,
+  `bank_account_name` varchar(255) DEFAULT NULL,
   `created_by` bigint unsigned NOT NULL,
   `created_at` datetime(3) DEFAULT NULL,
   `updated_at` datetime(3) DEFAULT NULL,
@@ -63,6 +73,7 @@ CREATE TABLE `employees` (
   KEY `idx_employees_mobile` (`mobile`),
   KEY `idx_employees_search_normalized` (`search_normalized`(255)),
   CONSTRAINT `fk_employees_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_employees_bank` FOREIGN KEY (`bank_id`) REFERENCES `banks` (`id`),
   CONSTRAINT `fk_employees_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_employees_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
 UNIQUE KEY `uq_employees_email` (`email`),
@@ -455,6 +466,54 @@ CREATE TABLE `billing_report_lines` (
 -- Seed settings (subscription fee)
 INSERT INTO `settings` (`key`,`value`,`value_type`) VALUES
   ('subscription_fee_per_employee_per_ky_vnd','10000','number');
+
+-- Seed banks (frozen snapshot of the 44 staging branches, 2026-11-28 — PAYSUB-19).
+-- No banks CRUD surface exists; staging/prod edits require re-syncing this seed.
+INSERT INTO `banks` (`id`,`branch_name`) VALUES
+  (4488, 'Quân đội (MB)'),
+  (4489, 'Nông nghiệp và Phát triển nông thôn (VBA)'),
+  (4490, 'Ngoại thương Việt Nam (VCB)'),
+  (4491, 'Đầu tư và phát triển (BIDV)'),
+  (4492, 'Công Thương Việt Nam (VIETINBANK)'),
+  (4493, 'Việt Nam Thịnh Vượng (VPB)'),
+  (4494, 'Quốc tế (VIB)'),
+  (4495, 'Xuất nhập khẩu (EIB)'),
+  (4496, 'Sài Gòn Hà Nội (SHB)'),
+  (4497, 'Tiên Phong (TPB)'),
+  (4498, 'Kỹ Thương (TCB)'),
+  (4499, 'Hàng hải (MSB)'),
+  (4500, 'Ngân hàng Thương mại Cổ phần Lộc Phát Việt Nam (LPB)'),
+  (4501, 'Đông Á (DAB)'),
+  (4502, 'Bắc Á (NASB)'),
+  (4503, 'Sài Gòn Công thương (SGB)'),
+  (4504, 'Việt Nam Thương tín (VIETBANK)'),
+  (4505, 'BVBank – Ngân hàng TMCP Bản Việt (VCCB)'),
+  (4506, 'Kiên Long (KLB)'),
+  (4507, 'Ngân hàng TMCP Thịnh vượng và Phát triển (PGB)'),
+  (4508, 'Đại chúng Việt Nam (PVC)'),
+  (4509, 'Á Châu (ACB)'),
+  (4510, 'Nam Á (NAMABANK)'),
+  (4511, 'Sài Gòn (SCB)'),
+  (4512, 'Đông Nam Á (SEAB)'),
+  (4513, 'Phương Đông (OCB)'),
+  (4514, 'Việt Á (VAB)'),
+  (4515, 'Quốc Dân (NCB)'),
+  (4516, 'Liên doanh VID Public Bank (VID)'),
+  (4517, 'Bảo Việt (BVB)'),
+  (4518, 'Ngân hàng TNHH MTV Việt Nam Hiện Đại (MBV)'),
+  (4519, 'Phát triển nhà TP HCM (HDB)'),
+  (4520, 'Dầu khí toàn cầu (GPB)'),
+  (4521, 'Sacombank (STB)'),
+  (4522, 'An Bình (ABBANK)'),
+  (4523, 'TNHH MTV Hong Leong VN (HLB)'),
+  (4524, 'MTV Shinhan Việt Nam (SHBVN)'),
+  (4525, 'Liên Doanh Việt Nga (VRB)'),
+  (4526, 'Xây dựng Việt Nam (CBB)'),
+  (4527, 'United Overseas Bank Việt Nam (UOB)'),
+  (4528, 'Woori Bank'),
+  (4529, 'Indovina (IVB)'),
+  (4530, 'Việt Nam Thịnh Vượng CAKE BANK (CAKEVPB)'),
+  (4531, 'Việt Nam Thịnh Vượng UBANK (UBANKVPB)');
 
 
 SET FOREIGN_KEY_CHECKS=1;

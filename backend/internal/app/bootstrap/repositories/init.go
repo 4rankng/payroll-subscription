@@ -10,6 +10,7 @@ type Repositories struct {
 	Project            domain.ProjectRepository
 	ProjectUser        domain.ProjectUserRepository
 	Employee           domain.EmployeeRepository
+	Bank               domain.BankRepository
 	EmployeeUser       domain.EmployeeUserRepository
 	ProjectEmployee    domain.ProjectEmployeeRepository
 	Payrate            domain.PayrateRepository
@@ -32,6 +33,7 @@ func Initialize(db *persistence.Database, eventBus domain.EventBus) *Repositorie
 		Project:            persistence.NewProjectRepository(db),
 		ProjectUser:        persistence.NewProjectUserRepository(db),
 		Employee:           persistence.NewEmployeeRepository(db),
+		Bank:               persistence.NewBankRepository(db),
 		EmployeeUser:       persistence.NewEmployeeUserRepository(db),
 		ProjectEmployee:    persistence.NewProjectEmployeeRepository(db),
 		Payrate:            persistence.NewPayrateRepository(db),

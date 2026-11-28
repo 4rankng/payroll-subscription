@@ -44,6 +44,7 @@ func (b *EmployeeQueryBuilder) BuildGetByIDQuery(id uint) *gorm.DB {
 	return b.DB.Model(&domain.Employee{}).
 		Preload("Creator").
 		Preload("User").
+		Preload("Bank").
 		Where("id = ?", id)
 }
 

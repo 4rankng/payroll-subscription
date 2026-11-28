@@ -63,15 +63,39 @@ type Employee struct {
 	Fullname  string    `json:"fullname" gorm:"type:varchar(255);not null"`
 	Email     *string   `json:"email" gorm:"type:varchar(255)"`
 	CCCD      string    `json:"cccd" gorm:"type:varchar(255);not null;comment:'Citizen ID - Can cuoc cong dan (12 digits)'"`
+	Address   string    `json:"address" gorm:"type:text"`
 	Mobile    string    `json:"mobile" gorm:"type:varchar(15)"`
+	BankID            *uint      `json:"bank_id" gorm:"type:bigint unsigned"`
+	BankAccountNumber string     `json:"bank_account_number" gorm:"type:varchar(30)"`
+	BankAccountName   string     `json:"bank_account_name" gorm:"type:varchar(255)"`
+	DateOfBirth       *time.Time `json:"date_of_birth" gorm:"type:date"`
 	UserID    *uint     `json:"user_id" gorm:"type:bigint unsigned;index"`
 	CreatedBy uint      `json:"created_by" gorm:"not null;type:bigint unsigned"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// Relationships
+	Bank    *Bank `json:"bank,omitempty" gorm:"foreignKey:BankID"`
 	Creator User  `json:"creator" gorm:"foreignKey:CreatedBy;references:ID"`
 	User    *User `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
+}
+
+// ValidateBankingInfo enforces the complete-or-none rule for the optional
+// bank capture: providing any bank field requires all three, so a half-filled
+// account can never satisfy the missing-bank warning downstream.
+func (e *Employee) ValidateBankingInfo() error {
+	if e.BankID != nil || e.BankAccountNumber != "" || e.BankAccountName != "" {
+		if e.BankID == nil {
+			return NewValidationError("bank selection is required when providing banking information")
+		}
+		if e.BankAccountNumber == "" {
+			return NewValidationError("bank account number is required")
+		}
+		if e.BankAccountName == "" {
+			return NewValidationError("bank account name is required")
+		}
+	}
+	return nil
 }
 
 // GetAuditEntityType implements Auditable interface

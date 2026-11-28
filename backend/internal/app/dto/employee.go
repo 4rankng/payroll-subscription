@@ -6,10 +6,15 @@ import (
 
 // CreateEmployeeRequest represents the request to create a new employee
 type CreateEmployeeRequest struct {
-	Fullname string  `json:"fullname" binding:"required"`
-	Email    *string `json:"email,omitempty" binding:"omitempty,email"`
-	CCCD     string  `json:"cccd" binding:"required"`
-	Mobile   string  `json:"mobile,omitempty"`
+	Fullname          string  `json:"fullname" binding:"required"`
+	Email             *string `json:"email,omitempty" binding:"omitempty,email"`
+	CCCD              string  `json:"cccd" binding:"required"`
+	Address           string  `json:"address,omitempty"`
+	Mobile            string  `json:"mobile,omitempty"`
+	BankID            *uint   `json:"bank_id,omitempty"`
+	BankAccountNumber string  `json:"bank_account_number,omitempty"`
+	BankAccountName   string  `json:"bank_account_name,omitempty"`
+	DateOfBirth       string  `json:"date_of_birth,omitempty"`
 }
 
 // UpdateEmployeeRequest represents the request to update an employee
@@ -26,16 +31,27 @@ type ChangeEmployeePasswordRequest struct {
 }
 
 // EmployeeResponse represents the response containing employee data
+// EmployeeBankInfo is the bank branch reference embedded in employee responses
+type EmployeeBankInfo struct {
+	ID         uint   `json:"id"`
+	BranchName string `json:"branch_name"`
+}
+
 type EmployeeResponse struct {
-	ID              uint                  `json:"id"`
-	Username        *string               `json:"username,omitempty"`
-	Fullname        string                `json:"fullname"`
-	Email           *string               `json:"email"`
-	CCCD            string                `json:"cccd"`
-	Mobile          string                `json:"mobile"`
-	CreatedBy       uint                  `json:"created_by"`
-	CreatedAt       time.Time             `json:"created_at"`
-	UpdatedAt       time.Time             `json:"updated_at"`
+	ID                uint              `json:"id"`
+	Username          *string           `json:"username,omitempty"`
+	Fullname          string            `json:"fullname"`
+	Email             *string           `json:"email"`
+	CCCD              string            `json:"cccd"`
+	Address           string            `json:"address"`
+	Mobile            string            `json:"mobile"`
+	Bank              *EmployeeBankInfo `json:"bank,omitempty"`
+	BankAccountNumber string            `json:"bank_account_number"`
+	BankAccountName   string            `json:"bank_account_name"`
+	DateOfBirth       *string           `json:"date_of_birth,omitempty"`
+	CreatedBy         uint              `json:"created_by"`
+	CreatedAt         time.Time         `json:"created_at"`
+	UpdatedAt         time.Time         `json:"updated_at"`
 	CanDelete       bool                  `json:"can_delete"`
 	CurrentProjects []EmployeeProjectInfo `json:"current_projects"`
 	// IsAccessible indicates whether the requesting partner already manages this
@@ -208,7 +224,12 @@ type EmployeeDetailedResponse struct {
 	Fullname  string    `json:"fullname"`
 	Email     *string   `json:"email"`
 	CCCD      string    `json:"cccd"`
+	Address   string    `json:"address"`
 	Mobile    string    `json:"mobile"`
+	Bank              *EmployeeBankInfo `json:"bank,omitempty"`
+	BankAccountNumber string            `json:"bank_account_number"`
+	BankAccountName   string            `json:"bank_account_name"`
+	DateOfBirth       *string           `json:"date_of_birth,omitempty"`
 	CreatedBy uint      `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

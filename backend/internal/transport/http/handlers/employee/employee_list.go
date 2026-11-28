@@ -110,30 +110,44 @@ func (h *Handler) parseEmployeeFilters(c *gin.Context) (domain.EmployeeFilters, 
 
 // buildEmployeeListResponse converts a slice of EmployeeWithProjects to response DTOs.
 // When maskInaccessible is true (global-pool listing for a partner), rows outside
-// the requester's accessible set are annotated is_accessible=false.
+// the requester's accessible set are annotated is_accessible=false and their
+// bank/contact details are withheld: a preview row only carries identity.
 func buildEmployeeListResponse(employees []*domain.EmployeeWithProjects, accessibleIDs map[uint]bool, maskInaccessible bool) []dto.EmployeeResponse {
 	result := make([]dto.EmployeeResponse, 0, len(employees))
 	for _, emp := range employees {
 		r := dto.EmployeeResponse{
-			ID:              emp.ID,
-			Fullname:        emp.Fullname,
-			Email:           emp.Email,
-			CCCD:            emp.CCCD,
-			Mobile:          emp.Mobile,
-			CreatedBy:       emp.CreatedBy,
-			CreatedAt:       emp.CreatedAt,
-			UpdatedAt:       emp.UpdatedAt,
-			CanDelete:       true,
-			CurrentProjects: make([]dto.EmployeeProjectInfo, 0, len(emp.CurrentProjects)),
+			ID:                emp.ID,
+			Fullname:          emp.Fullname,
+			Email:             emp.Email,
+			CCCD:              emp.CCCD,
+			Address:           emp.Address,
+			Mobile:            emp.Mobile,
+			Bank:              buildEmployeeBankInfo(emp.Bank),
+			BankAccountNumber: emp.BankAccountNumber,
+			BankAccountName:   emp.BankAccountName,
+			DateOfBirth:       formatOptionalDate(emp.DateOfBirth),
+			CreatedBy:         emp.CreatedBy,
+			CreatedAt:         emp.CreatedAt,
+			UpdatedAt:         emp.UpdatedAt,
+			CanDelete:         true,
+			CurrentProjects:   make([]dto.EmployeeProjectInfo, 0, len(emp.CurrentProjects)),
 		}
 
 		// Global-pool annotation: flag accessibility for rows the partner does
-		// not manage (cross-partner guard).
+		// not manage (cross-partner guard) and strip the details a preview is
+		// not entitled to.
 		if maskInaccessible {
 			accessible := accessibleIDs[emp.ID]
 			r.IsAccessible = &accessible
 			creatorName := emp.Creator.Fullname
 			r.CreatorName = &creatorName
+			if !accessible {
+				r.Address = ""
+				r.DateOfBirth = nil
+				r.Bank = nil
+				r.BankAccountNumber = ""
+				r.BankAccountName = ""
+			}
 		}
 
 		for _, p := range emp.CurrentProjects {
@@ -171,8 +185,8 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 		return
 	}
 
-	// Partner global-pool scope: list all employees, annotated with is_accessible
-	// and with bank/address withheld for rows the partner does not manage.
+	// Partner global-pool scope: list all employees, annotated with is_accessible,
+	// with bank/contact details withheld for rows the partner does not manage.
 	// Only this endpoint honors scope=global — export/unassigned/summary stay scoped.
 	globalPool := false
 	if c.Query("scope") == "global" && c.GetString(constants.CtxUserRole) == string(domain.RoleQuanly) {
