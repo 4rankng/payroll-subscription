@@ -79,11 +79,14 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB for pdfMake
       },
-      // Enable the service worker in `vite dev` so push notifications can
-      // be tested locally. Without this, sw.ts is only emitted by the
-      // production build and `navigator.serviceWorker.ready` hangs forever.
+      // Service worker stays OFF in `vite dev` (PAYR-53): with it enabled,
+      // the worker intercepts every fetch from the dev origin — including the
+      // CORS preflights for the cross-origin API (127.0.0.1:3000 → :8080) —
+      // answers OPTIONS with 404 and silently kills login. Push-notification
+      // testing that needs `navigator.serviceWorker.ready` must use a
+      // production build (pnpm build && pnpm preview) or staging instead.
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
         navigateFallback: 'index.html',
       }
