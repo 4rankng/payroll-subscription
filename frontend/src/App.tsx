@@ -251,7 +251,8 @@ const AppContent = () => {
           <Route path="dashboard" element={<ResponsivePage desktopComponent={PartnerDashboardPage} mobileComponent={PartnerDashboardMobile} />} />
           {/* PRD §5.1: fee-insights overview — ketoan/giamdoc landing (PRD §4). */}
           <Route path="overview" element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
-          {/* PRD §5.3: user management — admin + giamdoc full control. */}
+          {/* PRD §5.3: user directory — giamdoc reads /partner/users read-only;
+              user-management writes are admin-only (also enforced by casbin). */}
           <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />

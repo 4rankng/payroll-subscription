@@ -60,12 +60,12 @@ const defineAbilityFor = (role: string): AppAbility => {
     can(['read', 'update'], 'SelfAccount');
     can('read', ['Project', 'Employee', 'Notification']);
   }
-  // Director: same read surfaces plus PRD §5.3 full-control user management
-  // (backend casbin grants users read/create/update/delete to giamdoc).
+  // Director: same read surfaces as ketoan, plus the read-only user list on
+  // /partner/users. User-management writes stay admin-only — the director
+  // portal must not offer user creation or edits.
   else if (role === 'giamdoc') {
     can(['read', 'update'], 'SelfAccount');
-    can('read', ['Project', 'Employee', 'Notification']);
-    can(['read', 'create', 'update', 'delete'], 'User');
+    can('read', ['Project', 'Employee', 'Notification', 'User']);
   }
   else if (role === 'nhanvien') {
     can(['read', 'update'], 'SelfAccount');
@@ -121,8 +121,8 @@ export interface ModalPermission {
  * Simple and reliable approach
  */
 export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
-  // User Management — backend enforcement: user writes are admin + giamdoc
-  // (PRD §5.3); quanly/ketoan hold read-only user access.
+  // User Management — only admin holds user-management writes; giamdoc reads
+  // /partner/users read-only (list + details), quanly/ketoan read the list.
   user_details: {
     modalId: 'user_details',
     action: 'read',
@@ -133,19 +133,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'add_user',
     action: 'create',
     subject: 'User',
-    roles: ['admin', 'giamdoc']
+    roles: ['admin']
   },
   edit_user: {
     modalId: 'edit_user',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'giamdoc']
+    roles: ['admin']
   },
   reset_password: {
     modalId: 'reset_password',
     action: 'update',
     subject: 'User',
-    roles: ['admin', 'giamdoc']
+    roles: ['admin']
   },
 
   // Employee Management

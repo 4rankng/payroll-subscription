@@ -164,6 +164,13 @@ func TestExistingRoles_NotRegressed(t *testing.T) {
 	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/timesheets", "POST"))
 	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/employees", "POST"))
 
+	// Giamdoc reads the user directory read-only — user-management writes are admin-only
+	assert.True(t, svc.CanAccess("giamdoc", "/api/v1/users", "GET"))
+	assert.True(t, svc.CanAccess("giamdoc", "/api/v1/users/summary", "GET"))
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/users", "POST"))
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/users/1", "PUT"))
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/users/1", "DELETE"))
+
 	// Nhanvien keeps self-service, denied on operational surfaces
 	assert.True(t, svc.CanAccess("nhanvien", "/api/v1/me", "GET"))
 	assert.True(t, svc.CanAccess("nhanvien", "/api/v1/me", "PUT"))

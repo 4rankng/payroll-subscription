@@ -17,6 +17,7 @@ import {
 import { useUserActivities } from "@/hooks/api/useUsers";
 import { ResetPasswordModal } from "@/components/modals/ResetPasswordModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { canManageUsers } from "@/lib/permissions";
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -135,15 +136,17 @@ function UserDetailsSheet({
         avatar={avatar}
         footer={
           <div className="flex w-full flex-wrap items-center gap-2">
-            <UserActions
-              isEditing={isEditing}
-              onEdit={() => setIsEditing(true)}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              onDelete={() => setShowDeleteConfirm(true)}
-              onResetPassword={() => setShowResetPasswordModal(true)}
-              loading={loading}
-            />
+            {canManageUsers() && (
+              <UserActions
+                isEditing={isEditing}
+                onEdit={() => setIsEditing(true)}
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onDelete={() => setShowDeleteConfirm(true)}
+                onResetPassword={() => setShowResetPasswordModal(true)}
+                loading={loading}
+              />
+            )}
             {!isEditing && (
               <Button variant="default" size="sm" onClick={handleClose} className="min-h-11 flex-1 px-5 min-[420px]:flex-none">
                 Đóng

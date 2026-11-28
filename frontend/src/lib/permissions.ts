@@ -118,12 +118,12 @@ export const canClaimEmployee = (userRole?: UserRole | null): boolean => {
 };
 
 /**
- * Check if user can create users.
- * Backend grants POST /users to admin and giamdoc (PRD §5.3 full-control
- * user management); quanly/ketoan hold read-only user access.
+ * Check if user can manage other users (create, edit, reset password,
+ * delete). Only admin holds user-management writes: giamdoc reads
+ * /partner/users read-only.
  */
-export const canCreateUser = (userRole?: UserRole | null): boolean => {
+export const canManageUsers = (userRole?: UserRole | null): boolean => {
   const role = userRole || authManager.getUserRole();
 
-  return role === 'admin' || role === 'giamdoc';
+  return role === 'admin';
 };
