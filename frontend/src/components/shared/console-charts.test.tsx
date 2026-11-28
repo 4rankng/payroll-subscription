@@ -45,8 +45,8 @@ describe('toDonutSegments', () => {
 });
 
 describe('ConsoleDonut', () => {
-  it('renders the centre figure and one legend row per segment', () => {
-    const { container, getByText, getByRole } = render(
+  it('renders the centre figure without an internal legend — the caller owns it', () => {
+    const { container, getByRole, queryByText } = render(
       <ConsoleDonut
         segments={[
           { label: 'MB', value: 3, display: '120 gd · 3 tỷ' },
@@ -57,11 +57,8 @@ describe('ConsoleDonut', () => {
       />,
     );
     expect(getByRole('img')).toHaveAttribute('aria-label', 'Tổng chi trả 4 tỷ');
-    expect(getByText('MB')).toBeInTheDocument();
-    expect(getByText('VCB')).toBeInTheDocument();
-    expect(getByText('120 gd · 3 tỷ')).toBeInTheDocument();
-    expect(getByText('75%')).toBeInTheDocument();
-    expect(getByText('25%')).toBeInTheDocument();
+    expect(queryByText('MB')).not.toBeInTheDocument();
+    expect(queryByText('75%')).not.toBeInTheDocument();
     // Two segment arcs + one track ring.
     expect(container.querySelectorAll('circle')).toHaveLength(3);
   });

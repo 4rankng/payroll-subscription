@@ -5,7 +5,7 @@
  * gating (e.g. omit the gauge when the denominator is 0 — the gauge itself
  * returns null for a non-finite rate as a last resort).
  */
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 export interface ConsoleDonutSegment {
   /** Legend label (bank name, bucket name…). */
@@ -82,9 +82,9 @@ const RING = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** One donut: 10px ring segments from 12 o'clock with the headline figure
- *  beside it (never inside — full currency strings outgrow the hole), plus a
- *  stacked legend with whole-percent shares. Total ≤ 0 renders the bare
- *  track ring. */
+ *  beside it (never inside — full currency strings outgrow the hole). The
+ *  caller owns the legend: every current consumer renders a compact side
+ *  breakdown, and a second stacked legend here read the card as two legends. */
 export function ConsoleDonut({
   segments,
   centreValue,
@@ -146,25 +146,6 @@ export function ConsoleDonut({
           <span className="console-kicker mt-1 block">{centreLabel}</span>
         </div>
       </div>
-
-      <ul className="mt-3 flex flex-col gap-1.5">
-        {prepared.map((segment) => (
-          <li key={segment.label} className="flex items-center justify-between gap-2 text-sm">
-            <span className="flex min-w-0 items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ background: segment.color } as CSSProperties}
-              />
-              <span className="truncate">{segment.label}</span>
-              <span className="console-value shrink-0 text-xs text-fg-tertiary">{segment.display}</span>
-            </span>
-            <span className="console-value shrink-0 font-financial text-xs font-semibold tabular-nums">
-              {segment.percentage}%
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

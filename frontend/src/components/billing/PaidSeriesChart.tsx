@@ -75,7 +75,7 @@ export function buildPaidSeriesDefs(
 
   const named = (projectIds: number[]): PaidSeriesDef[] => {
     const seen = new Map<string, number>();
-    return projectIds.map((projectId) => {
+    return projectIds.map((projectId, index) => {
       const base = projectNameOf(projects, projectId, rowNames.get(projectId));
       // Series names double as chart data keys — keep them unique, but the
       // owner banned raw database ids on any user-facing surface, so unnamed
@@ -83,7 +83,7 @@ export function buildPaidSeriesDefs(
       const count = seen.get(base) ?? 0;
       seen.set(base, count + 1);
       const name = count === 0 ? base : `${base} ${count + 1}`;
-      return { name, projectIds: [projectId], color: SERIES_COLORS[(count) % SERIES_COLORS.length] };
+      return { name, projectIds: [projectId], color: SERIES_COLORS[index % SERIES_COLORS.length] };
     });
   };
 

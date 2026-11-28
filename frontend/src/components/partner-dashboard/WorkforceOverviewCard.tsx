@@ -31,13 +31,15 @@ export function WorkforceOverviewCard({ month }: WorkforceOverviewCardProps) {
           label: 'Đang làm việc',
           value: working,
           display: `${working.toLocaleString('vi-VN')} NV · ${share(working)}`,
-          color: 'hsl(var(--chart-1))',
+          // High-contrast pair — emerald for active, neutral slate for
+          // inactive; chart tokens 1/2 were near-identical greens.
+          color: '#059669',
         },
         {
           label: 'Nghỉ / không hoạt động',
           value: inactive,
           display: `${inactive.toLocaleString('vi-VN')} NV · ${share(inactive)}`,
-          color: 'hsl(var(--chart-2))',
+          color: '#94A3B8',
         },
       ],
     };
