@@ -30,8 +30,6 @@ component renders bare.
 
 | File | Description |
 |------|-------------|
-| `DashboardPage/index.tsx` | Mobile admin dashboard |
-| `DashboardPage/ActivityUsersPage.tsx` | Active-users drill-down (paired with desktop `pages/admin/DashboardPage/ActivityUsersPage.tsx`) |
 | `EmployeesPage/index.tsx` | Mobile employee list |
 | `ProjectsPage/index.tsx` | Mobile project list |
 | `TimesheetPage/index.tsx` | Mobile timesheet view |
