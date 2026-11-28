@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -22,25 +24,33 @@ const saoKeContentType = "application/vnd.openxmlformats-officedocument.spreadsh
 //     tổng tiền + per-employee STT|Họ tên|CCCD|Dự án|Số tiền|Ngày trả);
 //   - an INTERNAL sheet listing the timesheet ids behind the statement.
 //
+// Cell values and positions are a stable contract consumed by reconciliation;
+// the styling layer (fonts, fills, borders, widths, panes, filters, tab
+// colors) never moves or rewrites a cell except the amount header label and
+// the summary sheet name.
+//
 // Returns the xlsx bytes and the download filename sao_ke_tt_<DD-MM-YYYY>.xlsx.
 func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
 	f := excelize.NewFile()
 	defer f.Close()
 
-	boldStyle, err := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}})
+	styles, err := newSaoKeStyles(f)
 	if err != nil {
-		return nil, "", fmt.Errorf("sao ke: header style: %w", err)
+		return nil, "", err
 	}
 
 	summary := f.GetSheetName(0)
-	if err := renderSaoKeSummarySheet(f, summary, data, boldStyle); err != nil {
+	if err := f.SetSheetName(summary, saoKeSummarySheet); err != nil {
+		return nil, "", fmt.Errorf("sao ke: rename summary sheet: %w", err)
+	}
+	if err := renderSaoKeSummarySheet(f, saoKeSummarySheet, data, styles); err != nil {
 		return nil, "", err
 	}
 	for _, group := range data.Groups {
 		if _, err := f.NewSheet(safeSheetName(group.ProjectName)); err != nil {
 			return nil, "", fmt.Errorf("sao ke: project sheet %q: %w", group.ProjectName, err)
 		}
-		if err := renderSaoKeProjectSheet(f, safeSheetName(group.ProjectName), data.Cycle, group, boldStyle); err != nil {
+		if err := renderSaoKeProjectSheet(f, safeSheetName(group.ProjectName), data.Cycle, group, styles); err != nil {
 			return nil, "", err
 		}
 	}
@@ -51,14 +61,14 @@ func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
 		if err := f.SetCellValue("INTERNAL", "A1", "Timesheet IDs"); err != nil {
 			return nil, "", err
 		}
-		if err := f.SetCellStyle("INTERNAL", "A1", "A1", boldStyle); err != nil {
+		if err := f.SetCellStyle("INTERNAL", "A1", "A1", styles.plainBold); err != nil {
 			return nil, "", err
 		}
-		for i, id := range data.TimesheetIDs {
-			cell, _ := excelize.CoordinatesToCellName(1, i+2)
-			if err := f.SetCellValue("INTERNAL", cell, id); err != nil {
-				return nil, "", err
-			}
+		if err := f.SetColWidth("INTERNAL", "A", "A", 14); err != nil {
+			return nil, "", fmt.Errorf("sao ke: internal col width: %w", err)
+		}
+		if err := saoKeTabColor(f, "INTERNAL", saoKeGray); err != nil {
+			return nil, "", err
 		}
 	}
 
@@ -69,26 +79,214 @@ func renderSaoKeWorkbook(data *SaoKeData) ([]byte, string, error) {
 	return buf.Bytes(), saoKeFilename(data.ReportDate), nil
 }
 
+// newSaoKeStyles creates every cell style used by the statement workbook.
+func newSaoKeStyles(f *excelize.File) (saoKeStyles, error) {
+	var out saoKeStyles
+	thinBorders := []excelize.Border{
+		{Type: "left", Color: saoKeBorderColor, Style: 1},
+		{Type: "right", Color: saoKeBorderColor, Style: 1},
+		{Type: "top", Color: saoKeBorderColor, Style: 1},
+		{Type: "bottom", Color: saoKeBorderColor, Style: 1},
+	}
+	totalFill := excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{saoKeTotalFill}}
+	headerFill := excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{saoKeNavy}}
+	var err error
+	set := func(id *int, style *excelize.Style, name string) {
+		if err != nil {
+			return
+		}
+		if *id, err = f.NewStyle(style); err != nil {
+			err = fmt.Errorf("sao ke: %s style: %w", name, err)
+		}
+	}
+	set(&out.title, &excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 14, Color: saoKeNavy, Family: saoKeFontName},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+	}, "title")
+	set(&out.header, &excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Size: 11, Family: saoKeFontName},
+		Fill:      headerFill,
+		Border:    thinBorders,
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	}, "header")
+	set(&out.data, &excelize.Style{
+		Font:      &excelize.Font{Size: 11, Family: saoKeFontName},
+		Border:    thinBorders,
+		Alignment: &excelize.Alignment{Vertical: "center"},
+	}, "data")
+	set(&out.center, &excelize.Style{
+		Font:      &excelize.Font{Size: 11, Family: saoKeFontName},
+		Border:    thinBorders,
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+	}, "center")
+	set(&out.text, &excelize.Style{
+		Font:         &excelize.Font{Size: 11, Family: saoKeFontName},
+		Border:       thinBorders,
+		Alignment:    &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+		CustomNumFmt: new(saoKeTextFmt),
+	}, "text")
+	set(&out.money, &excelize.Style{
+		Font:         &excelize.Font{Size: 11, Family: saoKeFontName},
+		Border:       thinBorders,
+		Alignment:    &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+		CustomNumFmt: new(saoKeMoneyFmt),
+	}, "money")
+	set(&out.totalMoney, &excelize.Style{
+		Font:         &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName},
+		Fill:         totalFill,
+		Border:       thinBorders,
+		Alignment:    &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+		CustomNumFmt: new(saoKeMoneyVndFmt),
+	}, "totalMoney")
+	set(&out.totalLabel, &excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName},
+		Fill:      totalFill,
+		Border:    thinBorders,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+	}, "totalLabel")
+	set(&out.vndBold, &excelize.Style{
+		Font:         &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName},
+		Alignment:    &excelize.Alignment{Horizontal: "left", Vertical: "center"},
+		CustomNumFmt: new(saoKeMoneyVndFmt),
+	}, "vndBold")
+	set(&out.plain, &excelize.Style{Font: &excelize.Font{Size: 11, Family: saoKeFontName}}, "plain")
+	set(&out.plainBold, &excelize.Style{Font: &excelize.Font{Bold: true, Size: 11, Family: saoKeFontName}}, "plainBold")
+	return out, err
+}
+
+// saoKeDisplayLen measures the runes a cell value occupies when displayed
+// under its number format: strings verbatim, numbers thousand-grouped, totals
+// with the trailing ₫.
+func saoKeDisplayLen(v any, vnd bool) int {
+	switch t := v.(type) {
+	case string:
+		return utf8.RuneCountInString(t)
+	case int:
+		return len(strconv.Itoa(t))
+	case int64:
+		n := len(saoKeThousandGroup(t))
+		if vnd {
+			n += utf8.RuneCountInString(saoKeVndSuffix)
+		}
+		return n
+	default:
+		return 0
+	}
+}
+
+// saoKeThousandGroup renders v with comma group separators (1234567 →
+// "1,234,567"), matching the #,##0 display format.
+func saoKeThousandGroup(v int64) string {
+	s := strconv.FormatInt(v, 10)
+	var b strings.Builder
+	for i := range len(s) {
+		b.WriteByte(s[i])
+		if rem := len(s) - i - 1; rem > 0 && rem%3 == 0 {
+			b.WriteByte(',')
+		}
+	}
+	return b.String()
+}
+
+// saoKeWidths accumulates the longest display length per column and applies
+// them as column widths (longest + padding, clamped).
+type saoKeWidths struct {
+	max []int
+}
+
+func newSaoKeWidths(cols int) *saoKeWidths {
+	return &saoKeWidths{max: make([]int, cols)}
+}
+
+func (w *saoKeWidths) add(col int, v any, vnd bool) {
+	if n := saoKeDisplayLen(v, vnd); n > w.max[col-1] {
+		w.max[col-1] = n
+	}
+}
+
+func (w *saoKeWidths) apply(f *excelize.File, sheet string) error {
+	for i, n := range w.max {
+		width := float64(n + saoKeWidthPad)
+		if width < saoKeWidthMin {
+			width = saoKeWidthMin
+		}
+		if width > saoKeWidthMax {
+			width = saoKeWidthMax
+		}
+		col, _ := excelize.ColumnNumberToName(i + 1)
+		if err := f.SetColWidth(sheet, col, col, width); err != nil {
+			return fmt.Errorf("sao ke: %s col %s width: %w", sheet, col, err)
+		}
+	}
+	return nil
+}
+
+// saoKeFreeze freezes everything above aboveRow on sheet.
+func saoKeFreeze(f *excelize.File, sheet string, aboveRow int) error {
+	topLeft, _ := excelize.CoordinatesToCellName(1, aboveRow)
+	panes := &excelize.Panes{
+		Freeze:      true,
+		YSplit:      aboveRow - 1,
+		TopLeftCell: topLeft,
+		ActivePane:  "bottomRight",
+	}
+	if err := f.SetPanes(sheet, panes); err != nil {
+		return fmt.Errorf("sao ke: %s freeze panes: %w", sheet, err)
+	}
+	return nil
+}
+
+// saoKeHideGridlines turns off the sheet's gridline display; tables carry
+// their own borders.
+func saoKeHideGridlines(f *excelize.File, sheet string) error {
+	if err := f.SetSheetView(sheet, -1, &excelize.ViewOptions{ShowGridLines: new(false)}); err != nil {
+		return fmt.Errorf("sao ke: %s hide gridlines: %w", sheet, err)
+	}
+	return nil
+}
+
+// saoKeTabColor sets the sheet's tab color from an RGB hex string.
+func saoKeTabColor(f *excelize.File, sheet, rgb string) error {
+	if err := f.SetSheetProps(sheet, &excelize.SheetPropsOptions{TabColorRGB: new(rgb)}); err != nil {
+		return fmt.Errorf("sao ke: %s tab color: %w", sheet, err)
+	}
+	return nil
+}
+
 // renderSaoKeSummarySheet writes the transaction-detail table — and nothing
 // else — on the summary sheet.
-func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, boldStyle int) error {
+func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, styles saoKeStyles) error {
 	if err := f.SetCellValue(sheet, "A1", "CHI TIẾT GIAO DỊCH"); err != nil {
 		return err
 	}
-	if err := f.SetCellStyle(sheet, "A1", "A1", boldStyle); err != nil {
+	if err := f.MergeCell(sheet, "A1", "D1"); err != nil {
+		return fmt.Errorf("sao ke: merge summary title: %w", err)
+	}
+	if err := f.SetCellStyle(sheet, "A1", "A1", styles.title); err != nil {
 		return err
 	}
-	headers := []string{"STT", "Kỳ lương tháng", "Dự án", "Số tiền"}
+	if err := f.SetRowHeight(sheet, 1, 28); err != nil {
+		return fmt.Errorf("sao ke: summary title height: %w", err)
+	}
+	if err := f.SetRowHeight(sheet, 3, 24); err != nil {
+		return fmt.Errorf("sao ke: summary header height: %w", err)
+	}
+	headers := []string{"STT", "Kỳ lương tháng", "Dự án", "Số tiền (₫)"}
 	for col, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(col+1, 3)
 		if err := f.SetCellValue(sheet, cell, header); err != nil {
 			return err
 		}
-		if err := f.SetCellStyle(sheet, cell, cell, boldStyle); err != nil {
-			return err
-		}
+	}
+	if err := f.SetCellStyle(sheet, "A3", "D3", styles.header); err != nil {
+		return err
 	}
 	kyLabel := data.Cycle.KyLabel()
+	dataStyles := []int{styles.center, styles.data, styles.data, styles.money}
+	widths := newSaoKeWidths(4)
+	for col, header := range headers {
+		widths.add(col+1, header, false)
+	}
 	for i, row := range data.Rows {
 		rowNum := i + 4
 		sttCell, _ := excelize.CoordinatesToCellName(1, rowNum)
@@ -103,6 +301,17 @@ func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, bo
 				return err
 			}
 		}
+		// styles differ per column, so set them individually
+		for col := 1; col <= 4; col++ {
+			cell, _ := excelize.CoordinatesToCellName(col, rowNum)
+			if err := f.SetCellStyle(sheet, cell, cell, dataStyles[col-1]); err != nil {
+				return err
+			}
+		}
+		widths.add(1, i+1, false)
+		widths.add(2, kyLabel, false)
+		widths.add(3, row.ProjectName, false)
+		widths.add(4, row.Amount, false)
 	}
 	totalRow := len(data.Rows) + 4
 	totalLabelCell, _ := excelize.CoordinatesToCellName(3, totalRow)
@@ -113,18 +322,48 @@ func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, bo
 	if err := f.SetCellValue(sheet, totalCell, data.Total); err != nil {
 		return err
 	}
-	return f.SetCellStyle(sheet, totalLabelCell, totalCell, boldStyle)
+	if err := f.SetCellStyle(sheet, "A"+strconv.Itoa(totalRow), "B"+strconv.Itoa(totalRow), styles.totalLabel); err != nil {
+		return err
+	}
+	if err := f.SetCellStyle(sheet, totalLabelCell, totalLabelCell, styles.totalLabel); err != nil {
+		return err
+	}
+	if err := f.SetCellStyle(sheet, totalCell, totalCell, styles.totalMoney); err != nil {
+		return err
+	}
+	widths.add(3, "TỔNG CỘNG", false)
+	widths.add(4, data.Total, true)
+	filterEnd, _ := excelize.CoordinatesToCellName(4, len(data.Rows)+3)
+	if err := f.AutoFilter(sheet, "A3:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
+		return fmt.Errorf("sao ke: summary filter: %w", err)
+	}
+	if err := saoKeFreeze(f, sheet, 4); err != nil {
+		return err
+	}
+	if err := saoKeHideGridlines(f, sheet); err != nil {
+		return err
+	}
+	if err := saoKeTabColor(f, sheet, saoKeNavy); err != nil {
+		return err
+	}
+	return widths.apply(f, sheet)
 }
 
 // renderSaoKeProjectSheet writes one project's statement sheet: the project
 // heading block (tên dự án, tổng nhân viên, kỳ lương tháng, tổng tiền)
 // followed by the per-employee payment table.
-func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, group SaoKeProjectGroup, boldStyle int) error {
+func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, group SaoKeProjectGroup, styles saoKeStyles) error {
 	if err := f.SetCellValue(sheet, "A1", group.ProjectName); err != nil {
 		return err
 	}
-	if err := f.SetCellStyle(sheet, "A1", "A1", boldStyle); err != nil {
+	if err := f.MergeCell(sheet, "A1", "F1"); err != nil {
+		return fmt.Errorf("sao ke: merge project title: %w", err)
+	}
+	if err := f.SetCellStyle(sheet, "A1", "A1", styles.title); err != nil {
 		return err
+	}
+	if err := f.SetRowHeight(sheet, 1, 28); err != nil {
+		return fmt.Errorf("sao ke: project title height: %w", err)
 	}
 	if err := f.SetCellValue(sheet, "A2", fmt.Sprintf("Tổng nhân viên: %d", group.EmployeeCount)); err != nil {
 		return err
@@ -138,20 +377,34 @@ func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, g
 	if err := f.SetCellValue(sheet, "B4", group.Total); err != nil {
 		return err
 	}
-	if err := f.SetCellStyle(sheet, "A4", "A4", boldStyle); err != nil {
+	if err := f.SetCellStyle(sheet, "A2", "A3", styles.plain); err != nil {
 		return err
 	}
-
-	headers := []string{"STT", "Họ tên", "CCCD", "Dự án", "Số tiền", "Ngày trả"}
+	if err := f.SetCellStyle(sheet, "A4", "A4", styles.plainBold); err != nil {
+		return err
+	}
+	if err := f.SetCellStyle(sheet, "B4", "B4", styles.vndBold); err != nil {
+		return err
+	}
+	if err := f.SetRowHeight(sheet, 6, 24); err != nil {
+		return fmt.Errorf("sao ke: project header height: %w", err)
+	}
+	headers := []string{"STT", "Họ tên", "CCCD", "Dự án", "Số tiền (₫)", "Ngày trả"}
 	for col, header := range headers {
 		cell, _ := excelize.CoordinatesToCellName(col+1, 6)
 		if err := f.SetCellValue(sheet, cell, header); err != nil {
 			return err
 		}
-		if err := f.SetCellStyle(sheet, cell, cell, boldStyle); err != nil {
-			return err
-		}
 	}
+	if err := f.SetCellStyle(sheet, "A6", "F6", styles.header); err != nil {
+		return err
+	}
+	dataStyles := []int{styles.center, styles.data, styles.text, styles.data, styles.money, styles.center}
+	widths := newSaoKeWidths(6)
+	for col, header := range headers {
+		widths.add(col+1, header, false)
+	}
+	widths.add(2, group.Total, true)
 	for i, row := range group.Rows {
 		rowNum := i + 7
 		cells := []struct {
@@ -163,9 +416,26 @@ func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, g
 			if err := f.SetCellValue(sheet, cell, v.value); err != nil {
 				return err
 			}
+			if err := f.SetCellStyle(sheet, cell, cell, dataStyles[v.col-1]); err != nil {
+				return err
+			}
+			widths.add(v.col, v.value, false)
 		}
 	}
-	return nil
+	filterEnd, _ := excelize.CoordinatesToCellName(6, len(group.Rows)+6)
+	if err := f.AutoFilter(sheet, "A6:"+filterEnd, []excelize.AutoFilterOptions{}); err != nil {
+		return fmt.Errorf("sao ke: project filter: %w", err)
+	}
+	if err := saoKeFreeze(f, sheet, 7); err != nil {
+		return err
+	}
+	if err := saoKeHideGridlines(f, sheet); err != nil {
+		return err
+	}
+	if err := saoKeTabColor(f, sheet, saoKeBlue); err != nil {
+		return err
+	}
+	return widths.apply(f, sheet)
 }
 
 // saoKeFilename is the download/attachment filename for a report date:
