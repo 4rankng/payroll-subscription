@@ -20,7 +20,16 @@ function todayIso(): string {
  * FR-6 Tổng quan section: per-day paid employees and paid amount per project
  * from the billing module, over the last 12 months.
  */
-export function PaidSeriesSection() {
+interface PaidSeriesSectionProps {
+  /**
+   * Opt-in (mobile dashboards): cap each chart's legend to the top 8 projects
+   * + a "Khác" aggregate in a bounded scroll container. Default off, so the
+   * desktop admin surface keeps its full legend.
+   */
+  compactLegend?: boolean;
+}
+
+export function PaidSeriesSection({ compactLegend }: PaidSeriesSectionProps) {
   const from = monthStartIso(11);
   const to = todayIso();
   const { data: projects } = useAllProjects();
@@ -34,7 +43,7 @@ export function PaidSeriesSection() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Đang tải...</p>
         ) : (
-          <PaidEmployeesChart rows={rows ?? []} projects={labels} />
+          <PaidEmployeesChart rows={rows ?? []} projects={labels} legendLimit={compactLegend ? 8 : undefined} />
         )}
       </div>
       <div>
@@ -42,7 +51,7 @@ export function PaidSeriesSection() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Đang tải...</p>
         ) : (
-          <PaidAmountChart rows={rows ?? []} projects={labels} />
+          <PaidAmountChart rows={rows ?? []} projects={labels} legendLimit={compactLegend ? 8 : undefined} />
         )}
       </div>
     </ConsolePanel>
