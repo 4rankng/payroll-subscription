@@ -38,6 +38,24 @@ func newMobileRulesService(repo *mobileRulesRepo) *EmployeeService {
 }
 
 
+// Dropping the mandatory-mobile policy (PAYR-66): a phone-less employee is
+// legal on every create path. Pins the acceptance behavior so a silent
+// re-introduction of the requirement cannot pass CI.
+func TestCreateEmployee_MissingMobileAllowed(t *testing.T) {
+	service := newMobileRulesService(&mobileRulesRepo{})
+
+	t.Run("manual path creates without a mobile", func(t *testing.T) {
+		created, err := service.CreateEmployee(context.Background(), &domain.Employee{Fullname: "Nguyen Van A", CCCD: "012345678901"}, 9)
+		require.NoError(t, err)
+		require.Empty(t, created.Mobile)
+	})
+
+	t.Run("import path shares createEmployeeCore and creates without a mobile", func(t *testing.T) {
+		_, err := service.CreateEmployeeFromImport(context.Background(), &domain.Employee{Fullname: "Nguyen Van A", CCCD: "012345678901"}, 9)
+		require.NoError(t, err)
+	})
+}
+
 func TestCreateEmployee_RejectsDuplicateMobile(t *testing.T) {
 	repo := &mobileRulesRepo{holdersByMobile: map[string][]*domain.Employee{
 		"0912345678": {{ID: 7, Fullname: "Existing Holder", CCCD: "001179010398"}},
