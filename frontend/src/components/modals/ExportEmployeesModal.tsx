@@ -63,7 +63,7 @@ export function ExportEmployeesModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="rounded-lg sm:max-w-md gap-0">
-        <DialogHeader className="pb-1">
+        <DialogHeader>
           <DialogTitle className="text-sm font-semibold">Xuất Excel nhân viên</DialogTitle>
           <DialogDescription className="text-xs">
             Chọn một hoặc nhiều dự án để xuất
@@ -71,7 +71,7 @@ export function ExportEmployeesModal({
         </DialogHeader>
 
         {/* Select all / clear */}
-        <div className="flex items-center justify-between px-1 py-1.5">
+        <div className="mt-3 flex items-center justify-between px-1 py-1.5">
           <span className="text-xs text-muted-foreground">
             Đã chọn {selectedIds.size} dự án
           </span>
