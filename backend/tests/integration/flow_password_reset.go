@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"time"
 )
 
 const flowPasswordReset = "PasswordReset"
@@ -99,5 +101,50 @@ func runPasswordResetTests(client *APIClient, data *TestData, reporter *Reporter
 			return fmt.Errorf("missing token: status = %d, want 400 or 429", status)
 		}
 		return nil
+	})
+
+	// A reset request for a known email must leave a delivery record in the
+	// email history — that record is the evidence that the mail went out (the
+	// request itself always returns the same 200). The send is async, so poll.
+	reporter.RunTest(flowPasswordReset, "Reset email is recorded in email history", func() error {
+		if adminProfile.Email == "" {
+			return fmt.Errorf("no admin email to request a reset for")
+		}
+		body := map[string]interface{}{"email": adminProfile.Email}
+		_, status, err := anonymous.Post("/api/v1/auth/password-reset/request", body)
+		if err != nil {
+			return fmt.Errorf("request reset: %w", err)
+		}
+		if status == 429 {
+			// Shared per-email limiter exhausted by repeated runs — skip.
+			fmt.Printf("    rate limited (429) — history assertion skipped\n")
+			return nil
+		}
+		if status != 200 {
+			return fmt.Errorf("request reset: status = %d, want 200", status)
+		}
+
+		type historyRecipient struct {
+			Address string `json:"address"`
+		}
+		type historyEntry struct {
+			Subject    string             `json:"subject"`
+			Recipients []historyRecipient `json:"recipients"`
+		}
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			var entries []historyEntry
+			if _, err := admin.GetInto("/api/v1/email/history?limit=10", &entries); err == nil {
+				for _, entry := range entries {
+					for _, r := range entry.Recipients {
+						if r.Address == adminProfile.Email && strings.Contains(entry.Subject, "Đặt lại mật khẩu") {
+							return nil
+						}
+					}
+				}
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+		return fmt.Errorf("no password-reset email recorded in history within 5s")
 	})
 }

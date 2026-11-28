@@ -54,6 +54,67 @@ func (panicEmailSender) Send(context.Context, *domain.EmailMessage) (*domain.Ema
 	panic("boom from Send")
 }
 
+// recordingEmailPublisher captures EmailSentEvents — the delivery record the
+// email history is built from. Thread-safe: publishing happens on the send
+// goroutine while the test reads the captured slice.
+type recordingEmailPublisher struct {
+	mu     sync.Mutex
+	events []*domain.EmailSentEvent
+}
+
+func (p *recordingEmailPublisher) PublishEmailSent(_ context.Context, event *domain.EmailSentEvent) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.events = append(p.events, event)
+	return nil
+}
+
+func (p *recordingEmailPublisher) first() *domain.EmailSentEvent {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.events) == 0 {
+		return nil
+	}
+	return p.events[0]
+}
+
+// TestRequestReset_KnownUser_RecordsEmailInHistory pins the PAYSUB-34
+// contract: the reset mail is recorded through the shared email-sent
+// publisher, so it shows up in the email history admins and QA check. Before
+// the fix the send bypassed the publisher and left no trace anywhere.
+func TestRequestReset_KnownUser_RecordsEmailInHistory(t *testing.T) {
+	repo := &fakeUserRepo{
+		byEmail: map[string]*domain.User{
+			"alice@example.com": {ID: 1, Username: "alice", Fullname: "Alice", Email: new("alice@example.com")},
+		},
+	}
+	sender := &recordingEmailSender{}
+	pub := &recordingEmailPublisher{}
+	svc, _ := newTestService(t, repo, sender)
+	svc.eventPublisher = pub
+
+	if err := svc.RequestReset(context.Background(), "alice@example.com"); err != nil {
+		t.Fatalf("RequestReset: %v", err)
+	}
+	// email send + record is async — wait briefly for the goroutine.
+	deadline := time.After(2 * time.Second)
+	for pub.first() == nil {
+		select {
+		case <-deadline:
+			t.Fatalf("reset email not recorded in history within timeout")
+		default:
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+	evt := pub.first()
+	if evt.Kind != domain.EmailKindPasswordReset {
+		t.Errorf("event Kind = %v, want EmailKindPasswordReset", evt.Kind)
+	}
+	if len(evt.Recipients) != 1 || evt.Recipients[0].Address != "alice@example.com" {
+		t.Errorf("event Recipients = %+v, want [alice@example.com]", evt.Recipients)
+	}
+}
+
 // fakeUserRepo is a minimal UserRepository stub for the reset-service tests.
 // Only GetByEmail/GetByID are exercised; the rest panic to catch misuse.
 type fakeUserRepo struct {

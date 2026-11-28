@@ -28,11 +28,14 @@ type Service struct {
 	userRepo    domain.UserRepository
 	userService *user.UserService
 	emailSender domain.EmailDeliveryPort // Red Team C4: reuse emailProvider from init.go
-	eventBus    domain.EventBus
-	fromEmail   string
-	resetURL    string
-	clk         clock.Clock
-	logger      *slog.Logger
+	// eventPublisher records delivered mail in the email history (notification
+	// log) like every other app email. Nil disables the record (tests).
+	eventPublisher domain.EmailEventPublisher
+	eventBus       domain.EventBus
+	fromEmail      string
+	resetURL       string
+	clk            clock.Clock
+	logger         *slog.Logger
 }
 
 // NewService constructs the service. emailSender should be the existing
@@ -43,6 +46,7 @@ func NewService(
 	userRepo domain.UserRepository,
 	userService *user.UserService,
 	emailSender domain.EmailDeliveryPort,
+	eventPublisher domain.EmailEventPublisher,
 	eventBus domain.EventBus,
 	fromEmail, resetURL string,
 	clk clock.Clock,
@@ -52,15 +56,16 @@ func NewService(
 		clk = clock.New()
 	}
 	return &Service{
-		tokenStore:  tokenStore,
-		userRepo:    userRepo,
-		userService: userService,
-		emailSender: emailSender,
-		eventBus:    eventBus,
-		fromEmail:   fromEmail,
-		resetURL:    resetURL,
-		clk:         clk,
-		logger:      logger,
+		tokenStore:     tokenStore,
+		userRepo:       userRepo,
+		userService:    userService,
+		emailSender:    emailSender,
+		eventPublisher: eventPublisher,
+		eventBus:       eventBus,
+		fromEmail:      fromEmail,
+		resetURL:       resetURL,
+		clk:            clk,
+		logger:         logger,
 	}
 }
 
@@ -110,8 +115,17 @@ func (s *Service) RequestReset(ctx context.Context, email string) error {
 			s.logger.Error("password reset: build email failed", "error", err, "user_id", uid)
 			return
 		}
-		if _, err := s.emailSender.Send(bg, msg); err != nil {
+		result, err := s.emailSender.Send(bg, msg)
+		if err != nil {
 			s.logger.Error("password reset: send email failed", "error", err, "user_id", uid)
+			return
+		}
+		// Record the delivery in the email history (the notification log every
+		// other app email goes through) so admins and QA can see the reset mail.
+		if s.eventPublisher != nil {
+			if err := s.eventPublisher.PublishEmailSent(bg, domain.NewEmailSentEvent(result, msg, nil)); err != nil {
+				s.logger.Error("password reset: record email failed", "error", err, "user_id", uid)
+			}
 		}
 	}()
 

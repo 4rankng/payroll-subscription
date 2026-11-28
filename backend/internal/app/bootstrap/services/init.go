@@ -114,6 +114,11 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		emailProvider = email.NewSandboxProvider(logger)
 	} else {
 		emailProvider = email.NewResendProvider(cfg.Notification.ResendAPIKey)
+		if cfg.Notification.ResendAPIKey == "" {
+			// A missing key fails every send at runtime while the endpoints
+			// keep returning success — surface it at boot, not at first email.
+			logger.Warn("RESEND_API_KEY is not set in production — outbound email (password reset, notifications) will fail to send")
+		}
 	}
 	emailService := notification.NewEmailService(cfg.Notification, emailProvider, repos.Notification, repos.User, emailNotificationPublisher, assetService, logger)
 
@@ -218,7 +223,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	// never send real email.
 	pwresetTokenStore := cache.NewPasswordResetTokenStore(redis.Client, cfg.PasswordReset.TokenTTL)
 	emailPasswordResetService := passwordreset.NewService(
-		pwresetTokenStore, repos.User, userService, emailProvider, eventBus,
+		pwresetTokenStore, repos.User, userService, emailProvider, emailNotificationPublisher, eventBus,
 		constants.DefaultEmailSenderAddress, cfg.PasswordReset.ResetURL, clk, logger,
 	)
 
