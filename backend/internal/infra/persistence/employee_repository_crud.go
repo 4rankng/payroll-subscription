@@ -218,7 +218,10 @@ func (r *EmployeeRepository) Update(ctx context.Context, employee *domain.Employ
 }
 
 func (r *EmployeeRepository) Delete(ctx context.Context, id uint) error {
-	return r.SafeDelete(ctx, &domain.Employee{}, id)
+	// Use the tx from ctx (mirroring HardDelete): SafeDelete runs on the root
+	// DB, which self-deadlocks on the FOR UPDATE lock the surrounding
+	// DeleteEmployee transaction holds on this row.
+	return r.dbForContext(ctx).Delete(&domain.Employee{}, id).Error
 }
 
 func (r *EmployeeRepository) HardDelete(ctx context.Context, id uint) error {

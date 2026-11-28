@@ -252,7 +252,9 @@ func (r *UserRepository) UpdateOTPLockout(ctx context.Context, userID uint, fail
 }
 
 func (r *UserRepository) Delete(ctx context.Context, id uint) error {
-	result := r.DB.WithContext(ctx).Delete(&domain.User{}, id)
+	// Join the surrounding transaction when present (e.g. DeleteEmployee holds
+	// related locks): a root-DB delete here would self-deadlock on them.
+	result := r.dbForContext(ctx).Delete(&domain.User{}, id)
 	if result.Error != nil {
 		return domain.NewInternalError("failed to delete user", result.Error)
 	}

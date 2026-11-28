@@ -89,7 +89,9 @@ func (r *ProjectRepository) Update(ctx context.Context, project *domain.Project)
 }
 
 func (r *ProjectRepository) Delete(ctx context.Context, id uint) error {
-	return r.DB.WithContext(ctx).Delete(&domain.Project{}, id).Error
+	// Resolve the tx from ctx: the DeleteProject cascade locks the project row
+	// in its transaction, and a root-DB delete here would self-deadlock on it.
+	return r.dbForContext(ctx).Delete(&domain.Project{}, id).Error
 }
 
 func (r *ProjectRepository) List(ctx context.Context, filters domain.ProjectFilters) ([]*domain.Project, error) {

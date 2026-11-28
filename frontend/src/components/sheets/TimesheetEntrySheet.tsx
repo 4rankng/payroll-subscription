@@ -266,6 +266,7 @@ function TimesheetEntrySheetComponent({
 
   // Auto-populate entries when project is selected and has employees
   useEffect(() => {
+    console.log("AUTOPOP", JSON.stringify({ isOpen, projectId: formData.projectId, emp: availableEmployees.length, ready: isPayRateReady, closing: isClosing, entries: formData.entries.length }));
     if (!isOpen || !formData.projectId || availableEmployees.length === 0 || !isPayRateReady || isClosing) {
       return;
     }

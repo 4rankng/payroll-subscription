@@ -88,5 +88,29 @@ func EnsureDevUsers(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 		}
 		fmt.Println("dev user updated:", du.username)
 	}
+
+	// Give the dev nhanvien account an employee profile so /api/v1/me and the
+	// employee mobile views resolve instead of 404ing on a bare user. Idempotent:
+	// only created when no employee row links to the account.
+	nvUser, err := userRepo.GetByUsername(ctx, "nhanvien")
+	if err != nil {
+		return fmt.Errorf("lookup dev user nhanvien for employee profile: %w", err)
+	}
+	var empCount int64
+	if err := db.Model(&domain.Employee{}).Where("user_id = ?", nvUser.ID).Count(&empCount).Error; err != nil {
+		return fmt.Errorf("count employee profile for dev nhanvien: %w", err)
+	}
+	if empCount == 0 {
+		emp := &domain.Employee{
+			Fullname:  nvUser.Fullname,
+			CCCD:      "000000000001",
+			UserID:    &nvUser.ID,
+			CreatedBy: nvUser.ID,
+		}
+		if err := db.Create(emp).Error; err != nil {
+			return fmt.Errorf("create employee profile for dev nhanvien: %w", err)
+		}
+		fmt.Println("dev employee profile created for nhanvien")
+	}
 	return nil
 }
