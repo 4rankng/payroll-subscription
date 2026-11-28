@@ -11,23 +11,22 @@ import type { NavGroup } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts";
 import type { AppRole } from "@/lib/auth";
 
-const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
+const PartnerLayoutInner = () => {
   useEffect(() => {
-    if (!isPartner) return;
-    // The toto console design now covers partner routes too: the same token
-    // blocks, structural rules and static-ink re-skin layers key off
-    // html.admin-console-toto (variables.css maps the partner alias at the
-    // --admin-* tokens). partner-route-active keeps the role scope for
-    // partner-specific styling.
+    // One console theme for every role this layout serves — quanly, ketoan,
+    // giamdoc and admin on /payment-history: the same token blocks, structural
+    // rules and static-ink re-skin layers key off html.admin-console-toto
+    // (variables.css maps the partner alias at the --admin-* tokens).
+    // partner-route-active keeps the role scope for partner-specific styling.
     document.documentElement.classList.add("partner-route-active", "admin-console-toto");
     return () => document.documentElement.classList.remove("partner-route-active", "admin-console-toto");
-  }, [isPartner]);
+  }, []);
 
   return (
     <div
-      data-partner-ui={isPartner ? "" : undefined}
-      data-theme={isPartner ? "congtruong" : undefined}
-      className={isPartner ? "partner-shell-scope relative flex h-dvh w-full group/layout" : "relative flex h-dvh w-full group/layout"}
+      data-partner-ui=""
+      data-theme="congtruong"
+      className="partner-shell-scope relative flex h-dvh w-full group/layout"
     >
       <PartnerSidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -48,7 +47,6 @@ const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
 
 const PartnerLayout = ({ roles = ["quanly", "ketoan", "giamdoc"] }: { roles?: AppRole[] }) => {
   const { user } = useAuth();
-  const isPartner = user?.role === "quanly";
   const navGroups = partnerNavItems(user?.role);
 
   return (
@@ -57,7 +55,7 @@ const PartnerLayout = ({ roles = ["quanly", "ketoan", "giamdoc"] }: { roles?: Ap
     // /payment-history reuses the layout with admin added (PAYR-123).
     <ProtectedRoute requiredRole={roles}>
       <SidebarProvider defaultOpen={true}>
-        <PartnerLayoutInner isPartner={isPartner} />
+        <PartnerLayoutInner />
         <MobileBottomNav groups={navGroups} />
       </SidebarProvider>
     </ProtectedRoute>
