@@ -3,12 +3,11 @@ import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ResponsiveTable } from "@/components/ui/responsive-table";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { InlineStatStrip } from "@/components/shared/InlineStatStrip";
 import { SearchBar } from "@/components/shared/SearchBar";
 import { FilterPill } from "@/components/shared/FilterPill";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { usePartnerEmployeesData } from "@/hooks/partner-employees/usePartnerEmployeesData";
-import { useEmployeesSummary, useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
 import { useAuth } from "@/contexts";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useEmployeeModals } from "@/hooks/useModalNavigation";
@@ -120,8 +119,6 @@ const EmployeesPage = () => {
     handleSortChange,
   );
 
-  const { data: employeesSummary, isLoading: summaryLoading } =
-    useEmployeesSummary();
   const { data: projectsData } = useAssignableProjects();
   const { exportEmployees, isExporting } = useEmployeeExport();
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -134,11 +131,6 @@ const EmployeesPage = () => {
       openEmployeeDetails(employee.id.toString());
     },
     [canClaim, handleClaim, openEmployeeDetails, poolView],
-  );
-
-  const activeEmployees = useMemo(
-    () => employees.filter((emp) => emp.status === "active").length,
-    [employees],
   );
 
   const projects = useMemo(
@@ -548,63 +540,6 @@ const EmployeesPage = () => {
                 variant: 'default' as const,
               }] : []),
             ]}
-          />
-        </div>
-
-        <div className={cn(
-          "motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both]",
-          poolView === "global" && "hidden",
-        )}>
-          <InlineStatStrip
-            isLoading={summaryLoading}
-            items={
-              employeesSummary
-                ? [
-                    {
-                      label: "Tổng",
-                      value: employeesSummary.total_employees,
-                      onClick: () => { updateStatusFilter(undefined); updateMonth(undefined); },
-                    },
-                    {
-                      label: "Chưa phân công",
-                      value: employeesSummary.total_employees - employeesSummary.total_working_employees,
-                      highlight: (employeesSummary.total_employees - employeesSummary.total_working_employees) > 0,
-                      onClick: () => { updateStatusFilter(statusFilter === "unassigned" ? undefined : "unassigned"); updateMonth(undefined); },
-                    },
-                    {
-                      // Scoped label — the partner dashboard's "Đang làm việc"
-                      // counts the selected month's workforce, this strip
-                      // counts employment status across all time.
-                      label: "Đang làm việc (tổng)",
-                      value: employeesSummary.total_working_employees,
-                      onClick: () => { updateStatusFilter(statusFilter === "working" ? undefined : "working"); updateMonth(undefined); },
-                    },
-                    {
-                      label: "Thêm tháng này",
-                      value: employeesSummary.employees_hired_this_month,
-                      onClick: () => { updateStatusFilter(undefined); updateMonth(month ? undefined : new Date().toISOString().slice(0, 7)); },
-                    },
-                  ]
-                : [
-                    { label: "Tổng", value: employees.length, onClick: () => { updateStatusFilter(undefined); updateMonth(undefined); } },
-                    {
-                      label: "Chưa phân công",
-                      value: employees.length - activeEmployees,
-                      highlight: (employees.length - activeEmployees) > 0,
-                      onClick: () => { updateStatusFilter(statusFilter === "unassigned" ? undefined : "unassigned"); updateMonth(undefined); },
-                    },
-                    {
-                      label: "Đang làm việc (tổng)",
-                      value: activeEmployees,
-                      onClick: () => { updateStatusFilter(statusFilter === "working" ? undefined : "working"); updateMonth(undefined); },
-                    },
-                    {
-                      label: "Thêm tháng này",
-                      value: 0,
-                      onClick: () => { updateStatusFilter(undefined); updateMonth(month ? undefined : new Date().toISOString().slice(0, 7)); },
-                    },
-                  ]
-            }
           />
         </div>
 

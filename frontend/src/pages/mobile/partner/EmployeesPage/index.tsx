@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { MobileSearchInput } from "@/components/shared/MobileSearchInput";
 import { MobilePageHeader } from "@/components/shared/MobilePageHeader";
-import { MobileStatStrip } from "@/components/shared/MobileStatStrip";
 import { MobilePageShell, MobileSurface } from "@/components/shared/MobilePageShell";
 import { MobilePagination } from "@/components/shared/MobilePagination";
 import { getConsoleKicker } from "@/lib/console";
@@ -25,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmployeeMobileCard } from "@/components/employees/EmployeeMobileCard";
 import { EmployeeEmptyStates } from "@/components/employees/EmployeeEmptyStates";
 import { usePartnerEmployeesData } from "@/hooks/partner-employees/usePartnerEmployeesData";
-import { useEmployeesSummary, useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
 import { useAuth } from "@/contexts";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useEmployeeModals } from "@/hooks/useModalNavigation";
@@ -77,8 +76,6 @@ const EmployeesPageMobile = () => {
     handlePageChange,
   } = usePartnerEmployeesData();
 
-  const { data: employeesSummary, isLoading: summaryLoading } =
-    useEmployeesSummary();
   const { data: projectsData } = useAssignableProjects();
   const { exportEmployees, isExporting } = useEmployeeExport();
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -125,36 +122,6 @@ const EmployeesPageMobile = () => {
     [projectsData],
   );
 
-  const stats = useMemo(() => {
-    if (employeesSummary) {
-      return [
-        {
-          label: "Tổng",
-          value: employeesSummary.total_employees,
-          filter: null as "working" | "unassigned" | null,
-        },
-        {
-          label: "Đang làm",
-          value: employeesSummary.total_working_employees,
-          filter: "working" as const,
-        },
-        {
-          label: "Chưa phân",
-          value:
-            employeesSummary.total_employees -
-            employeesSummary.total_working_employees,
-          filter: "unassigned" as const,
-        },
-        {
-          label: "Tháng này",
-          value: employeesSummary.employees_hired_this_month,
-          filter: null as "working" | "unassigned" | null,
-        },
-      ];
-    }
-    return [];
-  }, [employeesSummary]);
-
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
@@ -162,15 +129,6 @@ const EmployeesPageMobile = () => {
         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
           <Skeleton className="h-7 w-28" />
           <Skeleton className="h-9 w-16" />
-        </div>
-        {/* Stats strip skeleton */}
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-border bg-card mx-4 mb-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className={i > 0 ? "flex min-h-16 flex-col justify-center gap-1.5 border-l border-border px-2 py-2.5" : "flex min-h-16 flex-col justify-center gap-1.5 px-2 py-2.5"}>
-              <Skeleton className="h-2.5 w-10" />
-              <Skeleton className="h-3.5 w-8" />
-            </div>
-          ))}
         </div>
         {/* Search skeleton */}
         <div className="px-4 pb-3">
@@ -222,38 +180,6 @@ const EmployeesPageMobile = () => {
           </div>
         }
       />
-
-      {/* ── Stats strip ── */}
-      {!summaryLoading && stats.length > 0 && (
-        <div className="px-4 pb-3">
-          <MobileStatStrip
-            items={stats.map((stat) => {
-              const isActive =
-                stat.filter !== null && statusFilter === stat.filter;
-              return {
-                key: stat.label,
-                label: stat.label,
-                value: stat.value.toLocaleString("vi-VN"),
-                active: isActive,
-                onClick: stat.filter
-                  ? () =>
-                      updateStatusFilter(isActive ? undefined : stat.filter)
-                  : undefined,
-              };
-            })}
-          />
-        </div>
-      )}
-      {summaryLoading && (
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-border bg-card mx-4 mb-3">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className={i > 0 ? "flex min-h-16 flex-col justify-center gap-1.5 border-l border-border px-2 py-2.5" : "flex min-h-16 flex-col justify-center gap-1.5 px-2 py-2.5"}>
-              <Skeleton className="h-2.5 w-10" />
-              <Skeleton className="h-3.5 w-8" />
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* ── Search + Filter ── */}
       <MobileSurface className="flex gap-2 p-3">
