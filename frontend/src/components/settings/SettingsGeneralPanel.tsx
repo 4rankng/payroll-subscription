@@ -21,11 +21,9 @@ export const SettingsGeneralPanel = ({ form }: SettingsGeneralPanelProps) => (
         onReset={() => form.setSubscriptionFeeVnd(form.originalSubscriptionFeeVnd)}
         isDirty={form.subscriptionFeeVnd !== form.originalSubscriptionFeeVnd}
         isSaving={form.isSaving}
-        type="number"
+        displayMode="currency-vnd"
         min={0}
         max={999999999}
-        step={1000}
-        suffix="đ"
       />
     </SettingsSection>
   </div>

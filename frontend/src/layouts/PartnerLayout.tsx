@@ -3,7 +3,6 @@ import { Outlet } from "react-router-dom";
 import PartnerSidebar from "@/components/PartnerSidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { NotificationFAB } from "@/components/notifications/NotificationFAB";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { partnerNavItems } from "@/config/partnerNav";
 import { SectionErrorBoundary } from "@/components/ErrorBoundary";
@@ -58,7 +57,6 @@ const PartnerLayout = () => {
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner isPartner={isPartner} />
         <MobileBottomNav groups={navGroups} />
-        <NotificationFAB />
       </SidebarProvider>
     </ProtectedRoute>
   );

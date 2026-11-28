@@ -164,7 +164,9 @@ const FeeInsightsPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {trendSeries.length === 0 ? (
+              {trendSeries.every((point) => point.feeVnd <= 0) ? (
+                // All-zero series would render a meaningless 0–4 default
+                // axis — show the empty state for it too.
                 <p className="py-12 text-center text-sm text-muted-foreground">
                   Chưa có dữ liệu phí
                 </p>

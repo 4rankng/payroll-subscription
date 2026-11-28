@@ -87,6 +87,19 @@ export const createProjectColumns = (
         );
       }
 
+      // Admin list payload carries only the plain employee_count (the split
+      // fields come from detail endpoints) — render the total so the column
+      // is never blank when the split rows are absent.
+      if (weekly === 0 && monthly === 0) {
+        return (
+          <div className="flex justify-center">
+            <span className="typography-body-medium font-semibold text-foreground tabular-nums">
+              {formatEmployeeCount(total)}
+            </span>
+          </div>
+        );
+      }
+
       return (
         <div className="flex flex-col items-start gap-0.5">
           {weekly > 0 && (

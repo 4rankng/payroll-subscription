@@ -66,11 +66,11 @@ describe.each([
       </MemoryRouter>,
     );
 
+    // currency-vnd display: grouped vi-VN digits + a ₫ suffix; bounds live in
+    // the currency validator, not input attributes.
     const feeInput = screen.getByLabelText('Phí (đ/NV/kỳ)') as HTMLInputElement;
-    expect(feeInput).toHaveValue(10000);
-    expect(feeInput).toHaveAttribute('min', '0');
-    expect(feeInput).toHaveAttribute('max', '999999999');
-    expect(feeInput).toHaveAttribute('step', '1000');
+    expect(feeInput).toHaveValue('10.000');
+    expect(feeInput).toHaveAttribute('inputmode', 'numeric');
     expect(screen.getByText('Phí')).toBeInTheDocument();
   });
 

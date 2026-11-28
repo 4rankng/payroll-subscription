@@ -3,7 +3,6 @@ import { useLayoutEffect } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { NotificationFAB } from "@/components/notifications/NotificationFAB";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { SectionErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts";
@@ -107,7 +106,6 @@ const AdminLayout = () => {
             groups={ADMIN_NAV_GROUPS}
             moreItems={ADMIN_MORE_ITEMS}
           />
-          <NotificationFAB />
         </div>
       </SidebarProvider>
     </ProtectedRoute>

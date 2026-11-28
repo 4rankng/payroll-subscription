@@ -128,7 +128,7 @@ function ProjectPaymentScheduleControl({
         type="single"
         value={selectedSchedule}
         onValueChange={handleScheduleChange}
-        className="flex gap-2 overflow-x-auto"
+        className="flex flex-wrap gap-1.5"
         aria-label="Chọn chu kỳ trả lương"
       >
         {scheduleOptions.map(({ value, label, icon: Icon }) => (
@@ -459,7 +459,9 @@ function ProjectCard({
                 aria-label="Ngày bắt đầu phân công"
                 disabled={!canEditFields || isSubmitting}
                 className={cn(
-                  "h-11 min-w-0 typography-body-small flex-1 sm:h-7",
+                  // min-w + pr keep the DD/MM/YYYY value and the native
+                  // calendar indicator intact in narrow drawer columns.
+                  "h-11 min-w-[140px] pr-8 typography-body-small sm:h-7",
                   !canEditFields && "opacity-100" // Ensure proper contrast in read-only mode
                 )}
               />

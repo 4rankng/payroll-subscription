@@ -46,6 +46,10 @@ export function EmployeeCanopy({
   periodSlot,
 }: EmployeeCanopyProps) {
   const [amountVisible, setAmountVisible] = useState(true);
+  // Controlled so the menu is fully closed before the Đổi mật khẩu sheet or
+  // logout runs — an uncontrolled menu could stay rendered behind the modal
+  // scrim (the scrim is translucent by design).
+  const [menuOpen, setMenuOpen] = useState(false);
   const todayLabel = format(new Date(), "EEEE, d 'tháng' M", { locale: vi });
   const paidAmount = wallet?.paidAmount ?? 0;
   const totalAmount = wallet?.totalAmount ?? 0;
@@ -104,7 +108,7 @@ export function EmployeeCanopy({
                 </span>
               )}
             </button>
-            <DropdownMenu>
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
@@ -122,16 +126,29 @@ export function EmployeeCanopy({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
+                sideOffset={6}
                 className="w-52 rounded-2xl p-1.5"
                 data-employee-ui=""
                 data-theme="employee"
               >
-                <DropdownMenuItem onClick={onChangePassword} className="min-h-11 gap-3 rounded-xl py-2.5 text-fg-secondary">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onChangePassword();
+                  }}
+                  className="min-h-11 gap-3 rounded-xl py-2.5 text-fg-secondary"
+                >
                   <Settings01 className="h-4 w-4 text-fg-tertiary" aria-hidden="true" />
                   <span className="employee-type-action">Đổi mật khẩu</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
-                <DropdownMenuItem onClick={onLogout} className="min-h-11 gap-3 rounded-xl py-2.5 text-[var(--employee-error)] focus:text-[var(--employee-error)]">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onLogout();
+                  }}
+                  className="min-h-11 gap-3 rounded-xl py-2.5 text-[var(--employee-error)] focus:text-[var(--employee-error)]"
+                >
                   <LogOut01 className="h-4 w-4" aria-hidden="true" />
                   <span className="employee-type-action">Đăng xuất</span>
                 </DropdownMenuItem>

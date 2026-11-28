@@ -32,9 +32,19 @@ export const createProjectMobileConfig = (
       render: (row) => {
         const weekly = row.weekly_salary_employee_count || 0;
         const monthly = row.monthly_salary_employee_count || 0;
-        const total = weekly + monthly;
+        const total = (weekly + monthly) > 0 ? weekly + monthly : row.employee_count || 0;
 
         if (total === 0) return <span className="text-muted-foreground">—</span>;
+
+        // Plain employee_count fallback when the split fields are absent
+        // (admin list payload) so the column is never blank.
+        if (weekly === 0 && monthly === 0) {
+          return (
+            <span className="typography-body-medium font-semibold text-foreground tabular-nums">
+              {formatEmployeeCount(total)}
+            </span>
+          );
+        }
 
         return (
           <div className="flex flex-col gap-0.5">

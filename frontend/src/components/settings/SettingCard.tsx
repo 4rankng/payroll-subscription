@@ -184,7 +184,7 @@ export const SettingCard = ({
   // value column, fixed action column so rows never shift when actions mount.
   const rowGridClass = isSliderMode
     ? 'md:grid-cols-[minmax(0,1fr)_minmax(18rem,1.1fr)_6rem]'
-    : 'md:grid-cols-[minmax(0,1fr)_13rem_6rem]';
+    : 'md:grid-cols-[minmax(0,1fr)_13rem_auto]';
 
   return (
     <div
@@ -370,7 +370,7 @@ export const SettingCard = ({
                 disabled={isSaving || isInvalid}
               >
                 <Check aria-hidden="true" data-icon className="h-3.5 w-3.5" />
-                <span aria-live="polite">{isSaving ? 'Đang lưu…' : 'Lưu'}</span>
+                <span aria-live="polite">{isSaving ? 'Đang lưu…' : 'Lưu thay đổi'}</span>
               </Button>
             </>
           ) : null}
