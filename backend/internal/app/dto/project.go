@@ -55,6 +55,16 @@ type ProjectSummaryResponse struct {
 	TotalPendingPayableVND float64 `json:"total_pending_payable_vnd"`
 }
 
+// PartnerProjectSummaryResponse represents project statistics for partner
+// users (GET /projects/partner-summary). Field names mirror the partner list
+// contract the frontend consumes.
+type PartnerProjectSummaryResponse struct {
+	TotalProjects     int `json:"total_projects"`
+	ActiveProjects    int `json:"active_projects"`
+	CompletedProjects int `json:"completed_projects"`
+	TotalEmployees    int `json:"total_employees"`
+}
+
 // ProjectEmployeeAssignments represents employee assignment summary for a project
 type ProjectEmployeeAssignments struct {
 	TotalEmployees  int                     `json:"total_employees"`

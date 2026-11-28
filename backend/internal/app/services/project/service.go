@@ -281,26 +281,60 @@ func (s *ProjectService) GetProjectSummary(ctx context.Context) (*domain.Project
 	return result, nil
 }
 
-// Try to get from cache
+// GetPartnerProjectSummary returns project statistics for partner users over
+// the same "accessible" set as the partner project list (AccessibleBy: owned
+// + shared + assignment paths) — NOT CreatedBy. A partner whose projects were
+// granted via project_users sees them in the list, so the summary must count
+// them too; filtering by creator showed "Tổng dự án 0" above a non-empty
+// list. userID == 0 (global callers) counts the whole table.
+func (s *ProjectService) GetPartnerProjectSummary(ctx context.Context, userID uint) (*domain.PartnerProjectSummary, error) {
+	cacheKey := fmt.Sprintf("projects:partner_summary:%d", userID)
+	var summary domain.PartnerProjectSummary
+	if err := s.cache.Get(ctx, cacheKey, &summary); err == nil {
+		return &summary, nil
+	}
 
-// Cache hit
+	filters := domain.ProjectFilters{}
+	if userID > 0 {
+		filters.AccessibleBy = &userID
+	}
 
-// Cache miss - fetch from database.
-// Scope by the same "accessible" set as the partner project list
-// (AccessibleBy: owned + shared + assignment paths) — NOT CreatedBy.
-// A partner whose projects were granted via project_users sees them in the
-// list, so the summary cards must count them too; filtering by creator
-// showed "Tổng dự án 0" above a non-empty list.
+	total, err := s.ProjectRepo.Count(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
 
-// Get total project count for this partner (accessible set)
+	var statusCounts map[string]int
+	if userID > 0 {
+		statusCounts, err = s.ProjectRepo.GetStatusCountsForAccessible(ctx, userID)
+	} else {
+		statusCounts, err = s.ProjectRepo.GetStatusCounts(ctx)
+	}
+	if err != nil {
+		return nil, err
+	}
 
-// Get status counts for this partner's accessible projects only
+	// Assignment slots across the set: an employee in two projects counts
+	// once per project, mirroring the per-card nhân sự figures.
+	projects, err := s.ProjectRepo.ListWithEmployeeCount(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+	totalEmployees := 0
+	for _, p := range projects {
+		totalEmployees += p.EmployeeCount
+	}
 
-// Get total active employees created by this partner
+	summary = domain.PartnerProjectSummary{
+		TotalProjects:     int(total),
+		ActiveProjects:    statusCounts[string(domain.ProjectStatusRunning)],
+		CompletedProjects: statusCounts[string(domain.ProjectStatusCompleted)],
+		TotalEmployees:    totalEmployees,
+	}
 
-// Calculate summary statistics for this partner only
-
-// Cache the result with appropriate TTL
+	_ = s.cache.Set(ctx, cacheKey, &summary, constants.ProjectListCacheTTL)
+	return &summary, nil
+}
 
 // generateProjectListCacheKey builds a deterministic cache key for project list queries.
 func (s *ProjectService) generateProjectListCacheKey(filters domain.ProjectFilters) string {

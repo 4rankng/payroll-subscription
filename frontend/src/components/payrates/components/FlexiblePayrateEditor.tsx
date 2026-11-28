@@ -6,7 +6,7 @@ const DAY_TYPE = 'ngày thường';
 const SHIFT_RE = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/;
 
 const ALL_POSITIONS = [
-  'Phổ Thông','Kinh Nghiệm','Học Việc','Thợ Điện','Thợ Cơ Khí',
+  'phổ thông','Kinh Nghiệm','Học Việc','Thợ Điện','Thợ Cơ Khí',
   'Thợ Hàn','Công Nhân','Kỹ Thuật','Thủ Kho','Tổ Trưởng','Quản Đốc','Giám Sát',
 ];
 
@@ -99,7 +99,7 @@ export function FlexiblePayrateEditor({ rates, onChange, readOnly = false }: Pro
   const parsed = useMemo(() => parseRates(rates), [rates]);
 
   const [positions, setPositions] = useState<string[]>(
-    parsed.positions.length ? parsed.positions : ['Phổ Thông']
+    parsed.positions.length ? parsed.positions : ['phổ thông']
   );
   const [shifts, setShifts]       = useState<Shift[]>(parsed.shifts);
   const [rateMap, setRateMap]      = useState<RateMap>(parsed.rateMap);
@@ -118,7 +118,7 @@ export function FlexiblePayrateEditor({ rates, onChange, readOnly = false }: Pro
   useEffect(() => {
     if (lastEmittedRef.current === rates) return;
     const p = parseRates(rates);
-    setPositions(p.positions.length ? p.positions : ['Phổ Thông']);
+    setPositions(p.positions.length ? p.positions : ['phổ thông']);
     setShifts(p.shifts);
     setRateMap(p.rateMap);
   }, [rates]);

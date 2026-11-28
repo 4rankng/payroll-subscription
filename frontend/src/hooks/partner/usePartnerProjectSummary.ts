@@ -8,8 +8,11 @@ const QUERY_KEYS = {
 
 export const usePartnerProjectSummary = () => {
   const userRole = authManager.getUserRole();
-  // Only allow if explicitly partner - deny if null or any other role
-  const hasPermission = userRole === 'quanly' && userRole !== null;
+  // Mirror the useProjects gate: admin, quanly, giamdoc. ketoan's project
+  // list is deliberately scoped out, so its summary stays off too — no new
+  // data exposure beyond the visible list.
+  const hasPermission =
+    (userRole === 'admin' || userRole === 'quanly' || userRole === 'giamdoc') && userRole !== null;
 
   return useQuery({
     queryKey: QUERY_KEYS.partnerSummary,

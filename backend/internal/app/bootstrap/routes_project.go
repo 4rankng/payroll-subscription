@@ -8,6 +8,7 @@ func setupProjectRoutes(protected *gin.RouterGroup, container *Container) {
 		projects.POST("", container.Handlers.Project.CreateProject)
 		projects.GET("", container.Handlers.Project.ListProjects)
 		projects.GET("/summary", container.Handlers.Project.GetProjectSummary)
+		projects.GET("/partner-summary", container.Handlers.Project.GetPartnerProjectSummary)
 		projects.POST("/activate", container.Handlers.Project.ActivateProjects) // Admin-only endpoint for manual project activation
 		projects.GET("/:id", container.Handlers.Project.GetProject)
 		projects.PUT("/:id", container.Handlers.Project.UpdateProject)
