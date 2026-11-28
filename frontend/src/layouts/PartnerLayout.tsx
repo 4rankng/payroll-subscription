@@ -9,6 +9,7 @@ import { SectionErrorBoundary } from "@/components/ErrorBoundary";
 import { Briefcase01, Calendar, Grid01, Users01, Wallet01 } from "@untitledui/icons";
 import type { NavGroup } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts";
+import type { AppRole } from "@/lib/auth";
 
 const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
   useEffect(() => {
@@ -45,7 +46,7 @@ const PartnerLayoutInner = ({ isPartner }: { isPartner: boolean }) => {
   );
 };
 
-const PartnerLayout = () => {
+const PartnerLayout = ({ roles = ["quanly", "ketoan", "giamdoc"] }: { roles?: AppRole[] }) => {
   const { user } = useAuth();
   const isPartner = user?.role === "quanly";
   const navGroups = partnerNavItems(user?.role);
@@ -53,7 +54,8 @@ const PartnerLayout = () => {
   return (
     // Mirrors the /partner route guard: quanly operates; ketoan reads;
     // giamdoc reads, approves and exports (PRD §4 ma trận Trang × Vai trò).
-    <ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}>
+    // /payment-history reuses the layout with admin added (PAYR-123).
+    <ProtectedRoute requiredRole={roles}>
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner isPartner={isPartner} />
         <MobileBottomNav groups={navGroups} />

@@ -106,7 +106,7 @@ const PARTNER_SURFACES: Surface[] = [
   { title: "partner/dashboard", path: "/partner/dashboard" },
   { title: "partner/timesheets", path: "/partner/timesheet" },
   { title: "partner/projects", path: "/partner/projects" },
-  { title: "partner/payment-history", path: "/partner/timesheet/payment-history" },
+  { title: "partner/payment-history", path: "/payment-history" },
 ];
 
 const VIEWPORTS = [

@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clipboard,
+  FileCheck01,
   Home01,
   Key01,
   LogOut01,
@@ -74,6 +75,7 @@ export const ADMIN_MENU_ITEMS: MenuItem[] = [
   { title: "Dự án", icon: Briefcase01, path: "/admin/projects", group: "quan-ly" },
   { title: "Nhân viên", icon: Users01, path: "/admin/employees", group: "quan-ly" },
   { title: "Bảng công", icon: CalendarCheck01, path: "/admin/timesheet", group: "quan-ly" },
+  { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", group: "quan-ly" },
   { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log", group: "he-thong" },
   { title: "Cài đặt", icon: Settings01, path: "/admin/settings", group: "he-thong" },
 ];

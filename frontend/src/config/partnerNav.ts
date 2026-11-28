@@ -33,8 +33,9 @@ export const PARTNER_NAV_ITEMS: PartnerNavItem[] = [
   { title: "Dự án", icon: Briefcase01, path: "/partner/projects", roles: ALL_STAFF },
   { title: "Nhân viên", icon: Users01, path: "/partner/employees", roles: ALL_STAFF },
   { title: "Bảng công", icon: Calendar, path: "/partner/timesheet", end: true, roles: ALL_STAFF },
-  // PAYR-42: rebuilt payroll payment history for all staff roles.
-  { title: "Lịch sử trả lương", icon: FileCheck01, path: "/partner/payment-history", roles: ALL_STAFF },
+  // PAYR-42: rebuilt payroll payment history; PAYR-123: canonical
+  // /payment-history shared by all staff roles plus admin.
+  { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", roles: ["quanly", "ketoan", "giamdoc", "admin"] },
   // PAYR-41: company transfer ledger + sao kê export/email.
   { title: "Sổ cái", icon: BookOpen01, path: "/partner/ledger", end: true, roles: ["ketoan", "giamdoc"] },
 ];

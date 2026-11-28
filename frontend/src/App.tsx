@@ -166,6 +166,12 @@ initInvalidationService(queryClient);
 setupQueryPersistence(queryClient);
 
 // Component that uses location hook inside Router context
+/** Legacy /partner|/admin payment-history bookmarks → canonical URL, query kept. */
+const PaymentHistoryRedirect = () => {
+  const search = useLocation().search;
+  return <Navigate replace to={{ pathname: "/payment-history", search }} />;
+};
+
 const AppContent = () => {
   const location = useLocation();
 
@@ -259,10 +265,18 @@ const AppContent = () => {
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
           {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
           <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
-          {/* PRD §5.7: Lịch sử trả lương — payment history (quanly/ketoan/giamdoc). */}
-          <Route path="payment-history" element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
+
+        {/* PRD §5.7: Lịch sử trả lương — payment history under one canonical
+            URL shared by quanly/ketoan/giamdoc/admin (PAYR-123). PartnerLayout
+            carries the role guard internally; this route widens it to admin. */}
+        <Route path="/payment-history" element={<PartnerLayout roles={["quanly", "ketoan", "giamdoc", "admin"]} />}>
+          <Route index element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
+        </Route>
+        {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
+        <Route path="/partner/payment-history" element={<PaymentHistoryRedirect />} />
+        <Route path="/admin/payment-history" element={<PaymentHistoryRedirect />} />
 
         {/* Employee Routes */}
         <Route path="/employee" element={<ProtectedRoute requiredRole="nhanvien"><EmployeeRouter /></ProtectedRoute>} />

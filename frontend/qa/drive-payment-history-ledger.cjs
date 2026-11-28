@@ -41,8 +41,8 @@ async function login(page, username, password) {
 
   try {
     for (const role of [
-      { user: 'frankng', route: '/admin/payment-history', label: 'admin' },
-      { user: 'cuongnv', route: '/partner/timesheet/payment-history', label: 'partner' },
+      { user: 'frankng', route: '/payment-history', label: 'admin' },
+      { user: 'cuongnv', route: '/payment-history', label: 'partner' },
     ]) {
       for (const vp of [
         { width: 1280, height: 900, label: '1280' },

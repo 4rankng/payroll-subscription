@@ -23,7 +23,7 @@ const ROUTES = [
   "/admin/projects",
   "/admin/employees",
   "/admin/timesheet",
-  "/admin/payment-history",
+  "/payment-history",
   "/PROBE_SKIP", // placeholder to keep numbering readable
   "/admin/ledger",
   "/admin/loans",
@@ -40,7 +40,6 @@ const ROUTES = [
   "/partner/projects",
   "/partner/employees",
   "/partner/timesheet",
-  "/partner/timesheet/payment-history",
 ].filter((r) => r !== "/PROBE_SKIP");
 
 const WIDTHS = [390, 834, 1194, 1366];

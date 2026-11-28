@@ -27,12 +27,12 @@ describe('getConsoleKicker', () => {
 
   it('maps money routes to TÀI CHÍNH', () => {
     expect(getConsoleKicker('/admin/ledger')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/admin/payment-history')).toBe('TÀI CHÍNH');
+    expect(getConsoleKicker('/payment-history')).toBe('TÀI CHÍNH');
+    expect(getConsoleKicker('/payment-history?ky=3')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/loans')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/loans/lenders')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/advance-payments/check-in-settings')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/admin/wallet')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/partner/payment-history')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/adv-partner/advance-payments')).toBe('TÀI CHÍNH');
   });
 
