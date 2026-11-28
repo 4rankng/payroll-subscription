@@ -114,14 +114,19 @@ p, giamdoc, /api/v1/notifications/unread/count, GET, allow
 p, giamdoc, /api/v1/employees/*, GET, allow
 p, giamdoc, /api/v1/push/vapid-key, GET, allow
 
-# Giamdoc — read-only user directory: the director sees /partner/users to
-# audit accounts, but user creation, edits, password resets and deletions
-# stay admin-only.
+# Giamdoc — full-control user directory per PRD §5.3 (admin + giamdoc both
+# manage accounts, roles and deactivation; quanly/ketoan stay outside —
+# quanly keeps GET /users for project-assignment pickers only, and the
+# /partner/users page is route-guarded to giamdoc).
 p, giamdoc, /api/v1/users, GET, allow
 p, giamdoc, /api/v1/users/summary, GET, allow
 p, giamdoc, /api/v1/users/export, GET, allow
 p, giamdoc, /api/v1/users/*, GET, allow
 p, giamdoc, /api/v1/users/reset-first-time-login-password, GET, allow
+p, giamdoc, /api/v1/users, POST, allow
+p, giamdoc, /api/v1/users/*, PUT, allow
+p, giamdoc, /api/v1/users/*, DELETE, allow
+p, giamdoc, /api/v1/users/*, POST, allow
 
 # Ketoan — accounting clerk (PAYSUB D28): reads the same operational surfaces
 # as giamdoc and runs the bank-transfer workflow on Bảng công. Duyệt/loại công
