@@ -7,6 +7,8 @@ p, admin, /api/*, *, allow
 p, quanly, /api/v1/auth/me, GET, allow
 p, quanly, /api/v1/auth/logout, POST, allow
 p, quanly, /api/v1/auth/change-password, POST, allow
+# Self-service own-password change (the account menu's Đổi mật khẩu sheet)
+p, quanly, /api/v1/me/password, PUT, allow
 p, quanly, /api/v1/projects, *, allow
 p, quanly, /api/v1/projects/*, *, allow
 p, quanly, /api/v1/users, GET, allow
@@ -59,6 +61,7 @@ p, quanly, /api/v1/billing/reports, GET, allow
 p, giamdoc, /api/v1/auth/me, GET, allow
 p, giamdoc, /api/v1/auth/logout, POST, allow
 p, giamdoc, /api/v1/auth/change-password, POST, allow
+p, giamdoc, /api/v1/me/password, PUT, allow
 p, giamdoc, /api/v1/timesheets, GET, allow
 p, giamdoc, /api/v1/timesheets/:id, GET, allow
 p, giamdoc, /api/v1/timesheets/summary, GET, allow
@@ -87,6 +90,7 @@ p, nhanvien, /api/v1/me, PUT, allow
 p, nhanvien, /api/v1/me/*, GET, allow
 p, nhanvien, /api/v1/auth/me, GET, allow
 p, nhanvien, /api/v1/auth/change-password, POST, allow
+p, nhanvien, /api/v1/me/password, PUT, allow
 p, nhanvien, /api/v1/auth/logout, POST, allow
 p, nhanvien, /api/v1/settings, GET, allow
 p, nhanvien, /api/v1/settings/*, GET, allow
@@ -116,6 +120,7 @@ p, giamdoc, /api/v1/users/reset-first-time-login-password, GET, allow
 p, ketoan, /api/v1/auth/me, GET, allow
 p, ketoan, /api/v1/auth/logout, POST, allow
 p, ketoan, /api/v1/auth/change-password, POST, allow
+p, ketoan, /api/v1/me/password, PUT, allow
 p, ketoan, /api/v1/timesheets, GET, allow
 p, ketoan, /api/v1/timesheets/:id, GET, allow
 p, ketoan, /api/v1/timesheets/summary, GET, allow

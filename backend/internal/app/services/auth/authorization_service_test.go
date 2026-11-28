@@ -70,9 +70,12 @@ func sampleRoutePath(path string) string {
 
 func isEmployeeSelfServicePath(path string, method string) bool {
 	if path == "/api/v1/me" {
-		// GET reads the profile; PUT updates it. Sub-path PUTs (e.g.
-		// /me/password) are not part of the nhanvien policy.
+		// GET reads the profile; PUT updates it.
 		return method == "GET" || method == "PUT"
+	}
+	if path == "/api/v1/me/password" {
+		// Self-service own-password change — allowed for nhanvien (PAYR-48).
+		return method == "PUT"
 	}
 	return method == "GET" && strings.HasPrefix(path, "/api/v1/me/")
 }
