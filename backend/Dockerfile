@@ -5,7 +5,7 @@
 # from Docker Hub via `make mirror-bases`) and pinned by manifest-list digest
 # so builds never hit Docker Hub (avoids "TLS handshake timeout" deploy
 # failures). Manifest-list digest → BuildKit picks linux/amd64 automatically.
-FROM ghcr.io/4rankng/golang:1.26-alpine@sha256:c95332c2af86b6d89b91bd0500f4b9529ccbd090a0d1855c6d1ceaa142ae8615 AS builder
+FROM ghcr.io/4rankng/golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata

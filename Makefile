@@ -18,7 +18,7 @@ STAGING_SERVER := 139.59.121.152
 # digest into the matching FROM line in backend/Dockerfile or frontend/Dockerfile.
 # ─────────────────────────────────────────────────────────────────────────────
 GHCR_OWNER ?= 4rankng
-BASE_IMAGES ?= node:22-alpine golang:1.26-alpine
+BASE_IMAGES ?= node:22-alpine golang:1.27-alpine
 
 # Mirror upstream Docker Hub base images into GHCR (registry-to-registry) and
 # print the digest each image should be pinned to in the Dockerfiles.
