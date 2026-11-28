@@ -10,6 +10,7 @@ import (
 	"api-server/internal/app/services/infrastructure"
 	"api-server/internal/domain"
 	"api-server/internal/pkg/clock"
+	"api-server/internal/transport/http/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,7 +40,9 @@ func (h *PaymentHistoryHandler) List(c *gin.Context) {
 		writePaymentHistoryError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	// Standard {status, data} envelope — apiClient-based services read
+	// response.data, so a bare c.JSON(result) leaves it undefined client-side.
+	response.Success(c, result, "")
 }
 
 // Export — GET /payrolls/bank-transfer-histories/export
@@ -116,8 +119,8 @@ func (h *PaymentHistoryHandler) parseQuery(c *gin.Context) (billing.PaymentHisto
 
 func writePaymentHistoryError(c *gin.Context, err error) {
 	if domain.IsValidationError(err) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.BadRequest(c, err.Error())
 		return
 	}
-	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	response.InternalServerError(c, err.Error())
 }

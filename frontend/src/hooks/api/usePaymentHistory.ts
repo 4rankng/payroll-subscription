@@ -86,12 +86,12 @@ export function useBankTransferHistories(filters: PaymentHistoryFilters) {
           if (filters.search) params.search = filters.search;
 
           const res = await billingService.getBankTransferHistories(params);
-          const data = res as unknown as Record<string, unknown>;
+          const data = res as unknown as Record<string, unknown> | undefined;
           return {
-            rows: (data.rows as Record<string, unknown>[] | undefined) ?? [],
-            total: (data.total as number | undefined) ?? 0,
+            rows: (data?.rows as Record<string, unknown>[] | undefined) ?? [],
+            total: (data?.total as number | undefined) ?? 0,
             summary:
-              (data.summary as BankTransferHistoriesResult['summary'] | undefined) ?? {
+              (data?.summary as BankTransferHistoriesResult['summary'] | undefined) ?? {
                 total_amount_vnd: 0,
                 bank_entry_count: 0,
                 employee_count: 0,
