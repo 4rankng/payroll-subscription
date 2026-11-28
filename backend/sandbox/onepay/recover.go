@@ -3,12 +3,13 @@ package onepay
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 )
 
 type recoverer struct {
@@ -50,10 +51,22 @@ func (r *recoverer) run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if err := r.scan(ctx); err != nil {
+				if isMissingWalletTable(err) {
+					log.Printf("[onepay] recoverer: wallet_payments table absent (payment rails removed) — recovery idle")
+					return
+				}
 				log.Printf("[onepay] recoverer: %v", err)
 			}
 		}
 	}
+}
+
+// isMissingWalletTable reports MySQL error 1146 for wallet_payments: the
+// payment-rails schema was removed from the product, so the mock has nothing
+// to recover and stops polling instead of repeating the error every interval.
+func isMissingWalletTable(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1146
 }
 
 type staleRow struct {

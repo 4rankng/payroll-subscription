@@ -3,6 +3,7 @@ package ninepay
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 )
 
 type poller struct {
@@ -66,10 +67,22 @@ func (p *poller) run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if err := p.scan(ctx); err != nil {
+				if isMissingWalletTable(err) {
+					log.Printf("[9pay] poller: wallet_payments table absent (payment rails removed) — IPN polling idle")
+					return
+				}
 				log.Printf("[9pay] poller: %v", err)
 			}
 		}
 	}
+}
+
+// isMissingWalletTable reports MySQL error 1146 for wallet_payments: the
+// payment-rails schema was removed from the product, so the mock has nothing
+// to watch and stops polling instead of repeating the error every interval.
+func isMissingWalletTable(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1146
 }
 
 func (p *poller) scan(ctx context.Context) error {

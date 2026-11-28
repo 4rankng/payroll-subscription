@@ -85,7 +85,11 @@ services:
       MOCK_SLOW_DELAY: ${MOCK_SLOW_DELAY:-5m}
       MOCK_BASE64_LINEWRAP: ${MOCK_BASE64_LINEWRAP:-alternate}
       MOCK_SKIP_VERIFY: ${MOCK_SKIP_VERIFY:-false}
-      MOCK_DB_DSN: ${MOCK_DB_DSN:-root:${ROOT_PASSWORD}@tcp(mysql:3306)/payroll_db?parseTime=true&loc=UTC}
+      # Static app credentials (granted on payroll_db by the MySQL entrypoint)
+      # instead of root:${ROOT_PASSWORD}: that variable is not in .env, so a
+      # bare `docker compose up` froze an empty password into the container and
+      # the mock crash-looped on every DB ping.
+      MOCK_DB_DSN: ${MOCK_DB_DSN:-payroll_user:payroll_pass@tcp(mysql:3306)/payroll_db?parseTime=true&loc=UTC}
       # OnePay
       ONEPAY_PARTNER_ID: ${ONEPAY_PARTNER_ID:-TESTVFICPO}
       ONEPAY_PARTNER_KEY: ${ONEPAY_PARTNER_KEY:-C2B5DA903DAE19E215454211C66A59DD}
@@ -97,7 +101,7 @@ services:
       # Optional explicit holder-name override for testing mismatch warnings.
       # By default the mock resolves the employee name from the local database.
       MOCK_ONEPAY_HOLDER_NAME: ${MOCK_ONEPAY_HOLDER_NAME:-}
-      MOCK_ONEPAY_DB_DSN: ${MOCK_ONEPAY_DB_DSN:-root:${ROOT_PASSWORD}@tcp(mysql:3306)/payroll_db?parseTime=true&loc=UTC}
+      MOCK_ONEPAY_DB_DSN: ${MOCK_ONEPAY_DB_DSN:-payroll_user:payroll_pass@tcp(mysql:3306)/payroll_db?parseTime=true&loc=UTC}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

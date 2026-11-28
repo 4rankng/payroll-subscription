@@ -1,4 +1,4 @@
-<!-- Generated: 2026-06-07 | Updated: 2026-11-27 -->
+<!-- Generated: 2026-06-07 | Updated: 2026-11-28 -->
 
 # Payroll
 
@@ -126,20 +126,20 @@ gives you structural context (callers, dependents, test coverage) that file sear
 <!-- /code-review-graph MCP tools -->
 
 ## Board tickets — plan.tingting.vip (bắt buộc từ 24/10)
-MỌI thay đổi code bắt nguồn từ request/complaint/feedback PHẢI có issue trên board TRƯỚC khi code; commit message cite ticket (vd PAYR-123).
+MỌI thay đổi code bắt nguồn từ request/complaint/feedback PHẢI có issue trên board TRƯỚC khi code; commit message cite ticket (vd PAYSUB-123).
 
 - TICKET = SHIPMATE SPEC (owner 24/10): mở ticket bằng skill **shipmate specify** (`/specify` / `shipmate:specify`) — spec ngắn đã validate (Problem / Objective / Acceptance Criteria / Out of Scope / Technical Notes) qua independent review; `create_issue` dùng description = spec đã approve. Không tự viết ticket spec ngoài luồng shipmate.
 
-- Board: https://plan.tingting.vip/tingtingsoft/PAYR
+- Board: https://plan.tingting.vip/tingtingsoft/PAYSUB
 - Quản lý qua MCP JSON-RPC: `POST https://plan.tingting.vip/mcp` với headers
   `Authorization: Bearer $(cat ~/.hermes/profiles/dev/cache/scratch/ttplan-token.txt)`
   và `Accept: application/json, text/event-stream`.
   Flow: `initialize` (giữ header Mcp-Session-Id từ response) → `notifications/initialized` → `tools/call`.
-- Tools hay dùng: `list_issues {projectKey:"PAYR"}` (mỗi call = 1 page — lặp với seen-id set)
+- Tools hay dùng: `list_issues {projectKey:"PAYSUB"}` (mỗi call = 1 page — lặp với seen-id set)
   · `create_issue {projectKey, columnId, title, description}`
   · `update_issue {issueId, columnId}` để chuyển cột (KHÔNG dùng move_issue — đó là đổi project)
   · `add_comment {issueId, body}`.
-- Cột của PAYR: Backlog=16 · Todo=17 · In Progress=18 · Done=19 · Canceled=20.
+- Cột của PAYSUB: Backlog=42 · Todo=43 · In Progress=44 · Done=45 · Canceled=46.
 - Luật chuyển cột: mọi chuyển PHẢI kèm `add_comment` evidence (Done = có evidence kiểm chứng;
   Canceled = won't-do + ghi rõ ruling/owner decision). Không đổi trạng thái khi thiếu evidence.
 
