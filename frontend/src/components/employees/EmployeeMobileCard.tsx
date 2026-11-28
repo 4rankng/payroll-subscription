@@ -6,7 +6,7 @@ import {
   hasCompleteBankDetails,
   getEmployeeProjects,
 } from "@/types/api/employee.types";
-import { Building2, Clock, CreditCard, IdCard } from "lucide-react";
+import { AlertTriangle, Building2, Clock, CreditCard, IdCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -84,20 +84,24 @@ export const EmployeeMobileCard = React.memo(function EmployeeMobileCard({
               title={
                 hasBankDetails
                   ? "Đã có thông tin ngân hàng"
-                  : "Chưa có thông tin ngân hàng"
+                  : "Chưa cập nhật tài khoản ngân hàng"
               }
             >
-              <CreditCard
-                aria-hidden="true"
-                className={cn(
-                  "h-2.5 w-2.5",
-                  hasBankDetails ? "text-emerald-700" : "text-amber-700",
-                )}
-              />
+              {hasBankDetails ? (
+                <CreditCard
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 text-emerald-700"
+                />
+              ) : (
+                <AlertTriangle
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 text-amber-600"
+                />
+              )}
               <span className="sr-only">
                 {hasBankDetails
                   ? "Đã có thông tin ngân hàng"
-                  : "Chưa có thông tin ngân hàng"}
+                  : "Chưa cập nhật tài khoản ngân hàng"}
               </span>
             </span>
           </div>

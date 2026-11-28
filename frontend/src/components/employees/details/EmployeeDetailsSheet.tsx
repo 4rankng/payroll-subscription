@@ -328,7 +328,18 @@ export function EmployeeDetailsSheet({
         avatar={avatar}
         footer={isEditing ? editingFooter : footer}
         headerActions={headerActions}
-        className={isNarrowViewport ? "employee-details-sheet w-full p-0" : "employee-details-sheet w-full md:w-[60%] min-w-[800px] p-0"}
+        className={[
+          "employee-details-sheet p-0",
+          // Drawer contract: fixed to the right viewport edge (SheetContent's
+          // inset-y-0 right-0), width min(480px, 100vw). The old 60%/800px
+          // sizing overflowed viewports narrower than 800px.
+          isNarrowViewport ? "w-full" : "w-[min(480px,100vw)]",
+          // 3-band header contract for this sheet: px-5 py-4 hairline header
+          // with the close button sized h-8 w-8 ghost rounded-md in the far
+          // top-right corner.
+          "[&_.console-panel-header]:px-5 [&_.console-panel-header]:py-4",
+          "[&_.sheet-close-btn]:h-8 [&_.sheet-close-btn]:w-8 [&_.sheet-close-btn]:rounded-md",
+        ].join(" ")}
       >
         <div className="space-y-3 py-1">
           {/* ── Personal info / Edit form ── */}

@@ -16,7 +16,7 @@ import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
 import { useTableSorting } from "@/utils/sorting";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Plus, Download } from "lucide-react";
+import { AlertTriangle, Plus, Download } from "lucide-react";
 import {
   Bank,
   CheckCircle,
@@ -64,6 +64,12 @@ const EmployeesPage = () => {
   const { pathname } = useLocation();
   const [poolView, setPoolView] = useState<"mine" | "global">("mine");
 
+  // "Tất cả NV" pool: scope=global is part of the query key, and useEmployees
+  // stays enabled for every role in canViewEmployees, so quanly/ketoan/giamdoc
+  // all fetch the paginated pool. Read-only roles render the same table with
+  // the claim affordances hidden (canClaimEmployee gates the "Yêu cầu quản lý"
+  // button), never a blank region: an empty result falls through to the
+  // structured empty state below.
   const {
     employees,
     pagination,
@@ -156,7 +162,7 @@ const EmployeesPage = () => {
               return (
                 <div className="flex items-center justify-between gap-3 min-w-0">
                   <div className="min-w-0">
-                    <span className="typography-body-medium text-foreground/80 truncate block" title={employee.creator_name}>
+                    <span className="text-[12px] leading-[1.35] text-foreground/80 truncate block" title={employee.creator_name}>
                       {employee.creator_name || "—"}
                     </span>
                     <span className="typography-label-medium text-muted-foreground">
@@ -211,7 +217,7 @@ const EmployeesPage = () => {
               <UserAvatar name={employee.fullname} email={employee.email} cccd={employee.cccd} size="md" />
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="typography-body-medium font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                  <span className="text-[12px] leading-[1.35] font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {employee.fullname}
                   </span>
                   {pendingCount > 0 && (
@@ -239,12 +245,13 @@ const EmployeesPage = () => {
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="inline-flex items-center justify-center h-4 w-4 rounded bg-warning/10 border border-warning/30">
-                            <XClose className="h-2.5 w-2.5 text-warning" aria-hidden="true" />
+                          <span className="inline-flex items-center gap-1 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-px text-[11px] font-semibold leading-[1.35] text-amber-600">
+                            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                            Thiếu NH
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
-                          Thiếu thông tin ngân hàng
+                          Chưa cập nhật tài khoản ngân hàng
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -295,7 +302,7 @@ const EmployeesPage = () => {
           return (
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="typography-body-medium text-foreground truncate">
+                <span className="text-[12px] leading-[1.35] text-foreground truncate">
                   {first.name}
                 </span>
                 {first.payment_schedule && !first.last_date && (
@@ -346,7 +353,7 @@ const EmployeesPage = () => {
                 <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/5 border border-primary/10 shrink-0">
                   <Bank className="h-2.5 w-2.5 text-primary" aria-hidden="true" />
                 </div>
-                <span className="typography-body-medium text-foreground/80 truncate" title={branch}>
+                <span className="text-[12px] leading-[1.35] text-foreground/80 truncate" title={branch}>
                   {branch}
                 </span>
               </div>
@@ -364,7 +371,7 @@ const EmployeesPage = () => {
         header: "Ngày tạo",
         size: 110,
         cell: ({ row }) => (
-          <span className="typography-body-medium text-muted-foreground tabular-nums">
+          <span className="text-[12px] leading-[1.35] text-muted-foreground tabular-nums">
             {row.original.created_at
               ? format(new Date(row.original.created_at), 'dd/MM/yyyy')
               : "—"}
@@ -643,10 +650,24 @@ const EmployeesPage = () => {
           </div>
         )}
 
-        <div className="console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
+        <div className={cn(
+          "console-panel motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]",
+          // Dense console table contract for this panel only: 34px sticky
+          // header row with capped tracking, 12px body cells. Scoped overrides
+          // so the shared table chrome keeps its defaults for other routes.
+          "[&_.console-table_thead_tr]:h-[34px]",
+          "[&_.console-table_thead_th]:h-[34px]",
+          "[&_.console-table_thead_th]:py-[3px]",
+          "[&_.console-table_thead_th]:leading-[1.35]",
+          "[&_.console-table_thead_th]:tracking-[0.03em]",
+          "[&_.console-table_td]:text-[12px]",
+          // Zero rows → nothing to scroll: suppress the phantom horizontal
+          // scrollbar the sized columns would otherwise force.
+          employees.length === 0 && "[&_[data-slot=data-table-desktop]]:overflow-x-hidden",
+        )}>
           <div className="console-panel-header justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="console-kicker">{poolView === "global" ? "Toàn bộ nhân viên" : "Danh sách nhân sự"}</span>
+              <span className="font-financial text-[11px] font-semibold uppercase leading-[1.35] tracking-[0.03em] text-muted-foreground">{poolView === "global" ? "Toàn bộ nhân viên" : "Danh sách nhân sự"}</span>
               <span className="hidden truncate text-xs text-muted-foreground min-[420px]:block">
                 {poolView === "global"
                   ? "Danh sách mọi nhân viên trong hệ thống"
@@ -690,7 +711,7 @@ const EmployeesPage = () => {
               embedded
               emptyState={
                 <EmptyState
-                  title={hasFilters ? "Không tìm thấy nhân viên nào" : poolView === "global" ? "Hệ thống chưa có nhân viên nào" : "Không có nhân viên nào"}
+                  title={hasFilters ? "Không có nhân viên phù hợp" : poolView === "global" ? "Hệ thống chưa có nhân viên nào" : "Không có nhân viên nào"}
                   description={
                     hasFilters
                       ? "Không có kết quả phù hợp với bộ lọc của bạn."
@@ -701,7 +722,7 @@ const EmployeesPage = () => {
                   size="sm"
                   action={
                     hasFilters
-                      ? { label: "Xóa lọc", onClick: () => clearAllFilters() }
+                      ? { label: "Đặt lại bộ lọc", onClick: () => clearAllFilters() }
                       : undefined
                   }
                 />

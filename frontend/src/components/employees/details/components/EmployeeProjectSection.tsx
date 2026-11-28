@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Building, Link, Unlink, Plus, Calendar, Clock, Repeat, AlertCircle, X, Pencil, Check } from "lucide-react";
 import { useProjectModals } from "@/hooks/useModalNavigation";
 import { getEmployeeProjects, getEmployeeProjectCount } from "@/types/api/employee.types";
@@ -127,7 +128,7 @@ function ProjectPaymentScheduleControl({
         type="single"
         value={selectedSchedule}
         onValueChange={handleScheduleChange}
-        className="grid grid-cols-2 gap-2"
+        className="flex gap-2 overflow-x-auto"
         aria-label="Chọn chu kỳ trả lương"
       >
         {scheduleOptions.map(({ value, label, icon: Icon }) => (
@@ -136,14 +137,14 @@ function ProjectPaymentScheduleControl({
             value={value}
             aria-label={label}
             className={cn(
-              "justify-start gap-2 typography-body-small",
+              "justify-start gap-2 typography-body-small whitespace-nowrap shrink-0",
               "data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary data-[state=on]:border-2 data-[state=on]:font-medium",
               "data-[state=off]:bg-muted/30 data-[state=off]:text-muted-foreground data-[state=off]:border data-[state=off]:border-border",
               isSelectionDisabled && "pointer-events-none text-foreground" // Use dark color instead of gray
             )}
             disabled={isSelectionDisabled}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4 shrink-0" />
             {label}
           </ToggleGroupItem>
         ))}
@@ -427,7 +428,7 @@ function ProjectCard({
                     placeholder={
                       availablePositions.length === 0
                         ? "Chưa có bảng lương"
-                        : "Chọn vị trí"
+                        : "Chưa chọn vị trí"
                     }
                   />
                 </SelectTrigger>
@@ -463,17 +464,25 @@ function ProjectCard({
                 )}
               />
             {canRemoveProject && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-11 w-11 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0 sm:h-7 sm:w-7"
-                  onClick={() => onRemove?.(project.project_id)}
-                  disabled={isRemoving || isSubmitting}
-                  title="Gỡ khỏi dự án"
-                  aria-label="Gỡ khỏi dự án"
-                >
-                  <Unlink className="h-3 w-3" />
-                </Button>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-11 w-11 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0 sm:h-7 sm:w-7"
+                        onClick={() => onRemove?.(project.project_id)}
+                        disabled={isRemoving || isSubmitting}
+                        aria-label="Gỡ khỏi dự án"
+                      >
+                        <Unlink className="h-3 w-3" aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      Gỡ khỏi dự án
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>

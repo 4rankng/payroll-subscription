@@ -381,7 +381,7 @@ const EmployeesPageMobile = () => {
           <div className="space-y-4">
             {/* Status */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold uppercase tracking-[0.03em] text-muted-foreground">
                 Trạng thái
               </label>
               <Select
@@ -405,7 +405,7 @@ const EmployeesPageMobile = () => {
 
             {/* Month */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold uppercase tracking-[0.03em] text-muted-foreground">
                 Tháng
               </label>
               <Select
@@ -431,7 +431,7 @@ const EmployeesPageMobile = () => {
             {/* Project */}
             {projects.length > 0 && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold uppercase tracking-[0.03em] text-muted-foreground">
                   Dự án
                 </label>
                 <SearchableSelect
@@ -452,7 +452,7 @@ const EmployeesPageMobile = () => {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold uppercase tracking-[0.03em] text-muted-foreground">
                 Sắp xếp
               </label>
               <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
