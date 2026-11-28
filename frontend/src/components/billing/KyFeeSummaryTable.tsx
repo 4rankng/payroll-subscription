@@ -1,13 +1,11 @@
 import { memo, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
 import { UploadCloud01 } from '@untitledui/icons';
 
 import { useKySummary } from '@/hooks/api/useBilling';
 import { formatFullCurrency as formatVND } from '@/utils/formatters';
 import { ConsolePanel } from '@/components/shared/console-panel';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -110,16 +108,15 @@ export const KyFeeSummaryTable = memo(function KyFeeSummaryTable({
             đối chiếu.
           </p>
         ) : (
-          /* Desktop empty state: centered icon + CTA to the billing upload. */
+          /* Desktop empty state: centered icon + informative copy only.
+             Upload/đối soát chuyển khoản stays on its own surface — it is
+             not a dashboard action (owner ruling). */
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
             <UploadCloud01 className="h-6 w-6 text-muted-foreground/60" aria-hidden="true" />
             <p className="max-w-xs text-xs leading-4 text-muted-foreground">
               Chưa có kỳ nào được xác nhận thanh toán — số liệu xuất hiện sau khi kết quả chuyển khoản được tải lên và
               đối chiếu.
             </p>
-            <Button asChild size="sm" className="h-8 text-xs">
-              <Link to="/partner/timesheet">Tải lên &amp; đối soát chuyển khoản</Link>
-            </Button>
           </div>
         )
       ) : (
