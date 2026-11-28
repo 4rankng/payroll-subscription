@@ -4,15 +4,14 @@ import { getConsoleKicker } from './console';
 
 describe('getConsoleKicker', () => {
   it('returns no kicker for staff dashboards and ops routes (owner 28/11)', () => {
-    expect(getConsoleKicker('/admin/dashboard')).toBe('');
+    expect(getConsoleKicker('/admin')).toBe('');
     expect(getConsoleKicker('/admin/projects')).toBe('');
     expect(getConsoleKicker('/admin/timesheet')).toBe('');
-    expect(getConsoleKicker('/admin/approvals')).toBe('');
     expect(getConsoleKicker('/admin/settings')).toBe('');
-    expect(getConsoleKicker('/admin/system-health')).toBe('');
     expect(getConsoleKicker('/admin/audit-log')).toBe('');
-    expect(getConsoleKicker('/admin/zns-tracking')).toBe('');
+    expect(getConsoleKicker('/admin/email')).toBe('');
     expect(getConsoleKicker('/partner/dashboard')).toBe('');
+    expect(getConsoleKicker('/partner/overview')).toBe('');
     expect(getConsoleKicker('/partner/timesheet')).toBe('');
     expect(getConsoleKicker('/')).toBe('');
   });
@@ -26,23 +25,16 @@ describe('getConsoleKicker', () => {
   });
 
   it('maps money routes to TÀI CHÍNH', () => {
-    expect(getConsoleKicker('/admin/ledger')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/payment-history')).toBe('TÀI CHÍNH');
     expect(getConsoleKicker('/payment-history?ky=3')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/admin/loans')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/admin/loans/lenders')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/admin/advance-payments/check-in-settings')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/admin/wallet')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/adv-partner/advance-payments')).toBe('TÀI CHÍNH');
-  });
-
-  it('maps the accountant workspace to KẾ TOÁN', () => {
-    expect(getConsoleKicker('/accountant')).toBe('KẾ TOÁN');
+    expect(getConsoleKicker('/partner/ledger')).toBe('TÀI CHÍNH');
+    expect(getConsoleKicker('/partner/ledger/')).toBe('TÀI CHÍNH');
   });
 
   it('does not let a prefix capture a longer sibling segment', () => {
     expect(getConsoleKicker('/admin/users-archive')).toBe('');
     expect(getConsoleKicker('/admin/employeesx')).toBe('');
+    expect(getConsoleKicker('/payment-history-x')).toBe('');
   });
 
   it('falls back to no kicker for non-staff and unknown paths', () => {
@@ -52,7 +44,7 @@ describe('getConsoleKicker', () => {
   });
 
   it('ignores query strings and trailing slashes', () => {
-    expect(getConsoleKicker('/admin/ledger?tab=pending')).toBe('TÀI CHÍNH');
-    expect(getConsoleKicker('/accountant/')).toBe('KẾ TOÁN');
+    expect(getConsoleKicker('/partner/ledger?tab=pending')).toBe('TÀI CHÍNH');
+    expect(getConsoleKicker('/admin/users/')).toBe('NHÂN SỰ');
   });
 });

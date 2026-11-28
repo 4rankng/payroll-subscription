@@ -6,8 +6,7 @@
 //   - oversized list rows (>88px) — genuinely sparse rows; 2–3-line identity
 //     rows (~76-92px) are data-rich by design
 // Known-accepted flags: the compact DateRangePicker inner inputs measure 28px
-// but sit inside a 32px clickable container (the container is the target);
-// /admin/advance-payments identity rows carry name+CCCD+project by design.
+// but sit inside a 32px clickable container (the container is the target).
 // Usage: node scripts/dense-audit.mjs [--base http://localhost:5174]
 // Requires: backend on :8080, payroll-redis container for the login captcha.
 import { chromium } from "@playwright/test";
@@ -17,30 +16,26 @@ const BASE = process.argv.includes("--base")
   ? process.argv[process.argv.indexOf("--base") + 1]
   : "http://localhost:5174";
 
+// PAYR-126: keep this list equal to the mounted route map (App.tsx) —
+// auditing dead URLs hides real pages; missing ones skip real coverage.
 const ROUTES = [
   "/admin",
   "/admin/users",
   "/admin/projects",
   "/admin/employees",
   "/admin/timesheet",
-  "/payment-history",
-  "/PROBE_SKIP", // placeholder to keep numbering readable
-  "/admin/ledger",
-  "/admin/loans",
-  "/admin/advance-payments",
-  "/admin/advance-payments/check-in-settings",
-  "/admin/advance-payments/employees",
-  "/admin/approvals",
   "/admin/settings",
-  "/admin/wallet",
   "/admin/audit-log",
-  "/admin/send-notification",
   "/admin/email",
+  "/payment-history",
   "/partner",
+  "/partner/overview",
+  "/partner/users",
   "/partner/projects",
   "/partner/employees",
   "/partner/timesheet",
-].filter((r) => r !== "/PROBE_SKIP");
+  "/partner/ledger",
+];
 
 const WIDTHS = [390, 834, 1194, 1366];
 

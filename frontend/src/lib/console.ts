@@ -4,29 +4,24 @@
  * dependency so it is testable and usable from any layout.
  */
 
-export type ConsoleKicker = '' | 'NHÂN SỰ' | 'TÀI CHÍNH' | 'KẾ TOÁN';
+export type ConsoleKicker = '' | 'NHÂN SỰ' | 'TÀI CHÍNH';
 
 // Owner 28/11: no default eyebrow — unmatched routes render no kicker text.
 const DEFAULT_KICKER: ConsoleKicker = '';
 
 /** Longest-prefix routes first is not required — prefixes are disjoint, but
  *  matching is segment-exact (`/admin/users` never captures
- *  `/admin/users-archive`). */
+ *  `/admin/users-archive`). PAYR-126: dead prefixes removed; entries cover
+ *  mounted routes only. */
 const ROUTE_KICKERS: ReadonlyArray<{ prefix: string; kicker: ConsoleKicker }> = [
-  { prefix: '/accountant', kicker: 'KẾ TOÁN' },
-
   // NHÂN SỰ — people records and accounts.
   { prefix: '/admin/users', kicker: 'NHÂN SỰ' },
   { prefix: '/admin/employees', kicker: 'NHÂN SỰ' },
   { prefix: '/partner/employees', kicker: 'NHÂN SỰ' },
 
   // TÀI CHÍNH — money movement.
-  { prefix: '/admin/ledger', kicker: 'TÀI CHÍNH' },
   { prefix: '/payment-history', kicker: 'TÀI CHÍNH' },
-  { prefix: '/admin/loans', kicker: 'TÀI CHÍNH' },
-  { prefix: '/admin/advance-payments', kicker: 'TÀI CHÍNH' },
-  { prefix: '/admin/wallet', kicker: 'TÀI CHÍNH' },
-  { prefix: '/adv-partner', kicker: 'TÀI CHÍNH' },
+  { prefix: '/partner/ledger', kicker: 'TÀI CHÍNH' },
 ];
 
 export const getConsoleKicker = (pathname: string): ConsoleKicker => {
