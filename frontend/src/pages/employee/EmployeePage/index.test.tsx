@@ -41,12 +41,8 @@ describe("EmployeePage data recovery", () => {
     vi.mocked(useSettingByKey).mockReturnValue(settingQuery as unknown as ReturnType<typeof useSettingByKey>);
   });
 
-  it.each(["timesheets", "payment setting"])("does not show zero wages or empty records when %s fails", (failedQuery) => {
-    if (failedQuery === "timesheets") {
-      vi.mocked(useEmployeeTimesheetsInfinite).mockReturnValue({ ...timesheetQuery, data: undefined, isError: true } as unknown as ReturnType<typeof useEmployeeTimesheetsInfinite>);
-    } else {
-      vi.mocked(useSettingByKey).mockReturnValue({ ...settingQuery, data: undefined, isError: true } as unknown as ReturnType<typeof useSettingByKey>);
-    }
+  it("shows the recovery state when the timesheet query fails", () => {
+    vi.mocked(useEmployeeTimesheetsInfinite).mockReturnValue({ ...timesheetQuery, data: undefined, isError: true } as unknown as ReturnType<typeof useEmployeeTimesheetsInfinite>);
     render(<MemoryRouter><EmployeePage /></MemoryRouter>);
 
     expect(screen.getByRole("alert")).toHaveTextContent("Chưa tải được bảng công");
@@ -56,6 +52,22 @@ describe("EmployeePage data recovery", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
     expect(refetchTimesheets).toHaveBeenCalledOnce();
     expect(refetchSetting).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the timesheet panel normal when only the payment setting fails (PAYR-47)", () => {
+    vi.mocked(useSettingByKey).mockReturnValue({ ...settingQuery, data: undefined, isError: true } as unknown as ReturnType<typeof useSettingByKey>);
+    render(<MemoryRouter><EmployeePage /></MemoryRouter>);
+
+    // A missing/failed bulk_transfer_payment_percentage defaults the wallet
+    // percentage to 0 — it must not surface as a timesheet fetch failure.
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Chưa tải được bảng công")).not.toBeInTheDocument();
+    expect(screen.getByText("Chưa có bảng công")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ẩn số tiền" })).toBeInTheDocument();
+    // Recovery UI belongs to timesheet failures only: no retry offer, no spurious refetches.
+    expect(screen.queryByRole("button", { name: "Tải lại" })).not.toBeInTheDocument();
+    expect(refetchTimesheets).not.toHaveBeenCalled();
+    expect(refetchSetting).not.toHaveBeenCalled();
   });
 
   it("shows an empty month only after both dependencies succeed", () => {
