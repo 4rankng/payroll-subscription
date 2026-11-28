@@ -187,9 +187,15 @@ const PartnerSidebar = () => {
         </SidebarContent>
 
         {/* PAYR-71 compact bell opening the existing notifications sheet —
-            own row above the footer separator (PAYR-141): right-aligned when
-            expanded, centered on the collapsed rail. */}
-        <div className={cn("flex px-2 pb-1.5", isCollapsed ? "justify-center" : "justify-end")}>
+            own row above the footer separator (PAYR-141): version flush
+            left, bell right when expanded, bell centered on the collapsed
+            rail (version hidden). */}
+        <div className={cn("flex px-2 pb-1.5 items-center", isCollapsed && "justify-center")}>
+            {!isCollapsed && (
+              <p className="mr-auto text-xs text-white/70 tracking-wide select-none whitespace-nowrap">
+                v{__APP_VERSION__}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
@@ -309,11 +315,6 @@ const PartnerSidebar = () => {
           </DropdownMenu>
           </div>
 
-          {!isCollapsed && (
-            <p className="mt-1.5 text-xs text-white/70 text-center tracking-wide select-none">
-              v{__APP_VERSION__}
-            </p>
-          )}
         </SidebarFooter>
       </Sidebar>
 
