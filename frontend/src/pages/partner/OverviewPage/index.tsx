@@ -7,9 +7,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { format, subMonths } from 'date-fns';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getConsoleKicker } from '@/lib/console';
 import { useLocation } from 'react-router-dom';
+import { getCurrentMonthValue } from '@/utils/bankTransferHistoryHelpers';
 import type { ApiError } from '@/services/api/client';
 import {
   Card,
@@ -27,7 +29,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useBillingKySummary } from '@/hooks/api/useBillingDashboard';
+import { useBillingKySummary, useBillingReconStatus } from '@/hooks/api/useBillingDashboard';
+import { authManager } from '@/lib/auth';
+import { ReportPanel } from '@/components/billing/ReportPanel';
 import {
   buildFeeTrendSeries,
   buildMonthRows,
@@ -45,6 +49,48 @@ function KySummarySkeleton() {
           <Skeleton key={ky} className="h-28 w-full" />
         ))}
       </div>
+    </div>
+  );
+}
+
+
+const RECON_STATE_META: Record<string, { label: string; className: string }> = {
+  reconciled: { label: 'Đã đối chiếu', className: 'bg-emerald-100 text-emerald-800' },
+  waiting_file: { label: 'Chờ file', className: 'bg-muted text-muted-foreground' },
+  mismatch: { label: 'Có dòng lệch', className: 'bg-amber-100 text-amber-800' },
+};
+
+/** PRD §5.1: current-month reconciliation status, one card per Kỳ. */
+function ReconStatusCards({ workMonth }: { workMonth: string }) {
+  const recon = useBillingReconStatus(workMonth);
+  const byCycle = new Map((recon.data?.kyes ?? []).map((row) => [row.cycle, row]));
+
+  return (
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {[1, 2, 3, 4].map((ky) => {
+        const row = byCycle.get(ky);
+        const meta = RECON_STATE_META[row?.state ?? 'waiting_file'] ?? RECON_STATE_META.waiting_file;
+        return (
+          <Card key={ky} className="min-w-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-semibold">Kỳ {ky}</CardTitle>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.className}`}>
+                {meta.label}
+              </span>
+            </CardHeader>
+            <CardContent className="space-y-1 text-xs text-muted-foreground">
+              <p className="tabular-nums">
+                File tải lên: <span className="font-semibold text-foreground">{row?.uploads ?? 0}</span>
+              </p>
+              <p className="tabular-nums">
+                Dòng khớp: <span className="font-semibold text-foreground">
+                  {row ? `${row.matched_rows.toLocaleString('vi-VN')}/${row.parsed_rows.toLocaleString('vi-VN')}` : '0/0'}
+                </span>
+              </p>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -104,6 +150,8 @@ const FeeInsightsPage = () => {
         <KySummarySkeleton />
       ) : (
         <>
+          <ReconStatusCards workMonth={getCurrentMonthValue()} />
+
           <Card>
             <CardContent className="pt-6">
               <Table>
@@ -193,6 +241,10 @@ const FeeInsightsPage = () => {
               )}
             </CardContent>
           </Card>
+
+          {(authManager.getUserRole() === 'admin' || authManager.getUserRole() === 'giamdoc') && (
+            <ReportPanel workMonth={format(subMonths(new Date(), 1), 'yyyy-MM')} canGenerate />
+          )}
         </>
       )}
     </div>

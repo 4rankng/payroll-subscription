@@ -131,7 +131,8 @@ export const SettingCard = ({
   const visibleError =
     unavailableMessage ?? errorMessage ?? currencyInputError ?? validation.errorMessage;
   const isUnavailable = Boolean(unavailableMessage);
-  const isInvalid = isUnavailable || Boolean(currencyInputError) || !validation.isValid;
+  const isInvalid =
+    isUnavailable || Boolean(currencyInputError) || Boolean(errorMessage) || !validation.isValid;
   const hasVisibleError = Boolean(visibleError);
   const isSliderMode = displayMode === 'currency-slider';
   const displayValue = displayMode === 'currency-vnd' ? formatVndDigits(value) : value;

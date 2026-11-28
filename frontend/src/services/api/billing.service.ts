@@ -7,11 +7,26 @@ import { apiClient, createIdempotencyKey } from './client';
  * and response types. API responses use the platform envelope { status, data }.
  */
 
+export interface KyReconStatusRow {
+  cycle: number;
+  uploads: number;
+  parsed_rows: number;
+  matched_rows: number;
+  /** waiting_file | mismatch | reconciled (backend derives from upload outcomes). */
+  state: string;
+}
+
+export interface ReconStatus {
+  work_month: string;
+  kyes: KyReconStatusRow[];
+}
+
 const ENDPOINTS = {
   uploads: '/billing/uploads',
   kyPaidRecords: '/billing/ky-paid-records',
   paidSeries: '/billing/dashboard/paid-series',
   kySummary: '/billing/dashboard/ky-summary',
+  reconStatus: '/billing/dashboard/recon-status',
   reports: '/billing/reports',
   generateReport: '/billing/reports/generate',
   saokeRecipients: '/billing/saoke/recipients',
@@ -159,6 +174,12 @@ class BillingService {
     if (params.projectId !== undefined) qs.set('project_id', String(params.projectId));
     const response = await apiClient.get<{ items: PaidSeriesRow[] }>(`${ENDPOINTS.paidSeries}?${qs}`);
     return response.data?.items ?? [];
+  }
+
+  /** PRD §5.1: per-Kỳ reconciliation status of one work month. */
+  async getReconStatus(workMonth: string): Promise<ReconStatus> {
+    const response = await apiClient.get<ReconStatus>(`${ENDPOINTS.reconStatus}?work_month=${workMonth}`);
+    return response.data ?? { work_month: workMonth, kyes: [] };
   }
 
   /** FR-6 Tổng quan: distinct employees per Kỳ for the last N months + fee (BR-1). */
