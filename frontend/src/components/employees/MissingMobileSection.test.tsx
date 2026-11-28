@@ -7,6 +7,7 @@ import {
   useDuplicateMobiles,
 } from '@/hooks/employees/useMissingMobile';
 import { useIsMobile } from '@/hooks/useBreakpoint';
+import { canPartnerManageProject } from '@/lib/permissions';
 import type { Employee, DuplicateMobileGroup } from '@/types/api/employee.types';
 import { MissingMobileSection } from './MissingMobileSection';
 
@@ -17,6 +18,10 @@ vi.mock('@/hooks/employees/useMissingMobile', () => ({
 
 vi.mock('@/hooks/useBreakpoint', () => ({
   useIsMobile: vi.fn(),
+}));
+
+vi.mock('@/lib/permissions', () => ({
+  canPartnerManageProject: vi.fn(() => true),
 }));
 
 const missingEmployees = [
@@ -233,6 +238,15 @@ describe('MissingMobileSection', () => {
 
     const bulkLink = screen.getByRole('link', { name: 'Nhập SĐT hàng loạt' });
     expect(bulkLink).toHaveAttribute('href', '/partner/employees?modal=employee_import');
+  });
+
+  it('hides the bulk import link from read-only roles (no 403 trap)', () => {
+    vi.mocked(canPartnerManageProject).mockReturnValueOnce(false);
+    render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: 'Nhập SĐT hàng loạt' })).not.toBeInTheDocument();
   });
 
   it('gives every desktop row a one-click Cập nhật SĐT action', () => {

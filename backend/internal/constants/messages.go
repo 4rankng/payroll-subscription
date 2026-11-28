@@ -591,7 +591,7 @@ const (
 	MsgFailedToInitEmployeeUsersVN = "Không thể khởi tạo người dùng nhân viên"
 
 	// Mobile Backfill Import Messages - Vietnamese
-	MsgMobileBackfillAdminOnlyVN = "Chức năng nhập số điện thoại chỉ dành cho quản trị viên"
+	MsgMobileBackfillAdminOnlyVN = "Chức năng nhập số điện thoại chỉ dành cho quản trị viên và quản lý"
 	MsgFailedToParseMobileFileVN = "Không thể đọc file Excel. File phải có cột 'CCCD' và cột 'Mobile' (dùng file 'NV chưa có SĐt' đã điền cột Mobile)"
 	MsgFailedToBackfillMobilesVN = "Không thể cập nhật số điện thoại"
 

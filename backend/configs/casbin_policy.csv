@@ -15,6 +15,7 @@ p, quanly, /api/v1/users, GET, allow
 p, quanly, /api/v1/users/*, GET, allow
 p, quanly, /api/v1/employees, *, allow
 p, quanly, /api/v1/employees/*, *, allow
+p, quanly, /api/v1/employees/import-mobiles, POST, allow
 p, quanly, /api/v1/project-employees, *, allow
 p, quanly, /api/v1/project-employees/*, *, allow
 p, quanly, /api/v1/timesheets, GET, allow

@@ -20,8 +20,10 @@ import (
 // Synchronous by design: the monthly file is ~130 rows, so the response
 // carries the full per-row summary directly, with no import job to poll.
 //
-// Admin-only, matching the sibling export-paid-without-mobile that produces
-// the workbook in the first place.
+// Admin or quanly, matching the sibling export-paid-without-mobile that
+// produces the workbook in the first place: the partner manager (quanly)
+// runs the missing-mobile fix loop on the dashboard banner, so they fill the
+// workbook and push it back here. ketoan/giamdoc stay read-only.
 func (h *Handler) ImportMobiles(c *gin.Context) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -33,7 +35,7 @@ func (h *Handler) ImportMobiles(c *gin.Context) {
 		}
 	}()
 
-	if userRole := c.GetString(constants.CtxUserRole); userRole != string(domain.RoleAdmin) {
+	if userRole := c.GetString(constants.CtxUserRole); userRole != string(domain.RoleAdmin) && userRole != string(domain.RoleQuanly) {
 		response.Forbidden(c, constants.MsgMobileBackfillAdminOnlyVN)
 		return
 	}

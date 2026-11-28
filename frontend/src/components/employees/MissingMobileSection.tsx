@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useMissingMobile, useDuplicateMobiles } from '@/hooks/employees/useMissingMobile';
 import { useIsMobile } from '@/hooks/useBreakpoint';
+import { canPartnerManageProject } from '@/lib/permissions';
 import { VIETNAMESE_EMPLOYEE_LABELS } from '@/types/api/employee.types';
 import type {
   Employee,
@@ -214,13 +215,17 @@ export const MissingMobileSection = ({
               </button>
             )}
             {/* PAYR-72: 1-click path to the bulk phone import on the
-                employees page (URL-modal entry point). */}
-            <Link
-              to="/partner/employees?modal=employee_import"
-              className="ml-auto inline-flex items-center rounded px-1 py-0.5 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
-            >
-              Nhập SĐT hàng loạt
-            </Link>
+                employees page (URL-modal entry point). Manager-only: the
+                import modal 403s for ketoan/giamdoc, so they never see a
+                dead link here. */}
+            {canPartnerManageProject() && (
+              <Link
+                to="/partner/employees?modal=employee_import"
+                className="ml-auto inline-flex items-center rounded px-1 py-0.5 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+              >
+                Nhập SĐT hàng loạt
+              </Link>
+            )}
           </div>
         </div>
 

@@ -106,6 +106,9 @@ func main() {
 	// untested PUT /employees/:id/change-password endpoint)
 	runEmployeePasswordAdminTests(client, testData, reporter, cfg)
 
+	// Phase 7.6: import-mobiles RBAC (admin|quanly pass, others 403)
+	runEmployeeImportMobilesTests(client, testData, reporter, cfg)
+
 	// Phase 8: CRUD flows
 	runEmployeeCRUDTests(client, testData, reporter, cfg)
 	runProjectCRUDTests(client, testData, reporter, cfg)
