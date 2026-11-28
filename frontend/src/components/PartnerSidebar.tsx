@@ -186,13 +186,10 @@ const PartnerSidebar = () => {
           </SidebarMenu>
         </SidebarContent>
 
-        {/* Footer — user menu */}
-        <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
-        <SidebarFooter className="p-2 shrink-0">
-          {/* PAYR-71: compact bell opening the existing notifications sheet —
-              own row above the account pill (PAYR-138): right-aligned when
-              expanded, centered on the collapsed rail. */}
-          <div className={cn("flex", isCollapsed ? "justify-center" : "justify-end")}>
+        {/* PAYR-71 compact bell opening the existing notifications sheet —
+            own row above the footer separator (PAYR-141): right-aligned when
+            expanded, centered on the collapsed rail. */}
+        <div className={cn("flex px-2 pb-1.5", isCollapsed ? "justify-center" : "justify-end")}>
             <button
               type="button"
               onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
@@ -220,10 +217,13 @@ const PartnerSidebar = () => {
             </button>
           </div>
 
-          {/* PAYR-136/138: the account pill keeps the full footer width on its
-              own row; PAYR-124's squeeze concern lives on — the pill still
-              never shares its row. */}
-          <div className={cn("mt-1.5 flex", isCollapsed ? "flex-col items-center" : "items-center")}>
+        {/* Footer — user menu */}
+        <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
+        <SidebarFooter className="p-2 shrink-0">
+          {/* The account pill keeps the full footer width on its own row;
+              PAYR-124's squeeze concern lives on — the pill never shares its
+              row. */}
+          <div className={cn("flex", isCollapsed ? "flex-col items-center" : "items-center")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -310,7 +310,7 @@ const PartnerSidebar = () => {
           </div>
 
           {!isCollapsed && (
-            <p className="mt-1.5 text-xs text-white/70 tracking-wide select-none">
+            <p className="mt-1.5 text-xs text-white/70 text-center tracking-wide select-none">
               v{__APP_VERSION__}
             </p>
           )}

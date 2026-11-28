@@ -450,14 +450,11 @@ const AdminSidebar = () => {
           })}
         </SidebarContent>
 
-        {/* Footer — user menu */}
-        <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
-        <SidebarFooter className="p-2 shrink-0">
-          {/* PAYR-138: quick actions (notifications + appearance) sit on their
-              own row above the account pill — right-aligned when expanded,
-              stacked and centered on the collapsed rail; version keeps the
-              bottom row alone. */}
-          <div className={cn("flex", isCollapsed ? "flex-col items-center gap-1" : "items-center justify-end gap-1.5")}>
+        {/* Quick actions: notifications + appearance — own row ABOVE the
+            footer separator (PAYR-141): right-aligned when expanded, stacked
+            and centered on the collapsed rail; reachable directly outside the
+            account menu. */}
+        <div className={cn("flex px-2 pb-1.5", isCollapsed ? "flex-col items-center gap-1" : "items-center justify-end gap-1.5")}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -499,7 +496,10 @@ const AdminSidebar = () => {
             </Tooltip>
           </div>
 
-          <div className={cn("mt-1.5 flex gap-2", isCollapsed ? "flex-col items-center" : "items-center")}>
+        {/* Footer — user menu */}
+        <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
+        <SidebarFooter className="p-2 shrink-0">
+          <div className={cn("flex gap-2", isCollapsed ? "flex-col items-center" : "items-center")}>
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -571,7 +571,7 @@ const AdminSidebar = () => {
           </div>
 
           {!isCollapsed && (
-            <p className="mt-1.5 text-xs text-white/70 tracking-wide select-none">
+            <p className="mt-1.5 text-xs text-white/70 text-center tracking-wide select-none">
               v{__APP_VERSION__}
             </p>
           )}
