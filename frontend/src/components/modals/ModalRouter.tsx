@@ -14,6 +14,7 @@ import type { PayrateStructure } from '@/types/api/payrate.types';
 
 // Import working sheet components (default exports)
 import AddUserSheet from '@/components/sheets/AddUserSheet';
+import { ImportMobilesModal } from '@/components/modals/ImportMobilesModal';
 import AddEmployeeSheet from '@/components/sheets/AddEmployeeSheet';
 import { AddEmployeeToProjectSheetContainer } from '@/components/project-employees/AddEmployeeToProjectSheetContainer';
 import AddProjectSheet from '@/components/sheets/AddProjectSheet';
@@ -482,6 +483,14 @@ export function ModalRouter({ fallback: CustomFallback }: ModalRouterProps) {
       return <FileUploadModal isOpen={true} onClose={closeModal} type="upload" title="Upload File" />;
     case MODAL_IDS.NOTIFICATION_SHEET:
       return <NotificationSheet variant="corporate" isOpen={true} onClose={closeModal} />;
+    case MODAL_IDS.EMPLOYEE_IMPORT:
+      return (
+        <ImportMobilesModal
+          key={instanceKey}
+          open={true}
+          onClose={closeModal}
+        />
+      );
 
     default:
       console.warn(`Modal component not implemented: ${modalId}`);
