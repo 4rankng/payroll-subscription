@@ -37,6 +37,7 @@ import {
   getMonthOptions,
 } from '@/hooks/timesheet/useBCCUploadModal';
 import { groupImportErrors, describeGroupedError } from '@/utils/import-errors';
+import { vietnameseIncludes } from '@/utils/vietnameseNormalization';
 import type { PartnerImportFile } from '@/types/api/timesheet.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -78,8 +79,8 @@ const ProjectCombobox = memo(function ProjectCombobox({
 
   const filtered = useMemo(() => {
     if (!search.trim()) return projects;
-    const q = search.toLowerCase();
-    return projects.filter((p) => p.name.toLowerCase().includes(q));
+    // PAYR-127: ASCII keywords match Vietnamese names ("nguyen" → "Nguyễn").
+    return projects.filter((p) => vietnameseIncludes(p.name, search));
   }, [projects, search]);
 
   const selectedName = useMemo(
