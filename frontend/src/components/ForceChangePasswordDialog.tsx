@@ -161,12 +161,12 @@ export const ForceChangePasswordDialog = () => {
         onEscapeKeyDown={(e) => e.preventDefault()}
         className="max-h-[88dvh] gap-0 overflow-hidden border-0 bg-white p-0 shadow-[0_16px_48px_rgba(16,24,40,0.20)] sm:max-w-[26rem] sm:rounded-2xl"
       >
-        <header className="shrink-0 bg-gradient-to-b from-employee-800 to-employee-700 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top,0px))] text-white">
-          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white/12 ring-1 ring-inset ring-white/20">
+        <header className="shrink-0 border-b border-utility-gray-200 px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top,0px))]">
+          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground ring-1 ring-inset ring-utility-gray-200">
             <ShieldAlert className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
           </span>
-          <DialogTitle className="employee-type-strong text-white">Đổi mật khẩu</DialogTitle>
-          <p className="employee-type-body-sm mt-1.5 text-white/70">
+          <DialogTitle className="employee-type-strong text-card-foreground">Đổi mật khẩu</DialogTitle>
+          <p className="employee-type-body-sm mt-1.5 text-muted-foreground">
             Tài khoản đang dùng mật khẩu mặc định. Đặt mật khẩu mới để tiếp tục.
           </p>
         </header>

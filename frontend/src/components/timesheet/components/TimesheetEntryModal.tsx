@@ -43,15 +43,15 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
     <Dialog open={isOpen} onOpenChange={f.isLoading ? undefined : onClose}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl bg-white shadow-2xl" contentPadding="none" hideCloseButton>
         {/* Header */}
-        <div className="bg-emerald-950 px-5 pt-5 pb-4 text-white flex-shrink-0">
+        <div className="border-b border-utility-gray-200 px-5 pt-5 pb-4 flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-lg font-semibold tracking-tight text-white leading-tight">
+              <p className="text-lg font-semibold tracking-tight text-card-foreground leading-tight">
                 {f.isReadOnly ? "Chi tiết bảng công" : f.isEditing ? "Chỉnh sửa bảng công" : "Nhập bảng công"}
               </p>
               <div className="flex items-center gap-1.5 mt-1">
-                <Calendar className="h-3 w-3 text-emerald-200/75" />
-                <p className="text-xs text-emerald-200/75">{format(date, "EEEE, dd/MM/yyyy", { locale: vi })}</p>
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{format(date, "EEEE, dd/MM/yyyy", { locale: vi })}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -62,8 +62,8 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
               )}
               {existingEntry?.force_payroll && <Badge variant="info" className="text-xs">Kỳ tiếp theo</Badge>}
               <button onClick={onClose} disabled={f.isLoading}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-40" aria-label="Đóng">
-                <X className="h-4 w-4 text-white" />
+                className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors disabled:opacity-40" aria-label="Đóng">
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>

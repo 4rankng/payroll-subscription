@@ -312,9 +312,9 @@ export function useTimesheetEntryForm({
 
   const statusBadge = existingEntry ? (() => {
     const cfg: Record<string, { label: string; cls: string }> = {
-      pending_approval: { label: "Chờ duyệt", cls: "bg-amber-500/20 text-amber-200 border border-amber-400/30" },
-      approved: { label: "Đã duyệt", cls: "bg-emerald-500/20 text-emerald-200 border border-emerald-400/30" },
-      rejected: { label: "Đã loại", cls: "bg-red-500/20 text-red-200 border border-red-400/30" },
+      pending_approval: { label: "Chờ duyệt", cls: "bg-amber-100 text-amber-800 border border-amber-200" },
+      approved: { label: "Đã duyệt", cls: "bg-emerald-100 text-emerald-700 border border-emerald-200" },
+      rejected: { label: "Đã loại", cls: "bg-red-100 text-red-700 border border-red-200" },
     };
     const s = cfg[existingEntry.status];
     return s ? { label: s.label, cls: s.cls } : null;

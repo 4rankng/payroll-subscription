@@ -315,10 +315,10 @@ export function ChangePasswordSheet({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-2xl" data-employee-ui="" data-theme="employee">
         <DialogHeader>
-          <DialogTitle className="employee-type-card-title text-white">
+          <DialogTitle className="employee-type-card-title text-card-foreground">
             Đổi mật khẩu
           </DialogTitle>
-          <DialogDescription className="employee-type-body-sm text-white/90">Mật khẩu mới sẽ dùng cho lần đăng nhập sau.</DialogDescription>
+          <DialogDescription className="employee-type-body-sm text-muted-foreground">Mật khẩu mới sẽ dùng cho lần đăng nhập sau.</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 overflow-y-auto">{formContent}</div>
       </DialogContent>

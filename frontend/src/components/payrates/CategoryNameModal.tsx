@@ -62,7 +62,7 @@ export function CategoryNameModal({
         </DialogClose>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5 text-white/80" />
+            <Plus className="w-5 h-5 text-muted-foreground" />
             {title}
           </DialogTitle>
           <DialogDescription>

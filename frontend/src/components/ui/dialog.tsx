@@ -9,10 +9,10 @@ import { useDialogFocusReturn } from '@/hooks/useDialogFocusReturn'
 // UU PRO restyle (W5): surface keeps bg-card (own :root token — Radix portals
 // render outside [data-*-ui], so daisyUI-scoped vars would be undefined) and
 // the border migrates to the bridge's utility-gray-200 (W2 card recipe). The
-// header strips migrate emerald-950 → brand-section_subtle (near-black forest,
-// added in W1 for exactly this strip) and on-brand muted copy reads
-// tertiary_on-brand. Engine stays Radix (plan engine-keep list); mobile bottom
-// sheet, focus-return, sr-only fallbacks and the navy-header CSS-var overrides
+// header drops the old emerald-950/brand-section_subtle ink strip and renders
+// on the dialog's own surface with a utility-gray-200 hairline (PAYSUB-16);
+// title/description read theme tokens directly. Engine stays Radix (plan
+// engine-keep list); mobile bottom sheet, focus-return and sr-only fallbacks
 // are contractual and untouched.
 const Dialog = DialogPrimitive.Root
 
@@ -100,17 +100,10 @@ const DialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "-mx-4 -mt-4 flex min-h-14 flex-col space-y-1.5 rounded-t-2xl bg-brand-section_subtle px-4 pb-4 pr-16 pt-5 text-center text-white sm:-mx-6 sm:-mt-6 sm:px-6 sm:pr-20 sm:text-left",
+      "-mx-4 -mt-4 flex flex-col space-y-1.5 rounded-t-2xl border-b border-utility-gray-200 px-4 pb-4 pr-16 pt-5 text-center sm:-mx-6 sm:-mt-6 sm:px-6 sm:pr-20 sm:text-left",
       className
     )}
-    style={{
-      // Override CSS variables so text-foreground / text-muted-foreground
-      // resolve to light colours inside the dark navy header, fixing
-      // invisible-text bugs across all dialogs without touching each one.
-      '--foreground': '0 0% 100%',          // white
-      '--muted-foreground': '152 30% 78%',  // light emerald
-      ...style,
-    } as React.CSSProperties}
+    style={style}
     {...props}
   />
 )
@@ -137,7 +130,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-semibold tracking-tight text-white leading-tight",
+      "text-base font-semibold tracking-tight text-card-foreground leading-tight",
       className
     )}
     {...props}
@@ -151,7 +144,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-tertiary_on-brand mt-1", className)}
+    className={cn("text-sm text-muted-foreground mt-1", className)}
     {...props}
   />
 ))

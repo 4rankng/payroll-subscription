@@ -43,23 +43,23 @@ export const NotificationDetailModal = memo(function NotificationDetailModal({
         hideCloseButton
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-emerald-900 bg-emerald-950 px-6 pb-4 pt-5">
+        <div className="flex items-center gap-3 border-b border-utility-gray-200 px-6 pb-4 pt-5">
           <div className={`flex-shrink-0 w-10 h-10 ${style.bgColor} rounded-full flex items-center justify-center`}>
             <Bell className={`h-5 w-5 ${style.iconColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold text-white leading-tight">
+            <p className="text-base font-semibold text-card-foreground leading-tight">
               {notification.title}
             </p>
-            <p className="mt-0.5 text-xs text-emerald-200/75">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {formatNotificationDetailDate(notification.created_at)}
             </p>
           </div>
           <DialogClose
             onClick={handleClose}
-            className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors outline-none focus:ring-2 focus:ring-white/30"
+            className="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted transition-colors outline-none focus:ring-2 focus:ring-ring"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-4 h-4" />
             <span className="sr-only">Đóng</span>
           </DialogClose>
         </div>
