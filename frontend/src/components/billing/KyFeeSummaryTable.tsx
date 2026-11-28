@@ -1,10 +1,13 @@
 import { memo, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
+import { UploadCloud01 } from '@untitledui/icons';
 
 import { useKySummary } from '@/hooks/api/useBilling';
 import { formatFullCurrency as formatVND } from '@/utils/formatters';
 import { ConsolePanel } from '@/components/shared/console-panel';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -77,11 +80,13 @@ export const KyFeeSummaryTable = memo(function KyFeeSummaryTable({
   const totalFeeVnd = useMemo(() => rows.reduce((sum, row) => sum + row.feeVnd, 0), [rows]);
   const hasAnyRecord = rows.some((row) => row.employeeKy > 0);
 
-  const cellSize = isMobile ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm';
-  const headSize = isMobile ? 'px-2 py-1.5 text-[11px]' : 'px-3 py-2 text-xs';
+  const cellSize = isMobile ? 'px-2 py-1.5 text-xs' : 'px-2.5 py-2 text-[12px]';
+  const headSize = isMobile ? 'px-2 py-1.5 text-[11px]' : 'px-2.5 py-2 text-[11px] font-semibold leading-[1.35] tracking-[0.03em]';
 
   return (
-    <ConsolePanel className={cn('flex flex-col gap-3', className)}>
+    /* PAYR-70 (DASH-03): desktop variant fills the grid row height so both
+       summary cards share bottom edges; mobile keeps its natural height. */
+    <ConsolePanel className={cn('flex flex-col gap-3', !isMobile && 'h-full', className)}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className={cn('font-bold text-foreground', isMobile ? 'text-[13px]' : 'text-sm')}>
           NV theo kỳ trả và phí
@@ -99,12 +104,26 @@ export const KyFeeSummaryTable = memo(function KyFeeSummaryTable({
       ) : isError ? (
         <p className="text-sm text-destructive">Không thể tải số liệu theo kỳ. Hãy làm mới để thử lại.</p>
       ) : !hasAnyRecord ? (
-        <p className="text-sm text-muted-foreground">
-          Chưa có kỳ nào được xác nhận thanh toán — số liệu xuất hiện sau khi kết quả chuyển khoản được tải lên và
-          đối chiếu.
-        </p>
+        isMobile ? (
+          <p className="text-sm text-muted-foreground">
+            Chưa có kỳ nào được xác nhận thanh toán — số liệu xuất hiện sau khi kết quả chuyển khoản được tải lên và
+            đối chiếu.
+          </p>
+        ) : (
+          /* Desktop empty state: centered icon + CTA to the billing upload. */
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
+            <UploadCloud01 className="h-6 w-6 text-muted-foreground/60" aria-hidden="true" />
+            <p className="max-w-xs text-xs leading-4 text-muted-foreground">
+              Chưa có kỳ nào được xác nhận thanh toán — số liệu xuất hiện sau khi kết quả chuyển khoản được tải lên và
+              đối chiếu.
+            </p>
+            <Button asChild size="sm" className="h-8 text-xs">
+              <Link to="/partner/billing">Tải lên &amp; đối soát chuyển khoản</Link>
+            </Button>
+          </div>
+        )
       ) : (
-        <div className="overflow-x-auto">
+        <div className={cn('overflow-x-auto', !isMobile && 'flex-1')}>
           <Table>
             <TableHeader>
               <TableRow>

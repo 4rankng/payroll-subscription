@@ -190,6 +190,32 @@ const PartnerSidebar = () => {
         <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
         <SidebarFooter className="p-2 shrink-0">
           <div className={cn("flex gap-2", isCollapsed ? "flex-col items-center" : "items-center")}>
+          {/* PAYR-71: compact bell opening the existing notifications sheet. */}
+          <button
+            type="button"
+            onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
+            aria-label={`Thông báo${unreadCount > 0 ? ` (${unreadCount} chưa đọc)` : ''}`}
+            className={cn(
+              "relative flex shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-card/[0.04]",
+              "transition-all duration-200 hover:bg-card/[0.08] hover:border-white/[0.1] hover:text-white",
+              "outline-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2",
+              "h-9 w-9 text-white/80",
+            )}
+          >
+            <Bell03 className="h-4 w-4" aria-hidden="true" />
+            {unreadCount > 0 && (
+              <span
+                className={cn(
+                  "absolute h-4 min-w-4 flex items-center justify-center px-1",
+                  "-top-1.5 -right-1.5",
+                  "text-xs font-semibold rounded-full bg-red-600 text-white",
+                  "animate-badge-pulse",
+                )}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button

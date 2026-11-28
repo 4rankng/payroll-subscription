@@ -20,8 +20,16 @@ interface PageHeaderProps {
   description?: string;
   /** Mono domain kicker above the title (e.g. getConsoleKicker(pathname)). */
   kicker?: string;
+  /**
+   * Sans-serif role eyebrow above the title (DASH-05: quanly → QUẢN LÝ…).
+   * Rendered without the mono console-kicker treatment; takes precedence
+   * visually only when kicker is absent.
+   */
+  eyebrow?: string;
   /** 11px mono metadata line (period + count + updated time). */
   meta?: string;
+  /** 'mono' (default) keeps the 11px financial mono meta; 'sans' renders it as a 12px gray-500 sans subtitle. */
+  metaVariant?: 'mono' | 'sans';
   actions?: PageHeaderAction[];
   children?: React.ReactNode;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
@@ -32,7 +40,9 @@ export const PageHeader = ({
   title,
   description,
   kicker,
+  eyebrow,
   meta,
+  metaVariant = 'mono',
   actions = [],
   children,
   icon: Icon,
@@ -58,18 +68,35 @@ export const PageHeader = ({
                 <Icon className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
               )}
               <div className="min-w-0">
-                {kicker ? (
+                {eyebrow ? (
+                  <p
+                    data-slot="page-header-eyebrow"
+                    className="mb-1 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-gray-500"
+                  >
+                    {eyebrow}
+                  </p>
+                ) : null}
+                {!eyebrow && kicker ? (
                   <p data-slot="page-header-eyebrow" className="console-kicker mb-1">
                     {kicker}
                   </p>
-                ) : (
+                ) : null}
+                {!eyebrow && !kicker ? (
                   <p data-slot="page-header-eyebrow" className="hidden" />
-                )}
+                ) : null}
                 <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                   {title}
                 </h1>
                 {meta && (
-                  <p data-slot="page-header-meta" className="mt-1 font-financial text-[11px] text-muted-foreground">
+                  <p
+                    data-slot="page-header-meta"
+                    className={cn(
+                      'mt-1',
+                      metaVariant === 'sans'
+                        ? 'text-xs text-gray-500'
+                        : 'font-financial text-[11px] text-muted-foreground',
+                    )}
+                  >
                     {meta}
                   </p>
                 )}

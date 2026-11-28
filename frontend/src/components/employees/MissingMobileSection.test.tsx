@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -86,7 +87,9 @@ describe('MissingMobileSection', () => {
       refetch: vi.fn(),
     });
 
-    const { container } = render(<MissingMobileSection />);
+    const { container } = render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -106,12 +109,16 @@ describe('MissingMobileSection', () => {
       refetch: vi.fn(),
     });
 
-    const { container } = render(<MissingMobileSection />);
+    const { container } = render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
   it('shows split counts per kind in the header and explains why it matters', () => {
-    render(<MissingMobileSection />);
+    render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
 
     // Header chips render the label and its count as separate nodes, so match
     // on the chip element rather than one concatenated string.
@@ -129,7 +136,9 @@ describe('MissingMobileSection', () => {
   it('groups duplicate rows under their shared number and names co-holders', () => {
     // Rows only carry activation semantics (and their accessible name) when
     // an onEmployeeClick handler is supplied — same as the cloned section.
-    render(<MissingMobileSection onEmployeeClick={vi.fn()} />);
+    render(
+      <MemoryRouter><MissingMobileSection onEmployeeClick={vi.fn()} /></MemoryRouter>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Xem danh sách' }));
 
     const region = screen.getByRole('region', {
@@ -158,7 +167,9 @@ describe('MissingMobileSection', () => {
 
   it('keeps optional row activation available to pointer and keyboard users', () => {
     const handleEmployeeClick = vi.fn();
-    render(<MissingMobileSection onEmployeeClick={handleEmployeeClick} />);
+    render(
+      <MemoryRouter><MissingMobileSection onEmployeeClick={handleEmployeeClick} /></MemoryRouter>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Xem danh sách' }));
 
     const row = screen.getByRole('row', {
@@ -187,7 +198,9 @@ describe('MissingMobileSection', () => {
   it('switches to card lists on phones but keeps collision groups intact', () => {
     const handleEmployeeClick = vi.fn();
     vi.mocked(useIsMobile).mockReturnValue(true);
-    render(<MissingMobileSection onEmployeeClick={handleEmployeeClick} />);
+    render(
+      <MemoryRouter><MissingMobileSection onEmployeeClick={handleEmployeeClick} /></MemoryRouter>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Xem danh sách' }));
 
     // Phones get card lists; the table is a desktop-density view — only one
@@ -211,5 +224,53 @@ describe('MissingMobileSection', () => {
       cccd: '',
       current_projects: [],
     });
+  });
+
+  it('links the header to the bulk phone import on the employees page', () => {
+    render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
+
+    const bulkLink = screen.getByRole('link', { name: 'Nhập SĐT hàng loạt' });
+    expect(bulkLink).toHaveAttribute('href', '/partner/employees?modal=employee_import');
+  });
+
+  it('gives every desktop row a one-click Cập nhật SĐT action', () => {
+    const handleEmployeeClick = vi.fn();
+    render(
+      <MemoryRouter><MissingMobileSection onEmployeeClick={handleEmployeeClick} /></MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Xem danh sách' }));
+
+    const action = screen.getByRole('button', { name: 'Cập nhật SĐT cho Nguyễn Thị Không SĐT' });
+    fireEvent.click(action);
+    expect(handleEmployeeClick).toHaveBeenCalledWith(missingEmployees[0]);
+  });
+
+  it('switches the inline lists via the count pill tabs and back to both', () => {
+    render(
+      <MemoryRouter><MissingMobileSection /></MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Xem danh sách' }));
+
+    // Default: both lists visible.
+    expect(screen.getByRole('region', { name: 'Danh sách nhân viên thiếu số điện thoại' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Danh sách số điện thoại trùng' })).toBeInTheDocument();
+
+    // Narrowing to duplicates hides the missing list.
+    fireEvent.click(screen.getByRole('button', { name: /Thiếu số điện thoại/ }));
+    expect(screen.getByRole('button', { name: /Thiếu số điện thoại/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      screen.queryByRole('region', { name: 'Danh sách số điện thoại trùng' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Danh sách nhân viên thiếu số điện thoại' }),
+    ).toBeInTheDocument();
+
+    // Tapping the active pill again restores both lists.
+    fireEvent.click(screen.getByRole('button', { name: /Thiếu số điện thoại/ }));
+    expect(
+      screen.getByRole('region', { name: 'Danh sách số điện thoại trùng' }),
+    ).toBeInTheDocument();
   });
 });

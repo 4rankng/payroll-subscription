@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, ChevronDown, ChevronUp, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useMissingMobile, useDuplicateMobiles } from '@/hooks/employees/useMissingMobile';
 import { useIsMobile } from '@/hooks/useBreakpoint';
@@ -128,6 +130,9 @@ export const MissingMobileSection = ({
   onEmployeeClick,
 }: MissingMobileSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  // PAYR-72: the two count pills are tab selectors. Default 'all' keeps both
+  // inline tables visible; tapping a pill narrows to that list only.
+  const [activeTab, setActiveTab] = useState<'all' | 'missing' | 'duplicate'>('all');
   const isMobile = useIsMobile();
   const {
     employees: missingEmployees,
@@ -169,19 +174,53 @@ export const MissingMobileSection = ({
           </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {missingEmployees.length > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
-                Thiếu số điện thoại
-                <span className="tabular-nums">{missingEmployees.length}</span>
-              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTab(activeTab === 'missing' ? 'all' : 'missing')}
+                aria-pressed={activeTab === 'missing'}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-colors outline-amber-600',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2',
+                  activeTab === 'missing'
+                    ? 'bg-amber-200 text-amber-900 ring-1 ring-amber-400'
+                    : 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <span>Thiếu số điện thoại</span>
+                  <span className="tabular-nums">{missingEmployees.length}</span>
+                </span>
+              </button>
             )}
             {groups.length > 0 && (
               /* Conflicts outrank gaps: a duplicate number breaks accounts
                   that already work, so its chip carries the rose tone. */
-              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-1.5 py-0.5 text-xs font-semibold text-rose-700">
-                Số điện thoại trùng
-                <span className="tabular-nums">{duplicateTotal}</span>
-              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTab(activeTab === 'duplicate' ? 'all' : 'duplicate')}
+                aria-pressed={activeTab === 'duplicate'}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-colors outline-rose-600',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2',
+                  activeTab === 'duplicate'
+                    ? 'bg-rose-100 text-rose-800 ring-1 ring-rose-300'
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100',
+                )}
+              >
+                <span className="inline-flex items-center gap-1">
+                  <span>Số điện thoại trùng</span>
+                  <span className="tabular-nums">{duplicateTotal}</span>
+                </span>
+              </button>
             )}
+            {/* PAYR-72: 1-click path to the bulk phone import on the
+                employees page (URL-modal entry point). */}
+            <Link
+              to="/partner/employees?modal=employee_import"
+              className="ml-auto inline-flex items-center rounded px-1 py-0.5 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+            >
+              Nhập SĐT hàng loạt
+            </Link>
           </div>
         </div>
 
@@ -208,7 +247,7 @@ export const MissingMobileSection = ({
           read at 390px, it just scrolls sideways with cut columns. */}
       {isExpanded && (
         <div id="missing-mobile-list" className="border-t border-amber-200">
-          {missingEmployees.length > 0 && (
+          {missingEmployees.length > 0 && activeTab !== 'duplicate' && (
             <div>
               <h3 className="px-3 pt-2.5 text-xs font-semibold uppercase tracking-wide text-amber-900 sm:px-4">
                 Thiếu số điện thoại
@@ -261,16 +300,19 @@ export const MissingMobileSection = ({
                   aria-label="Danh sách nhân viên thiếu số điện thoại"
                   tabIndex={0}
                 >
-                  <table className="w-full min-w-[560px] text-sm">
+                  <table className="w-full min-w-[560px] text-xs">
                     <caption className="sr-only">
                       Danh sách nhân viên thiếu số điện thoại
                     </caption>
-                    <thead className="sticky top-0 z-10 bg-amber-100/80 backdrop-blur-sm">
+                    <thead className="sticky top-0 z-10 bg-amber-100">
                       <tr>
-                        <th className="w-12 px-4 py-2.5 text-left text-xs font-semibold text-amber-900">STT</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">Họ và tên</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">CCCD</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">Dự án hiện tại</th>
+                        <th className="w-12 px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">STT</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">Họ và tên</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">CCCD</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">Dự án hiện tại</th>
+                        <th className="px-3 py-2 text-right text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">
+                          <span className="sr-only">Hành động</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-amber-100 bg-card">
@@ -280,13 +322,28 @@ export const MissingMobileSection = ({
                           {...makeRowProps(employee, onEmployeeClick)}
                           className={onEmployeeClick ? CLICKABLE_ROW_CLASS : ''}
                         >
-                          <td className="px-4 py-3 text-xs tabular-nums text-muted-foreground">{index + 1}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm font-medium text-foreground">{employee.fullname}</span>
+                          <td className="px-3 py-1.5 tabular-nums text-muted-foreground">{index + 1}</td>
+                          <td className="px-3 py-1.5">
+                            <span className="text-xs font-medium text-foreground">{employee.fullname}</span>
                           </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{employee.cccd}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-1.5 font-mono text-xs tabular-nums text-muted-foreground">{employee.cccd}</td>
+                          <td className="px-3 py-1.5">
                             <ProjectCell projects={employee.current_projects} />
+                          </td>
+                          <td className="px-3 py-1.5 text-right">
+                            {onEmployeeClick && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onEmployeeClick(employee);
+                                }}
+                                aria-label={`Cập nhật SĐT cho ${employee.fullname}`}
+                                className="rounded px-1.5 py-1 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                              >
+                                Cập nhật SĐT
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -297,7 +354,7 @@ export const MissingMobileSection = ({
             </div>
           )}
 
-          {groups.length > 0 && (
+          {groups.length > 0 && activeTab !== 'missing' && (
             <div>
               <h3 className="px-3 pt-2.5 text-xs font-semibold uppercase tracking-wide text-rose-900 sm:px-4">
                 Số điện thoại trùng
@@ -354,16 +411,19 @@ export const MissingMobileSection = ({
                         })}
                       </ul>
                     ) : (
-                      <table className="w-full min-w-[560px] text-sm">
+                      <table className="w-full min-w-[560px] text-xs">
                         <caption className="sr-only">
                           Nhân viên dùng chung số {group.mobile}
                         </caption>
-                        <thead className="bg-amber-100/60">
+                        <thead className="sticky top-0 z-10 bg-amber-100">
                           <tr>
-                            <th className="w-12 px-4 py-2.5 text-left text-xs font-semibold text-amber-900">STT</th>
-                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">Họ và tên</th>
-                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">Số điện thoại</th>
-                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-amber-900">Dùng chung với</th>
+                            <th className="w-12 px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">STT</th>
+                            <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">Họ và tên</th>
+                            <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">Số điện thoại</th>
+                            <th className="px-3 py-2 text-left text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">Dùng chung với</th>
+                            <th className="px-3 py-2 text-right text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-amber-900">
+                              <span className="sr-only">Hành động</span>
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-amber-100 bg-card">
@@ -380,15 +440,30 @@ export const MissingMobileSection = ({
                                 {...makeRowProps(employee, onEmployeeClick)}
                                 className={onEmployeeClick ? CLICKABLE_ROW_CLASS : ''}
                               >
-                                <td className="px-4 py-3 text-xs tabular-nums text-muted-foreground">{index + 1}</td>
-                                <td className="px-4 py-3">
-                                  <span className="text-sm font-medium text-foreground">{member.fullname}</span>
+                                <td className="px-3 py-1.5 tabular-nums text-muted-foreground">{index + 1}</td>
+                                <td className="px-3 py-1.5">
+                                  <span className="text-xs font-medium text-foreground">{member.fullname}</span>
                                 </td>
-                                <td className="px-4 py-3 font-mono text-xs tabular-nums text-muted-foreground">
+                                <td className="px-3 py-1.5 font-mono text-xs tabular-nums text-muted-foreground">
                                   {group.mobile}
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-3 py-1.5">
                                   <CoHolders group={group} member={member} />
+                                </td>
+                                <td className="px-3 py-1.5 text-right">
+                                  {onEmployeeClick && (
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        onEmployeeClick(employee);
+                                      }}
+                                      aria-label={`Cập nhật SĐT cho ${member.fullname}`}
+                                      className="rounded px-1.5 py-1 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                                    >
+                                      Cập nhật SĐT
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             );

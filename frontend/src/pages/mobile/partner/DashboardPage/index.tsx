@@ -189,7 +189,7 @@ const PartnerDashboardMobile = () => {
 
   return (
     <MobilePageShell className="space-y-2">
-      <MobilePageHeader kicker="Đối tác" title="Tổng quan" subtitle={periodLabel} />
+      <MobilePageHeader title="Tổng quan" subtitle={periodLabel} />
       <TimesheetMonthSelector value={selectedMonth} onChange={handleMonthChange} />
 
       {isSummaryLoading ? (
