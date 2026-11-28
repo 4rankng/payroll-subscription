@@ -102,6 +102,14 @@ const DashboardLayoutRouter = () => {
   return role === "admin" ? <AdminLayout /> : <PartnerLayout />;
 };
 
+// PRD §5.7: admin crosses into the console shell on /payment-history — the
+// partner nav has a single admin item, so the partner rail would render as a
+// one-item strip and drop the admin chrome.
+const PaymentHistoryShell = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout roles={["quanly", "ketoan", "giamdoc"]} />;
+};
+
 const DashboardRoleRouter = () => {
   const role = authManager.getUserRole();
   if (role === "quanly") {
@@ -305,9 +313,9 @@ const AppContent = () => {
         </Route>
 
         {/* PRD §5.7: Lịch sử trả lương — payment history under one canonical
-            URL shared by quanly/ketoan/giamdoc/admin. PartnerLayout
-            carries the role guard internally; this route widens it to admin. */}
-        <Route path="/payment-history" element={<PartnerLayout roles={["quanly", "ketoan", "giamdoc", "admin"]} />}>
+            URL shared by quanly/ketoan/giamdoc/admin. Admin crosses into the
+            console shell (PAYSUB-36); partner roles keep the partner layout. */}
+        <Route path="/payment-history" element={<PaymentHistoryShell />}>
           <Route index element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
         </Route>
         {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
