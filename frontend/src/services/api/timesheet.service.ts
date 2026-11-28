@@ -25,7 +25,6 @@ import type {
   NewTimesheetEntry,
   BulkCreateTimesheetResult,
   TimesheetListResponse,
-  UploadEntriesExcelResult,
   SettlementUploadResultResponse,
   EmployeeEntryTable,
   ListGroupedTimesheetsResponse,

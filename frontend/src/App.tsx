@@ -14,7 +14,6 @@ import AdminLayout from "./layouts/AdminLayout";
 import PartnerLayout from "./layouts/PartnerLayout";
 
 // Admin Desktop Pages (lazy-loaded)
-const AdminDashboard = lazy(() => import("./pages/admin/DashboardPage"));
 const UsersPage = lazy(() => import("./pages/admin/UsersPage"));
 const ProjectsPage = lazy(() => import("./pages/admin/ProjectsPage"));
 const EmployeesPage = lazy(() => import("./pages/admin/EmployeesPage"));
@@ -25,7 +24,6 @@ const PayrateEditPage = lazy(() => import("./pages/admin/PayrateEditPage"));
 const AuditLogPage = lazy(() => import("./pages/admin/AuditLogPage"));
 
 // Admin Mobile Pages (lazy-loaded)
-const AdminDashboardMobile = lazy(() => import("./pages/mobile/admin/DashboardPage"));
 const UsersPageMobile = lazy(() => import("./pages/mobile/admin/UsersPage"));
 const ProjectsPageMobile = lazy(() => import("./pages/mobile/admin/ProjectsPage"));
 const EmployeesPageMobile = lazy(() => import("./pages/mobile/admin/EmployeesPage"));

@@ -334,27 +334,6 @@ export interface EmployeeTimesheetSummaryResponse extends ApiResponse<EmployeeTi
 // Type alias for employee-specific timesheet filters
 export type EmployeeTimesheetFilters = TimesheetFilters;
 
-// Upload Excel entries response
-export interface UploadEntriesExcelResult {
-  created_count: number;
-  error_count: number;
-  skipped_count: number;
-  failed_entries: Array<{
-    Index: number;
-    Error: string;
-    Request: {
-      project_id: number;
-      employee_id: number;
-      date: string;
-      hours_worked: number;
-      hour_type: string;
-      day_type: string;
-    };
-  }>;
-}
-
-export interface UploadEntriesExcelResponse extends ApiResponse<UploadEntriesExcelResult> {}
-
 // Timesheet Entry Table API Types
 export interface DailyEntry {
   date: string;
