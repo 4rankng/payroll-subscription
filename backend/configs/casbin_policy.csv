@@ -11,6 +11,8 @@ p, quanly, /api/v1/auth/change-password, POST, allow
 p, quanly, /api/v1/me/password, PUT, allow
 p, quanly, /api/v1/projects, *, allow
 p, quanly, /api/v1/projects/*, *, allow
+# Bank branch reference list for the employee bank capture UI (read-only)
+p, quanly, /api/v1/banks, GET, allow
 p, quanly, /api/v1/users, GET, allow
 p, quanly, /api/v1/users/*, GET, allow
 p, quanly, /api/v1/employees, *, allow
