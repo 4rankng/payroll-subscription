@@ -8,7 +8,6 @@ import (
 	authservice "api-server/internal/app/services/auth"
 	"api-server/internal/app/services/employee"
 	"api-server/internal/app/services/project"
-	"api-server/internal/config"
 	"api-server/internal/constants"
 	"api-server/internal/domain"
 	"api-server/internal/infra/observability"
@@ -21,15 +20,13 @@ type AuthorizationMiddleware struct {
 	authorizationService      *authservice.AuthorizationService
 	projectPermissionService  *project.ProjectPermissionService
 	employeePermissionService *employee.EmployeePermissionService
-	otpConfig                 config.OTPConfig
 }
 
-func NewAuthorizationMiddleware(authorizationService *authservice.AuthorizationService, projectPermissionService *project.ProjectPermissionService, employeePermissionService *employee.EmployeePermissionService, otpCfg config.OTPConfig) *AuthorizationMiddleware {
+func NewAuthorizationMiddleware(authorizationService *authservice.AuthorizationService, projectPermissionService *project.ProjectPermissionService, employeePermissionService *employee.EmployeePermissionService) *AuthorizationMiddleware {
 	return &AuthorizationMiddleware{
 		authorizationService:      authorizationService,
 		projectPermissionService:  projectPermissionService,
 		employeePermissionService: employeePermissionService,
-		otpConfig:                 otpCfg,
 	}
 }
 
@@ -86,24 +83,6 @@ func (m *AuthorizationMiddleware) Authorize() gin.HandlerFunc {
 			if !m.authorizationService.CanAccess(userRole, resource, action) {
 				m.logAuthorizationDenied(userID, userRole, resource, action, "casbin policy")
 				response.Forbidden(c, "Insufficient permissions")
-				c.Abort()
-				return
-			}
-		}
-
-		// RT-C1: email-OTP enforcement lives INSIDE Authorize() (not as a route-
-		// group middleware) so it covers EVERY route that does RBAC, including
-		// /wallet and /admin/manual-disbursement which are mounted on v1 directly
-		// rather than the shared `protected` group. When the flag is on and the
-		// caller is admin/partner/accountant, the token must carry
-		// otp_verified=true (set only after a successful /auth/login/verify).
-		// Flag off → no-op. Keep this role set in sync with
-		// AuthService.requiresOTP.
-		if m.otpConfig.Enabled && (userRole == string(domain.RoleAdmin) || userRole == string(domain.RoleQuanly) || userRole == string(domain.RoleGiamdoc)) {
-			otpVerified, _ := c.Get("otp_verified")
-			verified, _ := otpVerified.(bool)
-			if !verified {
-				response.Forbidden(c, constants.MsgOTPVerificationRequiredVN)
 				c.Abort()
 				return
 			}

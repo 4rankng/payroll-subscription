@@ -66,9 +66,6 @@ func (r *exportUserRepo) UpdateLastLogin(context.Context, uint, time.Time) error
 func (r *exportUserRepo) UpdatePasswordAndInvalidateSessions(context.Context, uint, string, time.Time) error {
 	panic("not impl")
 }
-func (r *exportUserRepo) UpdateOTPLockout(context.Context, uint, int, *time.Time) error {
-	panic("not impl")
-}
 func (r *exportUserRepo) UpdateTokensInvalidBefore(context.Context, uint, time.Time) error {
 	panic("not impl")
 }

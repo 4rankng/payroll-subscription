@@ -10,32 +10,7 @@ import type {
   ChangePasswordRequest,
   CompleteUserProfile,
   PasswordStrengthResponse,
-  VerifyOTPRequest,
-  ResendOTPRequest,
 } from '@/types/api/auth.types';
-
-// RT-C3: distinct storage key for the pending OTP session id. MUST NOT be
-// 'auth_token' — that key is read by AuthManager.isTokenValid() and would
-// cause a pending OTP id to be mistaken for a real session. sessionStorage is
-// used (not localStorage) so it survives a page refresh but clears on tab
-// close — the desired security behavior for an in-flight login.
-const OTP_PENDING_KEY = 'otp_pending';
-
-/** Read the pending OTP session id (if any) from sessionStorage. */
-export function getPendingOtpSessionId(): string | null {
-  try {
-    const raw = sessionStorage.getItem(OTP_PENDING_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw)?.session_id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** Clear the pending OTP session id (call on successful verify or abandon). */
-export function clearPendingOtp(): void {
-  sessionStorage.removeItem(OTP_PENDING_KEY);
-}
 
 /**
  * Persist the user profile returned by the login endpoints. Display data
@@ -58,28 +33,12 @@ function storeUserProfile(user: User): void {
 class AuthService {
   /**
    * Login user with credentials.
-   *
-   * RT-C3: when the response requires the email-OTP second factor
-   * (otp_required=true), this method stores the pending session id under a
-   * DISTINCT key (otp_pending in sessionStorage) and returns WITHOUT creating
-   * a session (no profile write, no cookie — the cookie only arrives from
-   * /auth/login/verify). The caller (useAuth) must route to the OTP entry
-   * screen instead of navigating to the dashboard.
    */
   async login(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> {
     const response = await apiClient.post<LoginResponse>(
       API_ENDPOINTS.auth.login,
       credentials
     );
-
-    if (response.data?.otp_required && response.data.otp_session_id) {
-      // Pending OTP step — do NOT set the auth token. Store only the session id.
-      sessionStorage.setItem(
-        OTP_PENDING_KEY,
-        JSON.stringify({ session_id: response.data.otp_session_id })
-      );
-      return response;
-    }
 
     if (response.data && response.data.user) {
       // Session = HttpOnly cookie set by the server (PAYR-37B item 4). The
@@ -94,8 +53,7 @@ class AuthService {
   }
 
   /**
-   * Login user with Google OAuth ID token. Same OTP gate as password login
-   * (RT-H5): admin/partner Google logins may require the second factor too.
+   * Login user with Google OAuth ID token.
    */
   async loginWithGoogle(idToken: string): Promise<ApiResponse<LoginResponse>> {
     const response = await apiClient.post<LoginResponse>(
@@ -103,14 +61,6 @@ class AuthService {
       { id_token: idToken }
     );
 
-    if (response.data?.otp_required && response.data.otp_session_id) {
-      sessionStorage.setItem(
-        OTP_PENDING_KEY,
-        JSON.stringify({ session_id: response.data.otp_session_id })
-      );
-      return response;
-    }
-
     if (response.data && response.data.user) {
       const user = response.data.user;
       storeUserProfile(user);
@@ -118,35 +68,6 @@ class AuthService {
     }
 
     return response;
-  }
-
-  /**
-   * Complete the email-OTP login by submitting the 6-digit code. On success
-   * the server sets the session cookie + returns the user; this method stores
-   * the profile exactly as login() would have, and clears the pending id.
-   */
-  async verifyLoginOtp(req: VerifyOTPRequest): Promise<ApiResponse<LoginResponse>> {
-    const response = await apiClient.post<LoginResponse>(
-      API_ENDPOINTS.auth.loginVerifyOtp,
-      req
-    );
-
-    if (response.data && response.data.user) {
-      const user = response.data.user;
-      storeUserProfile(user);
-      authManager.setSessionMeta(response.data.expires_in ?? null);
-      clearPendingOtp();
-    }
-
-    return response;
-  }
-
-  /**
-   * Request a new OTP code for a pending session (email didn't arrive).
-   * Returns the (unchanged) session id and remaining TTL in seconds.
-   */
-  async resendOtp(req: ResendOTPRequest): Promise<ApiResponse<LoginResponse>> {
-    return apiClient.post<LoginResponse>(API_ENDPOINTS.auth.loginResendOtp, req);
   }
 
   /**

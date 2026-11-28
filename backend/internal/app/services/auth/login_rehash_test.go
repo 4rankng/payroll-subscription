@@ -38,8 +38,6 @@ func (r *rehashUserRepo) UpdatePasswordAndInvalidateSessions(_ context.Context, 
 
 func (r *rehashUserRepo) UpdateLastLogin(context.Context, uint, time.Time) error { return nil }
 
-func (r *rehashUserRepo) UpdateOTPLockout(context.Context, uint, int, *time.Time) error { return nil }
-
 // Login must heal legacy bcrypt hashes transparently: the correct password
 // verifies through the bcrypt fallback in VerifyPasswordHash, then the stored
 // hash is upgraded to Argon2id without failing the login (accounts nv478/nv548

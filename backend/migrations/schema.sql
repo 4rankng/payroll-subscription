@@ -28,8 +28,6 @@ CREATE TABLE `users` (
   `role` enum('admin','quanly','ketoan','giamdoc','nhanvien') NOT NULL DEFAULT 'nhanvien',
   `last_login` datetime(3) DEFAULT NULL,
   `tokens_invalid_before` datetime(3) DEFAULT NULL COMMENT 'when set, any JWT issued before this instant is rejected on validate; used by RevokeUserTokens',
-  `otp_failed_attempts` int NOT NULL DEFAULT '0' COMMENT 'consecutive failed OTP verifies; reset on success',
-  `otp_locked_until` datetime(3) DEFAULT NULL COMMENT 'when set, OTP-gated login is refused until this instant',
   `created_at` datetime(3) DEFAULT NULL,
   `updated_at` datetime(3) DEFAULT NULL,
   `cccd` varchar(20) DEFAULT NULL COMMENT '''Citizen ID for admin/quanly login''',

@@ -16,7 +16,6 @@ import (
 	"api-server/internal/app/services/employee"
 	infraServices "api-server/internal/app/services/infrastructure"
 	"api-server/internal/app/services/notification"
-	"api-server/internal/app/services/otp"
 	"api-server/internal/app/services/passwordreset"
 	"api-server/internal/app/services/payroll"
 	"api-server/internal/app/services/project"
@@ -214,27 +213,12 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		cacheService,
 	)
 
-	// Email-OTP 2FA: build the pending-session store (Redis) + OTP service.
-	//
-	// OTP delivery ALWAYS uses the real Resend provider when OTP is enabled,
-	// regardless of environment. Login depends on the code reaching the inbox,
-	// and a sandbox/no-op provider would silently swallow the code and lock
-	// every account out once MaxAttempts is hit. When OTP_ENABLE=false the
-	// service is still constructed (cheap) but requiresOTP() short-circuits
-	// and login behaves as before.
-	otpEmailSender := emailProvider
-	if cfg.OTP.Enabled {
-		otpEmailSender = email.NewResendProvider(cfg.Notification.ResendAPIKey)
-	}
-	otpPendingStore := cache.NewOTPPendingStore(redis.Client, cfg.OTP.CodeTTL)
-	otpFromEmail := constants.DefaultEmailSenderName + " <" + constants.DefaultEmailSenderAddress + ">"
-	otpService := otp.NewOTPService(otpPendingStore, repos.User, otpEmailSender, otpFromEmail, cfg.OTP, clk, logger)
-
-	// Self-service email password-reset (reuses otpEmailSender so reset emails
-	// reach real inboxes under the same env-gating as OTP).
+	// Email delivery for password-reset and notification emails: Resend in
+	// production, an in-memory sandbox anywhere else (dev/test) so local runs
+	// never send real email.
 	pwresetTokenStore := cache.NewPasswordResetTokenStore(redis.Client, cfg.PasswordReset.TokenTTL)
 	emailPasswordResetService := passwordreset.NewService(
-		pwresetTokenStore, repos.User, userService, otpEmailSender, eventBus,
+		pwresetTokenStore, repos.User, userService, emailProvider, eventBus,
 		constants.DefaultEmailSenderAddress, cfg.PasswordReset.ResetURL, clk, logger,
 	)
 
@@ -248,7 +232,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 		User:                    userService,
 		PasswordResetJobManager: passwordResetJobManager,
 		EmailPasswordReset:      emailPasswordResetService,
-		Auth:                    auth.NewAuthService(userService, repos.Employee, repos.BlacklistedToken, eventBus, cfg.Auth.JWTSecret, cfg.Auth.AccessTTL, otpService, cfg.OTP, cfg.Google.ClientID, nonceStore, cacheService, logger),
+		Auth:                    auth.NewAuthService(userService, repos.Employee, repos.BlacklistedToken, eventBus, cfg.Auth.JWTSecret, cfg.Auth.AccessTTL, cfg.Google.ClientID, nonceStore, cacheService, logger),
 		Authorization:           authorizationService,
 		Dashboard:               dashboardService,
 		Project:                 project.NewProjectService(repos.Project, repos.Employee, repos.ProjectEmployee, repos.Timesheet, eventBus, cacheService, logger),

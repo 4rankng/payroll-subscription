@@ -8,7 +8,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ResponsivePage } from "@/components/ResponsivePage";
 import Login from "./pages/Login";
-import OTPLogin from "./pages/OTPLogin";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminLayout from "./layouts/AdminLayout";
@@ -64,7 +63,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { authManager } from "@/lib/auth";
 import { SecureModalProvider } from "@/components/modals/SecureModalProvider";
 import ModalRouter from "@/components/modals/ModalRouter";
-import { EmailPromptGate } from "@/components/EmailPromptGate";
 import { ForceChangePasswordDialog } from "@/components/ForceChangePasswordDialog";
 import { showErrorNotification, isNetworkError, handleNetworkError } from "@/utils/error-handler";
 import { initInvalidationService } from "@/lib/cache/invalidationService";
@@ -227,8 +225,6 @@ const AppContent = () => {
 
         {/* Login Route */}
         <Route path="/login" element={<Login />} />
-        {/* OTP second-step login (admin/partner when OTP_ENABLE is on) */}
-        <Route path="/login/otp" element={<OTPLogin />} />
         {/* Self-service password reset (email magic link) */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -281,9 +277,6 @@ const AppContent = () => {
 
       {/* Modal Router - centralized URL-driven modal system */}
       <ModalRouter />
-
-      {/* Prompts admin and quanly users with no email to provide one. */}
-      <EmailPromptGate />
 
       {/* Blocks employee accounts still on the default password behind a compulsory change-password dialog. */}
       <ForceChangePasswordDialog />

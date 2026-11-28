@@ -27,7 +27,7 @@ type Service struct {
 	tokenStore  *cache.PasswordResetTokenStore
 	userRepo    domain.UserRepository
 	userService *user.UserService
-	emailSender domain.EmailDeliveryPort // Red Team C4: reuse otpEmailSender from init.go
+	emailSender domain.EmailDeliveryPort // Red Team C4: reuse emailProvider from init.go
 	eventBus    domain.EventBus
 	fromEmail   string
 	resetURL    string
@@ -36,8 +36,8 @@ type Service struct {
 }
 
 // NewService constructs the service. emailSender should be the existing
-// otpEmailSender variable from bootstrap/services/init.go (it resolves Sandbox
-// in dev vs Resend in prod/OTP-enabled) — do NOT re-instantiate a provider.
+// emailProvider variable from bootstrap/services/init.go (it resolves Sandbox
+// in dev vs Resend in production) — do NOT re-instantiate a provider.
 func NewService(
 	tokenStore *cache.PasswordResetTokenStore,
 	userRepo domain.UserRepository,

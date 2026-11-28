@@ -28,8 +28,6 @@ func TestUserRepositoryCreateUsesTransactionContext(t *testing.T) {
 			deleted_at DATETIME,
 			last_login DATETIME,
 			tokens_invalid_before DATETIME,
-			otp_failed_attempts INTEGER NOT NULL DEFAULT 0,
-			otp_locked_until DATETIME,
 			created_at DATETIME,
 			updated_at DATETIME
 		)

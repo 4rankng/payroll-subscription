@@ -10,7 +10,6 @@ import (
 
 	authservice "api-server/internal/app/services/auth"
 	"api-server/internal/app/services/user"
-	"api-server/internal/config"
 	"api-server/internal/domain"
 
 	"github.com/gin-gonic/gin"
@@ -44,7 +43,7 @@ func newCookieTestAuthService(t *testing.T, accessTTL time.Duration) *authservic
 	userSvc := user.NewUserService(&cookieTestUserRepo{}, nil, nil, "h", "s", nil)
 	return authservice.NewAuthService(
 		userSvc, nil, &cookieTestBlacklistRepo{}, nil, "test-secret", accessTTL,
-		nil, config.OTPConfig{}, "", nil, nil, nil,
+		"", nil, nil, nil,
 	)
 }
 
@@ -55,7 +54,6 @@ func newCookieTestToken(t *testing.T, svc *authservice.AuthService, ttl time.Dur
 		Username:    "itest-user",
 		Fullname:    "Integration User",
 		Role:        "admin",
-		OTPVerified: true,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        "cookie-test-jti",
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),

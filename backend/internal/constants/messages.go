@@ -163,17 +163,6 @@ const (
 	MsgInvalidEmployeeDataVN    = "Dữ liệu nhân viên không hợp lệ"
 	MsgGoogleAccountNotLinkedVN = "Tài khoản Google này chưa được liên kết với bất kỳ người dùng nào trên hệ thống"
 
-	// Email-OTP 2FA messages - Vietnamese
-	MsgOTPAccountMissingEmailVN            = "Tài khoản chưa có email, không thể bật xác thực hai bước — vui lòng liên hệ quản trị viên"
-	MsgOTPAccountLockedVN                  = "Tài khoản tạm bị khóa do nhập sai mã nhiều lần, vui lòng thử lại sau"
-	MsgOTPInvalidCodeOrSessionVN           = "Mã xác thực không đúng hoặc đã hết hạn"
-	MsgOTPStartFailedVN                    = "Không thể bắt đầu xác thực hai bước"
-	MsgOTPVerifyFailedVN                   = "Không thể xác thực mã OTP"
-	MsgOTPSessionIDRequiredVN              = "Thiếu mã phiên OTP"
-	MsgOTPSessionIDMissingVN               = "Không tìm thấy phiên OTP, vui lòng đăng nhập lại"
-	MsgOTPCodeRequiredVN                   = "Vui lòng nhập mã xác thực"
-	MsgOTPResendTooSoonVN                  = "Vui lòng đợi một chút trước khi yêu cầu gửi lại mã"
-	MsgOTPVerificationRequiredVN           = "Cần xác thực hai bước để truy cập tài nguyên này"
 	MsgRateLimitExceededVN                 = "Quá nhiều yêu cầu. Vui lòng thử lại sau"
 	MsgPasswordChangeNotAllowedOnProfileVN = "Không thể đổi mật khẩu qua cập nhật hồ sơ — vui lòng sử dụng endpoint đổi mật khẩu (yêu cầu mật khẩu hiện tại)"
 

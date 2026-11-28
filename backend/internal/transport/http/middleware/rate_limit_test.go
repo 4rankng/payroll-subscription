@@ -43,11 +43,6 @@ func TestLoginAccountKeyGetter_PerAccount(t *testing.T) {
 			body: `{"username":"carol"}`,
 			want: "account:carol",
 		},
-		{
-			name: "OTP verify body keyed by session (per-account proxy)",
-			body: `{"otp_session_id":"sess-123","code":"000000"}`,
-			want: "otp-session:sess-123",
-		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

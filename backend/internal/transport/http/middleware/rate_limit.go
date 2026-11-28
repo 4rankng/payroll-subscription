@@ -116,9 +116,7 @@ func CreateLoginRateLimit(redisURL string) gin.HandlerFunc {
 // loginAccountKeyGetter extracts the account identifier from the login request
 // body and returns a per-account limiter key, so the 10/min login cap is
 // enforced per account, not per IP. For /auth/login the identifier is the
-// submitted username/CCCD/mobile; for the OTP second step (/auth/login/verify,
-// /auth/login/resend) it is the otp_session_id, which is bound 1:1 to one
-// account for the duration of the OTP flow. The body is read with a small cap
+// submitted username/CCCD/mobile. The body is read with a small cap
 // and restored, so the downstream handler's BindJSON re-reads it normally. When
 // the body carries no identifier, the key falls back to the client IP — this
 // keeps isolation per-source instead of collapsing every anonymous request into
@@ -131,8 +129,7 @@ func loginAccountKeyGetter(c *gin.Context) string {
 		c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 		if err == nil {
 			var payload struct {
-				Username     string `json:"username"`
-				OTPSessionID string `json:"otp_session_id"`
+				Username string `json:"username"`
 			}
 			if json.Unmarshal(raw, &payload) == nil {
 				if id := strings.TrimSpace(payload.Username); id != "" {
@@ -140,12 +137,6 @@ func loginAccountKeyGetter(c *gin.Context) string {
 						id = id[:255]
 					}
 					return "account:" + strings.ToLower(id)
-				}
-				if id := strings.TrimSpace(payload.OTPSessionID); id != "" {
-					if len(id) > 255 {
-						id = id[:255]
-					}
-					return "otp-session:" + id
 				}
 			}
 		}

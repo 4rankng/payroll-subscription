@@ -11,7 +11,7 @@ export interface AuthCardProps {
 }
 
 /**
- * The centered auth card surface shared by OTP login, forgot password, and
+ * The centered auth card surface shared by the login, forgot password, and
  * the two reset screens (W10 UU PRO migration). Pages keep their own outer
  * wrapper (data attributes and safe-area padding stay page-owned).
  */

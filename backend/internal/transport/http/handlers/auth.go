@@ -39,10 +39,9 @@ func NewAuthHandler(authService *auth.AuthService, userService *user.UserService
 }
 
 // setSessionCookieFromLogin mints the HttpOnly session cookie when a login
-// flow produced an access token (PAYR-37B item 4). OTP-gated logins return
-// otp_required without a token — nothing to set until /auth/login/verify
-// succeeds. The token is still present in the JSON body for legacy cached
-// clients during the migration window; the new SPA never reads it.
+// flow produced an access token (PAYR-37B item 4). The token is still present
+// in the JSON body for legacy cached clients during the migration window; the
+// new SPA never reads it.
 func (h *AuthHandler) setSessionCookieFromLogin(c *gin.Context, loginResponse *dto.LoginResponse) {
 	if loginResponse == nil || loginResponse.AccessToken == "" {
 		return
@@ -92,79 +91,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	h.setSessionCookieFromLogin(c, loginResponse)
 	response.Success(c, loginResponse, "Login successful")
-}
-
-// @Summary Verify OTP login code
-// @Description Complete the two-step login by submitting the emailed 6-digit code
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param body body dto.VerifyOTPRequest true "OTP session id + code"
-// @Success 200 {object} dto.LoginResponse
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Router /auth/login/verify [post]
-func (h *AuthHandler) VerifyLoginOTP(c *gin.Context) {
-	var req dto.VerifyOTPRequest
-	if !helpers.BindJSON(c, &req) {
-		return
-	}
-	if req.OTPSessionID == "" {
-		response.BadRequest(c, constants.MsgOTPSessionIDRequiredVN)
-		return
-	}
-	if req.Code == "" {
-		response.BadRequest(c, constants.MsgOTPCodeRequiredVN)
-		return
-	}
-
-	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
-
-	loginResponse, err := h.authService.VerifyLoginOTP(c.Request.Context(), req.OTPSessionID, req.Code, ipAddress, userAgent)
-	if err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
-
-	h.setSessionCookieFromLogin(c, loginResponse)
-	response.Success(c, loginResponse, "Login successful")
-}
-
-// @Summary Resend OTP code
-// @Description Re-issue the emailed OTP code for a pending login session
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param body body dto.ResendOTPRequest true "OTP session id"
-// @Success 200 {object} response.SuccessResponse
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 401 {object} response.ErrorResponse
-// @Router /auth/login/resend [post]
-func (h *AuthHandler) ResendOTPCode(c *gin.Context) {
-	var req dto.ResendOTPRequest
-	if !helpers.BindJSON(c, &req) {
-		return
-	}
-	if req.OTPSessionID == "" {
-		response.BadRequest(c, constants.MsgOTPSessionIDRequiredVN)
-		return
-	}
-
-	ipAddress := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
-
-	sessionID, expiresIn, err := h.authService.ResendOTPCode(c.Request.Context(), req.OTPSessionID, ipAddress, userAgent)
-	if err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"otp_required":   true,
-		"otp_session_id": sessionID,
-		"expires_in":     expiresIn,
-	}, "Mã mới đã được gửi")
 }
 
 // @Summary Request password reset
