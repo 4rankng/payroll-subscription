@@ -441,7 +441,7 @@ export default function TimesheetPage() {
                   <DotsVertical className="h-4 w-4" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="z-40 w-52 rounded-lg border-border bg-card shadow-lg">
+              <DropdownMenuContent align="end" className="z-40 w-52 rounded-lg border-gray-200 bg-white shadow-lg">
                 {(isQuanly || isAdmin) && (
                   <DropdownMenuItem onClick={() => setBccHistoryOpen(true)}>
                     <Clock className="h-4 w-4 mr-2" aria-hidden="true" />
