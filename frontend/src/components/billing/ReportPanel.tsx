@@ -50,7 +50,7 @@ export function ReportPanel({ workMonth, canGenerate }: ReportPanelProps) {
       </CardHeader>
       <CardContent>
         {report === null || report === undefined ? (
-          <p className="text-sm text-slate-500">Chưa có báo cáo cho tháng này.</p>
+          <p className="text-sm text-slate-600">Chưa có báo cáo cho tháng này.</p>
         ) : (
           <div className="space-y-3">
             <div className="text-sm text-slate-600">
