@@ -81,9 +81,9 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo tài khoản người dùng mới',
     category: 'user',
     requiresAuth: true,
-    // Backend enforcement: POST /users is admin + giamdoc (PRD §5.3);
-    // quanly holds read-only user access.
-    roles: ['admin', 'giamdoc'],
+    // User-management writes are admin-only; giamdoc reads /partner/users
+    // read-only (enforced in casbin too).
+    roles: ['admin'],
     componentPath: '/src/components/sheets/AddUserSheet',
     hasParams: false
   },
@@ -94,7 +94,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'giamdoc'],
+    roles: ['admin'],
     componentPath: '/src/components/sheets/EditUserSheet',
     hasParams: true,
     paramSchema: 'userEdit'
@@ -106,7 +106,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đặt lại mật khẩu cho người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'giamdoc'],
+    roles: ['admin'],
     componentPath: '/src/components/modals/ResetPasswordModal',
     hasParams: true,
     paramSchema: 'resetPassword'

@@ -152,6 +152,9 @@ export default function AuditLogPage() {
                     const variant = getActionVariant(log.action);
                     const location = extractLocation(log.metadata);
                     const date = new Date(log.created_at);
+                    const timestamp = Number.isNaN(date.getTime())
+                      ? '—'
+                      : `${format(date, 'dd/MM/yyyy')} · ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
                     return (
                       <TableRow
                         key={log.id}
@@ -159,8 +162,7 @@ export default function AuditLogPage() {
                         className="cursor-pointer"
                       >
                         <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
-                          {format(date, 'dd/MM/yyyy')}{' · '}
-                          {date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          {timestamp}
                         </TableCell>
                         <TableCell className="min-w-0">
                           <span className="block truncate font-medium text-foreground" title={log.user_fullname || log.user_username}>

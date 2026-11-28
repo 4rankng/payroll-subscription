@@ -81,9 +81,10 @@ describe.each(views)("%s next-page failure", (label, Component) => {
   it("preserves loaded records and retries the failed next page", () => {
     mocks.query = { ...mocks.query, isFetchNextPageError: true, hasMore: true, hasNextPage: true,
       users: [{ id: 1, username: "loaded-user", role: "nhanvien" }],
-      data: { pages: [{ data: [{ id: 1 }], pagination: { totalRecords: 2 } }] } };
+      data: { pages: [{ data: [{ id: 1, user_username: "loaded-user", action: "LOGIN", created_at: "2026-11-28T08:00:00Z" }], pagination: { totalRecords: 2 } }] } };
     render(<MemoryRouter><Component /></MemoryRouter>);
-    expect(screen.getByText(label.startsWith("users") ? "loaded-user" : "Bản ghi 1")).toBeInTheDocument();
+    // Desktop renders the real table row; mobile keeps the mocked card marker.
+    expect(screen.getByText(label === "users desktop" || label === "audit desktop" ? "loaded-user" : label === "users mobile" ? "loaded-user" : "Bản ghi 1")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("đã tải vẫn được giữ lại");
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(mocks.fetchNextPage).toHaveBeenCalledOnce();
