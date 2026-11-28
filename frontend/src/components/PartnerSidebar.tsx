@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
-  Bell03,
   Briefcase01,
   Calendar,
   Grid01,
@@ -44,13 +43,11 @@ import {
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { UserProfileSheet } from "@/components/sheets/UserProfileSheet";
 import { SidebarToggle } from "@/components/shared/SidebarToggle";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/contexts";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
 import { useAdminTheme } from "@/hooks/useAdminTheme";
 import { MODAL_IDS } from "@/constants/modalRegistry";
 import { partnerNavItems, type PartnerNavItem } from "@/config/partnerNav";
-import { useUnreadNotifications } from "@/hooks/api/useNotifications";
 
 
 interface NavItemProps {
@@ -134,8 +131,6 @@ const PartnerSidebar = () => {
   const { isMobile, setOpenMobile, open, openMobile } = useSidebar();
   const { openModal } = useModalNavigation();
   const isCollapsed = getSidebarCollapsedState({ isMobile, open, openMobile });
-  const { data: unreadData } = useUnreadNotifications();
-  const unreadCount = unreadData?.count || 0;
 
   const [showProfile, setShowProfile] = useState(false);
 
@@ -186,41 +181,38 @@ const PartnerSidebar = () => {
           </SidebarMenu>
         </SidebarContent>
 
-        {/* Compact bell opening the existing notifications sheet —
-            own row above the footer separator: version flush
-            left, bell right when expanded, bell centered on the collapsed
-            rail (version hidden). */}
+        {/* Quick actions: version + appearance — own row above the footer
+            separator: version flush left, theme toggle right when expanded,
+            centered on the collapsed rail (version hidden); reachable
+            directly outside the account menu. */}
         <div className={cn("flex px-2 pb-1.5 items-center", isCollapsed && "justify-center")}>
             {!isCollapsed && (
               <p className="mr-auto text-xs text-white/70 tracking-wide select-none whitespace-nowrap">
                 v{__APP_VERSION__}
               </p>
             )}
-            <button
-              type="button"
-              onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}
-              aria-label={`Thông báo${unreadCount > 0 ? ` (${unreadCount} chưa đọc)` : ''}`}
-              className={cn(
-                "relative flex shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-card/[0.04]",
-                "transition-all duration-200 hover:bg-card/[0.08] hover:border-white/[0.1] hover:text-white",
-                "outline-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2",
-                "h-9 w-9 text-white/80",
-              )}
-            >
-              <Bell03 className="h-4 w-4" aria-hidden="true" />
-              {unreadCount > 0 && (
-                <span
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  aria-label={dark ? "Chế độ sáng" : "Chế độ tối"}
                   className={cn(
-                    "absolute h-4 min-w-4 flex items-center justify-center px-1",
-                    "-top-1.5 -right-1.5",
-                    "text-xs font-semibold rounded-full bg-red-600 text-white",
-                    "animate-badge-pulse",
+                    "relative flex shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-card/[0.04]",
+                    "transition-all duration-200 hover:bg-card/[0.08] hover:border-white/[0.1] hover:text-white",
+                    "outline-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2",
+                    "h-9 w-9 text-white/80",
                   )}
                 >
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </button>
+                  {dark ? (
+                    <Sun className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Moon01 className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side={isCollapsed ? "right" : "left"}>{dark ? "Chế độ sáng" : "Chế độ tối"}</TooltipContent>
+            </Tooltip>
           </div>
 
         {/* Footer — user menu */}
@@ -256,16 +248,6 @@ const PartnerSidebar = () => {
                     <ChevronSelectorVertical className="w-3.5 h-3.5 shrink-0 text-white/45" aria-hidden="true" />
                   </>
                 )}
-                {unreadCount > 0 && (
-                  <span className={cn(
-                    "absolute h-4 min-w-4 flex items-center justify-center px-1",
-                    isCollapsed ? "-top-0.5 -right-0.5" : "-top-1.5 -right-1.5",
-                    "text-xs font-semibold rounded-full bg-red-600 text-white",
-                    "animate-badge-pulse"
-                  )}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -293,18 +275,6 @@ const PartnerSidebar = () => {
               <DropdownMenuItem onClick={() => openModal(MODAL_IDS.CHANGE_PASSWORD)}>
                 <Key01 className="mr-2 h-4 w-4" aria-hidden="true" />
                 Đổi mật khẩu
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openModal(MODAL_IDS.NOTIFICATION_SHEET)}>
-                <Bell03 className="mr-2 h-4 w-4" aria-hidden="true" />
-                Thông báo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleTheme}>
-                {dark ? (
-                  <Sun className="mr-2 h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Moon01 className="mr-2 h-4 w-4" aria-hidden="true" />
-                )}
-                {dark ? "Chế độ sáng" : "Chế độ tối"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
