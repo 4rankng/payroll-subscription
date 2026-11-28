@@ -67,7 +67,10 @@ func (r *TransferUploadRepository) Create(ctx context.Context, upload *domain.Tr
 	return nil
 }
 
-// Update persists status/reject/verify mutations on the primary key.
+// Update persists status/reject/verify and row-counter mutations on the
+// primary key. The counters must stay in the column map: ProcessUpload
+// finalizes parsed_rows/matched_rows through here, and a dropped column
+// silently leaves the Sổ cái "Dòng khớp" list at 0.
 func (r *TransferUploadRepository) Update(ctx context.Context, upload *domain.TransferUpload) error {
 	if err := r.dbForContext(ctx).Model(&domain.TransferUpload{}).
 		Where("id = ?", upload.ID).
@@ -77,6 +80,8 @@ func (r *TransferUploadRepository) Update(ctx context.Context, upload *domain.Tr
 			"verified_at":   upload.VerifiedAt,
 			"verified_by":   upload.VerifiedBy,
 			"asset_id":      upload.AssetID,
+			"parsed_rows":   upload.ParsedRows,
+			"matched_rows":  upload.MatchedRows,
 			"updated_at":    upload.UpdatedAt,
 		}).Error; err != nil {
 		return fmt.Errorf("transfer_uploads: update: %w", err)

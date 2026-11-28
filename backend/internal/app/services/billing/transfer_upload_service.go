@@ -97,7 +97,7 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 		// verification once the blocker clears (A2: corrected re-upload
 		// re-runs verification) — so drop the stale row and process fresh.
 		if prior.Status == domain.TransferUploadStatusVerified {
-			return &UploadResult{UploadID: prior.ID, Status: prior.Status, Duplicate: true}, nil
+			return s.priorOutcome(ctx, prior, data)
 		}
 		if delErr := s.uploads.Delete(ctx, prior.ID); delErr != nil {
 			return nil, fmt.Errorf("billing: clear stale %s upload: %w", prior.Status, delErr)
@@ -170,6 +170,65 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 		"status", upload.Status,
 	)
 	return result, nil
+}
+
+// priorOutcome returns the recorded outcome of a verified prior upload when
+// the identical file is re-uploaded — the books are never touched twice.
+// Builds that finalized an upload without persisting its row counters left
+// them at zero, so the outcome is reconstructed exactly: the identical bytes
+// re-parse to the file's row count, and the billing atoms the upload owns
+// are its matched rows. When the reconstruction differs from the stored
+// counters they are repaired, so re-uploading a file converges its Sổ cái
+// row instead of echoing stale zeros.
+func (s *TransferUploadService) priorOutcome(ctx context.Context, prior *domain.TransferUpload, data []byte) (*UploadResult, error) {
+	result := &UploadResult{
+		UploadID:   prior.ID,
+		Status:     prior.Status,
+		Duplicate:  true,
+		RowsTotal:  prior.ParsedRows,
+		RowsOK:     prior.MatchedRows,
+		RowsFailed: prior.ParsedRows - prior.MatchedRows,
+		Failures:   []RowFailure{},
+	}
+	rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data))
+	if parseErr != nil {
+		// Same bytes verified before, so a parse failure is not reachable
+		// under the app's own rules; fall back to the stored outcome.
+		return result, nil
+	}
+	matched, err := s.countUploadMatches(ctx, prior.ID, prior.WorkMonth)
+	if err != nil {
+		return nil, err
+	}
+	result.RowsTotal = len(rows)
+	result.RowsOK = matched
+	result.RowsFailed = len(rows) - matched
+	if prior.ParsedRows != result.RowsTotal || prior.MatchedRows != matched {
+		prior.ParsedRows = result.RowsTotal
+		prior.MatchedRows = matched
+		prior.UpdatedAt = clock.Now()
+		if err := s.uploads.Update(ctx, prior); err != nil {
+			return nil, fmt.Errorf("billing: repair upload counters: %w", err)
+		}
+	}
+	return result, nil
+}
+
+// countUploadMatches counts the billing atoms one upload produced — exactly
+// one per matched row (rows are deduped by CCCD and one atom is kept per
+// employee per Kỳ), so this is the upload's historical matched-row count.
+func (s *TransferUploadService) countUploadMatches(ctx context.Context, uploadID uint64, workMonth string) (int, error) {
+	paid, err := s.kyPaid.ListByWorkMonth(ctx, workMonth)
+	if err != nil {
+		return 0, fmt.Errorf("billing: load pay cycles: %w", err)
+	}
+	n := 0
+	for _, row := range paid {
+		if row.SourceUploadID == uploadID {
+			n++
+		}
+	}
+	return n, nil
 }
 
 // processRows walks the parsed rows inside the caller's transaction. A row
