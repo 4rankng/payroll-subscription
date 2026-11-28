@@ -277,7 +277,7 @@ const PartnerDashboardPage = () => {
               <WorkforceOverviewCard month={apiMonth} />
             </div>
             <div className="flex lg:col-span-7">
-              <KyFeeSummaryTable className="h-full" />
+              <KyFeeSummaryTable className="h-full w-full" />
             </div>
           </div>
           <PaidSeriesSection month={apiMonth} layout="segmented" />
