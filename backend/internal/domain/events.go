@@ -378,11 +378,12 @@ type EmployeeAccessGrantedEvent struct {
 
 type EmployeeAccessRevokedEvent struct {
 	BaseEvent
-	EmployeeID   uint
-	EmployeeName string
-	ProjectID    uint
-	ProjectName  string
-	RevokedBy    uint
+	EmployeeID    uint
+	EmployeeName  string
+	ProjectID     uint
+	ProjectName   string
+	RevokedBy     uint
+	RevokedUserID uint
 }
 
 type ProjectAccessGrantedEvent struct {

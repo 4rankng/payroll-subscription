@@ -58,6 +58,11 @@ type EmployeeResponse struct {
 	// employee (created/shared/project-assigned). Only set on global-pool listings
 	// (scope=global, partner role); omitted elsewhere.
 	IsAccessible *bool `json:"is_accessible,omitempty"`
+	// IsClaimed indicates whether the requesting partner manages this row via an
+	// employee_users claim (scoped listings only) — the self-service remove
+	// affordance keys off it, since created and project-visible rows cannot
+	// leave the list through a claim release.
+	IsClaimed *bool `json:"is_claimed,omitempty"`
 	// CreatorName is the display name of the employee's creator. Exposed so the
 	// global pool can show "Được quản lý bởi" without exposing the creator user ID.
 	CreatorName *string `json:"creator_name,omitempty"`

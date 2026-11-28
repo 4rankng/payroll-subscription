@@ -25,14 +25,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmployeeMobileCard } from "@/components/employees/EmployeeMobileCard";
 import { EmployeeEmptyStates } from "@/components/employees/EmployeeEmptyStates";
 import { usePartnerEmployeesData } from "@/hooks/partner-employees/usePartnerEmployeesData";
-import { useEmployeesSummary, useRequestEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useEmployeesSummary, useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useAuth } from "@/contexts";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useEmployeeModals } from "@/hooks/useModalNavigation";
 import { useAssignableProjects } from "@/hooks/api/useProjects";
 import { useEmployeeExport } from "@/hooks/employees/useEmployeeExport";
 import { ExportEmployeesModal } from "@/components/modals/ExportEmployeesModal";
 import { canClaimEmployee, canPartnerManageProject } from "@/lib/permissions";
 import { Users } from "lucide-react";
-import { Download01, FilterLines, Plus, UserPlus01, XClose } from "@untitledui/icons";
+import { Download01, FilterLines, Plus, UserMinus01, UserPlus01, XClose } from "@untitledui/icons";
 import type { Employee } from "@/types/api/employee.types";
 
 // Generate last 12 months
@@ -82,6 +84,9 @@ const EmployeesPageMobile = () => {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const { openEmployeeDetails, openAddEmployee } = useEmployeeModals();
   const requestAccess = useRequestEmployeeAccess();
+  const revokeAccess = useRevokeEmployeeAccess();
+  const { user } = useAuth();
+  const [removeTarget, setRemoveTarget] = useState<Employee | null>(null);
   const canClaim = canClaimEmployee();
   const canCreateEmployee = canPartnerManageProject();
   const handleClaim = useCallback(
@@ -354,6 +359,23 @@ const EmployeesPageMobile = () => {
                         <UserPlus01 className="h-4 w-4" aria-hidden="true" />
                         Yêu cầu quản lý
                       </Button>
+                    ) : canClaim && employee.is_claimed ? (
+                      // Scoped list: release a claimed employee. Created and
+                      // project-visible rows cannot leave the list through a
+                      // release, so only is_claimed rows render the action.
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+                        disabled={revokeAccess.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRemoveTarget(employee);
+                        }}
+                      >
+                        <UserMinus01 className="h-4 w-4" aria-hidden="true" />
+                        Xóa khỏi danh sách của tôi
+                      </Button>
                     ) : undefined
                   }
                 />
@@ -506,6 +528,34 @@ const EmployeesPageMobile = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+        title="Xóa khỏi danh sách của tôi?"
+        description={
+          removeTarget
+            ? `Nhân viên ${removeTarget.fullname} sẽ rời khỏi "Nhân viên của tôi". Bạn có thể yêu cầu quản lý lại từ "Tất cả NV" bất kỳ lúc nào.`
+            : ""
+        }
+        confirmText="Xóa khỏi danh sách"
+        cancelText="Giữ lại"
+        confirmVariant="destructive"
+        loading={revokeAccess.isPending}
+        onConfirm={() => {
+          if (!removeTarget || !user?.id) return Promise.resolve();
+          const target = removeTarget;
+          // Project TS lib predates Promise.withResolvers — executor form required.
+          return new Promise<void>((resolve) => {
+            revokeAccess.mutate(
+              { employeeId: target.id, userId: Number(user.id) },
+              { onSettled: () => resolve() },
+            );
+          });
+        }}
+      />
 
       <ExportEmployeesModal
         open={exportModalOpen}

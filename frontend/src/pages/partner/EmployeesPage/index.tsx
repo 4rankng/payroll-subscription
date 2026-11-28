@@ -8,7 +8,9 @@ import { SearchBar } from "@/components/shared/SearchBar";
 import { FilterPill } from "@/components/shared/FilterPill";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { usePartnerEmployeesData } from "@/hooks/partner-employees/usePartnerEmployeesData";
-import { useEmployeesSummary, useRequestEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useEmployeesSummary, useRequestEmployeeAccess, useRevokeEmployeeAccess } from "@/hooks/api/useEmployees";
+import { useAuth } from "@/contexts";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useEmployeeModals } from "@/hooks/useModalNavigation";
 import { useEmployeeExport } from "@/hooks/employees/useEmployeeExport";
 import { useAssignableProjects } from "@/hooks/api/useProjects";
@@ -24,6 +26,7 @@ import {
   Globe01,
   PhoneCall01,
   UserCheck01,
+  UserMinus01,
   UserPlus01,
   XClose,
 } from "@untitledui/icons";
@@ -92,6 +95,9 @@ const EmployeesPage = () => {
   } = usePartnerEmployeesData(poolView === "global" ? "global" : undefined);
 
   const canClaim = canClaimEmployee();
+  const { user } = useAuth();
+  const revokeAccess = useRevokeEmployeeAccess();
+  const [removeTarget, setRemoveTarget] = useState<Employee | null>(null);
   const canCreateEmployee = canPartnerManageProject();
 
   const { openEmployeeDetails, openAddEmployee } = useEmployeeModals();
@@ -372,6 +378,46 @@ const EmployeesPage = () => {
           </span>
         ),
       },
+      // Scoped view only: release a claimed employee back to the global pool.
+      // Rows the partner created (or merely sees via projects) cannot leave
+      // the list through a release, so only is_claimed rows render the action.
+      ...(poolView === "mine" && canClaim
+        ? [{
+            id: "list_actions",
+            header: "",
+            size: 64,
+            minSize: 56,
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Employee } }) => {
+              const employee = row.original;
+              if (!employee.is_claimed) return null;
+              return (
+                <div className="flex justify-end">
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={`Xóa ${employee.fullname} khỏi danh sách của tôi`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRemoveTarget(employee);
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground outline-brand cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
+                        >
+                          <UserMinus01 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="text-xs">
+                        Xóa khỏi danh sách của tôi
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              );
+            },
+          } satisfies ColumnDef<Employee>]
+        : []),
     ],
     [navigate, handleEmployeeClick, poolView, handleClaim, requestAccess.isPending, canClaim],
   );
@@ -739,6 +785,34 @@ const EmployeesPage = () => {
         onExport={(projectIds) => exportEmployees(projectIds)}
         projects={projects}
         isExporting={isExporting}
+      />
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+        title="Xóa khỏi danh sách của tôi?"
+        description={
+          removeTarget
+            ? `Nhân viên ${removeTarget.fullname} sẽ rời khỏi "Nhân viên của tôi". Bạn có thể yêu cầu quản lý lại từ "Tất cả NV" bất kỳ lúc nào.`
+            : ""
+        }
+        confirmText="Xóa khỏi danh sách"
+        cancelText="Giữ lại"
+        confirmVariant="destructive"
+        loading={revokeAccess.isPending}
+        onConfirm={() => {
+          if (!removeTarget || !user?.id) return Promise.resolve();
+          const target = removeTarget;
+          // Project TS lib predates Promise.withResolvers — executor form required.
+          return new Promise<void>((resolve) => {
+            revokeAccess.mutate(
+              { employeeId: target.id, userId: Number(user.id) },
+              { onSettled: () => resolve() },
+            );
+          });
+        }}
       />
     </div>
   );

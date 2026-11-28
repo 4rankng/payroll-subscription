@@ -449,6 +449,77 @@ func runEmployeeCRUDTests(client *APIClient, data *TestData, reporter *Reporter,
 			}
 			return nil
 		})
+
+		reporter.RunTest(flowEmployee, "Self-release: partner removes claimed employee from scoped list", func() error {
+			if poolEmpID == 0 {
+				return fmt.Errorf("no pool employee ID")
+			}
+			var me UserResponse
+			if _, err := partner.GetInto("/api/v1/auth/me", &me); err != nil {
+				return fmt.Errorf("partner identity: %w", err)
+			}
+
+			// The scoped list must annotate the claimed row as claimed — the
+			// frontend remove affordance keys off it.
+			var scoped []EmployeeResponse
+			if _, err := partner.GetInto("/api/v1/employees?pageSize=100&sortBy=created_at&sortOrder=desc", &scoped); err != nil {
+				return fmt.Errorf("scoped list: %w", err)
+			}
+			claimedSeen := false
+			for _, emp := range scoped {
+				if emp.ID == poolEmpID {
+					if emp.IsClaimed == nil || !*emp.IsClaimed {
+						return fmt.Errorf("claimed employee %d must carry is_claimed=true on the scoped list", poolEmpID)
+					}
+					claimedSeen = true
+					break
+				}
+			}
+			if !claimedSeen {
+				return fmt.Errorf("claimed employee %d missing from scoped list before release", poolEmpID)
+			}
+
+			// Release: DELETE own access succeeds and drops the employee from
+			// the scoped list while the global pool keeps it.
+			if _, _, err := partner.Delete(fmt.Sprintf("/api/v1/employees/%d/users/%d", poolEmpID, me.ID)); err != nil {
+				return fmt.Errorf("self-release: %w", err)
+			}
+			if _, err := partner.GetInto("/api/v1/employees?pageSize=100&sortBy=created_at&sortOrder=desc", &scoped); err != nil {
+				return fmt.Errorf("scoped list after release: %w", err)
+			}
+			for _, emp := range scoped {
+				if emp.ID == poolEmpID {
+					return fmt.Errorf("released employee %d must leave the scoped list", poolEmpID)
+				}
+			}
+
+			var pool []EmployeeResponse
+			if _, err := partner.GetInto("/api/v1/employees?scope=global&pageSize=100&sortBy=created_at&sortOrder=desc", &pool); err != nil {
+				return fmt.Errorf("global pool after release: %w", err)
+			}
+			stillPooled := false
+			for _, emp := range pool {
+				if emp.ID == poolEmpID {
+					stillPooled = true
+					break
+				}
+			}
+			if !stillPooled {
+				return fmt.Errorf("released employee %d must stay in the global pool", poolEmpID)
+			}
+
+			// No-row contract: releasing again is a silent 200 no-op.
+			if _, _, err := partner.Delete(fmt.Sprintf("/api/v1/employees/%d/users/%d", poolEmpID, me.ID)); err != nil {
+				return fmt.Errorf("idempotent self-release: %w", err)
+			}
+
+			// Re-claim to leave the partner scoped list as earlier tests found it.
+			var resp APIResponse
+			if _, err := partner.PostInto(fmt.Sprintf("/api/v1/employees/%d/request-access", poolEmpID), map[string]string{}, &resp); err != nil {
+				return fmt.Errorf("re-claim after release: %w", err)
+			}
+			return nil
+		})
 	}
 
 	reporter.RunTest(flowEmployee, "Edge: update non-existent employee", func() error {

@@ -154,15 +154,28 @@ func (s *EmployeePermissionService) RequestEmployeeAccess(ctx context.Context, e
 
 // RevokeEmployeeAccess revokes employee access from a user
 func (s *EmployeePermissionService) RevokeEmployeeAccess(ctx context.Context, employeeID, userID, revokedBy uint, revokerRole string) error {
-	// Verify revoker is employee creator or admin
 	employee, err := s.employeeRepo.GetByID(ctx, employeeID)
 	if err != nil {
 		return err
 	}
 
-	// Admins can revoke access from any employee, partners can only revoke access from employees they created
-	if revokerRole != string(domain.RoleAdmin) && employee.CreatedBy != revokedBy {
+	// Admins can revoke access on any employee; a creator on their own
+	// employees; a quanly may additionally release their own claim row
+	// (self-service remove from "Nhân viên của tôi", mirror of the claim).
+	isSelfRelease := revokedBy == userID && revokerRole == string(domain.RoleQuanly)
+	if revokerRole != string(domain.RoleAdmin) && employee.CreatedBy != revokedBy && !isSelfRelease {
 		return domain.NewForbiddenError(constants.MsgOnlyEmployeeCreatorOrAdminCanRevokeAccessVN)
+	}
+
+	// Idempotent no-row contract: without an employee_users row there is
+	// nothing to revoke — succeed silently and publish no event (the creator's
+	// "owner" entry is virtual and never backed by a row).
+	existing, err := s.employeeUserRepo.GetByEmployeeAndUser(ctx, employeeID, userID)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return nil
 	}
 
 	// Revoke access (soft delete)
@@ -170,18 +183,27 @@ func (s *EmployeePermissionService) RevokeEmployeeAccess(ctx context.Context, em
 		return err
 	}
 
-	// Publish permission domain event for audit and notifications
+	// Publish permission domain event for audit and notifications; the event
+	// carries the revoked target so the audit record states whom the revoke
+	// removed (self-releases make actor and target the same person).
 	employeeName := strings.TrimSpace(employee.Fullname)
 
 	if s.eventBus != nil {
 		actorFullName := audit.GetActorFullName(ctx, s.userRepo, revokedBy)
-		event := domain.NewEmployeeAccessRevokedEvent(ctx, employeeID, employeeName, "", 0, revokedBy, actorFullName)
+		event := domain.NewEmployeeAccessRevokedEvent(ctx, employeeID, employeeName, "", 0, userID, revokedBy, actorFullName)
 		if err := s.eventBus.Publish(ctx, event); err != nil {
 			observability.GetLogger().Error("failed to publish EmployeeAccessRevokedEvent", "error", err)
 		}
 	}
 
 	return nil
+}
+
+// ListClaimedEmployeeIDs returns the employee IDs a user manages via
+// employee_users claims (not creator ownership). Drives the scoped-list
+// is_claimed annotation for the self-service remove action.
+func (s *EmployeePermissionService) ListClaimedEmployeeIDs(ctx context.Context, userID uint) ([]uint, error) {
+	return s.employeeUserRepo.GetUserEmployees(ctx, userID)
 }
 
 // GetEmployeeUsers retrieves all users with access to an employee, including the owner

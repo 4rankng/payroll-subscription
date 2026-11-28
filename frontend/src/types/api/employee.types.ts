@@ -77,6 +77,8 @@ export interface Employee {
   created_by?: number;
   /** Global-pool listing only: true when the requesting partner already manages this employee */
   is_accessible?: boolean;
+  /** Scoped listing only: true when the partner manages this row via an employee_users claim — the remove affordance keys off it */
+  is_claimed?: boolean;
   /** Global-pool listing only: display name of the employee's creator */
   creator_name?: string;
   created_at?: string;

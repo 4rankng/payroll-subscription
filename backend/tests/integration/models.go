@@ -111,6 +111,10 @@ type EmployeeResponse struct {
 	BankAccountNumber string                `json:"bank_account_number"`
 	BankAccountName   string                `json:"bank_account_name"`
 	CurrentProjects   []EmployeeProjectInfo `json:"current_projects"`
+	CreatedBy         uint                  `json:"created_by"`
+	// IsClaimed: scoped-partner lists only — the row is managed via an
+	// employee_users claim (the self-service remove affordance keys off it).
+	IsClaimed *bool `json:"is_claimed,omitempty"`
 }
 
 type EmployeeBankInfo struct {

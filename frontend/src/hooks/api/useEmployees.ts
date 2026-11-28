@@ -515,6 +515,11 @@ export const useRevokeEmployeeAccess = () => {
     onSuccess: (response, { employeeId }) => {
       // Invalidate the employee users list
       queryClient.invalidateQueries({ queryKey: QueryKeys.employees.users(employeeId) });
+      // Self-release changes list membership: scoped list, global pool and
+      // summary counts must re-resolve once the claim row is gone.
+      queryClient.invalidateQueries({ queryKey: QueryKeys.employees.lists() });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.employees.summary() });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.employees.detail(employeeId) });
 
       if (response.message) {
         showSuccessNotification(response.message);

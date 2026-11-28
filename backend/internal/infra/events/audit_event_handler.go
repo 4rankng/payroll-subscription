@@ -314,11 +314,12 @@ func (h *AuditEventHandler) buildMetadata(event domain.DomainEvent) map[string]i
 		}
 	case domain.EmployeeAccessRevokedEvent:
 		return map[string]interface{}{
-			"employee_id":   e.EmployeeID,
-			"employee_name": e.EmployeeName,
-			"project_id":    e.ProjectID,
-			"project_name":  e.ProjectName,
-			"revoked_by":    e.RevokedBy,
+			"employee_id":     e.EmployeeID,
+			"employee_name":   e.EmployeeName,
+			"project_id":      e.ProjectID,
+			"project_name":    e.ProjectName,
+			"revoked_by":      e.RevokedBy,
+			"revoked_user_id": e.RevokedUserID,
 		}
 	case domain.ProjectAccessGrantedEvent:
 		return map[string]interface{}{

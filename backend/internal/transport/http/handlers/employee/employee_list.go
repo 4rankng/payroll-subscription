@@ -112,7 +112,7 @@ func (h *Handler) parseEmployeeFilters(c *gin.Context) (domain.EmployeeFilters, 
 // When maskInaccessible is true (global-pool listing for a partner), rows outside
 // the requester's accessible set are annotated is_accessible=false and their
 // bank/contact details are withheld: a preview row only carries identity.
-func buildEmployeeListResponse(employees []*domain.EmployeeWithProjects, accessibleIDs map[uint]bool, maskInaccessible bool) []dto.EmployeeResponse {
+func buildEmployeeListResponse(employees []*domain.EmployeeWithProjects, accessibleIDs map[uint]bool, maskInaccessible bool, claimedIDs map[uint]bool) []dto.EmployeeResponse {
 	result := make([]dto.EmployeeResponse, 0, len(employees))
 	for _, emp := range employees {
 		r := dto.EmployeeResponse{
@@ -148,6 +148,15 @@ func buildEmployeeListResponse(employees []*domain.EmployeeWithProjects, accessi
 				r.BankAccountNumber = ""
 				r.BankAccountName = ""
 			}
+		}
+
+		// Scoped-partner annotation: flag rows the partner manages via an
+		// employee_users claim — the only rows the self-service remove action
+		// applies to (created and project-visible rows cannot leave the list
+		// through a claim release).
+		if claimedIDs != nil {
+			claimed := claimedIDs[emp.ID]
+			r.IsClaimed = &claimed
 		}
 
 		for _, p := range emp.CurrentProjects {
@@ -239,7 +248,26 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 		}
 	}
 
-	employeeResponses := buildEmployeeListResponse(employees, accessibleIDs, globalPool)
+	// For the scoped partner list, resolve the partner's claim set so rows can
+	// carry is_claimed (drives the self-service remove affordance).
+	claimedIDs := map[uint]bool{}
+	if !globalPool && h.employeePermissionService != nil {
+		uid, err := h.validator.ValidateUserContext(c)
+		if err != nil {
+			response.HandleDomainError(c, err)
+			return
+		}
+		ids, err := h.employeePermissionService.ListClaimedEmployeeIDs(c.Request.Context(), uid)
+		if err != nil {
+			response.InternalServerError(c, constants.MsgFailedToListEmployeesVN)
+			return
+		}
+		for _, id := range ids {
+			claimedIDs[id] = true
+		}
+	}
+
+	employeeResponses := buildEmployeeListResponse(employees, accessibleIDs, globalPool, claimedIDs)
 	pagination := helpers.CalculatePagination(page, pageSize, total)
 
 	if len(employeeResponses) == 0 {
@@ -288,7 +316,7 @@ func (h *Handler) GetEmployeesMissingMobile(c *gin.Context) {
 		return
 	}
 
-	employeeResponses := buildEmployeeListResponse(employees, nil, false)
+	employeeResponses := buildEmployeeListResponse(employees, nil, false, nil)
 	pagination := helpers.CalculatePagination(page, pageSize, total)
 
 	if len(employeeResponses) == 0 {

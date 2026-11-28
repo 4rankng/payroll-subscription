@@ -124,7 +124,7 @@ func NewEmployeeAccessGrantedEvent(ctx context.Context, employeeID uint, employe
 }
 
 // NewEmployeeAccessRevokedEvent creates an EmployeeAccessRevokedEvent
-func NewEmployeeAccessRevokedEvent(ctx context.Context, employeeID uint, employeeName, projectName string, projectID uint, revokedBy uint, actorFullName string) EmployeeAccessRevokedEvent {
+func NewEmployeeAccessRevokedEvent(ctx context.Context, employeeID uint, employeeName, projectName string, projectID uint, revokedUserID, revokedBy uint, actorFullName string) EmployeeAccessRevokedEvent {
 	auditMessage := BuildEventAuditMessage(
 		AuditActionDelete,
 		EntityTypeEmployeeUser,
@@ -134,11 +134,12 @@ func NewEmployeeAccessRevokedEvent(ctx context.Context, employeeID uint, employe
 	)
 
 	return EmployeeAccessRevokedEvent{
-		BaseEvent:    newBaseEventWithActor(ctx, "EmployeeAccessRevoked", employeeID, revokedBy, AuditActionDelete, EntityTypeEmployeeUser, auditMessage),
-		EmployeeID:   employeeID,
-		EmployeeName: employeeName,
-		ProjectID:    projectID,
-		ProjectName:  projectName,
-		RevokedBy:    revokedBy,
+		BaseEvent:     newBaseEventWithActor(ctx, "EmployeeAccessRevoked", employeeID, revokedBy, AuditActionDelete, EntityTypeEmployeeUser, auditMessage),
+		EmployeeID:    employeeID,
+		EmployeeName:  employeeName,
+		ProjectID:     projectID,
+		ProjectName:   projectName,
+		RevokedBy:     revokedBy,
+		RevokedUserID: revokedUserID,
 	}
 }
