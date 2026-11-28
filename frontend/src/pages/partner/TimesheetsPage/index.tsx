@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { TimesheetMonthSelector } from "@/components/timesheet/TimesheetMonthSelector";
 import { TimesheetFilters } from "@/components/timesheet/TimesheetFilters";
 import { TimesheetListTable } from "@/components/timesheet/TimesheetListTable";
@@ -7,6 +8,7 @@ import { TimesheetMobileList } from "@/components/timesheet/TimesheetMobileList"
 import { TimesheetProvider } from "@/components/timesheet/TimesheetContext";
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useTimesheetManagement } from "@/hooks/timesheet/useTimesheetManagement";
 import { useEmployeeModals, useTimesheetModals } from "@/hooks/useModalNavigation";
 import { useTimesheetStatsConfig } from "@/hooks/useTimesheetStatsConfig";
@@ -15,6 +17,7 @@ import {
   CheckCircle,
   ClipboardCheck,
   Clock,
+  Download01,
   FilterLines,
   Users01,
   Wallet01,
@@ -22,6 +25,10 @@ import {
 import { BCCUploadModal } from "@/components/timesheet/BCCUploadModal";
 import { UploadHistorySheet } from "@/components/timesheet/UploadHistorySheet";
 import { PartnerTimesheetActions } from "@/components/timesheet/PartnerTimesheetActions";
+import { TransferUploadPanel } from "@/components/billing/TransferUploadPanel";
+import { billingKeys } from "@/hooks/api/useBilling";
+import { billingService } from "@/services/api/billing.service";
+import { useAuth } from "@/contexts";
 import { cn } from "@/lib/utils";
 import type { Employee } from "@/types/api/employee.types";
 import type { Timesheet } from "@/types/api/timesheet.types";
@@ -216,6 +223,30 @@ export default function TimesheetsPage() {
     ? currentMonthStr
     : timesheetManagement.selectedMonth;
 
+  // Bank-transfer workflow (ketoan only): export the bulk-transfer file for
+  // the selected month and upload the bank's result workbook for reconciliation.
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const isKetoan = user?.role === "ketoan";
+
+  const bankTransferExport = useMutation({
+    mutationFn: async () => {
+      const blob = await billingService.exportBankTransferHistories({ month: displayMonth });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `chuyen-khoan-${displayMonth}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    },
+  });
+
+  const handleTransferUploaded = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: billingKeys.all });
+  }, [queryClient]);
+
   const statsFilters = useMemo(() => ({
     project_id: timesheetManagement.selectedProject !== "all" ? parseInt(timesheetManagement.selectedProject) : undefined,
     fromDate: displayMonth ? `${displayMonth}-01` : undefined,
@@ -363,6 +394,34 @@ export default function TimesheetsPage() {
             onUploadBcc={() => setBccUploadOpen(true)}
           />
         </div>
+
+        {/* Chuyển khoản ngân hàng — ketoan only: bulk-transfer export + result upload */}
+        {isKetoan && (
+          <div className="rounded-xl border border-input bg-card shadow-xs motion-safe:animate-fade-in-up [animation-delay:130ms] [animation-fill-mode:both]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/55 bg-muted/25 px-3 py-2 sm:px-4">
+              <div>
+                <p className="text-[12px] font-bold text-foreground">Chuyển khoản ngân hàng</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Xuất file chuyển khoản hàng loạt tháng {displayMonth} và tải lên kết quả đối soát từ ngân hàng
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void bankTransferExport.mutateAsync()}
+                disabled={bankTransferExport.isPending}
+                className="h-8 gap-1.5 text-xs"
+              >
+                <Download01 className="h-3.5 w-3.5" aria-hidden="true" />
+                {bankTransferExport.isPending ? "Đang xuất..." : "Xuất file chuyển khoản"}
+              </Button>
+            </div>
+            <div className="px-3 py-3 sm:px-4">
+              <TransferUploadPanel workMonth={displayMonth} onUploaded={handleTransferUploaded} />
+            </div>
+          </div>
+        )}
 
 
         {/* Filters + Table */}

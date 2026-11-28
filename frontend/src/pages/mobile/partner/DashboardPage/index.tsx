@@ -161,11 +161,6 @@ const PartnerDashboardMobile = () => {
       icon: ClipboardList,
       onClick: () => navigate('/partner/timesheet'),
     },
-    {
-      label: 'Thanh toán',
-      icon: Wallet,
-      onClick: () => navigate('/partner/billing'),
-    },
   ], [navigate]);
 
   const operationMetrics = useMemo<MobileOperationMetric[]>(() => [

@@ -11,7 +11,6 @@ import {
   FileCheck01,
   Grid01,
   Users01,
-  Wallet01,
 } from "@untitledui/icons";
 import type { AppRole } from "@/lib/auth";
 
@@ -38,7 +37,6 @@ export const PARTNER_NAV_ITEMS: PartnerNavItem[] = [
   { title: "Lịch sử trả lương", icon: FileCheck01, path: "/partner/payment-history", roles: ALL_STAFF },
   // PAYR-41: company transfer ledger + sao kê export/email.
   { title: "Sổ cái", icon: BookOpen01, path: "/partner/ledger", end: true, roles: ["ketoan", "giamdoc"] },
-  { title: "Thanh toán", icon: Wallet01, path: "/partner/billing", end: true, roles: ["quanly"] },
 ];
 
 export const partnerNavItems = (role?: string): PartnerNavItem[] =>

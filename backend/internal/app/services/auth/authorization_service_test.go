@@ -334,3 +334,25 @@ func TestFinanceRoles_ProjectSubresourceRead(t *testing.T) {
 		}
 	}
 }
+
+// TestKetoanRole_BankTransferUpload asserts ketoan can run the bank-transfer
+// workflow from Bảng công — export the bulk-transfer file (read) and upload
+// the bank's result workbook — while giamdoc and nhanvien stay write-denied
+// on the upload endpoint.
+func TestKetoanRole_BankTransferUpload(t *testing.T) {
+	svc := newTestAuthorizationService(t)
+
+	assert.True(t, svc.CanAccess("ketoan", "/api/v1/billing/uploads", "POST"),
+		"ketoan should be allowed POST /billing/uploads (upload bank-transfer result)")
+	assert.True(t, svc.CanAccess("ketoan", "/api/v1/billing/uploads", "GET"),
+		"ketoan should be allowed GET /billing/uploads (upload history)")
+	assert.True(t, svc.CanAccess("ketoan", "/api/v1/payrolls/bank-transfer-histories/export", "GET"),
+		"ketoan should be allowed GET /payrolls/bank-transfer-histories/export (bulk-transfer file)")
+
+	assert.False(t, svc.CanAccess("giamdoc", "/api/v1/billing/uploads", "POST"),
+		"giamdoc should be DENIED POST /billing/uploads")
+	assert.False(t, svc.CanAccess("nhanvien", "/api/v1/billing/uploads", "POST"),
+		"nhanvien should be DENIED POST /billing/uploads")
+	assert.False(t, svc.CanAccess("nhanvien", "/api/v1/billing/uploads", "GET"),
+		"nhanvien should be DENIED GET /billing/uploads")
+}

@@ -136,6 +136,9 @@ p, ketoan, /api/v1/projects/*, GET, allow
 p, ketoan, /api/v1/billing/reports, GET, allow
 p, ketoan, /api/v1/billing/ky-paid-records, GET, allow
 p, ketoan, /api/v1/billing/uploads, GET, allow
+# Ketoan runs the bank-transfer workflow on Bảng công: upload the bank's
+# result workbook for reconciliation.
+p, ketoan, /api/v1/billing/uploads, POST, allow
 p, ketoan, /api/v1/billing/dashboard/*, GET, allow
 # Sao kê (PRD §5.8, PAYR-41): statement export, recipients and email.
 p, ketoan, /api/v1/billing/saoke/export, GET, allow

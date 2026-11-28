@@ -41,7 +41,6 @@ const FeeInsightsPage = lazy(() => import("./pages/partner/OverviewPage"));
 const FeeInsightsPageMobile = lazy(() =>
   import("./pages/partner/OverviewPage/Mobile").then((m) => ({ default: m.FeeInsightsPageMobile })),
 );
-const PartnerBillingPage = lazy(() => import("./pages/partner/BillingPage"));
 const PartnerLedgerPage = lazy(() => import("./pages/partner/LedgerPage"));
 const PartnerLedgerPageMobile = lazy(() => import("./pages/mobile/partner/LedgerPage"));
 const PartnerPaymentHistoryPage = lazy(() => import("./pages/partner/PaymentHistoryPage"));
@@ -257,7 +256,6 @@ const AppContent = () => {
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
           <Route path="timesheet" element={<ResponsivePage desktopComponent={PartnerTimesheetsPage} mobileComponent={PartnerTimesheetsPageMobile} />} />
-          <Route path="billing" element={<ResponsivePage desktopComponent={PartnerBillingPage} mobileComponent={PartnerBillingPage} />} />
           {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
           <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
           {/* PRD §5.7: Lịch sử trả lương — payment history (quanly/ketoan/giamdoc). */}
