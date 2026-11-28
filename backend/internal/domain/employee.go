@@ -59,20 +59,20 @@ func strPtrToStr(p *string) string {
 
 // Employee represents an employee in the domain
 type Employee struct {
-	ID        uint      `json:"id" gorm:"primarykey;type:bigint unsigned"`
-	Fullname  string    `json:"fullname" gorm:"type:varchar(255);not null"`
-	Email     *string   `json:"email" gorm:"type:varchar(255)"`
-	CCCD      string    `json:"cccd" gorm:"type:varchar(255);not null;comment:'Citizen ID - Can cuoc cong dan (12 digits)'"`
-	Address   string    `json:"address" gorm:"type:text"`
-	Mobile    string    `json:"mobile" gorm:"type:varchar(15)"`
+	ID                uint       `json:"id" gorm:"primarykey;type:bigint unsigned"`
+	Fullname          string     `json:"fullname" gorm:"type:varchar(255);not null"`
+	Email             *string    `json:"email" gorm:"type:varchar(255)"`
+	CCCD              string     `json:"cccd" gorm:"type:varchar(255);not null;comment:'Citizen ID - Can cuoc cong dan (12 digits)'"`
+	Address           string     `json:"address" gorm:"type:text"`
+	Mobile            string     `json:"mobile" gorm:"type:varchar(15)"`
 	BankID            *uint      `json:"bank_id" gorm:"type:bigint unsigned"`
 	BankAccountNumber string     `json:"bank_account_number" gorm:"type:varchar(30)"`
 	BankAccountName   string     `json:"bank_account_name" gorm:"type:varchar(255)"`
 	DateOfBirth       *time.Time `json:"date_of_birth" gorm:"type:date"`
-	UserID    *uint     `json:"user_id" gorm:"type:bigint unsigned;index"`
-	CreatedBy uint      `json:"created_by" gorm:"not null;type:bigint unsigned"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	UserID            *uint      `json:"user_id" gorm:"type:bigint unsigned;index"`
+	CreatedBy         uint       `json:"created_by" gorm:"not null;type:bigint unsigned"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
 
 	// Relationships
 	Bank    *Bank `json:"bank,omitempty" gorm:"foreignKey:BankID"`

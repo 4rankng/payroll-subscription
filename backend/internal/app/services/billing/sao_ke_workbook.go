@@ -406,8 +406,18 @@ func renderSaoKeSummarySheet(f *excelize.File, sheet string, data *SaoKeData, st
 // template: the heading block, the aggregated payment table and the
 // per-timesheet detail section.
 func renderSaoKeProjectSheet(f *excelize.File, sheet string, cycle SaoKeCycle, group SaoKeProjectGroup, styles saoKeStyles) error {
-	if err := f.SetCellValue(sheet, "A1", group.ProjectName); err != nil {
-		return err
+	widths := newSaoKeWidths(8)
+
+	heading := []struct {
+		row   int
+		label string
+		value any
+		vnd   bool
+	}{
+		{1, "T\u00ean d\u1ef1 \u00e1n", group.ProjectName, false},
+		{2, "T\u1ed5ng nh\u00e2n vi\u00ean", len(group.Payments), false},
+		{3, "K\u1ef3 l\u01b0\u01a1ng th\u00e1ng", saoKyWindowLabel(cycle), false},
+		{4, "T\u1ed5ng ti\u1ec1n \u1ee9ng", group.Total, true},
 	}
 	for _, h := range heading {
 		labelCell, _ := excelize.CoordinatesToCellName(1, h.row)

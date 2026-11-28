@@ -1,8 +1,12 @@
 package billing
 
 import (
+	"archive/zip"
 	"bytes"
+	"io"
+	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,12 +32,17 @@ func saoKeTestData() *SaoKeData {
 		To:        time.Date(2026, 11, 20, 0, 0, 0, 0, time.UTC),
 	}
 	return &SaoKeData{
-		Cycle:        cycle,
-		ReportDate:   time.Date(2026, 11, 28, 0, 0, 0, 0, time.UTC),
-		Rows:         rows,
-		Groups:       []SaoKeProjectGroup{{ProjectID: 7, ProjectName: "Dự án Alpha", EmployeeCount: 2, Total: 1323567, Rows: rows}},
-		Total:        1323567,
-		TimesheetIDs: []uint{11, 12},
+		Cycle:      cycle,
+		ReportDate: time.Date(2026, 11, 28, 0, 0, 0, 0, time.UTC),
+		Rows:       rows,
+		Groups: []SaoKeProjectGroup{{ProjectID: 7, ProjectName: "Dự án Alpha", EmployeeCount: 2, Total: 1050000, Rows: rows, Payments: aggregateSaoKePayments(rows), TimesheetRows: []SaoKeTimesheetRow{
+			{TimesheetID: 11, EmployeeName: "Nguyễn Văn An", WorkDate: "20/10/2026", Position: "phổ thông", DayType: "ngày thường", Shift: "06:00-14:00", Hours: 8, Amount: 300000},
+			{TimesheetID: 12, EmployeeName: "Nguyễn Văn An", WorkDate: "25/10/2026", Position: "phổ thông", DayType: "ngày nghỉ", Shift: "tăng ca", Hours: 4, Amount: 225000},
+			{TimesheetID: 13, EmployeeName: "Nguyễn Văn An", WorkDate: "26/10/2026", Position: "phổ thông", DayType: "ngày thường", Shift: "tăng ca", Hours: 4, Amount: 225000},
+			{TimesheetID: 14, EmployeeName: "Trần Thị Bình", WorkDate: "21/10/2026", Position: "phổ thông", DayType: "ngày thường", Shift: "06:00-14:00", Hours: 8, Amount: 300000},
+		}}},
+		Total:        1050000,
+		TimesheetIDs: []uint{11, 12, 13, 14},
 	}
 }
 
@@ -285,5 +294,184 @@ func TestSaoKeWorkbookProjectSheet(t *testing.T) {
 	props, err := f.GetSheetProps(sheet)
 	if err != nil || props.TabColorRGB == nil || *props.TabColorRGB != "2E75B6" {
 		t.Fatalf("project tab color = %+v (err %v), want 2E75B6", props.TabColorRGB, err)
+	}
+}
+
+// saoKeStyle resolves the style of one cell.
+func saoKeStyle(t *testing.T, f *excelize.File, sheet, cell string) *excelize.Style {
+	t.Helper()
+	id, err := f.GetCellStyle(sheet, cell)
+	if err != nil {
+		t.Fatalf("cell style %s!%s: %v", sheet, cell, err)
+	}
+	s, err := f.GetStyle(id)
+	if err != nil || s == nil {
+		t.Fatalf("style %d (%s!%s): %v", id, sheet, cell, err)
+	}
+	return s
+}
+
+// saoKeARGB normalises excelize colour strings ("FF1F3864" or "1F3864") for
+// comparison against the style constants.
+func saoKeARGB(c string) string {
+	c = strings.ToUpper(c)
+	if len(c) == 8 {
+		return c[2:]
+	}
+	return c
+}
+
+func saoKeAssertBold(t *testing.T, f *excelize.File, sheet, cell string) {
+	t.Helper()
+	if s := saoKeStyle(t, f, sheet, cell); s.Font == nil || !s.Font.Bold {
+		t.Fatalf("%s!%s font = %+v, want bold", sheet, cell, s.Font)
+	}
+}
+
+// saoKeAssertBorder pins the thin B7C3D0 border of a region cell.
+func saoKeAssertBorder(t *testing.T, f *excelize.File, sheet, cell string) {
+	t.Helper()
+	s := saoKeStyle(t, f, sheet, cell)
+	if len(s.Border) != 4 {
+		t.Fatalf("%s!%s borders = %+v, want all four sides", sheet, cell, s.Border)
+	}
+	for _, b := range s.Border {
+		if b.Style != 1 || saoKeARGB(b.Color) != saoKeBorderColor {
+			t.Fatalf("%s!%s border = %+v, want thin %s", sheet, cell, b, saoKeBorderColor)
+		}
+	}
+}
+
+// saoKeAssertHeader pins AC-01/AC-02 header styling: bold white text on the
+// navy fill, thin light borders on all sides.
+func saoKeAssertHeader(t *testing.T, f *excelize.File, sheet, cell string) {
+	t.Helper()
+	s := saoKeStyle(t, f, sheet, cell)
+	if s.Font == nil || !s.Font.Bold || saoKeARGB(s.Font.Color) != "FFFFFF" {
+		t.Fatalf("%s!%s header font = %+v, want bold white", sheet, cell, s.Font)
+	}
+	if len(s.Fill.Color) == 0 || saoKeARGB(s.Fill.Color[0]) != saoKeNavy {
+		t.Fatalf("%s!%s header fill = %+v, want %s", sheet, cell, s.Fill, saoKeNavy)
+	}
+	saoKeAssertBorder(t, f, sheet, cell)
+}
+
+func saoKeAssertNumFmt(t *testing.T, f *excelize.File, sheet, cell, want string) {
+	t.Helper()
+	s := saoKeStyle(t, f, sheet, cell)
+	if s.CustomNumFmt == nil || *s.CustomNumFmt != want {
+		t.Fatalf("%s!%s numfmt = %+v, want %q", sheet, cell, s.CustomNumFmt, want)
+	}
+}
+
+// saoKeFilterRefs collects the workbook's auto-filter ranges from the sheet
+// XML (excelize exposes no getter for them).
+func saoKeFilterRefs(t *testing.T, raw []byte) []string {
+	t.Helper()
+	zr, err := zip.NewReader(bytes.NewReader(raw), int64(len(raw)))
+	if err != nil {
+		t.Fatalf("zip: %v", err)
+	}
+	re := regexp.MustCompile(`<autoFilter ref="([^"]+)"`)
+	var refs []string
+	for _, file := range zr.File {
+		if !strings.HasPrefix(file.Name, "xl/worksheets/sheet") {
+			continue
+		}
+		rc, err := file.Open()
+		if err != nil {
+			t.Fatalf("open %s: %v", file.Name, err)
+		}
+		xml, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			t.Fatalf("read %s: %v", file.Name, err)
+		}
+		for _, m := range re.FindAllStringSubmatch(string(xml), -1) {
+			refs = append(refs, m[1])
+		}
+	}
+	return refs
+}
+
+// TestSaoKeWorkbookStyleContract pins the template's visual contract:
+// header fills/fonts, thin region borders, number formats, the bold fonts kept
+// on the titles, heading totals and INTERNAL marker, and auto-filters that
+// cover exactly the payment table.
+func TestSaoKeWorkbookStyleContract(t *testing.T) {
+	data := saoKeTestData() // 3 payment rows: project 9–11; timesheet section 14–19
+	raw, _, err := renderSaoKeWorkbook(data)
+	if err != nil {
+		t.Fatalf("renderSaoKeWorkbook: %v", err)
+	}
+	f, err := excelize.OpenReader(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer f.Close()
+	summary, project := "Summary", "Dự án Alpha"
+
+	// summary: header row, borders, ₫ format on the project totals, bold title
+	saoKeAssertHeader(t, f, summary, "A3")
+	saoKeAssertHeader(t, f, summary, "E3")
+	saoKeAssertNumFmt(t, f, summary, "E4", saoKeMoneyVndFmt)
+	saoKeAssertBold(t, f, summary, "A1")
+	saoKeAssertBorder(t, f, summary, "A4")
+	saoKeAssertBorder(t, f, summary, "E4")
+
+	// project: heading total bold ₫ in C4, header row 8, CCCD text, borders
+	saoKeAssertHeader(t, f, project, "A8")
+	saoKeAssertHeader(t, f, project, "E8")
+	saoKeAssertNumFmt(t, f, project, "C9", saoKeTextFmt)
+	saoKeAssertNumFmt(t, f, project, "E9", saoKeMoneyVndFmt)
+	saoKeAssertNumFmt(t, f, project, "C4", saoKeMoneyVndFmt)
+	saoKeAssertBold(t, f, project, "C4")
+	saoKeAssertBold(t, f, project, "A1")
+	saoKeAssertBold(t, f, project, "A4")
+	saoKeAssertBorder(t, f, project, "B9")
+	saoKeAssertBorder(t, f, project, "F9")
+
+	// timesheet section: header row and bordered detail cells
+	saoKeAssertHeader(t, f, project, "A15")
+	saoKeAssertBorder(t, f, project, "H16")
+
+	// auto-filters cover the summary and the payment table exactly
+	refs := saoKeFilterRefs(t, raw)
+	for i, got := range refs {
+		refs[i] = strings.ReplaceAll(got, "$", "")
+	}
+	for _, want := range []string{"A3:E4", "A8:F11"} {
+		found := false
+		for _, got := range refs {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("auto-filter refs = %v, want %q included", refs, want)
+		}
+	}
+}
+
+func TestAggregateSaoKePayments(t *testing.T) {
+	rows := []SaoKeRow{
+		{TimesheetID: 2, EmployeeID: 1, EmployeeName: "B", Amount: 100, PaymentDate: "02/11/2026"},
+		{TimesheetID: 1, EmployeeID: 1, EmployeeName: "B", Amount: 200, PaymentDate: "02/11/2026"},
+		{TimesheetID: 3, EmployeeID: 1, EmployeeName: "B", Amount: 50, PaymentDate: "01/11/2026"},
+		{TimesheetID: 4, EmployeeID: 2, EmployeeName: "A", Amount: 10},
+	}
+	got := aggregateSaoKePayments(rows)
+	if len(got) != 3 {
+		t.Fatalf("payments = %d rows, want 3", len(got))
+	}
+	// A's blank-date row first (name), then B by real date order (01/11 before 02/11)
+	if got[0].EmployeeName != "A" || got[0].PaymentDate != "" || got[0].Amount != 10 {
+		t.Fatalf("row 0 = %+v", got[0])
+	}
+	if got[1].PaymentDate != "01/11/2026" || got[1].Amount != 50 {
+		t.Fatalf("row 1 = %+v", got[1])
+	}
+	if got[2].PaymentDate != "02/11/2026" || got[2].Amount != 300 {
+		t.Fatalf("row 2 = %+v, want 100+200 summed", got[2])
 	}
 }

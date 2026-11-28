@@ -43,6 +43,17 @@ func renderBillingWorkbook(workMonth string, fee int64, lines []domain.BillingRe
 			return nil, err
 		}
 	}
+	if err := f.SetCellStyle(summary, "A3", "D3", styles.header); err != nil {
+		return nil, err
+	}
+	if err := f.SetRowHeight(summary, 3, 24); err != nil {
+		return nil, fmt.Errorf("billing report: summary header height: %w", err)
+	}
+
+	widths := newSaoKeWidths(4)
+	for _, header := range headers {
+		widths.add(0+1, header, false)
+	}
 	rowIdx := 4
 	lineStyles := []int{styles.center, styles.center, styles.money, styles.money}
 	for _, line := range lines {
