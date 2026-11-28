@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -7,9 +7,7 @@ import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSel
 import {
   PayrollReportEmailDialog,
   PayrollReportExportDialog,
-  SaokeRecipientsDialog,
 } from '@/components/dialogs';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -19,10 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useLedgerBatches, useSaokeRecipients } from '@/hooks/api/useSaoke';
+import { useLedgerBatches } from '@/hooks/api/useSaoke';
 import { getConsoleKicker } from '@/lib/console';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
-import { seedSaokeRecipients } from '@/utils/saoke';
 
 const currentWorkMonth = (): string => {
   const now = new Date();
@@ -36,25 +33,17 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 };
 
 /**
- * Sổ cái (ketoan/giamdoc): company transfer-upload batches with the
- * money they settled, plus the sao kê export/email flows and their recipient
- * lists.
+ * Sổ cái (admin/ketoan/giamdoc): company transfer-upload batches with the
+ * money they settled, plus the sao kê export/email flows. The email dialog
+ * owns the recipient config.
  */
 const LedgerPage = () => {
   const location = useLocation();
   const [workMonth, setWorkMonth] = useState(currentWorkMonth);
   const [exportOpen, setExportOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
-  const [recipientsOpen, setRecipientsOpen] = useState(false);
 
   const { batches, summary, isLoading, isError } = useLedgerBatches(workMonth);
-  const recipientsQuery = useSaokeRecipients();
-  // Same hydration the Chỉnh sửa dialog applies (canned defaults on first
-  // run) so the card can never contradict the dialog it opens.
-  const recipients = useMemo(
-    () => (recipientsQuery.data === undefined ? undefined : seedSaokeRecipients(recipientsQuery.data)),
-    [recipientsQuery.data],
-  );
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-3 p-3 sm:p-4">
@@ -140,41 +129,8 @@ const LedgerPage = () => {
         </div>
       </ConsolePanel>
 
-      <ConsolePanel
-        kicker="GỬI SAO KÊ"
-        title="Danh sách người nhận"
-        description="Địa chỉ To/CC dùng cho email sao kê."
-        actions={
-          <Button size="sm" variant="outline" onClick={() => setRecipientsOpen(true)}>
-            Chỉnh sửa
-          </Button>
-        }
-      >
-        {recipientsQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Đang tải...</p>
-        ) : recipientsQuery.isError ? (
-          <p className="text-sm text-destructive">Không thể tải danh sách người nhận. Hãy thử lại.</p>
-        ) : !recipients || (recipients.to.length === 0 && recipients.cc.length === 0) ? (
-          <p className="text-sm text-muted-foreground">
-            Chưa cấu hình người nhận. Bấm “Chỉnh sửa” để thiết lập.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <div>
-              <p className="console-kicker">To</p>
-              <p className="break-all text-sm text-foreground">{recipients.to.join(', ') || '—'}</p>
-            </div>
-            <div>
-              <p className="console-kicker">CC</p>
-              <p className="break-all text-sm text-foreground">{recipients.cc.join(', ') || '—'}</p>
-            </div>
-          </div>
-        )}
-      </ConsolePanel>
-
       <PayrollReportExportDialog open={exportOpen} onOpenChange={setExportOpen} summary={summary} />
       <PayrollReportEmailDialog open={emailOpen} onOpenChange={setEmailOpen} summary={summary} />
-      <SaokeRecipientsDialog open={recipientsOpen} onOpenChange={setRecipientsOpen} />
     </div>
   );
 };

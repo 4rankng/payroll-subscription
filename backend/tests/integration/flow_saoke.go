@@ -10,7 +10,8 @@ import (
 const flowSaoKe = "SaoKe"
 
 // Dev-seed role credentials (seed.EnsureDevUsers, non-production only): the
-// sao kê surface belongs to ketoan + giamdoc (PRD §5.8, casbin policy).
+// sao kê surface belongs to admin + ketoan + giamdoc (PRD §5.8, casbin
+// policy — admin via the /api/* wildcard).
 const (
 	saoKeKetoanUser  = "ketoan"
 	saoKeGiamdocUser = "giamdoc"
@@ -156,6 +157,27 @@ func runSaoKeTests(client *APIClient, data *TestData, reporter *Reporter) {
 		}
 		if len(got.Recipients) != 1 || got.Recipients[0] != saoKeTestEmail {
 			return fmt.Errorf("recipients want [%s], got %v", saoKeTestEmail, got.Recipients)
+		}
+		return nil
+	})
+
+	// Admin holds the same grants via the /api/* casbin wildcard: the Sổ cái
+	// recipients config is editable by ketoan, giamdoc and admin.
+	reporter.RunTest(flowSaoKe, "Admin reads and updates the persisted recipients", func() error {
+		want := saoKeRecipientsPayload{Recipients: []string{saoKeTestEmail}, CC: []string{saoKeTestCC}}
+		var saved saoKeRecipientsPayload
+		if _, err := admin.PutInto("/api/v1/billing/saoke/recipients", want, &saved); err != nil {
+			return fmt.Errorf("PUT recipients as admin: %w", err)
+		}
+		var got saoKeRecipientsPayload
+		if _, err := admin.GetInto("/api/v1/billing/saoke/recipients", &got); err != nil {
+			return fmt.Errorf("GET recipients as admin: %w", err)
+		}
+		if len(got.Recipients) != 1 || got.Recipients[0] != saoKeTestEmail {
+			return fmt.Errorf("recipients want [%s], got %v", saoKeTestEmail, got.Recipients)
+		}
+		if len(got.CC) != 1 || got.CC[0] != saoKeTestCC {
+			return fmt.Errorf("cc want [%s], got %v", saoKeTestCC, got.CC)
 		}
 		return nil
 	})

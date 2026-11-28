@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagInput } from '@/components/ui/tag-input';
-import { useSaokeRecipients, useSendSaokeEmail } from '@/hooks/api/useSaoke';
+import { useSaokeRecipients, useSendSaokeEmail, useUpdateSaokeRecipients } from '@/hooks/api/useSaoke';
 import { validateEmail } from '@/utils/validators';
 import { seedSaokeRecipients, type SaokeSummary } from '@/utils/saoke';
 import { SaokePreviewPanel } from '@/components/dialogs/SaokePreviewPanel';
@@ -26,6 +26,9 @@ interface PayrollReportEmailDialogProps {
 /**
  * Gửi sao kê qua email: report date (required), To (min 1) and CC chip
  * lists prefilled from the persisted recipients, preview, then send.
+ * To/CC edited here persist as the default recipient list — the update
+ * (PUT /billing/saoke/recipients) runs before the send, so this dialog is
+ * the single config surface for the sao kê email recipients.
  */
 export function PayrollReportEmailDialog({
   open,
@@ -43,6 +46,7 @@ export function PayrollReportEmailDialog({
 
   const recipientsQuery = useSaokeRecipients();
   const sendEmail = useSendSaokeEmail();
+  const updateRecipients = useUpdateSaokeRecipients();
 
   // Prefill To/CC from the persisted lists (seeded defaults on first run)
   // until the user edits them for this email.
@@ -57,10 +61,18 @@ export function PayrollReportEmailDialog({
     setCc(seeded.cc);
   }, [open, dirty, recipientsQuery.data]);
 
-  const canSend = reportDate.length > 0 && to.length > 0 && !sendEmail.isPending;
+  const canSend =
+    reportDate.length > 0 &&
+    to.length > 0 &&
+    !sendEmail.isPending &&
+    !updateRecipients.isPending;
 
   const handleSend = async () => {
     try {
+      // The dialog is the recipients config surface: persist the edited
+      // To/CC as the default list before sending. If the send then fails the
+      // saved list stays (intentional).
+      await updateRecipients.mutateAsync({ to, cc });
       await sendEmail.mutateAsync({
         report_date: reportDate,
         to,
@@ -124,7 +136,7 @@ export function PayrollReportEmailDialog({
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
               placeholder="Nhập email..."
-              disabled={sendEmail.isPending}
+              disabled={sendEmail.isPending || updateRecipients.isPending}
             />
             {to.length === 0 && (
               <p role="alert" className="mt-1.5 text-xs text-destructive">
@@ -150,8 +162,11 @@ export function PayrollReportEmailDialog({
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
               placeholder="Nhập email..."
-              disabled={sendEmail.isPending}
+              disabled={sendEmail.isPending || updateRecipients.isPending}
             />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Danh sách To/CC được lưu làm mặc định cho lần gửi sau.
+            </p>
           </div>
 
           {showPreview && <SaokePreviewPanel summary={summary} reportDate={reportDate} />}
@@ -172,7 +187,7 @@ export function PayrollReportEmailDialog({
               Xem sao kê
             </Button>
             <Button type="button" onClick={handleSend} disabled={!canSend}>
-              {sendEmail.isPending ? 'Đang gửi...' : 'Gửi email'}
+              {sendEmail.isPending || updateRecipients.isPending ? 'Đang gửi...' : 'Gửi email'}
             </Button>
           </div>
         </DialogFooter>

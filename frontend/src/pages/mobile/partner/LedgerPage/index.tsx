@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { MobilePageShell, MobileSurface } from '@/components/shared/MobilePageShell';
 import { MobilePageHeader } from '@/components/shared/MobilePageHeader';
@@ -6,13 +6,11 @@ import { TimesheetMonthSelector } from '@/components/timesheet/TimesheetMonthSel
 import {
   PayrollReportEmailDialog,
   PayrollReportExportDialog,
-  SaokeRecipientsDialog,
 } from '@/components/dialogs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useLedgerBatches, useSaokeRecipients } from '@/hooks/api/useSaoke';
+import { useLedgerBatches } from '@/hooks/api/useSaoke';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
-import { seedSaokeRecipients } from '@/utils/saoke';
 
 const currentWorkMonth = (): string => {
   const now = new Date();
@@ -27,22 +25,15 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 
 /**
  * Sổ cái mobile: same data and actions as the desktop page —
- * transfer batches, sao kê export/email, recipient lists.
+ * transfer batches and sao kê export/email. The email dialog owns the
+ * recipient config.
  */
 const LedgerPageMobile = () => {
   const [workMonth, setWorkMonth] = useState(currentWorkMonth);
   const [exportOpen, setExportOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
-  const [recipientsOpen, setRecipientsOpen] = useState(false);
 
   const { batches, summary, isLoading, isError } = useLedgerBatches(workMonth);
-  const recipientsQuery = useSaokeRecipients();
-  // Same hydration the Chỉnh sửa dialog applies (canned defaults on first
-  // run) so the card can never contradict the dialog it opens.
-  const recipients = useMemo(
-    () => (recipientsQuery.data === undefined ? undefined : seedSaokeRecipients(recipientsQuery.data)),
-    [recipientsQuery.data],
-  );
 
   return (
     <MobilePageShell>
@@ -132,58 +123,10 @@ const LedgerPageMobile = () => {
               })}
           </div>
         </MobileSurface>
-
-        <MobileSurface>
-          <div className="space-y-3 p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="console-kicker">GỬI SAO KÊ</p>
-                <h2 className="font-display text-[13px] font-semibold text-foreground">
-                  Danh sách người nhận
-                </h2>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  Địa chỉ To/CC dùng cho email sao kê.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="min-h-11 shrink-0 sm:min-h-9"
-                onClick={() => setRecipientsOpen(true)}
-              >
-                Chỉnh sửa
-              </Button>
-            </div>
-
-            {recipientsQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Đang tải...</p>
-            ) : recipientsQuery.isError ? (
-              <p className="text-sm text-destructive">
-                Không thể tải danh sách người nhận. Hãy thử lại.
-              </p>
-            ) : !recipients || (recipients.to.length === 0 && recipients.cc.length === 0) ? (
-              <p className="text-sm text-muted-foreground">
-                Chưa cấu hình người nhận. Bấm “Chỉnh sửa” để thiết lập.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                <div>
-                  <p className="console-kicker">To</p>
-                  <p className="break-all text-sm text-foreground">{recipients.to.join(', ') || '—'}</p>
-                </div>
-                <div>
-                  <p className="console-kicker">CC</p>
-                  <p className="break-all text-sm text-foreground">{recipients.cc.join(', ') || '—'}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </MobileSurface>
       </div>
 
       <PayrollReportExportDialog open={exportOpen} onOpenChange={setExportOpen} summary={summary} />
       <PayrollReportEmailDialog open={emailOpen} onOpenChange={setEmailOpen} summary={summary} />
-      <SaokeRecipientsDialog open={recipientsOpen} onOpenChange={setRecipientsOpen} />
     </MobilePageShell>
   );
 };
