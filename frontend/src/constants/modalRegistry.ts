@@ -69,7 +69,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Xem và chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin', 'quanly', 'giamdoc'],
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/sheets/UserDetailsSheet',
     hasParams: true,
     paramSchema: 'userDetails'
@@ -93,7 +93,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Chỉnh sửa thông tin người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin'],
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/sheets/EditUserSheet',
     hasParams: true,
     paramSchema: 'userEdit'
@@ -105,7 +105,7 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Đặt lại mật khẩu cho người dùng',
     category: 'user',
     requiresAuth: true,
-    roles: ['admin'],
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/modals/ResetPasswordModal',
     hasParams: true,
     paramSchema: 'resetPassword'

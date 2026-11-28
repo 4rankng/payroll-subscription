@@ -133,19 +133,19 @@ export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
     modalId: 'add_user',
     action: 'create',
     subject: 'User',
-    roles: ['admin']
+    roles: ['admin', 'giamdoc']
   },
   edit_user: {
     modalId: 'edit_user',
     action: 'update',
     subject: 'User',
-    roles: ['admin']
+    roles: ['admin', 'giamdoc']
   },
   reset_password: {
     modalId: 'reset_password',
     action: 'update',
     subject: 'User',
-    roles: ['admin']
+    roles: ['admin', 'giamdoc']
   },
 
   // Employee Management
