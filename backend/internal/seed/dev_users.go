@@ -24,11 +24,11 @@ type devUser struct {
 // ketoan→giamdoc merge is superseded; role enum is
 // admin/quanly/ketoan/giamdoc/nhanvien.
 var devUsers = []devUser{
-	{username: "admin", fullname: "System Administrator", role: domain.RoleAdmin},
-	{username: "quanly", fullname: "Quản lý", role: domain.RoleQuanly},
-	{username: "ketoan", fullname: "Kế toán", role: domain.RoleKetoan},
-	{username: "giamdoc", fullname: "Giám đốc", role: domain.RoleGiamdoc},
-	{username: "nhanvien", fullname: "Nhân viên", role: domain.RoleNhanvien},
+	{username: "admin", fullname: "Trần Quốc Bảo", role: domain.RoleAdmin},
+	{username: "quanly", fullname: "Nguyễn Văn Hùng", role: domain.RoleQuanly},
+	{username: "ketoan", fullname: "Lê Thị Thu Hà", role: domain.RoleKetoan},
+	{username: "giamdoc", fullname: "Phạm Đức Anh", role: domain.RoleGiamdoc},
+	{username: "nhanvien", fullname: "Vũ Ngọc Mai", role: domain.RoleNhanvien},
 }
 
 // devUserPassword is the shared local-dev password. Never applied outside
@@ -111,6 +111,10 @@ func EnsureDevUsers(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 			return fmt.Errorf("create employee profile for dev nhanvien: %w", err)
 		}
 		fmt.Println("dev employee profile created for nhanvien")
+	} else if err := db.Model(&domain.Employee{}).
+		Where("user_id = ? AND fullname <> ?", nvUser.ID, nvUser.Fullname).
+		Update("fullname", nvUser.Fullname).Error; err != nil {
+		return fmt.Errorf("sync employee profile name for dev nhanvien: %w", err)
 	}
 	return nil
 }
