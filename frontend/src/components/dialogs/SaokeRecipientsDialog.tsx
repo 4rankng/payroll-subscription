@@ -56,7 +56,7 @@ export function SaokeRecipientsDialog({ open, onOpenChange }: SaokeRecipientsDia
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
-        <div className="flex items-start justify-between gap-3 border-b bg-card px-5 py-4">
+        <div className="flex flex-col items-start gap-1 border-b bg-card px-5 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
             Danh sách người nhận sao kê
           </DialogTitle>

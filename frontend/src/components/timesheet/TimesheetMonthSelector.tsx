@@ -10,12 +10,19 @@ interface TimesheetMonthSelectorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  /**
+   * Month-scoped consumers (Sổ cái) whose queries cannot span months pass
+   * false to hide the "Tất cả" option entirely — selecting it there produced
+   * a "Tháng all · 0 file" dead state.
+   */
+  allowAll?: boolean;
 }
 
 export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
   value,
   onChange,
   className,
+  allowAll = true,
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -54,18 +61,20 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
         className,
       )}
     >
-      <button
-        type="button"
-        onClick={handleShowAll}
-        className={cn(
-          'h-11 border-r border-border/70 px-3 text-xs font-semibold transition-colors whitespace-nowrap sm:px-2.5 md:h-9',
-          value === 'all'
-            ? 'bg-foreground text-background'
-            : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
-        )}
-      >
-        Tất cả
-      </button>
+      {allowAll && (
+        <button
+          type="button"
+          onClick={handleShowAll}
+          className={cn(
+            'h-11 border-r border-border/70 px-3 text-xs font-semibold transition-colors whitespace-nowrap sm:px-2.5 md:h-9',
+            value === 'all'
+              ? 'bg-foreground text-background'
+              : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          Tất cả
+        </button>
+      )}
 
       <button
         type="button"

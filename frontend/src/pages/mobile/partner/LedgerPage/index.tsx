@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { MobilePageShell, MobileSurface } from '@/components/shared/MobilePageShell';
 import { MobilePageHeader } from '@/components/shared/MobilePageHeader';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLedgerBatches, useSaokeRecipients } from '@/hooks/api/useSaoke';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
+import { seedSaokeRecipients } from '@/utils/saoke';
 
 const currentWorkMonth = (): string => {
   const now = new Date();
@@ -36,17 +37,22 @@ const LedgerPageMobile = () => {
 
   const { batches, summary, isLoading, isError } = useLedgerBatches(workMonth);
   const recipientsQuery = useSaokeRecipients();
-  const recipients = recipientsQuery.data;
+  // Same hydration the Chỉnh sửa dialog applies (canned defaults on first
+  // run) so the card can never contradict the dialog it opens.
+  const recipients = useMemo(
+    () => (recipientsQuery.data === undefined ? undefined : seedSaokeRecipients(recipientsQuery.data)),
+    [recipientsQuery.data],
+  );
 
   return (
     <MobilePageShell>
       <MobilePageHeader
         title="Sổ cái"
-        subtitle={`Tháng ${workMonth} · ${isLoading ? '…' : `${batches.length} file kết quả`}`}
+        subtitle={`${workMonth === 'all' ? 'Tất cả các tháng' : `Tháng ${workMonth}`} · ${isLoading ? '…' : `${batches.length} file kết quả`}`}
       />
 
       <div className="space-y-3">
-        <TimesheetMonthSelector value={workMonth} onChange={setWorkMonth} />
+        <TimesheetMonthSelector value={workMonth} onChange={setWorkMonth} allowAll={false} />
 
         <div className="grid grid-cols-1 gap-2">
           <Button

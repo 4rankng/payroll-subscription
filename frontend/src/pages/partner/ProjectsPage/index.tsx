@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Building01,
   Calendar,
-  CalendarDate,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -126,31 +125,6 @@ function ProjectAvatar({ project, size = 'md' }: { project: Project; size?: 'sm'
   );
 }
 
-// ─── Salary period chip ────────────────────────────────────────────────────
-function SalaryPeriodChip({ project }: { project: Project }) {
-  if (project.is_weekly) {
-    return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-info/10 px-2 py-0.5 text-[11px] font-semibold text-info ring-1 ring-inset ring-info/30">
-        <CalendarDate className="h-3 w-3" aria-hidden="true" />
-        Lương tuần
-      </span>
-    );
-  }
-  if (project.is_monthly) {
-    const period =
-      project.salary_period_from != null && project.salary_period_to != null
-        ? `· ngày ${project.salary_period_from}–${project.salary_period_to}`
-        : '';
-    return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-inset ring-primary/30">
-        <Calendar className="h-3 w-3" aria-hidden="true" />
-        Lương tháng {period}
-      </span>
-    );
-  }
-  return null;
-}
-
 // ─── Project card ──────────────────────────────────────────────────────────
 function ProjectCard({
   project,
@@ -226,8 +200,6 @@ function ProjectCard({
               <span className="font-bold tabular-nums text-foreground">{project.employee_count}</span>
               nhân sự
             </span>
-            <span className="h-3.5 w-px bg-border" />
-            <SalaryPeriodChip project={project} />
           </div>
           <button
             type="button"
@@ -256,18 +228,6 @@ const STATUS_FILTERS: Array<{ value: ProjectStatus | 'all'; label: string }> = [
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
-// ─── Salary period label (Kỳ gần nhất column) ──────────────────────────────
-function salaryPeriodLabel(project: Project): string {
-  if (project.is_weekly) return 'Lương tuần';
-  if (project.is_monthly) {
-    if (project.salary_period_from != null && project.salary_period_to != null) {
-      return `Tháng ${project.salary_period_from}–${project.salary_period_to}`;
-    }
-    return 'Lương tháng';
-  }
-  return '—';
-}
-
 // ─── Dense table view (PAYR-75) ─────────────────────────────────────────────
 const TABLE_TH_CLASS =
   'h-9 px-3 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-muted-foreground whitespace-nowrap';
@@ -286,14 +246,13 @@ function ProjectTable({
       {/* Internal vertical scroll keeps the sticky header usable on long
           lists; horizontal scroll preserves the dense column layout. */}
       <div className="max-h-[65dvh] overflow-auto">
-        <table className="w-full min-w-[760px] border-collapse text-left">
+        <table className="w-full min-w-[680px] border-collapse text-left">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-border bg-muted">
-              <th className={cn(TABLE_TH_CLASS, 'w-[90px] font-mono')}>Mã DA</th>
+              <th className={cn(TABLE_TH_CLASS, 'w-[76px] font-mono')}>Mã DA</th>
               <th className={cn(TABLE_TH_CLASS, 'min-w-[200px]')}>Tên dự án</th>
               <th className={TABLE_TH_CLASS}>Trạng thái</th>
               <th className={cn(TABLE_TH_CLASS, 'text-right')}>Nhân sự</th>
-              <th className={TABLE_TH_CLASS}>Kỳ gần nhất</th>
               <th className={cn(TABLE_TH_CLASS, 'text-right')}>Thao tác</th>
             </tr>
           </thead>
@@ -337,9 +296,6 @@ function ProjectTable({
                   </td>
                   <td className="px-3 py-2 text-right text-[12px] tabular-nums text-foreground align-middle">
                     {project.employee_count}
-                  </td>
-                  <td className="px-3 py-2 text-[12px] whitespace-nowrap text-muted-foreground align-middle">
-                    {salaryPeriodLabel(project)}
                   </td>
                   <td className="px-3 py-2 text-right align-middle">
                     <button

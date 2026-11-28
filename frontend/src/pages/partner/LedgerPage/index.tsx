@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -22,6 +22,7 @@ import {
 import { useLedgerBatches, useSaokeRecipients } from '@/hooks/api/useSaoke';
 import { getConsoleKicker } from '@/lib/console';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
+import { seedSaokeRecipients } from '@/utils/saoke';
 
 const currentWorkMonth = (): string => {
   const now = new Date();
@@ -48,14 +49,19 @@ const LedgerPage = () => {
 
   const { batches, summary, isLoading, isError } = useLedgerBatches(workMonth);
   const recipientsQuery = useSaokeRecipients();
-  const recipients = recipientsQuery.data;
+  // Same hydration the Chỉnh sửa dialog applies (canned defaults on first
+  // run) so the card can never contradict the dialog it opens.
+  const recipients = useMemo(
+    () => (recipientsQuery.data === undefined ? undefined : seedSaokeRecipients(recipientsQuery.data)),
+    [recipientsQuery.data],
+  );
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-3 p-3 sm:p-4">
       <PageHeader
         title="Sổ cái"
         kicker={getConsoleKicker(location.pathname)}
-        meta={`Tháng ${workMonth} · ${isLoading ? '…' : `${batches.length} file kết quả`}`}
+        meta={`${workMonth === 'all' ? 'Tất cả các tháng' : `Tháng ${workMonth}`} · ${isLoading ? '…' : `${batches.length} file kết quả`}`}
         actions={[
           { label: 'Xuất sao kê', onClick: () => setExportOpen(true), variant: 'outline' },
           { label: 'Gửi sao kê qua email', onClick: () => setEmailOpen(true) },
@@ -64,6 +70,7 @@ const LedgerPage = () => {
         <TimesheetMonthSelector
           value={workMonth}
           onChange={setWorkMonth}
+          allowAll={false}
           className="lg:w-auto lg:shrink-0"
         />
       </PageHeader>
@@ -71,7 +78,7 @@ const LedgerPage = () => {
       <ConsolePanel
         kicker="CHUYỂN KHOẢN"
         title="File kết quả chuyển khoản"
-        description={`Các lô đã tải lên trong tháng ${workMonth}`}
+        description={`Các lô đã tải lên ${workMonth === 'all' ? '(tất cả các tháng)' : `trong tháng ${workMonth}`}`}
         isFlush
       >
         <div className="overflow-x-auto">

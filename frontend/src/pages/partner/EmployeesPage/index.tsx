@@ -153,8 +153,8 @@ const EmployeesPage = () => {
         ? [{
             id: "managed_by",
             header: "Quản lý",
-            size: 300,
-            minSize: 220,
+            size: 220,
+            minSize: 190,
             accessorFn: (row: Employee) => row.creator_name || "",
             cell: ({ row }: { row: { original: Employee } }) => {
               const employee = row.original;
@@ -197,8 +197,8 @@ const EmployeesPage = () => {
       {
         accessorKey: "fullname",
         header: "Nhân viên",
-        size: 340,
-        minSize: 260,
+        size: 260,
+        minSize: 220,
         cell: ({ row }) => {
           const employee = row.original;
           const pendingCount = employee.timesheet_summary?.pending_timesheets ?? 0;
@@ -277,8 +277,8 @@ const EmployeesPage = () => {
       {
         id: "project_info",
         header: "Dự án",
-        size: 430,
-        minSize: 300,
+        size: 320,
+        minSize: 240,
         accessorFn: (row) => {
           const projects = getEmployeeProjects(row);
           return projects.length > 0 ? projects[0].name : "";
@@ -341,7 +341,7 @@ const EmployeesPage = () => {
       ...(poolView !== "global" ? [{
         id: "bank",
         header: "Ngân hàng",
-        size: 300,
+        size: 220,
         accessorFn: (row) => row.bank?.branch_name || "",
         cell: ({ row }) => {
           const employee = row.original;
@@ -532,7 +532,10 @@ const EmployeesPage = () => {
                       onClick: () => { updateStatusFilter(statusFilter === "unassigned" ? undefined : "unassigned"); updateMonth(undefined); },
                     },
                     {
-                      label: "Đang làm việc",
+                      // Scoped label — the partner dashboard's "Đang làm việc"
+                      // counts the selected month's workforce, this strip
+                      // counts employment status across all time.
+                      label: "Đang làm việc (tổng)",
                       value: employeesSummary.total_working_employees,
                       onClick: () => { updateStatusFilter(statusFilter === "working" ? undefined : "working"); updateMonth(undefined); },
                     },
@@ -551,7 +554,7 @@ const EmployeesPage = () => {
                       onClick: () => { updateStatusFilter(statusFilter === "unassigned" ? undefined : "unassigned"); updateMonth(undefined); },
                     },
                     {
-                      label: "Đang làm việc",
+                      label: "Đang làm việc (tổng)",
                       value: activeEmployees,
                       onClick: () => { updateStatusFilter(statusFilter === "working" ? undefined : "working"); updateMonth(undefined); },
                     },
@@ -645,7 +648,9 @@ const EmployeesPage = () => {
           <div className="flex items-center gap-2.5 rounded-lg border border-info/25 bg-info/5 px-4 py-3">
             <Globe01 className="h-4 w-4 shrink-0 text-info" aria-hidden="true" />
             <p className="typography-body-medium text-foreground/80">
-              Toàn bộ nhân viên trong hệ thống. Nhấn <strong>Yêu cầu quản lý</strong> để thêm nhân viên vào danh sách của bạn thay vì tạo mới trùng lặp.
+              {canClaim
+                ? (<>Toàn bộ nhân viên trong hệ thống. Nhấn <strong>Yêu cầu quản lý</strong> để thêm nhân viên vào danh sách của bạn thay vì tạo mới trùng lặp.</>)
+                : "Toàn bộ nhân viên trong hệ thống."}
             </p>
           </div>
         )}
@@ -674,7 +679,7 @@ const EmployeesPage = () => {
                   : "Chọn một nhân viên để xem hồ sơ chi tiết"}
               </span>
             </div>
-            <span className="shrink-0 font-financial text-xs tabular-nums text-muted-foreground">{pagination?.totalRecords ?? employees.length} người</span>
+            <span className="shrink-0 font-financial text-xs tabular-nums text-muted-foreground">{(pagination?.totalRecords ?? employees.length).toLocaleString("vi-VN")} người</span>
           </div>
           {listError && employees.length === 0 ? (
             <EmptyState

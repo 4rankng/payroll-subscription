@@ -254,7 +254,9 @@ const GroupRow = memo(function GroupRow({
 // ── Partner-specific group column ──────────────────────────────────────────
 
 /** Parent-row rate summary: single rate → `48.750 ₫/giờ`, several rates →
- *  shift count, none → honest dash (the ⚠ badge flags missing rates). */
+ *  honest dash (a mixed-rate group has no one unit price — the per-status
+ *  counts and the project column carry the volume), none → dash (the ⚠ badge
+ *  flags missing rates). */
 const GroupRateColumn = memo(function GroupRateColumn({ group }: { group: EmployeeGroupedTimesheet }) {
   const rates = [...new Set(group.entries.map((e) => e.payrate).filter((r): r is number => !!r && r > 0))];
   if (rates.length === 1) {
@@ -262,13 +264,6 @@ const GroupRateColumn = memo(function GroupRateColumn({ group }: { group: Employ
     return (
       <span className="whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
         {formatFullCurrency(rates[0], { showSymbol: false })} {getPayrateUnit(isFlexible)}
-      </span>
-    );
-  }
-  if (rates.length > 1) {
-    return (
-      <span className="whitespace-nowrap text-xs font-semibold tabular-nums text-muted-foreground">
-        {group.entries.length} ca
       </span>
     );
   }
@@ -280,9 +275,10 @@ const PartnerGroupColumn = memo(function PartnerGroupColumn({ group }: { group: 
     <div className="flex flex-col gap-1 min-w-0">
       {(() => {
         const projects = [...new Set(group.entries.map(e => e.projectName).filter(Boolean))];
+        const projectLabel = projects.length === 1 ? projects[0] : projects.length > 1 ? `${projects[0]} +${projects.length - 1}` : "—";
         return (
           <p className="text-xs font-medium text-foreground truncate" title={projects.join(", ")}>
-            {projects.length === 1 ? projects[0] : projects.length > 1 ? `${projects[0]} +${projects.length - 1}` : "—"}
+            {projectLabel} · {group.entries.length} ca
           </p>
         );
       })()}
@@ -453,7 +449,6 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
             </div>
           ) : (
             <span className="ml-4 flex items-center gap-1.5 text-xs font-medium text-muted-foreground" aria-label="Cùng ngày">
-              <span className="h-4 w-px bg-border" />
               <span className="h-1.5 w-1.5 rounded-full bg-border" />
             </span>
           )}
