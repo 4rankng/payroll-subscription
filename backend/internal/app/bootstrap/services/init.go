@@ -99,7 +99,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	excelConverterService := reporting.NewExcelConverterService()
 	fileStorage := storage.NewLocalFileStorage(cfg.Asset.StoragePath, cfg.Asset.BaseURL)
 	assetService := asset.NewAssetService(repos.Asset, fileStorage, cfg.Asset.MaxFileSize, eventBus)
-	billingReportService := billing.NewBillingReportService(repos.BillingReport, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, settingsConfigService, assetService, notificationService, logger)
+	billingReportService := billing.NewBillingReportService(repos.BillingReport, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, repos.Project, settingsConfigService, assetService, notificationService, logger)
 	paymentHistoryService := billing.NewPaymentHistoryService(repos.Timesheet, repos.Employee, repos.Project, repos.EmployeePayCycle, repos.TransferUpload, repos.ProjectEmployee, logger)
 
 	// Step 4: Create domain services using infrastructure ports

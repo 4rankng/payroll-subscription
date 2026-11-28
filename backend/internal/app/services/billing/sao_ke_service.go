@@ -252,8 +252,14 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 			return nil, fmt.Errorf("sao ke: load projects: %w", err)
 		}
 		for id, p := range projects {
-			if p != nil && p.Name != "" {
+			if p == nil {
+				continue
+			}
+			switch {
+			case p.Name != "":
 				projectNames[id] = p.Name
+			case p.Code != "":
+				projectNames[id] = p.Code
 			}
 		}
 	}
@@ -267,7 +273,7 @@ func (s *SaoKeService) Collect(ctx context.Context, reportDate time.Time) (*SaoK
 		}
 		projectName := projectNames[ts.ProjectID]
 		if projectName == "" {
-			projectName = fmt.Sprintf("Dự án #%d", ts.ProjectID)
+			projectName = "(dự án đã xoá)"
 		}
 		row := SaoKeRow{
 			TimesheetID:  ts.ID,

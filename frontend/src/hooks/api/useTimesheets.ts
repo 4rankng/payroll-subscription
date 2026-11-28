@@ -544,34 +544,6 @@ export const useImportTimesheets = () => {
   });
 };
 
-// Upload timesheet entries from Excel file
-export const useUploadEntriesExcel = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      file,
-      onProgress,
-    }: {
-      file: File;
-      onProgress?: (progress: number) => void;
-    }) => timesheetService.uploadEntriesExcel(file, onProgress),
-    onSuccess: (result) => {
-      // Invalidate all timesheet queries to reflect the newly imported entries
-      queryClient.invalidateQueries({ queryKey: QueryKeys.timesheets.all });
-
-      // Map the result to the expected format for bulk notification
-      const mappedResult = {
-        total_created: result.created_count || 0,
-        total_failed: result.error_count || 0,
-        errors: (result.failed_entries || []).map((entry) => `${entry.Error}`)
-      };
-      showBulkOperationNotification(mappedResult, 'import');
-    },
-    // Error handling is now done globally in React Query - will display response.message from backend
-  });
-};
-
 // Export timesheets to Excel
 export const useExportTimesheets = () => {
 

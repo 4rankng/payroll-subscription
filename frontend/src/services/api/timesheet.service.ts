@@ -718,27 +718,6 @@ class TimesheetService {
   }
 
   /**
-   * Upload timesheet entries from Excel file
-   */
-  async uploadEntriesExcel(
-    file: File,
-    onProgress?: (progress: number) => void
-  ): Promise<UploadEntriesExcelResult> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await apiClient.upload<UploadEntriesExcelResult>(
-      API_ENDPOINTS.timesheets.uploadEntriesExcel,
-      formData,
-      onProgress
-    );
-    if (!response.data) {
-      throw new Error('API response missing expected data');
-    }
-    return response.data;
-  }
-
-  /**
    * Get timesheet entry table data
    */
   async getTimesheetEntryTable(

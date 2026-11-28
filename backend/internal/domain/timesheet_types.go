@@ -438,9 +438,13 @@ type TimesheetWithDetails struct {
 }
 
 // PaidSeriesRow is one day×project bucket of the FR-6 paid time series.
+// ProjectCode/ProjectName are enriched by the service layer after the raw
+// aggregation so the UI never has to render "Dự án #<id>".
 type PaidSeriesRow struct {
 	Date          time.Time `json:"date"`
 	ProjectID     uint      `json:"project_id"`
+	ProjectCode   string    `json:"project_code,omitempty"`
+	ProjectName   string    `json:"project_name,omitempty"`
 	EmployeeCount int64     `json:"employee_count"`
 	Amount        int64     `json:"amount"`
 }

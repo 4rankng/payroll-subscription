@@ -163,7 +163,7 @@ function ImportRow({ item, projectMap, onDownload, showProject }: {
             <>
               <span className="px-1 text-muted-foreground/50" aria-hidden="true">·</span>
               <span className="font-medium text-primary">
-                {projectMap.get(item.project_id) ?? `Dự án #${item.project_id}`}
+                {projectMap.get(item.project_id) ?? '(dự án đã xoá)'}
               </span>
             </>
           )}
@@ -382,7 +382,7 @@ export const UploadHistorySheet = memo(function UploadHistorySheet({
             {/* Sticky scan anchor: with 20 rows per page the header must
                 survive scrolling inside the sheet. */}
             <h3 className="sticky top-0 z-10 -mx-4 bg-card/95 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur sm:-mx-6 sm:px-6">
-              {projectMap.get(groupId) ?? `Dự án #${groupId}`}
+              {projectMap.get(groupId) ?? '(dự án đã xoá)'}
             </h3>
             <div className="mt-1 overflow-hidden rounded-lg border border-border bg-card">
               <div className="divide-y divide-border/60">

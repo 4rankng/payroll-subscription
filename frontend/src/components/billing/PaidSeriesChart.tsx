@@ -30,8 +30,8 @@ function metricOf(row: PaidSeriesRow, metric: 'employee_count' | 'amount'): numb
   return metric === 'amount' ? row.amount : row.employee_count;
 }
 
-function projectNameOf(projects: ProjectLabel[], projectId: number): string {
-  return projects.find((p) => p.id === projectId)?.name ?? `Dự án #${projectId}`;
+function projectNameOf(projects: ProjectLabel[], projectId: number, fallback?: string): string {
+  return projects.find((p) => p.id === projectId)?.name ?? fallback ?? '(dự án)';
 }
 
 /**
@@ -54,6 +54,13 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
 
   const dates = [...new Set(rows.map((r) => r.date))].sort();
   const byProject = new Map<number, Record<string, number>>();
+  // The API enriches each row with the project name/code (PAYR-61) — the
+  // projects prop is only a last-resort lookup for older cached responses.
+  const rowNames = new Map<number, string>();
+  for (const row of rows) {
+    const name = row.project_name ?? row.project_code;
+    if (name && !rowNames.has(row.project_id)) rowNames.set(row.project_id, name);
+  }
   for (const row of rows) {
     const slot = byProject.get(row.project_id) ?? {};
     slot[row.date] = (slot[row.date] ?? 0) + metricOf(row, metric);
@@ -62,11 +69,11 @@ function SeriesChart({ rows, projects, metric, label }: PaidSeriesChartProps) {
   const data = dates.map((d) => {
     const point: Record<string, string | number> = { date: formatChartDate(d) };
     for (const [projectId, slot] of byProject) {
-      point[projectNameOf(projects, projectId)] = slot[d] ?? 0;
+      point[projectNameOf(projects, projectId, rowNames.get(projectId))] = slot[d] ?? 0;
     }
     return point;
   });
-  const names = [...byProject.keys()].map((id) => projectNameOf(projects, id));
+  const names = [...byProject.keys()].map((id) => projectNameOf(projects, id, rowNames.get(id)));
 
   return (
     <div className="h-72 w-full">

@@ -76,6 +76,8 @@ export interface BillingReportLine {
 export interface PaidSeriesRow {
   date: string;
   project_id: number;
+  project_code?: string;
+  project_name?: string;
   employee_count: number;
   amount: number;
 }

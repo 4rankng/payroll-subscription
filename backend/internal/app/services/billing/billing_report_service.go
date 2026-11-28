@@ -27,6 +27,7 @@ type BillingReportService struct {
 	kyPaid     domain.EmployeePayCycleRepository
 	timesheets domain.TimesheetRepository
 	employees  domain.EmployeeRepository
+	projects   domain.ProjectRepository
 	feeSource  *config.SettingsConfigService
 	storage    assetStorer
 	notifier   BillingNotifier
@@ -38,6 +39,7 @@ func NewBillingReportService(
 	kyPaid domain.EmployeePayCycleRepository,
 	timesheets domain.TimesheetRepository,
 	employees domain.EmployeeRepository,
+	projects domain.ProjectRepository,
 	feeSource *config.SettingsConfigService,
 	storage assetStorer,
 	notifier BillingNotifier,
@@ -51,6 +53,7 @@ func NewBillingReportService(
 		kyPaid:     kyPaid,
 		timesheets: timesheets,
 		employees:  employees,
+		projects:   projects,
 		feeSource:  feeSource,
 		storage:    storage,
 		notifier:   notifier,
@@ -205,9 +208,31 @@ func (s *BillingReportService) projectSheets(ctx context.Context, workMonth stri
 	for i := range paid {
 		projectIDs[paid[i].ProjectID] = struct{}{}
 	}
+	// Sheet titles use the real project name (code as fallback) — the owner
+	// banned "Dự án #<id>" on any user-facing surface.
 	titles := make(map[uint]string, len(projectIDs))
+	if len(projectIDs) > 0 {
+		ids := make([]uint, 0, len(projectIDs))
+		for id := range projectIDs {
+			ids = append(ids, id)
+		}
+		projects, err := s.projects.GetByIDs(ctx, ids)
+		if err != nil {
+			return nil, fmt.Errorf("billing report: load projects: %w", err)
+		}
+		for id, p := range projects {
+			switch {
+			case p != nil && p.Name != "":
+				titles[id] = p.Name
+			case p != nil && p.Code != "":
+				titles[id] = p.Code
+			}
+		}
+	}
 	for id := range projectIDs {
-		titles[id] = fmt.Sprintf("Dự án #%d", id)
+		if titles[id] == "" {
+			titles[id] = "(dự án đã xoá)"
+		}
 	}
 
 	sheets := map[uint]*projectSheet{}
@@ -268,9 +293,36 @@ func (s *BillingReportService) GetReport(ctx context.Context, workMonth string) 
 }
 
 // PaidSeries returns the FR-6 per-day paid time series (distinct employees
-// and amount) per project. projectID nil = all projects.
+// and amount) per project. projectID nil = all projects. Rows are enriched
+// with the project code/name so the UI never renders "Dự án #<id>".
 func (s *BillingReportService) PaidSeries(ctx context.Context, from, to time.Time, projectID *uint) ([]domain.PaidSeriesRow, error) {
-	return s.timesheets.GetPaidSeries(ctx, from, to, projectID)
+	rows, err := s.timesheets.GetPaidSeries(ctx, from, to, projectID)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uint, 0, 8)
+	seen := make(map[uint]struct{}, 8)
+	for i := range rows {
+		if _, ok := seen[rows[i].ProjectID]; ok {
+			continue
+		}
+		seen[rows[i].ProjectID] = struct{}{}
+		ids = append(ids, rows[i].ProjectID)
+	}
+	if len(ids) == 0 {
+		return rows, nil
+	}
+	projects, err := s.projects.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("billing report: load paid-series projects: %w", err)
+	}
+	for i := range rows {
+		if p := projects[rows[i].ProjectID]; p != nil {
+			rows[i].ProjectName = p.Name
+			rows[i].ProjectCode = p.Code
+		}
+	}
+	return rows, nil
 }
 
 // KyMonthSummary is one work month of the FR-6 Tổng quan per-month table:
