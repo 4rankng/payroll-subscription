@@ -36,13 +36,6 @@ func (s *EmployeeService) CountEmployeesWithMissingMobile(ctx context.Context, f
 	return s.EmployeeRepo.CountEmployeesWithMissingMobile(ctx, filters)
 }
 
-// ListEmployeesPaidWithoutMobile returns employees who received salary (paid
-// timesheets) within [from, to] but have no mobile number on file. Read-only
-// pass-through to the repository read model.
-func (s *EmployeeService) ListEmployeesPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*domain.EmployeePaidActivity, error) {
-	return s.EmployeeRepo.GetPaidWithoutMobile(ctx, from, to)
-}
-
 // GetDuplicateIdentities returns phone numbers and CCCDs carried by more than one
 // employee record. These are the accounts that cannot log in via mobile, because
 // identity.Resolver fails closed rather than picking one of the colliding

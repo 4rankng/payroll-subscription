@@ -15,8 +15,6 @@ func setupEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
 		employees.POST("", container.Handlers.Employee.CreateEmployee)
 		employees.GET("", container.Handlers.Employee.ListEmployees)
 		employees.GET("/export", container.Handlers.Employee.ExportEmployees)
-		// Admin-only: employees paid (salary or FlexPay) in the last N months without a mobile number
-		employees.POST("/export-paid-without-mobile", container.Handlers.Employee.ExportEmployeesPaidWithoutMobile)
 		// Admin-only: upload the filled workbook back — fills EMPTY mobiles by CCCD, never overwrites
 		employees.POST("/import-mobiles", container.Handlers.Employee.ImportMobiles)
 		// Data-quality nudge: employees with no mobile on file (login/Zalo/check-in

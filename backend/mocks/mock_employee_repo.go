@@ -438,21 +438,6 @@ func (mr *MockEmployeeRepositoryMockRecorder) GetEmployeesWithMissingMobile(ctx,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmployeesWithMissingMobile", reflect.TypeOf((*MockEmployeeRepository)(nil).GetEmployeesWithMissingMobile), ctx, filters)
 }
 
-// GetPaidWithoutMobile mocks base method.
-func (m *MockEmployeeRepository) GetPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*domain.EmployeePaidActivity, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPaidWithoutMobile", ctx, from, to)
-	ret0, _ := ret[0].([]*domain.EmployeePaidActivity)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPaidWithoutMobile indicates an expected call of GetPaidWithoutMobile.
-func (mr *MockEmployeeRepositoryMockRecorder) GetPaidWithoutMobile(ctx, from, to interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaidWithoutMobile", reflect.TypeOf((*MockEmployeeRepository)(nil).GetPaidWithoutMobile), ctx, from, to)
-}
-
 // GetRecentEmployees mocks base method.
 func (m *MockEmployeeRepository) GetRecentEmployees(ctx context.Context, startDate, endDate time.Time, limit int) ([]*domain.Employee, error) {
 	m.ctrl.T.Helper()

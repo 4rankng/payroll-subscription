@@ -150,10 +150,6 @@ type EmployeeRepository interface {
 	// (identity.Resolver fails closed) and are surfaced to admins as a data-
 	// quality report. Read-only; it never merges or picks a winner.
 	GetDuplicateIdentities(ctx context.Context) ([]*DuplicateIdentityGroup, error)
-	// GetPaidWithoutMobile returns one row per employee who received salary
-	// within [from, to] but has no mobile number on file — the backfill
-	// export list.
-	GetPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*EmployeePaidActivity, error)
 }
 
 // EmployeeFilters represents filtering options for employee queries

@@ -234,64 +234,6 @@ func (r *EmployeeRepository) CountEmployeesWithMissingMobile(ctx context.Context
 	return count, err
 }
 
-// GetPaidWithoutMobile returns one row per employee who received salary (paid
-// timesheets) within [from, to] but has no mobile number on file. Salary
-// aggregates and the paid projects list are attached with LEFT JOINs; payment
-// recency (last_activity_at) is the activity signal for the admin export.
-func (r *EmployeeRepository) GetPaidWithoutMobile(ctx context.Context, from, to time.Time) ([]*domain.EmployeePaidActivity, error) {
-	ps := domain.PaymentStatusPaid
-	args := []any{
-		to,           // working-status check evaluated at window end
-		ps, from, to, // activity union
-		ps, from, to, // salary aggregate
-		ps, from, to, // projects union
-	}
-
-	var rows []*domain.EmployeePaidActivity
-	err := r.DB.WithContext(ctx).Raw(`
-SELECT
-	e.id AS employee_id,
-	e.fullname,
-	e.cccd,
-	CASE WHEN EXISTS (
-		SELECT 1 FROM project_employees pe
-		WHERE pe.employee_id = e.id
-			AND pe.start_date <= ?
-	) THEN 1 ELSE 0 END AS is_working,
-	COALESCE(sal.total_amount, 0) AS salary_total,
-	COALESCE(sal.payment_count, 0) AS salary_count,
-	sal.last_paid_at AS last_salary_paid_at,
-	sal.last_paid_at AS last_activity_at,
-	COALESCE(pr.projects, '') AS projects
-FROM (
-	SELECT DISTINCT employee_id FROM timesheets
-	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
-) act
-JOIN employees e ON e.id = act.employee_id
-	AND (e.mobile IS NULL OR e.mobile = '')
-LEFT JOIN (
-	SELECT employee_id, SUM(paid_amount) AS total_amount, COUNT(*) AS payment_count, MAX(paid_at) AS last_paid_at
-	FROM timesheets
-	WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
-	GROUP BY employee_id
-) sal ON sal.employee_id = e.id
-LEFT JOIN (
-	SELECT x.employee_id, GROUP_CONCAT(p.name) AS projects
-	FROM (
-		SELECT DISTINCT employee_id, project_id FROM timesheets
-		WHERE payment_status = ? AND paid_at >= ? AND paid_at <= ?
-	) x
-	JOIN projects p ON p.id = x.project_id
-	GROUP BY x.employee_id
-) pr ON pr.employee_id = e.id
-ORDER BY last_activity_at DESC
-`, args...).Scan(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
 func (r *EmployeeRepository) Count(ctx context.Context, filters domain.EmployeeFilters) (int64, error) {
 	// If AccessibleBy filter is present, use two separate queries approach for accurate count
 	if filters.AccessibleBy != nil {
