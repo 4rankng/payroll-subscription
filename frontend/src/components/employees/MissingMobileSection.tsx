@@ -223,7 +223,7 @@ export const MissingMobileSection = ({
                 to="/partner/employees?modal=employee_import"
                 className="ml-auto inline-flex items-center rounded px-1 py-0.5 text-xs font-semibold text-amber-700 underline-offset-2 outline-amber-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2"
               >
-                Nhập SĐT hàng loạt
+                Nhập SĐT
               </Link>
             )}
           </div>
