@@ -70,9 +70,14 @@ export const createProjectColumns = (
     size: 140,
     maxSize: 160,
     cell: ({ row }) => {
+      // The projects list payload carries a single `employee_count` (verified
+      // against GET /api/v1/projects); the weekly/monthly split fields are
+      // only populated by detail endpoints, so fall back to the list total
+      // instead of rendering a false "—" for projects that do have staff.
       const weekly = row.original.weekly_salary_employee_count || 0;
       const monthly = row.original.monthly_salary_employee_count || 0;
-      const total = weekly + monthly;
+      const splitTotal = weekly + monthly;
+      const total = splitTotal > 0 ? splitTotal : row.original.employee_count || 0;
 
       if (total === 0) {
         return (

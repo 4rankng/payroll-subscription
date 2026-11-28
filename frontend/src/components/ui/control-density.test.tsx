@@ -54,7 +54,9 @@ describe('shared control density', () => {
       'min-h-11',
       'sm:min-h-9',
     );
-    expect(screen.getByRole('combobox', { name: 'Lọc chung' })).toHaveClass(
+    // FilterPill renders a non-modal menu trigger (Radix DropdownMenu) rather
+    // than a combobox, so outside clicks are never swallowed while it is open.
+    expect(screen.getByRole('button', { name: 'Lọc chung' })).toHaveClass(
       'min-h-11',
       'sm:min-h-9',
     );

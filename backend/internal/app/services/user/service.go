@@ -115,6 +115,20 @@ func (s *UserService) GetUserSummary(ctx context.Context) (*dto.UserSummaryRespo
 		return nil, err
 	}
 
+	// Get accountant count
+	totalKetoans, err := s.UserRepo.CountByRole(ctx, domain.RoleKetoan)
+	if err != nil {
+		s.logger.Error("Failed to count accountant users", "error", err)
+		return nil, err
+	}
+
+	// Get director count
+	totalGiamdocs, err := s.UserRepo.CountByRole(ctx, domain.RoleGiamdoc)
+	if err != nil {
+		s.logger.Error("Failed to count director users", "error", err)
+		return nil, err
+	}
+
 	// Get recent logins today (since start of today)
 	startOfToday := timeutil.StartOfDay(clock.NowUTC())
 	recentLoginsToday, err := s.UserRepo.CountRecentLogins(ctx, startOfToday)
@@ -134,6 +148,8 @@ func (s *UserService) GetUserSummary(ctx context.Context) (*dto.UserSummaryRespo
 		TotalUsers:        totalUsers,
 		TotalAdmins:       totalAdmins,
 		TotalPartners:     totalPartners,
+		TotalKetoans:      totalKetoans,
+		TotalGiamdocs:     totalGiamdocs,
 		TotalEmployees:    totalEmployees,
 		RecentLoginsToday: recentLoginsToday,
 	}
@@ -142,6 +158,8 @@ func (s *UserService) GetUserSummary(ctx context.Context) (*dto.UserSummaryRespo
 		"total_users", totalUsers,
 		"total_admins", totalAdmins,
 		"total_partners", totalPartners,
+		"total_ketoans", totalKetoans,
+		"total_giamdocs", totalGiamdocs,
 		"total_employees", totalEmployees,
 		"recent_logins_today", recentLoginsToday)
 

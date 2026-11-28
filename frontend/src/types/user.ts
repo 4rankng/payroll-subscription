@@ -42,6 +42,8 @@ export interface UserSummary {
   total_users: number;
   total_admins: number;
   total_partners: number;
+  total_ketoans: number;
+  total_giamdocs: number;
   total_employees: number;
   recent_logins_today: number;
 }

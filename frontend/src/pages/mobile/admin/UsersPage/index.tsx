@@ -51,7 +51,7 @@ const UsersPageMobile = () => {
   const { openUserDetails, openAddUser } = useUserModals();
 
   const handleRoleSelect = useCallback(
-    (role?: "admin" | "quanly" | "nhanvien") => {
+    (role?: "admin" | "quanly" | "ketoan" | "giamdoc" | "nhanvien") => {
       filterState.setLastLoginToday(false);
       filterState.setRole(role);
     },
@@ -71,7 +71,7 @@ const UsersPageMobile = () => {
       {
         label: "Tổng",
         value: summaryData.total_users || 0,
-        role: null as "admin" | "quanly" | "nhanvien" | null,
+        role: null as "admin" | "quanly" | "ketoan" | "giamdoc" | "nhanvien" | null,
       },
       {
         label: "Quản trị",
@@ -82,6 +82,16 @@ const UsersPageMobile = () => {
         label: "Quản lý",
         value: summaryData.total_partners || 0,
         role: "quanly" as const,
+      },
+      {
+        label: "Kế toán",
+        value: summaryData.total_ketoans || 0,
+        role: "ketoan" as const,
+      },
+      {
+        label: "Giám đốc",
+        value: summaryData.total_giamdocs || 0,
+        role: "giamdoc" as const,
       },
       {
         label: "Nhân viên",
@@ -105,8 +115,8 @@ const UsersPageMobile = () => {
           <Skeleton className="h-7 w-32" />
           <Skeleton className="h-9 w-16" />
         </div>
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-border bg-card">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border bg-card">
+          {[...Array(6)].map((_, i) => (
             <div key={i} className={i > 0 ? "flex min-h-16 flex-col justify-center gap-1.5 border-l border-border px-2 py-2.5" : "flex min-h-16 flex-col justify-center gap-1.5 px-2 py-2.5"}>
               <Skeleton className="h-2.5 w-10" />
               <Skeleton className="h-3.5 w-8" />
@@ -160,6 +170,7 @@ const UsersPageMobile = () => {
       {!summaryLoading && stats.length > 0 && (
         <div className="px-4 pb-3">
           <MobileStatStrip
+            columns={3}
             items={stats.map((stat) => {
               const isActive =
                 stat.role !== null && filterState.role === stat.role;
@@ -181,8 +192,8 @@ const UsersPageMobile = () => {
         </div>
       )}
       {summaryLoading && (
-        <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-border bg-card mx-4 mb-3">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border bg-card mx-4 mb-3">
+          {[...Array(6)].map((_, i) => (
             <div key={i} className={i > 0 ? "flex min-h-16 flex-col justify-center gap-1.5 border-l border-border px-2 py-2.5" : "flex min-h-16 flex-col justify-center gap-1.5 px-2 py-2.5"}>
               <Skeleton className="h-2.5 w-10" />
               <Skeleton className="h-3.5 w-8" />

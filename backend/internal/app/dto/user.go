@@ -138,6 +138,8 @@ type UserSummaryResponse struct {
 	TotalUsers        int64 `json:"total_users"`
 	TotalAdmins       int64 `json:"total_admins"`
 	TotalPartners     int64 `json:"total_partners"`
+	TotalKetoans      int64 `json:"total_ketoans"`
+	TotalGiamdocs     int64 `json:"total_giamdocs"`
 	TotalEmployees    int64 `json:"total_employees"`
 	RecentLoginsToday int64 `json:"recent_logins_today"`
 }

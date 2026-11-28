@@ -194,7 +194,7 @@ const (
 	MsgDuplicateCheckRequiresIdentifierVN     = "Cần nhập ít nhất một tiêu chí: CCCD, số điện thoại hoặc email"
 	MsgEmployeeDuplicatesFoundVN              = "Phát hiện nhân viên trùng khớp"
 	MsgCanOnlyGrantProjectAccessToPartnerVN   = "Chỉ có thể cấp quyền truy cập dự án cho người dùng có vai trò quản lý"
-	MsgCannotGrantProjectAccessToNonPartnerVN = "Chỉ có thể cấp quyền quản lý dự án cho người dùng vai trò đối tác"
+	MsgCannotGrantProjectAccessToNonPartnerVN = "Chỉ có thể cấp quyền quản lý dự án cho người dùng vai trò quản lý"
 	MsgCanOnlyGrantEmployeeAccessToPartnerVN  = "Chỉ có thể cấp quyền truy cập nhân viên cho người dùng có vai trò quản lý"
 
 	// Project Payrate Messages - Vietnamese

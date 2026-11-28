@@ -2,7 +2,7 @@ import { UserStatsCard, StatItemProps } from '@/components/users/UserStatsCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserSummary } from '@/types/user';
 import { useCallback, useMemo } from 'react';
-import { Users, ShieldCheck, Briefcase, UserCheck } from 'lucide-react';
+import { Users, ShieldCheck, Briefcase, UserCheck, Calculator, Crown } from 'lucide-react';
 
 interface UserStatsCardsProps {
   stats?: UserSummary;
@@ -24,9 +24,12 @@ export const UserStatsCards = ({
   const handleAll = useCallback(() => onRoleSelect?.(undefined), [onRoleSelect]);
   const handleAdmin = useCallback(() => onRoleSelect?.('admin'), [onRoleSelect]);
   const handlePartner = useCallback(() => onRoleSelect?.('quanly'), [onRoleSelect]);
+  const handleKetoan = useCallback(() => onRoleSelect?.('ketoan'), [onRoleSelect]);
+  const handleGiamdoc = useCallback(() => onRoleSelect?.('giamdoc'), [onRoleSelect]);
   const handleEmployee = useCallback(() => onRoleSelect?.('nhanvien'), [onRoleSelect]);
 
-  // Merged stats in 2x2 grid: [Tổng, QTV] [QL, NV]
+  // Full role breakdown so the cards always sum to Tổng (previously the
+  // Kế toán and Giám đốc accounts were counted in Tổng but shown on no card).
   const mergedStats = useMemo<StatItemProps[]>(() => {
     if (!stats) return [];
     return [
@@ -52,6 +55,20 @@ export const UserStatsCards = ({
         isActive: selectedRole === 'quanly',
       },
       {
+        label: 'Kế toán',
+        value: stats.total_ketoans || 0,
+        icon: Calculator,
+        onClick: onRoleSelect ? handleKetoan : undefined,
+        isActive: selectedRole === 'ketoan',
+      },
+      {
+        label: 'Giám đốc',
+        value: stats.total_giamdocs || 0,
+        icon: Crown,
+        onClick: onRoleSelect ? handleGiamdoc : undefined,
+        isActive: selectedRole === 'giamdoc',
+      },
+      {
         label: 'Nhân viên',
         value: stats.total_employees || 0,
         icon: UserCheck,
@@ -59,12 +76,12 @@ export const UserStatsCards = ({
         isActive: selectedRole === 'nhanvien',
       },
     ];
-  }, [stats, onRoleSelect, handleAll, handleAdmin, handlePartner, handleEmployee, selectedRole, lastLoginToday]);
+  }, [stats, onRoleSelect, handleAll, handleAdmin, handlePartner, handleKetoan, handleGiamdoc, handleEmployee, selectedRole, lastLoginToday]);
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-[52px] rounded-lg border border-border/60 bg-card px-3 py-2.5 flex flex-col gap-1.5">
             <Skeleton className="h-2.5 w-16" />
             <Skeleton className="h-4 w-10" />

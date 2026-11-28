@@ -24,7 +24,7 @@ const Index = () => {
                 Bảng điều hành lương cho đội ngũ dự án
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Theo dõi nhân sự, bảng công, ví lương và thanh toán trong một hệ thống vận hành rõ ràng cho admin, đối tác và nhân viên.
+                Theo dõi nhân sự, bảng công, ví lương và thanh toán trong một hệ thống vận hành rõ ràng cho admin, quản lý và nhân viên.
               </p>
             </div>
 

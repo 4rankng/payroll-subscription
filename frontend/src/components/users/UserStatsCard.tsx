@@ -19,7 +19,7 @@ const DEFAULT_COLORS: Array<'blue' | 'emerald' | 'amber' | 'teal'> = ['blue', 't
 
 export const UserStatsCard = ({ stats }: UserStatsCardProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
       {stats.map((stat, index) => (
         <KpiHeroCard
           key={index}
