@@ -92,7 +92,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Users',
         category: 'navigation',
         keywords: ['users', 'người dùng', 'user'],
-        action: () => navigate('/admin/users'),
+        action: () => navigate('/users'),
         role: 'admin'
       },
       {

@@ -23,7 +23,7 @@ export interface Action {
   href?: string;
   onClick?: () => void;
   category: 'navigation' | 'creation' | 'data' | 'management';
-  permissions?: ('admin' | 'quanly' | 'nhanvien')[];
+  permissions?: ('admin' | 'quanly' | 'ketoan' | 'giamdoc' | 'nhanvien')[];
 }
 
 // Define all available actions
@@ -52,9 +52,9 @@ export const allActions: Action[] = [
     label: 'Người dùng',
     description: 'Quản lý tài khoản người dùng',
     icon: Users,
-    href: '/admin/users',
+    href: '/users',
     category: 'navigation',
-    permissions: ['admin']
+    permissions: ['admin', 'giamdoc']
   },
   {
     id: 'nav-projects',
@@ -108,9 +108,9 @@ export const allActions: Action[] = [
     label: 'Tạo người dùng',
     description: 'Thêm người dùng mới',
     icon: UserPlus,
-    href: '/admin/users?modal=add_user',
+    href: '/users?modal=add_user',
     category: 'creation',
-    permissions: ['admin'],
+    permissions: ['admin', 'giamdoc'],
   },
   {
     id: 'create-project',

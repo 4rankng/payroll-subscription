@@ -25,7 +25,7 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
 
 export const ADMIN_MORE_ITEMS: NavLeaf[] = [
   { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log" },
-  { title: "Người dùng", icon: UserEdit, path: "/admin/users" },
+  { title: "Người dùng", icon: UserEdit, path: "/users" },
   { title: "Dự án", icon: Briefcase01, path: "/admin/projects" },
   { title: "Nhân viên", icon: Users01, path: "/admin/employees" },
   { title: "Cài đặt", icon: Settings01, path: "/admin/settings" },

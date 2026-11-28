@@ -81,9 +81,8 @@ export const MODAL_REGISTRY: Record<ModalId, ModalMetadata> = {
     description: 'Tạo tài khoản người dùng mới',
     category: 'user',
     requiresAuth: true,
-    // User-management writes are admin-only; giamdoc reads /partner/users
-    // read-only (enforced in casbin too).
-    roles: ['admin'],
+    // PRD §5.3: admin + giamdoc full control (enforced in casbin too).
+    roles: ['admin', 'giamdoc'],
     componentPath: '/src/components/sheets/AddUserSheet',
     hasParams: false
   },

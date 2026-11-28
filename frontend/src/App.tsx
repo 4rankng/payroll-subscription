@@ -102,6 +102,15 @@ const DashboardLayoutRouter = () => {
   return role === "admin" ? <AdminLayout /> : <PartnerLayout />;
 };
 
+// PRD §5.3 (owner call): ONE canonical /users directory for admin + giamdoc —
+// the split /admin/users + /partner/users routes are gone. Admin keeps the
+// console shell; giamdoc keeps the partner shell. quanly/ketoan have no
+// directory access (PRD §5.3).
+const UsersShell = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout roles={["giamdoc"]} />;
+};
+
 // PRD §5.7: admin crosses into the console shell on /payment-history — the
 // partner nav has a single admin item, so the partner rail would render as a
 // one-item strip and drop the admin chrome.
@@ -185,6 +194,12 @@ initInvalidationService(queryClient);
 setupQueryPersistence(queryClient);
 
 // Component that uses location hook inside Router context
+/** Legacy /partner|/admin users bookmarks → canonical /users, query kept. */
+const UsersRedirect = () => {
+  const search = useLocation().search;
+  return <Navigate replace to={{ pathname: "/users", search }} />;
+};
+
 /** Legacy /partner|/admin payment-history bookmarks → canonical URL, query kept. */
 const PaymentHistoryRedirect = () => {
   const search = useLocation().search;
@@ -285,7 +300,6 @@ const AppContent = () => {
           {/* PRD §5.1: the old financial admin dashboard is replaced by the fee-insights overview. */}
           <Route index element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
           <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
-          <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
           {/* Bảng công moved to the canonical /timesheet route below. */}
@@ -302,15 +316,20 @@ const AppContent = () => {
           <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
           {/* PRD §5.1: fee-insights overview — ketoan/giamdoc landing (PRD §4). */}
           <Route path="overview" element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
-          {/* PRD §5.3: user directory — giamdoc reads /partner/users read-only;
-              user-management writes are admin-only (also enforced by casbin). */}
-          <Route path="users" element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
           <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
           <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
           {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
           <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
           <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
+
+        {/* PRD §5.3 (owner call): one canonical /users directory — admin +
+            giamdoc full control; /admin/users + /partner/users redirect. */}
+        <Route path="/users" element={<UsersShell />}>
+          <Route index element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
+        </Route>
+        <Route path="/admin/users" element={<UsersRedirect />} />
+        <Route path="/partner/users" element={<UsersRedirect />} />
 
         {/* PRD §5.7: Lịch sử trả lương — payment history under one canonical
             URL shared by quanly/ketoan/giamdoc/admin. Admin crosses into the

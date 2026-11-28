@@ -72,7 +72,8 @@ export const canPartnerManageProject = (userRole?: UserRole | null): boolean => 
 export const canApproveTimesheet = (userRole?: UserRole | null): boolean => {
   const role = userRole || authManager.getUserRole();
 
-  return role === 'admin' || role === 'quanly' || role === 'ketoan';
+  // PRD §4: giamdoc duyệt bảng công (bulk approve) — casbin grants it too.
+  return role === 'admin' || role === 'quanly' || role === 'ketoan' || role === 'giamdoc';
 };
 
 /**
@@ -132,11 +133,11 @@ export const canClaimEmployee = (userRole?: UserRole | null): boolean => {
 
 /**
  * Check if user can manage other users (create, edit, reset password,
- * delete). Only admin holds user-management writes: giamdoc reads
- * /partner/users read-only.
+ * delete). PRD §5.3: admin AND giamdoc hold full user-management writes.
  */
 export const canManageUsers = (userRole?: UserRole | null): boolean => {
   const role = userRole || authManager.getUserRole();
 
-  return role === 'admin';
+  // PRD §5.3: admin AND giamdoc hold full control of the user directory.
+  return role === 'admin' || role === 'giamdoc';
 };

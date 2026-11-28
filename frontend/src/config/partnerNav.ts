@@ -29,7 +29,7 @@ export const PARTNER_NAV_ITEMS: PartnerNavItem[] = [
   // mirror dashboard; ketoan/giamdoc land on the fee-insights overview.
   { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["quanly"] },
   { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["ketoan", "giamdoc"] },
-  { title: "Người dùng", icon: Users01, path: "/partner/users", end: true, roles: ["giamdoc"] },
+  { title: "Người dùng", icon: Users01, path: "/users", end: true, roles: ["giamdoc"] },
   { title: "Dự án", icon: Briefcase01, path: "/partner/projects", roles: ALL_STAFF },
   { title: "Nhân viên", icon: Users01, path: "/partner/employees", roles: ALL_STAFF },
   { title: "Bảng công", icon: Calendar, path: "/timesheet", end: true, roles: ALL_STAFF },

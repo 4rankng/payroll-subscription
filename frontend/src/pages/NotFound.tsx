@@ -30,7 +30,7 @@ const NotFound = () => {
   }, [navigate, handleDashboardNavigation]);
 
   // Pre-memoized navigation handlers to avoid inline arrow functions in JSX
-  const handleAdminUsers = useCallback(() => navigate('/admin/users'), [navigate]);
+  const handleAdminUsers = useCallback(() => navigate('/users'), [navigate]);
   const handleAdminProjects = useCallback(() => navigate('/admin/projects'), [navigate]);
   const handleAdminEmployees = useCallback(() => navigate('/admin/employees'), [navigate]);
   const handlePartnerEmployees = useCallback(() => navigate('/partner/employees'), [navigate]);

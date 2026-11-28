@@ -71,7 +71,7 @@ type MenuItem = {
 
 export const ADMIN_MENU_ITEMS: MenuItem[] = [
   { title: "Tổng quan", icon: Home01, path: "/dashboard", end: true, group: "top" },
-  { title: "Người dùng", icon: UserEdit, path: "/admin/users", group: "quan-ly" },
+  { title: "Người dùng", icon: UserEdit, path: "/users", group: "quan-ly" },
   { title: "Dự án", icon: Briefcase01, path: "/admin/projects", group: "quan-ly" },
   { title: "Nhân viên", icon: Users01, path: "/admin/employees", group: "quan-ly" },
   { title: "Bảng công", icon: CalendarCheck01, path: "/timesheet", group: "quan-ly" },

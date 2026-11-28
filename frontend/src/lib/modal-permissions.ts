@@ -60,12 +60,12 @@ const defineAbilityFor = (role: string): AppAbility => {
     can(['read', 'update'], 'SelfAccount');
     can('read', ['Project', 'Employee', 'Notification']);
   }
-  // Director: same read surfaces as ketoan, plus the read-only user list on
-  // /partner/users. User-management writes stay admin-only — the director
-  // portal must not offer user creation or edits.
+  // Director: PRD §5.3 — full control of the user directory (create, edit,
+  // deactivate, assign roles), same as admin.
   else if (role === 'giamdoc') {
     can(['read', 'update'], 'SelfAccount');
-    can('read', ['Project', 'Employee', 'Notification', 'User']);
+    can('read', ['Project', 'Employee', 'Notification']);
+    can('manage', 'User');
   }
   else if (role === 'nhanvien') {
     can(['read', 'update'], 'SelfAccount');
@@ -121,13 +121,13 @@ export interface ModalPermission {
  * Simple and reliable approach
  */
 export const MODAL_PERMISSIONS: Record<string, ModalPermission> = {
-  // User Management — only admin holds user-management writes; giamdoc reads
-  // /partner/users read-only (list + details), quanly/ketoan read the list.
+  // User Management — admin + giamdoc full control (PRD §5.3); quanly/ketoan
+  // have no directory access.
   user_details: {
     modalId: 'user_details',
     action: 'read',
     subject: 'User',
-    roles: ['admin', 'quanly', 'giamdoc']
+    roles: ['admin', 'giamdoc']
   },
   add_user: {
     modalId: 'add_user',
