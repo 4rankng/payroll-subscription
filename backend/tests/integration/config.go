@@ -19,13 +19,13 @@ type TestConfig struct {
 func LoadTestConfig() *TestConfig {
 	cfg := &TestConfig{
 		BaseURL:            getEnvOrDefault("PAYROLL_BASE_URL", "http://localhost:8080"),
-		AdminUsername:      getEnvOrDefault("PAYROLL_ADMIN_USER", "frankng"),
-		AdminPassword:      getEnvOrDefault("PAYROLL_ADMIN_PASS", "Admin123"),
-		CommonPassword:     getEnvOrDefault("PAYROLL_COMMON_PASS", "Admin123"),
+		AdminUsername:      getEnvOrDefault("PAYROLL_ADMIN_USER", "admin"),
+		AdminPassword:      getEnvOrDefault("PAYROLL_ADMIN_PASS", "Abc123"),
+		CommonPassword:     getEnvOrDefault("PAYROLL_COMMON_PASS", "Abc123"),
 		FlexPayFixturePath: getEnvOrDefault("PAYROLL_FLEXPAY_FIXTURE", "tests/fixtures/LGD- TINGTING 05.05.26 đợt 1.xlsx"),
 	}
 
-	partners := getEnvOrDefault("PAYROLL_PARTNER_USERS", "thanhmai,linhltk1,Vannth")
+	partners := getEnvOrDefault("PAYROLL_PARTNER_USERS", "quanly")
 	cfg.PartnerUsernames = strings.Split(partners, ",")
 
 	return cfg
