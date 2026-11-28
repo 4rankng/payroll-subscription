@@ -32,7 +32,7 @@ func TestBuildResetEmailMessage_DeliveredBannerStaysInsideContentTable(t *testin
 
 	htmlBody := delivered.Message.HTMLBody
 	tableIdx := strings.Index(htmlBody, `width="520"`)
-	bannerIdx := strings.Index(htmlBody, `src="https://tingting.vip/email-banner.jpg?v=20260709"`)
+	bannerIdx := strings.Index(htmlBody, `src="https://tingting.vip/email-banner.jpg?v=20261128"`)
 	headingIdx := strings.Index(htmlBody, "Đặt lại mật khẩu TingTing")
 	if tableIdx < 0 || bannerIdx < 0 || headingIdx < 0 {
 		t.Fatalf("expected content table, banner, and reset heading in delivered HTML")

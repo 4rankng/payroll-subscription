@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 
-export const TINGTING_EMAIL_BANNER_URL = 'https://tingting.vip/email-banner.jpg?v=20260709';
+export const TINGTING_EMAIL_BANNER_URL = 'https://tingting.vip/email-banner.jpg?v=20261128';
 
 export function parseEmailRecipients(value: string): string[] {
   return value

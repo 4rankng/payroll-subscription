@@ -8,9 +8,9 @@ import (
 	"api-server/internal/domain"
 )
 
-const publicEmailBannerURL = "https://tingting.vip/email-banner.jpg?v=20260709"
+const publicEmailBannerURL = "https://tingting.vip/email-banner.jpg?v=20261128"
 
-const publicEmailBannerHTML = `<img src="https://tingting.vip/email-banner.jpg?v=20260709" alt="TingTing Soft" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">`
+const publicEmailBannerHTML = `<img src="https://tingting.vip/email-banner.jpg?v=20261128" alt="TingTing Soft" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">`
 
 var publicEmailBannerImagePattern = regexp.MustCompile(`(?is)<img\b[^>]*\bsrc\s*=\s*(?:"[^"]*tingting\.vip/email-banner\.jpg[^"]*"|'[^']*tingting\.vip/email-banner\.jpg[^']*'|[^\s>]*tingting\.vip/email-banner\.jpg[^\s>]*)[^>]*>`)
 

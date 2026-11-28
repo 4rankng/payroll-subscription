@@ -82,7 +82,7 @@ const resetEmailTemplate = `<!DOCTYPE html>
       <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;border-collapse:separate;border-spacing:0;">
         <tr>
           <td style="padding:0 0 14px;">
-            <img src="https://tingting.vip/email-banner.jpg?v=20260709" alt="TingTing Soft" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;border-radius:16px;">
+            <img src="https://tingting.vip/email-banner.jpg?v=20261128" alt="TingTing Soft" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;border-radius:16px;">
           </td>
         </tr>
         <tr>
