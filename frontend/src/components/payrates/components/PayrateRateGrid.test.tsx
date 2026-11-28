@@ -18,17 +18,17 @@ describe("PayrateRateGrid", () => {
       />,
     );
 
-    expect(screen.getByText("30.000")).toBeInTheDocument();
-    expect(screen.getByText("₫/giờ")).toBeInTheDocument();
+    expect(screen.getAllByText((_, node) => (node?.textContent ?? '').replace(/\u00a0/g, ' ').startsWith("30.000 ₫")).length).toBeGreaterThan(0);
+    expect(screen.getByText("/giờ")).toBeInTheDocument();
     expect(screen.getByLabelText("Bảng mức lương theo giờ")).toHaveClass("overflow-x-auto");
   });
 
   it("labels flexible-project rates as full-shift earnings", () => {
     render(<PayrateRateGrid rates={rates} isFlexible />);
 
-    expect(screen.getByText("30.000")).toBeInTheDocument();
-    expect(screen.getByText("₫/ca")).toBeInTheDocument();
-    expect(screen.queryByText("₫/giờ")).not.toBeInTheDocument();
+    expect(screen.getAllByText((_, node) => (node?.textContent ?? '').replace(/\u00a0/g, ' ').startsWith("30.000 ₫")).length).toBeGreaterThan(0);
+    expect(screen.getByText("/ca")).toBeInTheDocument();
+    expect(screen.queryByText("/giờ")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Bảng lương trọn ca")).toHaveClass(
       "overflow-x-auto",
     );
