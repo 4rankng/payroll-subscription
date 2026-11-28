@@ -74,29 +74,8 @@ func ConvertAuditLogsToActivities(logs []*domain.AuditLog, repos Repositories) (
 // ConvertAuditLogToActivity converts an audit log to a minimal ActivityItem
 // compatible with the dashboard recent activities API.
 // Deprecated: Use ConvertAuditLogsToActivities for better performance
-func ConvertAuditLogToActivity(log *domain.AuditLog, repos Repositories) *dto.ActivityItem {
-	// Resolve actor name from user_id
-	actorName := ""
-	if user, err := repos.UserRepo.GetByID(context.Background(), log.UserID); err == nil && user != nil {
-		actorName = strings.TrimSpace(user.Fullname)
-		if actorName == "" {
-			actorName = strings.TrimSpace(user.Username)
-		}
-	}
 
-	// Build final human-readable message.
-	// log.Message is a suffix like "đã tạo dự án mới".
-	msg := strings.TrimSpace(log.Message)
-	if actorName != "" && msg != "" {
-		prefixed := actorName + " "
-		if !strings.HasPrefix(msg, prefixed) {
-			msg = fmt.Sprintf("%s %s", actorName, msg)
-		}
-	}
+// Resolve actor name from user_id
 
-	return &dto.ActivityItem{
-		ID:        int(log.ID),
-		Message:   msg,
-		CreatedAt: log.CreatedAt,
-	}
-}
+// Build final human-readable message.
+// log.Message is a suffix like "đã tạo dự án mới".

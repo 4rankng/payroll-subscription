@@ -227,11 +227,6 @@ type DisbursementConfig struct {
 	Onepay  OnepayConfig
 }
 
-func (d DisbursementConfig) EmployeeDisbursementEnabled() bool {
-	return (d.Ninepay.Enabled && d.Ninepay.EnabledForEmployee) ||
-		(d.Onepay.Enabled && d.Onepay.EnabledForEmployee)
-}
-
 // CashForecastConfig governs the advisory timesheet cash-readiness forecast on
 // /admin/timesheet ("how much cash to prepare for the next weekly bulk
 // transfer"). Like the wallet forecast, this is DISPLAY ONLY — it never feeds

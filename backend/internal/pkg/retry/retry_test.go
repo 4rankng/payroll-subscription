@@ -260,92 +260,11 @@ func TestWithExponentialBackoff_ContextCancellation(t *testing.T) {
 	assert.Equal(t, context.Canceled, err)
 }
 
-func TestWithDatabaseRetry_Success(t *testing.T) {
-	ctx := context.Background()
-	cfg := DatabaseOperationConfig{
-		MaxRetries:       3,
-		InitialDelay:     10 * time.Millisecond,
-		MaxDelay:         100 * time.Millisecond,
-		BackoffFactor:    1.5,
-		OperationTimeout: 1 * time.Second,
-	}
+// Short timeout that will be exceeded during retries
 
-	callCount := 0
-	operation := func() error {
-		callCount++
-		return nil
-	}
+// Operation that always fails with transient error
+// The retries and delays will exceed the timeout
 
-	err := WithDatabaseRetry(ctx, cfg, operation)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, callCount)
-}
+// Transient error
 
-func TestWithDatabaseRetry_RetryOnTransientError(t *testing.T) {
-	ctx := context.Background()
-	cfg := DatabaseOperationConfig{
-		MaxRetries:       2,
-		InitialDelay:     10 * time.Millisecond,
-		MaxDelay:         100 * time.Millisecond,
-		BackoffFactor:    1.5,
-		OperationTimeout: 1 * time.Second,
-	}
-
-	callCount := 0
-	operation := func() error {
-		callCount++
-		if callCount < 2 {
-			return errors.New("connection timeout")
-		}
-		return nil
-	}
-
-	err := WithDatabaseRetry(ctx, cfg, operation)
-	assert.NoError(t, err)
-	assert.Equal(t, 2, callCount)
-}
-
-func TestWithDatabaseRetry_OperationTimeout(t *testing.T) {
-	ctx := context.Background()
-	cfg := DatabaseOperationConfig{
-		MaxRetries:       5,
-		InitialDelay:     20 * time.Millisecond,
-		MaxDelay:         50 * time.Millisecond,
-		BackoffFactor:    2.0,
-		OperationTimeout: 80 * time.Millisecond, // Short timeout that will be exceeded during retries
-	}
-
-	// Operation that always fails with transient error
-	// The retries and delays will exceed the timeout
-	operation := func() error {
-		return errors.New("connection timeout") // Transient error
-	}
-
-	err := WithDatabaseRetry(ctx, cfg, operation)
-	assert.Error(t, err)
-	// Should timeout before exhausting all retries
-	assert.Equal(t, context.DeadlineExceeded, err)
-}
-
-func TestWithDatabaseRetry_NonRetryableError(t *testing.T) {
-	ctx := context.Background()
-	cfg := DatabaseOperationConfig{
-		MaxRetries:       3,
-		InitialDelay:     10 * time.Millisecond,
-		MaxDelay:         100 * time.Millisecond,
-		BackoffFactor:    1.5,
-		OperationTimeout: 1 * time.Second,
-	}
-
-	callCount := 0
-	expectedErr := errors.New("constraint violation")
-	operation := func() error {
-		callCount++
-		return expectedErr
-	}
-
-	err := WithDatabaseRetry(ctx, cfg, operation)
-	assert.Error(t, err)
-	assert.Equal(t, expectedErr, err)
-	assert.Equal(t, 1, callCount)
-}
+// Should timeout before exhausting all retries

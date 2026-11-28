@@ -274,25 +274,3 @@ func Chunk[T any](ctx context.Context, db *gorm.DB, ids []uint, size int,
 }
 
 // ChunkStrings is the string-keyed analogue of Chunk (e.g. for transaction codes).
-func ChunkStrings[T any](ctx context.Context, db *gorm.DB, keys []string, size int,
-	fn func(tx *gorm.DB, batch []string) ([]T, error)) ([]T, error) {
-	if len(keys) == 0 {
-		return nil, nil
-	}
-	if size <= 0 {
-		size = DefaultChunkSize
-	}
-	var out []T
-	for i := 0; i < len(keys); i += size {
-		end := i + size
-		if end > len(keys) {
-			end = len(keys)
-		}
-		batch, err := fn(db, keys[i:end])
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, batch...)
-	}
-	return out, nil
-}

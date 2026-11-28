@@ -1,8 +1,6 @@
 package employee
 
 import (
-	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
@@ -165,11 +163,3 @@ func (h *ImportHandler) GetImportStatus(c *gin.Context) {
 }
 
 // Helper function for worker to get stored file path
-func (h *ImportHandler) GetStoredFilePath(ctx context.Context, importID string) (string, uint, error) {
-	progress, err := h.progressService.GetProgress(ctx, importID)
-	if err != nil {
-		return "", 0, fmt.Errorf("failed to get import progress: %w", err)
-	}
-
-	return progress.FilePath, progress.UserID, nil
-}

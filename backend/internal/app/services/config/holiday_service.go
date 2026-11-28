@@ -1,16 +1,9 @@
 package config
 
-import (
-	"time"
-)
-
 // HolidayService handles Vietnam public holiday detection
 type HolidayService struct{}
 
 // NewHolidayService creates a new holiday service
-func NewHolidayService() *HolidayService {
-	return &HolidayService{}
-}
 
 // Vietnam public holidays in YYYY-MM-DD format
 var holidays = []string{
@@ -23,39 +16,15 @@ var holidays = []string{
 }
 
 // IsHoliday checks if the given date is a Vietnam public holiday
-func (h *HolidayService) IsHoliday(date string) bool {
-	for _, holiday := range holidays {
-		if holiday == date {
-			return true
-		}
-	}
-	return false
-}
 
 // GetDayType determines the day type based on Vietnam calendar rules
-func (h *HolidayService) GetDayType(date time.Time) string {
-	// Format date as YYYY-MM-DD
-	dateStr := date.Format("2006-01-02")
 
-	// Check if it's a Vietnam public holiday
-	if h.IsHoliday(dateStr) {
-		return "Ngày lễ"
-	}
+// Format date as YYYY-MM-DD
 
-	// Check day of week
-	weekday := date.Weekday()
-	switch weekday {
-	case time.Sunday:
-		return "Ngày nghỉ"
-	case time.Saturday:
-		// Saturday defaults to "ngày nghỉ" if not specified by user
-		return "Ngày nghỉ"
-	default:
-		return "Ngày thường"
-	}
-}
+// Check if it's a Vietnam public holiday
+
+// Check day of week
+
+// Saturday defaults to "ngày nghỉ" if not specified by user
 
 // IsSaturday checks if the given date is a Saturday
-func (h *HolidayService) IsSaturday(date time.Time) bool {
-	return date.Weekday() == time.Saturday
-}

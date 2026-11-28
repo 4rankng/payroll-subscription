@@ -37,13 +37,6 @@ func BindJSON(c *gin.Context, req interface{}) bool {
 //	if !helpers.BindJSONWithError(c, &req, "Invalid project data") {
 //		return
 //	}
-func BindJSONWithError(c *gin.Context, req interface{}, errMsg string) bool {
-	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, errMsg)
-		return false
-	}
-	return true
-}
 
 // BindJSONWithValidation attempts to bind the request body JSON and runs a custom validator.
 // If binding or validation fails, it sends a bad request response.
@@ -60,21 +53,6 @@ func BindJSONWithError(c *gin.Context, req interface{}, errMsg string) bool {
 //	}) {
 //		return
 //	}
-func BindJSONWithValidation(c *gin.Context, req interface{}, validator func() error) bool {
-	if err := c.ShouldBindJSON(req); err != nil {
-		response.BadRequest(c, constants.MsgInvalidRequestBodyVN)
-		return false
-	}
-
-	if validator != nil {
-		if err := validator(); err != nil {
-			response.BadRequest(c, err.Error())
-			return false
-		}
-	}
-
-	return true
-}
 
 // BindQuery attempts to bind query parameters to the provided struct.
 // If binding fails, it sends a bad request response.
@@ -86,13 +64,6 @@ func BindJSONWithValidation(c *gin.Context, req interface{}, validator func() er
 //	if !helpers.BindQuery(c, &filters) {
 //		return
 //	}
-func BindQuery(c *gin.Context, req interface{}) bool {
-	if err := c.ShouldBindQuery(req); err != nil {
-		response.BadRequest(c, "Invalid query parameters")
-		return false
-	}
-	return true
-}
 
 // BindURI attempts to bind URI parameters to the provided struct.
 // If binding fails, it sends a bad request response.
@@ -106,13 +77,6 @@ func BindQuery(c *gin.Context, req interface{}) bool {
 //	if !helpers.BindURI(c, &uri) {
 //		return
 //	}
-func BindURI(c *gin.Context, req interface{}) bool {
-	if err := c.ShouldBindUri(req); err != nil {
-		response.BadRequest(c, "Invalid URI parameters")
-		return false
-	}
-	return true
-}
 
 // ParseIDParam parses a uint path parameter by name.
 // Sends a BadRequest response and returns (0, false) on failure.

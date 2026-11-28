@@ -2,7 +2,6 @@ package user
 
 import (
 	"strings"
-	"unicode"
 
 	"api-server/internal/domain"
 )
@@ -209,11 +208,3 @@ func contains(s string, substrings []string) bool {
 }
 
 // capitalizeFirst capitalizes the first letter of a string (replacement for deprecated strings.Title)
-func capitalizeFirst(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	runes := []rune(s)
-	runes[0] = unicode.ToUpper(runes[0])
-	return string(runes)
-}

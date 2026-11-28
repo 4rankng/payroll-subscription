@@ -105,94 +105,21 @@ func TestVietnameseNormalizer_NormalizeForSearch(t *testing.T) {
 	}
 }
 
-func TestVietnameseNormalizer_NormalizeBatch(t *testing.T) {
-	normalizer := NewVietnameseNormalizer()
+// Normalize a string
 
-	tests := []struct {
-		name  string
-		input []string
-		want  []string
-	}{
-		{
-			name:  "empty batch",
-			input: []string{},
-			want:  []string{},
-		},
-		{
-			name:  "single item",
-			input: []string{"Hà Nội"},
-			want:  []string{"ha noi"},
-		},
-		{
-			name:  "multiple items",
-			input: []string{"Hà Nội", "Hồ Chí Minh", "Đà Nẵng"},
-			want:  []string{"ha noi", "ho chi minh", "da nang"},
-		},
-	}
+// Check cache size
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := normalizer.NormalizeBatch(tt.input)
-			if len(got) != len(tt.want) {
-				t.Errorf("NormalizeBatch() returned %d items, want %d", len(got), len(tt.want))
-				return
-			}
-			for i := range got {
-				if got[i] != tt.want[i] {
-					t.Errorf("NormalizeBatch()[%d] = %q, want %q", i, got[i], tt.want[i])
-				}
-			}
-		})
-	}
-}
+// Normalize the same string again (should use cache)
 
-func TestVietnameseNormalizer_Cache(t *testing.T) {
-	normalizer := NewVietnameseNormalizer()
+// Cache size should still be 1
 
-	// Normalize a string
-	input := "Nguyễn Văn A"
-	normalizer.Normalize(input)
+// Add another string
 
-	// Check cache size
-	if normalizer.GetCacheSize() != 1 {
-		t.Errorf("GetCacheSize() = %d, want 1", normalizer.GetCacheSize())
-	}
+// Cache size should be 2
 
-	// Normalize the same string again (should use cache)
-	normalizer.Normalize(input)
+// Add some items to cache
 
-	// Cache size should still be 1
-	if normalizer.GetCacheSize() != 1 {
-		t.Errorf("GetCacheSize() after duplicate = %d, want 1", normalizer.GetCacheSize())
-	}
-
-	// Add another string
-	normalizer.Normalize("Trần Văn B")
-
-	// Cache size should be 2
-	if normalizer.GetCacheSize() != 2 {
-		t.Errorf("GetCacheSize() after second string = %d, want 2", normalizer.GetCacheSize())
-	}
-}
-
-func TestVietnameseNormalizer_ClearCache(t *testing.T) {
-	normalizer := NewVietnameseNormalizer()
-
-	// Add some items to cache
-	normalizer.Normalize("Test 1")
-	normalizer.Normalize("Test 2")
-
-	if normalizer.GetCacheSize() != 2 {
-		t.Errorf("GetCacheSize() before clear = %d, want 2", normalizer.GetCacheSize())
-	}
-
-	// Clear cache
-	normalizer.ClearCache()
-
-	if normalizer.GetCacheSize() != 0 {
-		t.Errorf("GetCacheSize() after clear = %d, want 0", normalizer.GetCacheSize())
-	}
-}
+// Clear cache
 
 func TestNormalizeVietnamese(t *testing.T) {
 	// Test global convenience function
@@ -214,28 +141,8 @@ func TestNormalizeVietnameseForSearch(t *testing.T) {
 	}
 }
 
-func TestVietnameseNormalizer_ConcurrentAccess(t *testing.T) {
-	normalizer := NewVietnameseNormalizer()
+// Simulate concurrent access
 
-	done := make(chan bool)
+// Wait for all goroutines
 
-	// Simulate concurrent access
-	for i := 0; i < 10; i++ {
-		go func(n int) {
-			text := "Test"
-			normalizer.Normalize(text)
-			_ = normalizer.GetCacheSize()
-			done <- true
-		}(i)
-	}
-
-	// Wait for all goroutines
-	for i := 0; i < 10; i++ {
-		<-done
-	}
-
-	// Should not panic and cache should have the item
-	if normalizer.GetCacheSize() == 0 {
-		t.Error("Expected cache to have items after concurrent access")
-	}
-}
+// Should not panic and cache should have the item

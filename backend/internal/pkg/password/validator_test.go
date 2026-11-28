@@ -133,47 +133,6 @@ func TestPasswordValidator_ValidatePasswordStrength(t *testing.T) {
 	}
 }
 
-func TestGetStrengthLabel(t *testing.T) {
-	tests := []struct {
-		name  string
-		score int
-		want  string
-	}{
-		{
-			name:  "Very strong",
-			score: 95,
-			want:  "Rất mạnh",
-		},
-		{
-			name:  "Strong",
-			score: 80,
-			want:  "Mạnh",
-		},
-		{
-			name:  "Medium",
-			score: 60,
-			want:  "Trung bình",
-		},
-		{
-			name:  "Weak",
-			score: 30,
-			want:  "Yếu",
-		},
-		{
-			name:  "Very weak",
-			score: 10,
-			want:  "Rất yếu",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := GetStrengthLabel(tt.score)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestPasswordValidator_AddCustomRule(t *testing.T) {
 	validator := NewPasswordValidator()
 	initialRules := len(validator.rules)

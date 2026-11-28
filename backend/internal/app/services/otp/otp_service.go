@@ -232,9 +232,6 @@ func (s *OTPService) recordFailedAttempt(ctx context.Context, user *domain.User)
 
 // DeleteSessionsForUser is called by RevokeUserTokens (RT-M4) so revoking a
 // user also kills their in-flight OTP step.
-func (s *OTPService) DeleteSessionsForUser(ctx context.Context, userID uint) error {
-	return s.pendingStore.DeleteSessionsForUser(ctx, userID)
-}
 
 // Errors specific to resend.
 var (

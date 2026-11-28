@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -158,64 +157,6 @@ func TestCreateStyledWorkbook(t *testing.T) {
 			assert.Contains(t, sheetList, sheetName)
 		}
 	})
-}
-
-func TestRemoveTablesFromSheetPreventsCopySheetTableRelationshipOrphans(t *testing.T) {
-	service := &ExportService{}
-	wb := excelize.NewFile()
-	const templateSheet = "Sample Project"
-
-	require.NoError(t, wb.SetSheetName("Sheet1", templateSheet))
-	require.NoError(t, wb.SetCellValue(templateSheet, "A1", "Name"))
-	require.NoError(t, wb.SetCellValue(templateSheet, "B1", "Amount"))
-	require.NoError(t, wb.SetCellValue(templateSheet, "A2", "Nguyen Van A"))
-	require.NoError(t, wb.SetCellValue(templateSheet, "B2", 1000000))
-	require.NoError(t, wb.AddTable(templateSheet, &excelize.Table{
-		Range:     "A1:B2",
-		Name:      "SampleTable",
-		StyleName: "TableStyleMedium2",
-	}))
-
-	tables, err := wb.GetTables(templateSheet)
-	require.NoError(t, err)
-	require.Len(t, tables, 1)
-
-	require.NoError(t, service.RemoveTablesFromSheet(wb, templateSheet))
-
-	tables, err = wb.GetTables(templateSheet)
-	require.NoError(t, err)
-	require.Empty(t, tables)
-
-	templateIndex, err := wb.GetSheetIndex(templateSheet)
-	require.NoError(t, err)
-	sheetIndex, err := wb.NewSheet("LGD")
-	require.NoError(t, err)
-	require.NoError(t, wb.CopySheet(templateIndex, sheetIndex))
-	require.NoError(t, wb.DeleteSheet(templateSheet))
-
-	buffer, err := wb.WriteToBuffer()
-	require.NoError(t, err)
-	require.NoError(t, assertNoOrphanedWorksheetTableRelationships(buffer.Bytes()))
-}
-
-func TestSanitizeWorkbookXMLRemovesUndeclaredIgnorablePrefixes(t *testing.T) {
-	service := &ExportService{}
-	wb := excelize.NewFile()
-	require.NoError(t, wb.SetCellValue("Sheet1", "A1", "value"))
-
-	buffer, err := wb.WriteToBuffer()
-	require.NoError(t, err)
-
-	withInvalidIgnorable := bytes.Replace(
-		buffer.Bytes(),
-		[]byte(`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"`),
-		[]byte(`<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" mc:Ignorable="x14ac xr xr2"`),
-		1,
-	)
-
-	sanitized, err := service.SanitizeWorkbookXML(withInvalidIgnorable)
-	require.NoError(t, err)
-	require.NoError(t, assertNoUndeclaredIgnorablePrefixes(sanitized))
 }
 
 func TestSetupHeaderStyle(t *testing.T) {
@@ -555,38 +496,6 @@ func TestGetColumnName(t *testing.T) {
 	}
 }
 
-func TestFormatCurrency(t *testing.T) {
-	service := &ExportService{}
-
-	tests := []struct {
-		name     string
-		value    int64
-		expected string
-	}{
-		{"zero", 0, "0"},
-		{"single digit", 5, "5"},
-		{"two digits", 99, "99"},
-		{"three digits", 999, "999"},
-		{"one thousand", 1000, "1,000"},
-		{"ten thousand", 10000, "10,000"},
-		{"hundred thousand", 100000, "100,000"},
-		{"one million", 1000000, "1,000,000"},
-		{"complex number", 1234567, "1,234,567"},
-		{"salary example", 75000, "75,000"},
-		{"large salary", 250000, "250,000"},
-		{"negative small", -99, "-99"},
-		{"negative thousand", -1000, "-1,000"},
-		{"negative million", -1000000, "-1,000,000"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := service.FormatCurrency(tt.value)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestFormatDate(t *testing.T) {
 	service := &ExportService{}
 
@@ -660,58 +569,6 @@ func TestFormatDateValue(t *testing.T) {
 		zeroTime := time.Time{}
 		result := service.FormatDateValue(zeroTime)
 		assert.Equal(t, "01/01/0001", result)
-	})
-}
-
-func TestFormatDateTimeValue(t *testing.T) {
-	service := &ExportService{}
-
-	t.Run("formats valid datetime", func(t *testing.T) {
-		datetime := time.Date(2024, 1, 15, 14, 30, 45, 0, time.UTC)
-		result := service.FormatDateTimeValue(datetime)
-		assert.Equal(t, "15/01/2024 14:30:45", result)
-	})
-
-	t.Run("formats different datetimes", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			datetime time.Time
-			expected string
-		}{
-			{
-				"midnight",
-				time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				"01/01/2024 00:00:00",
-			},
-			{
-				"noon",
-				time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC),
-				"15/06/2024 12:00:00",
-			},
-			{
-				"end of day",
-				time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC),
-				"31/12/2024 23:59:59",
-			},
-			{
-				"morning time",
-				time.Date(2024, 3, 10, 9, 15, 30, 0, time.UTC),
-				"10/03/2024 09:15:30",
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				result := service.FormatDateTimeValue(tt.datetime)
-				assert.Equal(t, tt.expected, result)
-			})
-		}
-	})
-
-	t.Run("handles zero time", func(t *testing.T) {
-		zeroTime := time.Time{}
-		result := service.FormatDateTimeValue(zeroTime)
-		assert.Equal(t, "01/01/0001 00:00:00", result)
 	})
 }
 
@@ -797,115 +654,23 @@ func TestSaveToBuffer(t *testing.T) {
 	})
 }
 
-func TestExportService_IntegrationScenario(t *testing.T) {
-	service := &ExportService{}
+// Step 1: Create workbook
 
-	t.Run("complete export workflow", func(t *testing.T) {
-		// Step 1: Create workbook
-		wb, err := service.CreateStyledWorkbook("EmployeeReport")
-		assert.NoError(t, err)
-		assert.NotNil(t, wb)
+// Step 2: Write headers
 
-		sheetName := "EmployeeReport"
+// Verify headers
 
-		// Step 2: Write headers
-		headers := []string{"ID", "Name", "Department", "Join Date", "Salary", "Bonus"}
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
+// Step 3: Write data rows
 
-		// Verify headers
-		val, err := wb.GetCellValue(sheetName, "A1")
-		assert.NoError(t, err)
-		assert.Equal(t, "ID", val)
+// Salary and Bonus columns
 
-		// Step 3: Write data rows
-		joinDate := time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
-		data := [][]interface{}{
-			{1, "John Doe", "Engineering", service.FormatDateValue(joinDate), 75000, 5000},
-			{2, "Jane Smith", "Marketing", service.FormatDateValue(joinDate), 65000, 3000},
-			{3, "Bob Johnson", "Sales", service.FormatDateValue(joinDate), 70000, 7000},
-		}
+// Verify data was written
 
-		currencyColumns := []int{4, 5} // Salary and Bonus columns
+// Step 4: Auto size columns
 
-		for i, row := range data {
-			err = service.WriteDataRow(wb, sheetName, i+2, row, currencyColumns)
-			assert.NoError(t, err)
-		}
+// Step 5: Save to buffer
 
-		// Verify data was written
-		val, err = wb.GetCellValue(sheetName, "B2")
-		assert.NoError(t, err)
-		assert.Equal(t, "John Doe", val)
-
-		// Step 4: Auto size columns
-		err = service.AutoSizeColumns(wb, sheetName, headers, data)
-		assert.NoError(t, err)
-
-		// Step 5: Save to buffer
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.NotNil(t, buffer)
-		assert.Greater(t, len(buffer), 0)
-	})
-
-	t.Run("complete export with currency formatting", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("SalaryReport")
-		assert.NoError(t, err)
-
-		sheetName := "SalaryReport"
-		headers := []string{"Employee", "Base Salary", "Allowance", "Total"}
-
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		// Test currency formatting
-		formattedSalary := service.FormatCurrency(75000)
-		assert.Equal(t, "75,000", formattedSalary)
-
-		data := [][]interface{}{
-			{"John Doe", 75000, 5000, 80000},
-			{"Jane Smith", 85000, 7000, 92000},
-		}
-
-		for i, row := range data {
-			err = service.WriteDataRow(wb, sheetName, i+2, row, []int{1, 2, 3})
-			assert.NoError(t, err)
-		}
-
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.Greater(t, len(buffer), 0)
-	})
-
-	t.Run("complete export with date formatting", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("AttendanceReport")
-		assert.NoError(t, err)
-
-		sheetName := "AttendanceReport"
-		headers := []string{"Employee", "Date", "Time"}
-
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		now := time.Now()
-		formattedDate := service.FormatDateValue(now)
-		formattedDateTime := service.FormatDateTimeValue(now)
-
-		data := [][]interface{}{
-			{"John Doe", formattedDate, formattedDateTime},
-		}
-
-		for i, row := range data {
-			err = service.WriteDataRow(wb, sheetName, i+2, row, []int{})
-			assert.NoError(t, err)
-		}
-
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.Greater(t, len(buffer), 0)
-	})
-}
+// Test currency formatting
 
 func TestWriteHeaders_ErrorCases(t *testing.T) {
 	service := &ExportService{}
@@ -1118,108 +883,10 @@ func TestWriteHeaders_AdvancedScenarios(t *testing.T) {
 	})
 }
 
-func TestExportService_EdgeCases(t *testing.T) {
-	service := &ExportService{}
+// Create large dataset
 
-	t.Run("handles large dataset", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("LargeDataset")
-		assert.NoError(t, err)
+// Write all rows
 
-		sheetName := "LargeDataset"
-		headers := []string{"ID", "Data1", "Data2", "Data3"}
+// Create 50 columns
 
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		// Create large dataset
-		var data [][]interface{}
-		for i := 0; i < 100; i++ {
-			row := []interface{}{i, "Data", "Value", i * 100}
-			data = append(data, row)
-		}
-
-		// Write all rows
-		for i, row := range data {
-			err = service.WriteDataRow(wb, sheetName, i+2, row, []int{3})
-			assert.NoError(t, err)
-		}
-
-		err = service.AutoSizeColumns(wb, sheetName, headers, data)
-		assert.NoError(t, err)
-
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.Greater(t, len(buffer), 0)
-	})
-
-	t.Run("handles wide dataset with many columns", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("WideDataset")
-		assert.NoError(t, err)
-
-		sheetName := "WideDataset"
-
-		// Create 50 columns
-		var headers []string
-		var data []interface{}
-		for i := 0; i < 50; i++ {
-			headers = append(headers, "Column"+service.FormatCurrency(int64(i)))
-			data = append(data, "Value"+service.FormatCurrency(int64(i)))
-		}
-
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		err = service.WriteDataRow(wb, sheetName, 2, data, []int{})
-		assert.NoError(t, err)
-
-		// Verify column naming for high indices
-		columnName := service.GetColumnName(49)
-		assert.Equal(t, "AX", columnName)
-	})
-
-	t.Run("handles special characters in data", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("SpecialChars")
-		assert.NoError(t, err)
-
-		sheetName := "SpecialChars"
-		headers := []string{"Name", "Description"}
-
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		data := []interface{}{
-			"Test & Co. <Ltd>",
-			"Description with \"quotes\" and 'apostrophes'",
-		}
-
-		err = service.WriteDataRow(wb, sheetName, 2, data, []int{})
-		assert.NoError(t, err)
-
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.Greater(t, len(buffer), 0)
-	})
-
-	t.Run("handles unicode characters", func(t *testing.T) {
-		wb, err := service.CreateStyledWorkbook("Unicode")
-		assert.NoError(t, err)
-
-		sheetName := "Unicode"
-		headers := []string{"Name", "Text"}
-
-		err = service.WriteHeaders(wb, sheetName, headers)
-		assert.NoError(t, err)
-
-		data := []interface{}{
-			"José García",
-			"中文字符 العربية 日本語",
-		}
-
-		err = service.WriteDataRow(wb, sheetName, 2, data, []int{})
-		assert.NoError(t, err)
-
-		buffer, err := service.SaveToBuffer(wb)
-		assert.NoError(t, err)
-		assert.Greater(t, len(buffer), 0)
-	})
-}
+// Verify column naming for high indices

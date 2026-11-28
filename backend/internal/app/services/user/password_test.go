@@ -10,64 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApplyPeppering(t *testing.T) {
-	tests := []struct {
-		name       string
-		password   string
-		hashSecret string
-		hashSalt   string
-		expected   string
-	}{
-		{
-			name:       "No pepper - password only",
-			password:   "mypassword",
-			hashSecret: "",
-			hashSalt:   "",
-			expected:   "mypassword",
-		},
-		{
-			name:       "With secret only",
-			password:   "mypassword",
-			hashSecret: "secret123",
-			hashSalt:   "",
-			expected:   "mypassword::secret123",
-		},
-		{
-			name:       "With salt only",
-			password:   "mypassword",
-			hashSecret: "",
-			hashSalt:   "salt456",
-			expected:   "mypassword::salt456",
-		},
-		{
-			name:       "With both secret and salt",
-			password:   "mypassword",
-			hashSecret: "secret123",
-			hashSalt:   "salt456",
-			expected:   "mypassword::secret123::salt456",
-		},
-		{
-			name:       "Empty password with secret and salt",
-			password:   "",
-			hashSecret: "secret123",
-			hashSalt:   "salt456",
-			expected:   "::secret123::salt456",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			service := &UserService{
-				hashSecret: tt.hashSecret,
-				hashSalt:   tt.hashSalt,
-			}
-
-			result := service.applyPeppering(tt.password)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestValidatePassword(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	service := &UserService{

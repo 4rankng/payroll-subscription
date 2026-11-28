@@ -52,15 +52,6 @@ func NewNotFoundError(message string) *DomainError {
 	}
 }
 
-func NewNotFoundErrorWithCode(code, message string) *DomainError {
-	return &DomainError{
-		Type:    "NOT_FOUND",
-		Code:    code,
-		Message: message,
-		Cause:   ErrNotFound,
-	}
-}
-
 func NewValidationError(message string) *DomainError {
 	return &DomainError{
 		Type:    "VALIDATION_ERROR",
@@ -79,28 +70,10 @@ func NewUnauthorizedError(message string) *DomainError {
 	}
 }
 
-func NewUnauthorizedErrorWithCode(code, message string) *DomainError {
-	return &DomainError{
-		Type:    "UNAUTHORIZED",
-		Code:    code,
-		Message: message,
-		Cause:   ErrUnauthorized,
-	}
-}
-
 func NewForbiddenError(message string) *DomainError {
 	return &DomainError{
 		Type:    "FORBIDDEN",
 		Code:    "FORBIDDEN",
-		Message: message,
-		Cause:   ErrForbidden,
-	}
-}
-
-func NewForbiddenErrorWithCode(code, message string) *DomainError {
-	return &DomainError{
-		Type:    "FORBIDDEN",
-		Code:    code,
 		Message: message,
 		Cause:   ErrForbidden,
 	}
@@ -129,23 +102,6 @@ func NewInternalError(message string, cause error) *DomainError {
 // filtered out for missing bank info / unresolved SWIFT), NOT a server fault.
 // Handlers map it to HTTP 422 so the frontend can surface actionable guidance
 // instead of a generic "internal error".
-func NewEmptyResultError(message string) *DomainError {
-	return &DomainError{
-		Type:    "EMPTY_RESULT",
-		Code:    "EMPTY_RESULT",
-		Message: message,
-		Cause:   ErrValidation,
-	}
-}
-
-func NewInternalErrorWithCode(code, message string, cause error) *DomainError {
-	return &DomainError{
-		Type:    "INTERNAL_ERROR",
-		Code:    code,
-		Message: message,
-		Cause:   cause,
-	}
-}
 
 // Error type checkers
 func IsNotFoundError(err error) bool {
@@ -172,14 +128,6 @@ func IsUnauthorizedError(err error) bool {
 	return errors.Is(err, ErrUnauthorized)
 }
 
-func IsForbiddenError(err error) bool {
-	var domainErr *DomainError
-	if errors.As(err, &domainErr) {
-		return domainErr.Type == "FORBIDDEN"
-	}
-	return errors.Is(err, ErrForbidden)
-}
-
 func IsConflictError(err error) bool {
 	var domainErr *DomainError
 	if errors.As(err, &domainErr) {
@@ -188,22 +136,7 @@ func IsConflictError(err error) bool {
 	return errors.Is(err, ErrConflict)
 }
 
-func IsInternalError(err error) bool {
-	var domainErr *DomainError
-	if errors.As(err, &domainErr) {
-		return domainErr.Type == "INTERNAL_ERROR"
-	}
-	return errors.Is(err, ErrInternal)
-}
-
 // IsEmptyResultError reports whether err is an EMPTY_RESULT domain error
 // (export produced zero rows). Used by handlers that want to special-case
 // the response shape and by callers that need to distinguish "no data"
 // from real failures.
-func IsEmptyResultError(err error) bool {
-	var domainErr *DomainError
-	if errors.As(err, &domainErr) {
-		return domainErr.Type == "EMPTY_RESULT"
-	}
-	return false
-}

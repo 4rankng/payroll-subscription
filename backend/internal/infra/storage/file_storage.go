@@ -205,11 +205,5 @@ func ValidateFileSize(header *multipart.FileHeader, maxSize int64) error {
 }
 
 // SanitizeFilename removes potentially dangerous characters from filename
-func SanitizeFilename(filename string) string {
-	// Remove path separators and other dangerous characters
-	filename = strings.ReplaceAll(filename, "/", "_")
-	filename = strings.ReplaceAll(filename, "\\", "_")
-	filename = strings.ReplaceAll(filename, "..", "_")
-	filename = strings.ReplaceAll(filename, " ", "_")
-	return filename
-}
+
+// Remove path separators and other dangerous characters

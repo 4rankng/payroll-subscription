@@ -33,6 +33,9 @@ var devUsers = []devUser{
 
 // devUserPassword is the shared local-dev password. Never applied outside
 // non-production environments — the caller guards on APP_ENV.
+// The password validator is bypassed here BY DESIGN (hash-only path); any
+// password set through the API must satisfy the policy
+// (>=8 chars + upper/lower/digit/special) and can never be this value.
 const devUserPassword = "Abc123"
 
 // EnsureDevUsers creates or updates the standard local-dev login accounts

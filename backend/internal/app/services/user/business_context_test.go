@@ -123,27 +123,6 @@ func TestBusinessContextMapper_GetSupportedActionsForEntity_UnknownEntity(t *tes
 	assert.Empty(t, actions)
 }
 
-func TestCapitalizeFirst(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{"Empty string", "", ""},
-		{"Single char", "a", "A"},
-		{"Multiple chars", "hello", "Hello"},
-		{"Already capitalized", "Hello", "Hello"},
-		{"Unicode", "được", "Được"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := capitalizeFirst(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestBuildContextMap(t *testing.T) {
 	contextMap := buildContextMap()
 

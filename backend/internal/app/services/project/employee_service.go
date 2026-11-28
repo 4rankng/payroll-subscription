@@ -360,22 +360,16 @@ func (s *ProjectEmployeeService) updateAssignmentPosition(
 }
 
 // GetConflictingAssignments orchestrates conflict detection
-func (s *ProjectEmployeeService) GetConflictingAssignments(ctx context.Context, employeeID uint, startDate time.Time, endDate *time.Time) ([]*domain.ProjectEmployee, error) {
-	// Simple delegation to domain service - no transaction needed for read operation
-	return s.assignmentService.GetConflictingAssignments(ctx, employeeID, startDate, endDate)
-}
+
+// Simple delegation to domain service - no transaction needed for read operation
 
 // GetAssignmentsByProject orchestrates data retrieval
-func (s *ProjectEmployeeService) GetAssignmentsByProject(ctx context.Context, projectID uint) ([]*domain.ProjectEmployee, error) {
-	// Simple delegation to repository - no business logic needed
-	return s.projectEmployeeRepo.GetByProject(ctx, projectID)
-}
+
+// Simple delegation to repository - no business logic needed
 
 // GetAssignmentsByEmployee orchestrates data retrieval
-func (s *ProjectEmployeeService) GetAssignmentsByEmployee(ctx context.Context, employeeID uint) ([]*domain.ProjectEmployee, error) {
-	// Simple delegation to repository - no business logic needed
-	return s.projectEmployeeRepo.GetByEmployee(ctx, employeeID)
-}
+
+// Simple delegation to repository - no business logic needed
 
 // ListAssignments orchestrates assignment listing with pagination
 func (s *ProjectEmployeeService) ListAssignments(ctx context.Context, filters domain.ProjectEmployeeFilters) ([]*domain.ProjectEmployee, error) {
@@ -452,72 +446,25 @@ type RemoveEmployeeRequest struct {
 
 // CleanupDuplicateAssignments removes duplicate assignment records for the same employee-project combination
 // Keeps only the most recently updated one
-func (s *ProjectEmployeeService) CleanupDuplicateAssignments(ctx context.Context) error {
-	return s.transactionManager.ExecuteInTransaction(ctx, func(tx *gorm.DB) error {
-		// Find all duplicate assignments (same project_id + employee_id combination)
-		var duplicates []struct {
-			ProjectID  uint `json:"project_id"`
-			EmployeeID uint `json:"employee_id"`
-			Count      int  `json:"count"`
-		}
 
-		err := tx.WithContext(ctx).
-			Model(&domain.ProjectEmployee{}).
-			Select("project_id, employee_id, COUNT(*) as count").
-			Group("project_id, employee_id").
-			Having("COUNT(*) > 1").
-			Scan(&duplicates).Error
+// Find all duplicate assignments (same project_id + employee_id combination)
 
-		if err != nil {
-			return err
-		}
+// Get all assignments for this project-employee combination
 
-		for _, dup := range duplicates {
-			// Get all assignments for this project-employee combination
-			assignments, err := s.projectEmployeeRepo.GetByEmployee(ctx, dup.EmployeeID)
-			if err != nil {
-				continue // Skip this one and continue with others
-			}
+// Skip this one and continue with others
 
-			// Filter to only this project
-			var projectAssignments []*domain.ProjectEmployee
-			for _, assignment := range assignments {
-				if assignment.ProjectID == dup.ProjectID {
-					projectAssignments = append(projectAssignments, assignment)
-				}
-			}
+// Filter to only this project
 
-			if len(projectAssignments) <= 1 {
-				continue // No duplicates for this combination
-			}
+// No duplicates for this combination
 
-			// Keep the most recently updated assignment
-			var keepAssignment *domain.ProjectEmployee
-			for _, assignment := range projectAssignments {
-				if keepAssignment == nil || assignment.UpdatedAt.After(keepAssignment.UpdatedAt) {
-					keepAssignment = assignment
-				}
-			}
+// Keep the most recently updated assignment
 
-			// Delete all others
-			for _, assignment := range projectAssignments {
-				if assignment.ID != keepAssignment.ID {
-					// Check if this assignment has timesheets
-					hasTimesheets, err := s.timesheetAssignmentCheck.HasTimesheetsForAssignment(ctx, assignment.ProjectID, assignment.EmployeeID)
-					if err != nil {
-						continue // Skip on error
-					}
+// Delete all others
 
-					if !hasTimesheets {
-						// Safe to delete
-						if err := s.projectEmployeeRepo.Delete(ctx, assignment.ID); err != nil {
-							continue // Skip on error, continue with others
-						}
-					}
-				}
-			}
-		}
+// Check if this assignment has timesheets
 
-		return nil
-	})
-}
+// Skip on error
+
+// Safe to delete
+
+// Skip on error, continue with others

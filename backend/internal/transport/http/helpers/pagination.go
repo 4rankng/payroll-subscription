@@ -78,38 +78,9 @@ func CalculatePagination(page, pageSize int, totalRecords int64) response.Pagina
 
 // ParsePaginationWithCustomMax parses pagination with a custom maximum page size.
 // This is useful for endpoints that need different limits.
-func ParsePaginationWithCustomMax(c *gin.Context, defaultPageSize, maxPageSize int) PaginationParams {
-	if defaultPageSize <= 0 {
-		defaultPageSize = DefaultPageSize
-	}
-	if maxPageSize <= 0 {
-		maxPageSize = MaxPageSize
-	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", strconv.Itoa(defaultPageSize)))
+// Validate page (minimum 1)
 
-	// Validate page (minimum 1)
-	if page < 1 {
-		page = 1
-	}
+// Validate pageSize (between 1 and maxPageSize)
 
-	// Validate pageSize (between 1 and maxPageSize)
-	if pageSize < 1 {
-		pageSize = defaultPageSize
-	}
-	if pageSize > maxPageSize {
-		pageSize = maxPageSize
-	}
-
-	// Calculate offset and limit
-	offset := (page - 1) * pageSize
-	limit := pageSize
-
-	return PaginationParams{
-		Page:     page,
-		PageSize: pageSize,
-		Limit:    limit,
-		Offset:   offset,
-	}
-}
+// Calculate offset and limit

@@ -142,9 +142,6 @@ func (t *ErrorTranslator) CleanMessage(message string) string {
 }
 
 // AddTechnicalErrorMapping allows adding new error mappings at runtime
-func (t *ErrorTranslator) AddTechnicalErrorMapping(technicalPattern string, userFriendlyMessage string) {
-	t.technicalErrorMappings[technicalPattern] = userFriendlyMessage
-}
 
 // GetDefaultTranslator returns a singleton instance of the error translator
 var defaultTranslator *ErrorTranslator

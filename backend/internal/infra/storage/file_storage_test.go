@@ -106,54 +106,6 @@ func TestValidateFileSize(t *testing.T) {
 	}
 }
 
-func TestSanitizeFilename(t *testing.T) {
-	tests := []struct {
-		name     string
-		filename string
-		want     string
-	}{
-		{
-			name:     "normal filename",
-			filename: "document.pdf",
-			want:     "document.pdf",
-		},
-		{
-			name:     "filename with forward slash",
-			filename: "path/to/file.txt",
-			want:     "path_to_file.txt",
-		},
-		{
-			name:     "filename with backslash",
-			filename: "path\\to\\file.txt",
-			want:     "path_to_file.txt",
-		},
-		{
-			name:     "filename with parent directory reference",
-			filename: "../../../etc/passwd",
-			want:     "______etc_passwd",
-		},
-		{
-			name:     "filename with spaces",
-			filename: "my document with spaces.pdf",
-			want:     "my_document_with_spaces.pdf",
-		},
-		{
-			name:     "complex filename",
-			filename: "../path/with spaces/file..name.txt",
-			want:     "__path_with_spaces_file_name.txt",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := SanitizeFilename(tt.filename)
-			if got != tt.want {
-				t.Errorf("SanitizeFilename() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestExists(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir := os.TempDir()

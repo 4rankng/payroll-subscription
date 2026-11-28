@@ -1,7 +1,6 @@
 package events
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -14,16 +13,8 @@ type EventRegistry struct {
 }
 
 // NewEventRegistry creates a new event registry with all known event types
-func NewEventRegistry() *EventRegistry {
-	registry := &EventRegistry{
-		deserializers: make(map[string]func([]byte) (domain.DomainEvent, error)),
-	}
 
-	// Register all event types
-	registry.registerAllEvents()
-
-	return registry
-}
+// Register all event types
 
 // Deserialize deserializes event data based on event type
 func (r *EventRegistry) Deserialize(eventType string, data []byte) (domain.DomainEvent, error) {
@@ -36,214 +27,26 @@ func (r *EventRegistry) Deserialize(eventType string, data []byte) (domain.Domai
 }
 
 // registerAllEvents registers all domain event types
-func (r *EventRegistry) registerAllEvents() {
-	// User events
-	r.register("UserCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.UserCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
 
-	r.register("UserUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.UserUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// User events
 
-	r.register("UserDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.UserDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Employee events
 
-	r.register("PasswordChanged", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.PasswordChangedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Project events
 
-	// Employee events
-	r.register("EmployeeCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.EmployeeCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// ProjectEmployee events
 
-	r.register("EmployeeUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.EmployeeUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Timesheet events
 
-	r.register("EmployeeDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.EmployeeDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Payrate events
 
-	r.register("EmployeeProjectAssignmentsRemoved", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.EmployeeProjectAssignmentsRemovedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Asset events
 
-	r.register("EmployeeProfileUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.EmployeeProfileUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
+// Settings events
 
-	// Project events
-	r.register("ProjectCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.ProjectCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("ProjectUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.ProjectUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("ProjectDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.ProjectDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// ProjectEmployee events
-	r.register("ProjectEmployeeUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.ProjectEmployeeUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Timesheet events
-	r.register("TimesheetCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetApproved", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetApprovedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetRejected", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetRejectedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetBulkApproved", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetBulkApprovedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetBulkRejected", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetBulkRejectedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetBulkReset", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetBulkResetEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("TimesheetBulkCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.TimesheetBulkCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Payrate events
-	r.register("PayrateCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.PayrateCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("PayrateUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.PayrateUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("PayrateDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.PayrateDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Asset events
-	r.register("AssetCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.AssetCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("AssetDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.AssetDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Settings events
-	r.register("SettingsCreated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.SettingsCreatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("SettingsUpdated", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.SettingsUpdatedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("SettingsDeleted", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.SettingsDeletedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	// Import/Export events
-	r.register("DataImported", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.DataImportedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-	r.register("DataExported", func(data []byte) (domain.DomainEvent, error) {
-		var event domain.DataExportedEvent
-		err := json.Unmarshal(data, &event)
-		return event, err
-	})
-
-}
+// Import/Export events
 
 // register adds a deserializer for an event type
-func (r *EventRegistry) register(eventType string, deserializer func([]byte) (domain.DomainEvent, error)) {
-	r.deserializers[eventType] = deserializer
-}
 
 // EventTypes returns a sorted list of registered event type names.
 func (r *EventRegistry) EventTypes() []string {

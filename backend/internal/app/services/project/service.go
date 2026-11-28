@@ -173,10 +173,6 @@ func (s *ProjectService) DeleteProject(ctx context.Context, id uint, deletedBy u
 	return nil
 }
 
-func (s *ProjectService) ListProjects(ctx context.Context, filters domain.ProjectFilters) ([]*domain.Project, error) {
-	return s.ProjectRepo.List(ctx, filters)
-}
-
 func (s *ProjectService) ListProjectsWithEmployeeCount(ctx context.Context, filters domain.ProjectFilters) ([]*domain.ProjectWithEmployeeCount, error) {
 	// Apply a short-lived microcache for high-traffic project list endpoints.
 	if filters.Limit > 0 {
@@ -285,67 +281,26 @@ func (s *ProjectService) GetProjectSummary(ctx context.Context) (*domain.Project
 	return result, nil
 }
 
-func (s *ProjectService) GetPartnerProjectSummary(ctx context.Context, createdBy uint) (*domain.PartnerProjectSummary, error) {
-	// Try to get from cache
-	cacheKey := s.cache.GenerateDashboardCacheKey("partner_project_summary", fmt.Sprintf("%d", createdBy))
-	var summary domain.PartnerProjectSummary
-	err := s.cache.Get(ctx, cacheKey, &summary)
-	if err == nil {
-		// Cache hit
-		return &summary, nil
-	}
+// Try to get from cache
 
-	// Cache miss - fetch from database.
-	// Scope by the same "accessible" set as the partner project list
-	// (AccessibleBy: owned + shared + assignment paths) — NOT CreatedBy.
-	// A partner whose projects were granted via project_users sees them in the
-	// list, so the summary cards must count them too; filtering by creator
-	// showed "Tổng dự án 0" above a non-empty list.
-	accessibleBy := createdBy
+// Cache hit
 
-	// Get total project count for this partner (accessible set)
-	totalProjects, err := s.ProjectRepo.Count(ctx, domain.ProjectFilters{
-		AccessibleBy: &accessibleBy,
-	})
-	if err != nil {
-		s.logger.Error("Failed to count projects for partner summary", "created_by", createdBy, "error", err)
-		return nil, domain.NewInternalError(constants.MsgFailedToGetProjectsVN, err)
-	}
+// Cache miss - fetch from database.
+// Scope by the same "accessible" set as the partner project list
+// (AccessibleBy: owned + shared + assignment paths) — NOT CreatedBy.
+// A partner whose projects were granted via project_users sees them in the
+// list, so the summary cards must count them too; filtering by creator
+// showed "Tổng dự án 0" above a non-empty list.
 
-	// Get status counts for this partner's accessible projects only
-	statusCounts, err := s.ProjectRepo.GetStatusCountsForAccessible(ctx, createdBy)
-	if err != nil {
-		s.logger.Error("Failed to get status counts for partner summary", "created_by", createdBy, "error", err)
-		return nil, domain.NewInternalError(constants.MsgFailedToGetStatusCountsVN, err)
-	}
+// Get total project count for this partner (accessible set)
 
-	// Get total active employees created by this partner
-	activeEmployeeCount, err := s.EmployeeRepo.GetActiveCountAtDateForCreator(ctx, clock.Now(), createdBy)
-	if err != nil {
-		s.logger.Error("Failed to get active employee count for partner summary", "created_by", createdBy, "error", err)
-		return nil, domain.NewInternalError(constants.MsgFailedToGetActiveEmployeeCountVN, err)
-	}
+// Get status counts for this partner's accessible projects only
 
-	// Calculate summary statistics for this partner only
-	result := &domain.PartnerProjectSummary{
-		TotalProjects:     int(totalProjects),
-		ActiveProjects:    statusCounts["active"],
-		CompletedProjects: statusCounts["completed"],
-		TotalEmployees:    activeEmployeeCount,
-	}
+// Get total active employees created by this partner
 
-	s.logger.Info("Partner project summary calculated",
-		"total_projects", result.TotalProjects,
-		"active_projects", result.ActiveProjects,
-		"completed_projects", result.CompletedProjects,
-		"total_employees", result.TotalEmployees,
-	)
+// Calculate summary statistics for this partner only
 
-	// Cache the result with appropriate TTL
-	_ = s.cache.Set(ctx, cacheKey, result, constants.ProjectListCacheTTL)
-
-	return result, nil
-}
+// Cache the result with appropriate TTL
 
 // generateProjectListCacheKey builds a deterministic cache key for project list queries.
 func (s *ProjectService) generateProjectListCacheKey(filters domain.ProjectFilters) string {

@@ -55,10 +55,6 @@ func (s *Scheduler) AddJob(job Job) {
 	s.jobs = append(s.jobs, job)
 }
 
-func (s *Scheduler) GetJobs() []Job {
-	return s.jobs
-}
-
 func (s *Scheduler) Start() error {
 	if !s.enabled {
 		s.logger.Info("Scheduler is disabled")
@@ -109,10 +105,4 @@ func (s *Scheduler) wrapHandler(jobName string, handler func()) func() {
 
 		handler()
 	}
-}
-
-func IsLastDayOfMonth(date time.Time) bool {
-	nextMonth := time.Date(date.Year(), date.Month()+1, 1, 0, 0, 0, 0, date.Location())
-	lastDayOfMonth := nextMonth.AddDate(0, 0, -1)
-	return date.Day() == lastDayOfMonth.Day()
 }

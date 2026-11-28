@@ -22,13 +22,6 @@ func NewCacheHandler(cacheService domain.CacheServiceUseCase, logger *slog.Logge
 	}
 }
 
-func (h *CacheHandler) RegisterRoutes(router *gin.Engine) {
-	cacheRoutes := router.Group("/api/v1/cache")
-	{
-		cacheRoutes.DELETE("", h.DeleteAllCache)
-	}
-}
-
 // DeleteAllCache godoc
 // @Summary Delete all cache
 // @Description Delete all cache from the system

@@ -411,46 +411,12 @@ func (s *BCCImportService) completeSkippedBCCImport(
 // ProcessUpload saves the BCC file, parses it, and creates timesheets.
 // forMonth is "YYYY-MM" from the frontend; day numbers in the Excel belong to this month.
 // Conflict policy: missing rows are created, pending rows are replaced, and reviewed/paid rows are skipped.
-func (s *BCCImportService) ProcessUpload(
-	ctx context.Context,
-	fileData io.Reader,
-	filename string,
-	projectID uint,
-	uploaderID uint,
-	uploaderRole string,
-	forMonth string,
-) (*BCCImportResult, error) {
-	// 1. Read file bytes (needed for both storage and parsing).
-	data, err := io.ReadAll(io.LimitReader(fileData, maxBCCUploadSize+1))
-	if err != nil {
-		return nil, fmt.Errorf("BCCImportService.ProcessUpload: read file: %w", err)
-	}
-	if len(data) > maxBCCUploadSize {
-		return nil, domain.NewValidationError("file quá lớn (tối đa 20MB)")
-	}
 
-	// 2. Save raw file to storage.
-	stored, err := s.fileStorage.StoreBytes(data, filename, domain.UploadTypePartnerBCCImport)
-	if err != nil {
-		return nil, fmt.Errorf("BCCImportService.ProcessUpload: store file: %w", err)
-	}
+// 1. Read file bytes (needed for both storage and parsing).
 
-	// 3. Create asset record. On DB failure, clean up the orphaned file.
-	var createdAsset *domain.Asset
-	asset := &domain.Asset{
-		Filename:   stored.OriginalFilename,
-		FilePath:   stored.FilePath,
-		UploadType: domain.UploadTypePartnerBCCImport,
-		UploadedBy: uploaderID,
-	}
-	createdAsset, err = s.assetRepo.Create(ctx, asset)
-	if err != nil {
-		_ = s.fileStorage.Delete(stored.FilePath)
-		return nil, fmt.Errorf("BCCImportService.ProcessUpload: create asset: %w", err)
-	}
+// 2. Save raw file to storage.
 
-	return s.processAssetData(ctx, data, filename, projectID, uploaderID, uploaderRole, createdAsset, forMonth, false, false)
-}
+// 3. Create asset record. On DB failure, clean up the orphaned file.
 
 func (s *BCCImportService) updateAssetMetadata(ctx context.Context, assetID uint, meta *BCCImportStats) error {
 	if deferTerminal, _ := ctx.Value(deferBCCTerminalMetadataKey{}).(bool); deferTerminal &&

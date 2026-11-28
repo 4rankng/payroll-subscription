@@ -79,21 +79,7 @@ func GetUserRoleOrRespond(c *gin.Context) (string, bool) {
 // MustGetUserID extracts the user ID from context and panics if not found.
 // This should only be used in contexts where the user ID is guaranteed to exist (after auth middleware).
 // For most cases, use GetUserID or GetUserIDOrRespond instead.
-func MustGetUserID(c *gin.Context) uint {
-	userID, err := GetUserID(c)
-	if err != nil {
-		panic("user ID not found in context: " + err.Error())
-	}
-	return userID
-}
 
 // MustGetUserRole extracts the user role from context and panics if not found.
 // This should only be used in contexts where the role is guaranteed to exist (after auth middleware).
 // For most cases, use GetUserRole or GetUserRoleOrRespond instead.
-func MustGetUserRole(c *gin.Context) string {
-	role, err := GetUserRole(c)
-	if err != nil {
-		panic("user role not found in context: " + err.Error())
-	}
-	return role
-}

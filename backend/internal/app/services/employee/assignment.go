@@ -36,6 +36,3 @@ func (s *EmployeeService) SuggestAssignmentStart(ctx context.Context, employeeID
 }
 
 // UpdateUserLink sets the user_id on an employee record (targeted update).
-func (s *EmployeeService) UpdateUserLink(ctx context.Context, employeeID uint, userID uint) error {
-	return s.EmployeeRepo.UpdateColumns(ctx, employeeID, map[string]any{"user_id": userID})
-}

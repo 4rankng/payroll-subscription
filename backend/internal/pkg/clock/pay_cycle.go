@@ -58,10 +58,8 @@ func WorkStartDay(ky int) int {
 }
 
 // daysInMonth returns the calendar day count for (year, month).
-func daysInMonth(year int, month time.Month) int {
-	// Day 0 of the next month = last day of this month.
-	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
-}
+
+// Day 0 of the next month = last day of this month.
 
 // MaxCycleDay returns the last cycle-day index for the given Ky in (year, month):
 // the count of days from the work-start through the pay date.
@@ -71,15 +69,6 @@ func daysInMonth(year int, month time.Month) int {
 //	         July (31 days) → 11; February (28 days) → 8.
 //
 // Returns 0 for an out-of-range Ky.
-func MaxCycleDay(ky int, year int, month time.Month) int {
-	if ky < 1 || ky > TimesheetKyCount {
-		return 0
-	}
-	if ky == 4 {
-		return (daysInMonth(year, month) - WorkStartDay(4) + 1) + 1
-	}
-	return kyPayDayInMonth[ky] - WorkStartDay(ky) + 1
-}
 
 // PayDate returns the pay date (date-only, DefaultLocation) for the Ky whose
 // work window falls in (year, month). Ky 1–3 pay within the same month; Ky 4
@@ -101,37 +90,13 @@ func PayDate(ky int, year int, month time.Month) time.Time {
 // the window clamp to 1; approvals after the pay date clamp to MaxCycleDay, so a
 // late approval can never corrupt the cumulative curve. Returns 0 for an invalid
 // Ky.
-func CycleDayForApproval(ky int, year int, month time.Month, approvalDate time.Time) int {
-	maxDay := MaxCycleDay(ky, year, month)
-	if maxDay <= 0 {
-		return 0
-	}
-	workStart := time.Date(year, month, WorkStartDay(ky), 0, 0, 0, 0, DefaultLocation)
-	approvalDay := time.Date(approvalDate.In(DefaultLocation).Year(),
-		approvalDate.In(DefaultLocation).Month(),
-		approvalDate.In(DefaultLocation).Day(),
-		0, 0, 0, 0, DefaultLocation)
-	// Count calendar days via UTC-normalized date-only times so the result is
-	// exact even if DefaultLocation ever observes DST (both operands become
-	// midnight UTC, 24h apart per day).
-	d := calendarDaysBetween(workStart, approvalDay) + 1
-	if d < 1 {
-		return 1
-	}
-	if d > maxDay {
-		return maxDay
-	}
-	return d
-}
+
+// Count calendar days via UTC-normalized date-only times so the result is
+// exact even if DefaultLocation ever observes DST (both operands become
+// midnight UTC, 24h apart per day).
 
 // calendarDaysBetween returns the signed count of calendar days from `from` to
 // `to` (to − from), DST-safe via UTC date-only normalization.
-func calendarDaysBetween(from, to time.Time) int {
-	const day = 24 * time.Hour
-	fromUTC := time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, time.UTC)
-	toUTC := time.Date(to.Year(), to.Month(), to.Day(), 0, 0, 0, 0, time.UTC)
-	return int(toUTC.Sub(fromUTC) / day)
-}
 
 // TimesheetPayCycle describes the next upcoming pay cycle relative to a time.
 type TimesheetPayCycle struct {
@@ -154,47 +119,14 @@ type TimesheetPayCycle struct {
 // leaves the projection window open — landing on the pay day itself would
 // collapse the accrual forecast to zero. All times are interpreted in
 // DefaultLocation (Asia/Ho_Chi_Minh).
-func NextTimesheetPayCycle(t time.Time) TimesheetPayCycle {
-	now := t.In(DefaultLocation)
-	year, month := now.Year(), now.Month()
-	today := time.Date(year, month, now.Day(), 0, 0, 0, 0, DefaultLocation)
-	workMonth := time.Date(year, month, 1, 0, 0, 0, 0, DefaultLocation)
 
-	for ky := 1; ky <= TimesheetKyCount; ky++ {
-		pay := PayDate(ky, year, month)
-		if !pay.After(today) {
-			continue
-		}
-		return TimesheetPayCycle{
-			Ky:            ky,
-			WorkMonth:     workMonth,
-			NextPayDate:   pay,
-			CycleDayToday: CycleDayForApproval(ky, year, month, today),
-			MaxCycleDay:   MaxCycleDay(ky, year, month),
-		}
-	}
-	// Defensive fallback: Ky 4 pays on day 1 of next month, which is always
-	// strictly after any day in this month, so the loop returns by Ky 4 in
-	// practice. Reaching here would only mean t is itself past day 1 of next
-	// month, in which case Ky 4 of this month is the correct nearest cycle.
-	ky := TimesheetKyCount
-	return TimesheetPayCycle{
-		Ky:            ky,
-		WorkMonth:     workMonth,
-		NextPayDate:   PayDate(ky, year, month),
-		CycleDayToday: CycleDayForApproval(ky, year, month, today),
-		MaxCycleDay:   MaxCycleDay(ky, year, month),
-	}
-}
+// Defensive fallback: Ky 4 pays on day 1 of next month, which is always
+// strictly after any day in this month, so the loop returns by Ky 4 in
+// practice. Reaching here would only mean t is itself past day 1 of next
+// month, in which case Ky 4 of this month is the correct nearest cycle.
 
 // PrepareByDate returns the date by which cash should be ready:
 // next pay date − leadDays. A negative leadDays is treated as 0.
-func (c TimesheetPayCycle) PrepareByDate(leadDays int) time.Time {
-	if leadDays < 0 {
-		leadDays = 0
-	}
-	return c.NextPayDate.AddDate(0, 0, -leadDays)
-}
 
 // NextPayCycleAfter returns the pay cycle strictly after the given one,
 // walking the monthly Kỳ 1→2→3→4 sequence and wrapping Kỳ 4 to Kỳ 1 of the
@@ -205,23 +137,10 @@ func (c TimesheetPayCycle) PrepareByDate(leadDays int) time.Time {
 // cycle's work window. Kỳ 4's work window is in the current month but pays on
 // day 1 of the next month, so NextPayCycleAfter(Kỳ 4 of month M) = Kỳ 1 of
 // month M+1 (not M).
-func NextPayCycleAfter(current TimesheetPayCycle) TimesheetPayCycle {
-	nextKy := current.Ky + 1
-	workMonth := current.WorkMonth
-	if nextKy > TimesheetKyCount {
-		// Wrap: Kỳ 4 → Kỳ 1 of next month.
-		nextKy = 1
-		workMonth = workMonth.AddDate(0, 1, 0)
-	}
-	year, month := workMonth.Year(), workMonth.Month()
-	return TimesheetPayCycle{
-		Ky:            nextKy,
-		WorkMonth:     workMonth,
-		NextPayDate:   PayDate(nextKy, year, month),
-		MaxCycleDay:   MaxCycleDay(nextKy, year, month),
-		CycleDayToday: 0, // not meaningful for a projected future cycle
-	}
-}
+
+// Wrap: Kỳ 4 → Kỳ 1 of next month.
+
+// not meaningful for a projected future cycle
 
 // CycleWindow returns the [from, to] work-day window (inclusive, HCM timezone,
 // date-only) for a cycle. Kỳ 1 → days 1–7, Kỳ 2 → 8–14, Kỳ 3 → 15–21,

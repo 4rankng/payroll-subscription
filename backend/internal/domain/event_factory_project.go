@@ -117,24 +117,8 @@ func NewProjectEmployeeCreatedEvent(ctx context.Context, assignment *ProjectEmpl
 }
 
 // NewProjectEmployeeDeletedEvent creates a ProjectEmployeeDeletedEvent
-func NewProjectEmployeeDeletedEvent(ctx context.Context, assignmentID, projectID uint, projectName, employeeName, reason string, actorUserID uint, actorFullName string) ProjectEmployeeDeletedEvent {
-	auditMessage := BuildEventAuditMessage(
-		AuditActionDelete,
-		EntityTypeProjectEmployee,
-		actorFullName,
-		employeeName,
-		projectName,
-	)
 
-	return ProjectEmployeeDeletedEvent{
-		BaseEvent:    newBaseEventWithActor(ctx, "ProjectEmployeeDeleted", assignmentID, actorUserID, AuditActionDelete, EntityTypeProjectEmployee, auditMessage),
-		ProjectID:    projectID,
-		ProjectName:  projectName,
-		EmployeeID:   0, // Not available in deletion context
-		EmployeeName: employeeName,
-		Reason:       reason,
-	}
-}
+// Not available in deletion context
 
 // NewProjectAccessGrantedEvent creates a ProjectAccessGrantedEvent for sharing projects with users
 func NewProjectAccessGrantedEvent(ctx context.Context, projectID uint, projectName string, targetUserID uint, targetUserName, targetUserRole string, grantedBy uint, actorFullName string) ProjectAccessGrantedEvent {

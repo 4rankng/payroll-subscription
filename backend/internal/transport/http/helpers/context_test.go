@@ -181,30 +181,3 @@ func TestGetUserIDOrRespond(t *testing.T) {
 		})
 	}
 }
-
-func TestMustGetUserID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	t.Run("valid user ID", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Set(constants.CtxUserID, uint(123))
-
-		result := MustGetUserID(c)
-		if result != 123 {
-			t.Errorf("expected 123, got %d", result)
-		}
-	})
-
-	t.Run("panics when user ID not found", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("expected panic but didn't get one")
-			}
-		}()
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		MustGetUserID(c)
-	})
-}

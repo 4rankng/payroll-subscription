@@ -33,25 +33,5 @@ type Config struct {
 }
 
 // NewTimesheetServiceFromConfig creates a TimesheetService from config
-func NewTimesheetServiceFromConfig(cfg *Config) *TimesheetService {
-	// Initialize bulk operations with transaction support
-	bulkOperations := NewBulkOperations(cfg.TimesheetRepo, cfg.TransactionManager)
 
-	return &TimesheetService{
-		timesheetRepo:              cfg.TimesheetRepo,
-		employeeRepo:               cfg.EmployeeRepo,
-		projectRepo:                cfg.ProjectRepo,
-		projectEmployeeRepo:        cfg.ProjectEmployeeRepo,
-		payrateRepo:                cfg.PayrateRepo,
-		validationService:          cfg.ValidationService,
-		calculationService:         cfg.CalculationService,
-		assignmentService:          cfg.AssignmentService,
-		paytypeConstructionService: cfg.PaytypeConstructionService,
-		timesheetDomainService:     cfg.TimesheetDomainService,
-		bulkOperations:             bulkOperations,
-		transactionManager:         cfg.TransactionManager,
-		events:                     cfg.Events,
-		cache:                      cfg.Cache,
-		logger:                     cfg.Logger,
-	}
-}
+// Initialize bulk operations with transaction support

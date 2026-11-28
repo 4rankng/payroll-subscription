@@ -22,21 +22,10 @@ func (s *EmployeeService) GetEmployeeForUpdate(ctx context.Context, id uint) (*d
 // to). Used by the adv_partner scoped update path to enforce ownership before
 // any mutation. Reuses ProjectEmployeeRepo.HasAccessViaProject — the same join
 // backing the scoped list/detail access checks (see lesson_partner_403_employee_detail).
-func (s *EmployeeService) EmployeeHasAccess(ctx context.Context, employeeID, actorUserID uint) (bool, error) {
-	return s.ProjectEmployeeRepo.HasAccessViaProject(ctx, employeeID, actorUserID)
-}
 
 // GetUserByID retrieves a user by ID - helper method for employee operations
 func (s *EmployeeService) GetUserByID(ctx context.Context, userID uint) (*domain.User, error) {
 	return s.UserRepo.GetByID(ctx, userID)
-}
-
-func (s *EmployeeService) ListEmployees(ctx context.Context, filters domain.EmployeeFilters) ([]*domain.Employee, error) {
-	return s.EmployeeRepo.List(ctx, filters)
-}
-
-func (s *EmployeeService) ListEmployeesWithProjects(ctx context.Context, filters domain.EmployeeFilters) ([]*domain.EmployeeWithProject, error) {
-	return s.EmployeeRepo.ListWithProjects(ctx, filters)
 }
 
 func (s *EmployeeService) ListAccessibleIDs(ctx context.Context, userID uint) ([]uint, error) {
@@ -149,9 +138,6 @@ func (s *EmployeeService) GetEmployeeByCCCD(ctx context.Context, cccd string) (*
 }
 
 // SearchEmployees delegates to domain service for normalized Vietnamese search
-func (s *EmployeeService) SearchEmployees(ctx context.Context, query string, limit int) ([]*domain.EmployeeWithProject, error) {
-	return s.EmployeeDomainService.SearchEmployees(ctx, query, limit)
-}
 
 // generateEmployeeListCacheKey builds a deterministic cache key for employee list queries.
 func (s *EmployeeService) generateEmployeeListCacheKey(operation string, filters domain.EmployeeFilters) string {

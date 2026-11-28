@@ -380,6 +380,3 @@ func (s *ImportService) getOrCreateAssignment(ctx context.Context, projectID, em
 }
 
 // GetProgress retrieves the current import progress
-func (s *ImportService) GetProgress(ctx context.Context, importID string) (*dto.EmployeeImportStatus, error) {
-	return s.progressService.GetImportStatus(ctx, importID)
-}

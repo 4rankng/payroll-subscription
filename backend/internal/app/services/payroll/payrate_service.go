@@ -8,6 +8,7 @@ import (
 	"api-server/internal/domain"
 	"api-server/internal/infra/observability"
 	"api-server/internal/pkg/services"
+
 	"gorm.io/gorm"
 )
 
@@ -120,10 +121,6 @@ func (s *PayrateService) CountPayrates(ctx context.Context, filters domain.Payra
 	return s.PayrateRepo.Count(ctx, filters)
 }
 
-func (s *PayrateService) GetPayratesByProject(ctx context.Context, projectID uint) ([]*domain.Payrate, error) {
-	return s.PayrateRepo.GetByProject(ctx, projectID)
-}
-
 func (s *PayrateService) GetActivePayrateByProjectAndDate(ctx context.Context, projectID uint, date time.Time) (*domain.Payrate, error) {
 	return s.PayrateRepo.GetActiveByProjectAndDate(ctx, projectID, date)
 }
@@ -133,14 +130,8 @@ func (s *PayrateService) GetCurrentOrUpcomingPayrateByProject(ctx context.Contex
 }
 
 // HasProjectTimesheetsFromDate checks if a project has timesheets on or after a given date
-func (s *PayrateService) HasProjectTimesheetsFromDate(ctx context.Context, projectID uint, fromDate time.Time) (bool, error) {
-	return s.PayrateRepo.HasProjectTimesheetsFromDate(ctx, projectID, fromDate)
-}
 
 // GetLatestTimesheetDateForPayrate returns the most recent timesheet date linked to a payrate.
-func (s *PayrateService) GetLatestTimesheetDateForPayrate(ctx context.Context, payrateID uint) (*time.Time, error) {
-	return s.PayrateRepo.GetLatestTimesheetDateForPayrate(ctx, payrateID)
-}
 
 // GetLatestPaidTimesheetDateForProject returns the financial cutoff for a
 // new effective-dated payrate across the whole project.

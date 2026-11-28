@@ -72,76 +72,9 @@ func TestGenerateUsername(t *testing.T) {
 	}
 }
 
-func TestEnsureUniqueUsername(t *testing.T) {
-	tests := []struct {
-		name          string
-		baseUsername  string
-		existingUsers []string
-		want          string
-	}{
-		{
-			name:          "username available",
-			baseUsername:  "thamnth",
-			existingUsers: []string{},
-			want:          "thamnth",
-		},
-		{
-			name:          "username taken once",
-			baseUsername:  "thamnth",
-			existingUsers: []string{"thamnth"},
-			want:          "thamnth02",
-		},
-		{
-			name:          "username taken twice",
-			baseUsername:  "thamnth",
-			existingUsers: []string{"thamnth", "thamnth02"},
-			want:          "thamnth03",
-		},
-		{
-			name:          "username taken multiple times",
-			baseUsername:  "khaidq",
-			existingUsers: []string{"khaidq", "khaidq02", "khaidq03", "khaidq04"},
-			want:          "khaidq05",
-		},
-		{
-			name:          "empty base username",
-			baseUsername:  "",
-			existingUsers: []string{},
-			want:          "",
-		},
-	}
+// Create a checker function that returns true if username exists
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create a checker function that returns true if username exists
-			checker := func(username string) bool {
-				for _, existing := range tt.existingUsers {
-					if username == existing {
-						return true
-					}
-				}
-				return false
-			}
-
-			got := EnsureUniqueUsername(tt.baseUsername, checker)
-			if got != tt.want {
-				t.Errorf("EnsureUniqueUsername(%q) = %q, want %q", tt.baseUsername, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestEnsureUniqueUsername_AlwaysFalseChecker(t *testing.T) {
-	// Test with a checker that always returns false (all usernames available)
-	checker := func(username string) bool {
-		return false
-	}
-
-	result := EnsureUniqueUsername("testuser", checker)
-	if result != "testuser" {
-		t.Errorf("EnsureUniqueUsername with always-false checker = %q, want %q", result, "testuser")
-	}
-}
+// Test with a checker that always returns false (all usernames available)
 
 func TestGenerateUsernameEdgeCases(t *testing.T) {
 	tests := []struct {

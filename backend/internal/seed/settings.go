@@ -76,10 +76,6 @@ func EnsureSettings(ctx context.Context, db *gorm.DB) error {
 	return NewSeeder(db).upsertSettings(ctx, db, bootFlags)
 }
 
-func (s *Seeder) seedSettings(ctx context.Context, db *gorm.DB) error {
-	return s.upsertSettings(ctx, db, append(append([]settingRow{}, bootFlags...), devDefaults...))
-}
-
 func (s *Seeder) upsertSettings(ctx context.Context, db *gorm.DB, rows []settingRow) error {
 	for _, setting := range rows {
 		if err := db.Where("`key` = ?", setting.key).FirstOrCreate(&domain.Settings{

@@ -62,23 +62,6 @@ func SuccessWithPagination(c *gin.Context, data interface{}, message string, pag
 
 // SuccessWithPaginationAndSummary also carries an aggregate summary for the
 // full filtered set (not just the current page).
-func SuccessWithPaginationAndSummary(c *gin.Context, data interface{}, message string, pagination Pagination, summary interface{}) {
-	c.JSON(http.StatusOK, SuccessResponse{
-		Status:     "success",
-		Data:       data,
-		Message:    message,
-		Pagination: &pagination,
-		Summary:    summary,
-	})
-}
-
-func SuccessEmpty(c *gin.Context, message string) {
-	c.JSON(http.StatusOK, SuccessResponse{
-		Status:  "success",
-		Data:    []interface{}{},
-		Message: message,
-	})
-}
 
 func SuccessEmptyWithPagination(c *gin.Context, message string, pagination Pagination) {
 	c.JSON(http.StatusOK, SuccessResponse{
@@ -206,14 +189,6 @@ func TooManyRequests(c *gin.Context, message string, retryAfter int) {
 // ServiceUnavailableWithCode writes a structured 503 (code + message) for
 // fail-closed channels such as a tripped kill switch. The code makes the
 // state machine-consumable for agent callers.
-func ServiceUnavailableWithCode(c *gin.Context, message, code string) {
-	c.JSON(http.StatusServiceUnavailable, ErrorResponse{
-		Status:     "error",
-		Message:    sanitizeInternalDetails(message, constants.MsgInternalServerErrorVN),
-		HTTPStatus: http.StatusServiceUnavailable,
-		Code:       code,
-	})
-}
 
 // domainErrorFallback picks the friendly replacement used when a domain
 // error's message turns out to carry server internals. (PAYR-37)
@@ -235,12 +210,6 @@ func domainErrorFallback(errType string) string {
 }
 
 // NewErrorResponse creates a new error response
-func NewErrorResponse(status, message string) ErrorResponse {
-	return ErrorResponse{
-		Status:  status,
-		Message: message,
-	}
-}
 
 // HandleDomainError converts domain errors to appropriate HTTP responses
 func HandleDomainError(c *gin.Context, err error) {

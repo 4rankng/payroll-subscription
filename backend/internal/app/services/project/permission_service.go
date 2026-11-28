@@ -303,11 +303,3 @@ func (s *ProjectPermissionService) CanUserModifyProject(ctx context.Context, pro
 }
 
 // CanUserDeleteProject checks if a user can delete a project (only creator)
-func (s *ProjectPermissionService) CanUserDeleteProject(ctx context.Context, projectID, userID uint) (bool, error) {
-	project, err := s.projectRepo.GetByID(ctx, projectID)
-	if err != nil {
-		return false, err
-	}
-
-	return project.CreatedBy == userID && project.OwnerRevokedAt == nil, nil
-}

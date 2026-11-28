@@ -16,10 +16,6 @@ type dbMetricsCtxKey struct{}
 
 // WithDBMetrics attaches a DBRequestMetrics container to the context so that
 // GORM callbacks can increment per-request statement counts.
-func WithDBMetrics(ctx context.Context) (context.Context, *DBRequestMetrics) {
-	metrics := &DBRequestMetrics{}
-	return context.WithValue(ctx, dbMetricsCtxKey{}, metrics), metrics
-}
 
 // GetDBMetrics returns the DBRequestMetrics associated with the context, if any.
 func GetDBMetrics(ctx context.Context) *DBRequestMetrics {

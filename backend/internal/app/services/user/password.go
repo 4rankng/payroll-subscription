@@ -194,6 +194,3 @@ func ApplyPeppering(password, hashSecret, hashSalt string) string {
 
 // applyPeppering applies the application-level pepper to the password
 // This adds an additional layer of security beyond salting
-func (s *UserService) applyPeppering(password string) string {
-	return ApplyPeppering(password, s.hashSecret, s.hashSalt)
-}

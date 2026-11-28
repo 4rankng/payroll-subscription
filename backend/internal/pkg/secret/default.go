@@ -36,19 +36,10 @@ func Default() *Cipher {
 // Bootstrap may call it once at startup so the warning lands with the rest of
 // the boot log; otherwise Default resolves lazily on first use. Calling it more
 // than once is harmless — the first call wins.
-func LoadFromEnv() *Cipher {
-	return resolveDefault()
-}
 
 // SetDefault installs an explicit cipher — used by tests, and by wiring that
 // builds the cipher from application config rather than reading the environment
 // directly. Passing nil disables encryption for the process.
-func SetDefault(c *Cipher) {
-	defaultMu.Lock()
-	defer defaultMu.Unlock()
-	defaultCipher = c
-	defaultResolved = true
-}
 
 func resolveDefault() *Cipher {
 	defaultMu.Lock()
@@ -90,9 +81,3 @@ func resolveDefault() *Cipher {
 
 // resetDefaultForTest clears the process-wide resolution so a test can drive
 // Default/LoadFromEnv with a different environment.
-func resetDefaultForTest() {
-	defaultMu.Lock()
-	defer defaultMu.Unlock()
-	defaultCipher = nil
-	defaultResolved = false
-}

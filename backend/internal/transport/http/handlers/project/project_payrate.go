@@ -18,114 +18,27 @@ import (
 )
 
 // ListProjectPayrates gets payrates for a specific project
-func (h *Handler) ListProjectPayrates(c *gin.Context) {
-	projectID, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		response.BadRequest(c, constants.MsgInvalidProjectIDVN)
-		return
-	}
 
-	// Check if project exists
-	_, err = h.projectService.GetProject(c.Request.Context(), uint(projectID))
-	if err != nil {
-		response.HandleDomainError(c, err)
-		return
-	}
+// Check if project exists
 
-	// Parse query parameters
-	projectIDPtr := uint(projectID)
-	filters := domain.PayrateFilters{
-		ProjectID: &projectIDPtr,
-		Limit:     100, // default
-		Offset:    0,   // default
-		SortBy:    "from_date",
-		SortOrder: "desc",
-	}
+// Parse query parameters
 
-	// Handle page/pageSize pagination (new model)
-	page := 1
-	if p := c.Query("page"); p != "" {
-		if pageNum, err := strconv.Atoi(p); err == nil && pageNum > 0 {
-			page = pageNum
-		}
-	}
+// default
+// default
 
-	pageSize := 100
-	if ps := c.Query("pageSize"); ps != "" {
-		if size, err := strconv.Atoi(ps); err == nil && size > 0 && size <= 100 {
-			pageSize = size
-		}
-	}
+// Handle page/pageSize pagination (new model)
 
-	// Convert to offset/limit for repository
-	filters.Limit = pageSize
-	filters.Offset = (page - 1) * pageSize
+// Convert to offset/limit for repository
 
-	if fromDate := c.Query("fromDate"); fromDate != "" {
-		if date, err := time.Parse("2006-01-02", fromDate); err == nil {
-			filters.FromDate = &date
-		}
-	}
+// No toDate filter: payrates.to_date was dropped by migration 138 and end
+// dates are derived for display from each config's successor. The FE list
+// params never carried toDate.
 
-	// No toDate filter: payrates.to_date was dropped by migration 138 and end
-	// dates are derived for display from each config's successor. The FE list
-	// params never carried toDate.
+// Get payrates using the injected payrate service
 
-	// Get payrates using the injected payrate service
-	payrates, err := h.payrateService.ListPayrates(c.Request.Context(), filters)
-	if err != nil {
-		response.InternalServerError(c, constants.MsgFailedToListPayratesVN)
-		return
-	}
+// Convert payrates to response format
 
-	total, err := h.payrateService.CountPayrates(c.Request.Context(), filters)
-	if err != nil {
-		response.InternalServerError(c, constants.MsgFailedToCountPayratesVN)
-		return
-	}
-
-	// Convert payrates to response format
-	var payrateResponses []dto.PayrateResponse
-	for _, payrate := range payrates {
-		payrateResponses = append(payrateResponses, dto.PayrateResponse{
-			ID:        payrate.ID,
-			ProjectID: payrate.ProjectID,
-			Rates:     payrate.Payrate,
-			FromDate:  payrate.FromDate.Format(timeutil.DateFormat),
-			CreatedBy: payrate.CreatedBy,
-			CreatedAt: payrate.CreatedAt,
-			UpdatedAt: payrate.UpdatedAt,
-		})
-	}
-
-	// Calculate pagination
-	totalPages := (int(total) + pageSize - 1) / pageSize
-
-	if len(payrateResponses) == 0 {
-		pagination := response.Pagination{
-			Page:         page,
-			PageSize:     pageSize,
-			TotalPages:   totalPages,
-			TotalRecords: int(total),
-		}
-		response.SuccessEmptyWithPagination(c, constants.MsgNoPayratesFoundForProjectVN, pagination)
-		return
-	}
-
-	pagination := response.Pagination{
-		Page:         page,
-		PageSize:     pageSize,
-		TotalPages:   totalPages,
-		TotalRecords: int(total),
-	}
-
-	message := constants.MsgProjectPayratesRetrievedVN
-	if page > 1 {
-		message = fmt.Sprintf(constants.MsgPageOfProjectPayratesRetrievedVN, page)
-	}
-
-	response.SuccessWithPagination(c, payrateResponses, message, pagination)
-}
+// Calculate pagination
 
 // CreateProjectPayrate creates a new payrate for a project
 func (h *Handler) CreateProjectPayrate(c *gin.Context) {

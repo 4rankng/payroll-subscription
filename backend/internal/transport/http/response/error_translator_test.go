@@ -194,20 +194,9 @@ func TestErrorTranslator_CleanMessage(t *testing.T) {
 	}
 }
 
-func TestErrorTranslator_AddTechnicalErrorMapping(t *testing.T) {
-	translator := NewErrorTranslator()
-	initialSize := len(translator.technicalErrorMappings)
+// Add a new mapping
 
-	// Add a new mapping
-	translator.AddTechnicalErrorMapping("custom error pattern", "Custom user-friendly message")
-
-	assert.Equal(t, initialSize+1, len(translator.technicalErrorMappings))
-
-	// Test that the new mapping works
-	err := errors.New("This contains custom error pattern in it")
-	result := translator.TranslateError(err)
-	assert.Equal(t, "Custom user-friendly message", result)
-}
+// Test that the new mapping works
 
 func TestErrorTranslator_StatusReplacements(t *testing.T) {
 	translator := NewErrorTranslator()

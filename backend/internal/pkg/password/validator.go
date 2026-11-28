@@ -181,16 +181,3 @@ func (v *PasswordValidator) RemoveRule(index int) error {
 }
 
 // GetStrengthLabel returns a Vietnamese label for password strength
-func GetStrengthLabel(score int) string {
-	if score >= 90 {
-		return "Rất mạnh"
-	} else if score >= 75 {
-		return "Mạnh"
-	} else if score >= 50 {
-		return "Trung bình"
-	} else if score >= 25 {
-		return "Yếu"
-	} else {
-		return "Rất yếu"
-	}
-}

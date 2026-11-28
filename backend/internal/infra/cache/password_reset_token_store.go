@@ -112,9 +112,6 @@ func (s *PasswordResetTokenStore) Consume(ctx context.Context, token string) (ui
 
 // Delete removes a token (non-atomic). Provided for admin/teardown paths; the
 // normal single-use path is Consume (atomic GETDEL).
-func (s *PasswordResetTokenStore) Delete(ctx context.Context, token string) error {
-	return s.client.Del(ctx, tokenKey(tokenHashHex(token))).Err()
-}
 
 func tokenKey(hashHex string) string { return "pwreset:" + hashHex }
 func tokenHashHex(token string) string {

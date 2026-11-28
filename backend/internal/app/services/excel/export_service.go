@@ -1,13 +1,8 @@
 package excel
 
 import (
-	"archive/zip"
-	"bytes"
 	"fmt"
-	"io"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -46,104 +41,8 @@ func (s *ExportService) CreateStyledWorkbook(sheetName string) (*excelize.File, 
 }
 
 // RemoveTablesFromSheet removes Excel table metadata while preserving cell values and styles.
-func (s *ExportService) RemoveTablesFromSheet(f *excelize.File, sheetName string) error {
-	tables, err := f.GetTables(sheetName)
-	if err != nil {
-		return fmt.Errorf("failed to get tables from sheet %s: %w", sheetName, err)
-	}
-
-	for _, table := range tables {
-		if err := f.DeleteTable(table.Name); err != nil {
-			return fmt.Errorf("failed to delete table %s from sheet %s: %w", table.Name, sheetName, err)
-		}
-	}
-
-	return nil
-}
 
 // SanitizeWorkbookXML removes stale mc:Ignorable prefixes that are not declared in the XML part.
-func (s *ExportService) SanitizeWorkbookXML(workbook []byte) ([]byte, error) {
-	reader, err := zip.NewReader(bytes.NewReader(workbook), int64(len(workbook)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read workbook zip: %w", err)
-	}
-
-	var output bytes.Buffer
-	writer := zip.NewWriter(&output)
-
-	for _, file := range reader.File {
-		content, err := readZipFile(file)
-		if err != nil {
-			_ = writer.Close()
-			return nil, err
-		}
-
-		if strings.HasSuffix(file.Name, ".xml") {
-			content = sanitizeMCIgnorable(content)
-		}
-
-		header := file.FileHeader
-		header.Method = zip.Deflate
-		w, err := writer.CreateHeader(&header)
-		if err != nil {
-			_ = writer.Close()
-			return nil, fmt.Errorf("failed to create zip part %s: %w", file.Name, err)
-		}
-		if _, err := w.Write(content); err != nil {
-			_ = writer.Close()
-			return nil, fmt.Errorf("failed to write zip part %s: %w", file.Name, err)
-		}
-	}
-
-	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close workbook zip: %w", err)
-	}
-
-	return output.Bytes(), nil
-}
-
-func readZipFile(file *zip.File) ([]byte, error) {
-	rc, err := file.Open()
-	if err != nil {
-		return nil, fmt.Errorf("failed to open zip part %s: %w", file.Name, err)
-	}
-	defer func() { _ = rc.Close() }()
-
-	content, err := io.ReadAll(rc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read zip part %s: %w", file.Name, err)
-	}
-
-	return content, nil
-}
-
-func sanitizeMCIgnorable(content []byte) []byte {
-	xmlContent := string(content)
-	if !strings.Contains(xmlContent, "mc:Ignorable=") {
-		return content
-	}
-
-	sanitized := mcIgnorablePattern.ReplaceAllStringFunc(xmlContent, func(attribute string) string {
-		matches := mcIgnorablePattern.FindStringSubmatch(attribute)
-		if len(matches) != 2 {
-			return attribute
-		}
-
-		keptPrefixes := make([]string, 0)
-		for _, prefix := range strings.Fields(matches[1]) {
-			if strings.Contains(xmlContent, "xmlns:"+prefix+"=") {
-				keptPrefixes = append(keptPrefixes, prefix)
-			}
-		}
-		if len(keptPrefixes) == 0 {
-			return ""
-		}
-
-		return fmt.Sprintf(` mc:Ignorable="%s"`, strings.Join(keptPrefixes, " "))
-	})
-
-	return []byte(sanitized)
-}
 
 // SetupHeaderStyle creates and returns header style ID
 func (s *ExportService) SetupHeaderStyle(f *excelize.File) (int, error) {
@@ -359,24 +258,8 @@ func (s *ExportService) GetColumnName(index int) string {
 }
 
 // FormatCurrency formats an integer value as currency with thousand separators
-func (s *ExportService) FormatCurrency(value int64) string {
-	str := strconv.FormatInt(value, 10)
 
-	// Add thousand separators
-	if len(str) <= 3 {
-		return str
-	}
-
-	var result strings.Builder
-	for i, digit := range str {
-		if i > 0 && (len(str)-i)%3 == 0 {
-			result.WriteString(",")
-		}
-		result.WriteRune(digit)
-	}
-
-	return result.String()
-}
+// Add thousand separators
 
 // FormatDate formats a time.Time to DD/MM/YYYY format
 func (s *ExportService) FormatDate(t *time.Time) string {
@@ -392,9 +275,6 @@ func (s *ExportService) FormatDateValue(t time.Time) string {
 }
 
 // FormatDateTimeValue formats a time.Time to DD/MM/YYYY HH:MM:SS format
-func (s *ExportService) FormatDateTimeValue(t time.Time) string {
-	return t.Format("02/01/2006 15:04:05")
-}
 
 // SaveToBuffer saves the Excel file to a byte buffer
 func (s *ExportService) SaveToBuffer(f *excelize.File) ([]byte, error) {

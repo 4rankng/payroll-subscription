@@ -73,28 +73,6 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	}
 }
 
-func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := extractSessionToken(c)
-		if token == "" {
-			c.Next()
-			return
-		}
+// Set tenant_id for tenant isolation middleware (using user_id as tenant identifier)
 
-		if claims, err := m.authService.ValidateToken(c.Request.Context(), token); err == nil {
-			c.Set(constants.CtxUserID, claims.UserID)
-			c.Set("username", claims.Username)
-			c.Set(constants.CtxUserRole, claims.Role)
-			c.Set("token_jti", claims.ID)
-			c.Set("otp_verified", claims.OTPVerified)
-			// Set tenant_id for tenant isolation middleware (using user_id as tenant identifier)
-			c.Set("tenant_id", claims.UserID)
-
-			// Add user information to audit context using shared helper
-			ctx := auditservice.WithAuditContext(c.Request.Context(), claims.UserID, claims.Fullname)
-			c.Request = c.Request.WithContext(ctx)
-		}
-
-		c.Next()
-	}
-}
+// Add user information to audit context using shared helper

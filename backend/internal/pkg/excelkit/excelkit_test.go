@@ -34,37 +34,10 @@ func TestCollapseHeader(t *testing.T) {
 	}
 }
 
-func TestAliasTableResolve(t *testing.T) {
-	table := AliasTable{
-		"stt":              "order_no",
-		"(ord. no.)":       "order_no",
-		"số tài khoản":     "account_number", // diacritic key (collapsed match)
-		"so tai khoan":     "account_number", // ASCII key (unidecode retry)
-		"beneficiary bank": "bank_name",
-		"ghi chú stt":      "notes", // collapsed whole-cell key
-	}
+// diacritic key (collapsed match)
+// ASCII key (unidecode retry)
 
-	cases := []struct {
-		in     string
-		want   string
-		wantOK bool
-		note   string
-	}{
-		{" STT ", "order_no", true, "whole cell, trimmed + lowered"},
-		{"STT\n(Ord. No.)", "order_no", true, "newline segment fallback (whole-cell forms match nothing)"},
-		{"Số  tài  khoản", "account_number", true, "collapsed match on diacritic key"},
-		{"Số tài khoản", "account_number", true, "unidecode retry on ASCII key"},
-		{"Beneficiary Bank", "bank_name", true, "case-insensitive"},
-		{"Ghi chú\nSTT", "notes", true, "collapsed whole-cell outranks the STT segment"},
-		{"Unknown", "", false, "no match"},
-	}
-	for _, tc := range cases {
-		got, ok := table.Resolve(tc.in)
-		if ok != tc.wantOK || got != tc.want {
-			t.Errorf("Resolve(%q) = (%q, %v), want (%q, %v) [%s]", tc.in, got, ok, tc.want, tc.wantOK, tc.note)
-		}
-	}
-}
+// collapsed whole-cell key
 
 func TestCellAndNumericCell(t *testing.T) {
 	f := excelize.NewFile()

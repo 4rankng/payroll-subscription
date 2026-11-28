@@ -15,15 +15,3 @@ type WorkingDaysSpec struct {
 	Counter   WorkingDaysCounter
 	Threshold int
 }
-
-func NewWorkingDaysSpec(counter WorkingDaysCounter, threshold int) *WorkingDaysSpec {
-	return &WorkingDaysSpec{Counter: counter, Threshold: threshold}
-}
-
-func (s *WorkingDaysSpec) IsEligible(ctx context.Context, employeeID, projectID uint, fromDate, toDate time.Time) (bool, error) {
-	days, err := s.Counter.CountDistinctWorkingDays(ctx, employeeID, projectID, fromDate, toDate)
-	if err != nil {
-		return false, err
-	}
-	return days >= s.Threshold, nil
-}

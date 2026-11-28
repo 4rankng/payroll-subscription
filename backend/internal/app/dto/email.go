@@ -2,7 +2,6 @@ package dto
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -52,19 +51,6 @@ type SendPayrollReportEmailRequest struct {
 }
 
 // ParseReportAtDate validates and parses the requested report date using the same rules as the v3 report endpoint.
-func (r *SendPayrollReportEmailRequest) ParseReportAtDate() (time.Time, error) {
-	trimmed := strings.TrimSpace(r.ReportAtDate)
-	if trimmed == "" {
-		return time.Time{}, fmt.Errorf("reportAtDate is required")
-	}
-
-	req := PayrollReportByProjectRequest{AtDate: trimmed}
-	if err := req.ValidateDate(); err != nil {
-		return time.Time{}, err
-	}
-
-	return req.GetParsedDate()
-}
 
 // EmailRecipient represents an email recipient record in history responses.
 type EmailRecipient struct {

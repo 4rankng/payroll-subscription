@@ -126,6 +126,3 @@ func (p ActiveRecordsPlugin) filterActive(db *gorm.DB) {
 
 // SkipActiveFilter can be used to bypass the active filter for a specific query
 // Usage: db.Set("skip_active_filter", true).Find(&records)
-func SkipActiveFilter(db *gorm.DB) *gorm.DB {
-	return db.Set("skip_active_filter", true)
-}

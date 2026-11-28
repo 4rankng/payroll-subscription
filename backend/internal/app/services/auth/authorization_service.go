@@ -99,37 +99,7 @@ func (s *AuthorizationService) CanAccessTimesheet(ctx context.Context, userRole 
 	return true
 }
 
-func (s *AuthorizationService) CanModifyTimesheets(ctx context.Context, userRole string, timesheetIDs []uint) bool {
-	if userRole != string(domain.RoleQuanly) {
-		return true
-	}
-
-	for _, timesheetID := range timesheetIDs {
-		timesheet, err := s.timesheetService.GetTimesheet(ctx, timesheetID)
-		if err != nil {
-			s.logger.Error("Failed to get timesheet for bulk authorization check",
-				"timesheet_id", timesheetID,
-				"error", err,
-			)
-			return false
-		}
-
-		if timesheet.Status == domain.TimesheetStatusApproved {
-			s.logger.Info("Partner attempted to modify approved timesheet in bulk operation",
-				"timesheet_id", timesheetID,
-				"status", timesheet.Status,
-			)
-			return false
-		}
-	}
-
-	return true
-}
-
 // ReloadPolicy reloads the Casbin policy from disk at runtime.
-func (s *AuthorizationService) ReloadPolicy() error {
-	return s.enforcer.LoadPolicy()
-}
 
 func GetDefaultModelPath() string {
 	return filepath.Join("configs", "casbin_model.conf")

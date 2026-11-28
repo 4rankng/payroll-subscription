@@ -66,9 +66,6 @@ func IncrementTenantThrottle(tenant string) {
 }
 
 // IncrementTenantQueueDrop increments the queue drop counter for a tenant
-func IncrementTenantQueueDrop(tenant string) {
-	tenantQueueDropCounter.WithLabelValues(tenant).Inc()
-}
 
 // IncrementCacheHit increments the cache hit counter for a specific cache type
 func IncrementCacheHit(cacheType string) {

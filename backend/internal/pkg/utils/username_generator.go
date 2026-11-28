@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -43,19 +42,7 @@ func GenerateUsername(fullname string) string {
 // EnsureUniqueUsername takes a base username and appends a number if needed
 // to ensure uniqueness. The checker function should return true if username exists.
 // Uses format: baseUsername, baseUsername02, baseUsername03, etc.
-func EnsureUniqueUsername(baseUsername string, checker func(username string) bool) string {
-	// First check if base username is available
-	if !checker(baseUsername) {
-		return baseUsername
-	}
 
-	// Start with 02 for the first duplicate
-	counter := 2
-	for {
-		username := baseUsername + fmt.Sprintf("%02d", counter)
-		if !checker(username) {
-			return username
-		}
-		counter++
-	}
-}
+// First check if base username is available
+
+// Start with 02 for the first duplicate

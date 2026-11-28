@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"api-server/internal/app/dto"
-	"api-server/internal/app/services/audit"
 	"api-server/internal/app/services/identity"
 	"api-server/internal/app/services/infrastructure"
 	"api-server/internal/app/services/otp"
@@ -591,73 +590,28 @@ func (s *AuthService) Logout(ctx context.Context, tokenString, ipAddress, userAg
 }
 
 // GetUserFromToken extracts user information from a valid token
-func (s *AuthService) GetUserFromToken(ctx context.Context, tokenString string) (*domain.User, error) {
-	claims, err := s.ValidateToken(ctx, tokenString)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.userService.GetUser(ctx, claims.UserID)
-}
 
 // RevokeUserTokens invalidates all currently-issued JWTs for a user (admin
 // function). It sets tokens_invalid_before = now on the user record; every
 // existing token whose IssuedAt is older than that timestamp is then rejected by
 // ValidateToken on its next use. Tokens issued after this instant remain valid,
 // so the user can log back in immediately. The audit event is still published.
-func (s *AuthService) RevokeUserTokens(ctx context.Context, userID uint, revokedByUserID uint, reason domain.BlacklistReason, ipAddress, userAgent string) error {
-	now := clock.Now()
 
-	if err := s.userService.UserRepo.UpdateTokensInvalidBefore(ctx, userID, now); err != nil {
-		s.logger.Error("Failed to set tokens_invalid_before for user", "error", err, "user_id", userID)
-		return err
-	}
-	s.logger.Info("Revoked all user tokens via tokens_invalid_before", "user_id", userID, "revoked_by", revokedByUserID, "invalid_before", now)
+// Drop any cached tokens_invalid_before verdict so the revocation is
+// enforced on the very next request instead of after the 5s TTL.
 
-	// Drop any cached tokens_invalid_before verdict so the revocation is
-	// enforced on the very next request instead of after the 5s TTL.
-	if s.lookupCache != nil {
-		if err := s.lookupCache.Delete(ctx, authTokensInvalidBeforeCacheKey(userID)); err != nil {
-			s.logger.Warn("Failed to invalidate tokens_invalid_before cache", "error", err, "user_id", userID)
-		}
-	}
+// RT-M4: also kill any in-flight OTP login session for this user, so a
+// revocation mid-second-step cannot be completed by an attacker who later
+// obtains the code. Best-effort: a Redis failure here must not undo the
+// successful token revocation above.
 
-	// RT-M4: also kill any in-flight OTP login session for this user, so a
-	// revocation mid-second-step cannot be completed by an attacker who later
-	// obtains the code. Best-effort: a Redis failure here must not undo the
-	// successful token revocation above.
-	if s.otpService != nil {
-		if err := s.otpService.DeleteSessionsForUser(ctx, userID); err != nil {
-			s.logger.Error("Failed to delete pending OTP sessions during revoke", "error", err, "user_id", userID)
-		}
-	}
+// Get user for audit logging
 
-	// Get user for audit logging
-	user, err := s.userService.GetUser(ctx, userID)
-	if err != nil {
-		s.logger.Error("Failed to get user for revoke tokens audit", "error", err, "user_id", userID)
-	}
+// Publish UserUpdatedEvent for audit logging
 
-	// Publish UserUpdatedEvent for audit logging
-	if user != nil {
-		actorFullName := audit.GetActorFullName(ctx, s.userService.UserRepo, revokedByUserID)
-		event := domain.NewUserUpdatedEvent(ctx, user, revokedByUserID, actorFullName, nil)
-		if s.eventBus != nil {
-			// We could create a more specific event for token revocation, but UserUpdatedEvent covers the audit requirement
-			if err := s.eventBus.Publish(ctx, event); err != nil {
-				s.logger.Error("Failed to publish UserUpdatedEvent for revoke tokens", "error", err, "user_id", userID)
-				return err
-			}
-		}
-	}
-
-	return nil
-}
+// We could create a more specific event for token revocation, but UserUpdatedEvent covers the audit requirement
 
 // ChangePassword delegates to UserService
-func (s *AuthService) ChangePassword(ctx context.Context, userID uint, currentPassword, newPassword, ipAddress, userAgent string) error {
-	return s.userService.ChangePassword(ctx, userID, currentPassword, newPassword, ipAddress, userAgent)
-}
 
 // ChangePasswordAndBlacklistToken changes password and blacklists the current token for security
 func (s *AuthService) ChangePasswordAndBlacklistToken(ctx context.Context, userID uint, currentPassword, newPassword, tokenString, ipAddress, userAgent string) error {
@@ -696,14 +650,8 @@ func (s *AuthService) ChangePasswordAndBlacklistToken(ctx context.Context, userI
 }
 
 // ValidatePassword delegates to UserService
-func (s *AuthService) ValidatePassword(password string) error {
-	return s.userService.ValidatePassword(password)
-}
 
 // GetPasswordStrength delegates to UserService
-func (s *AuthService) GetPasswordStrength(password string) (int, []string) {
-	return s.userService.GetPasswordStrength(password)
-}
 
 // UpdateProfile updates the current user's profile (email, fullname, and optionally password)
 func (s *AuthService) UpdateProfile(ctx context.Context, userID uint, req dto.UpdateProfileRequest, ipAddress, userAgent string) (*dto.UserResponse, error) {

@@ -54,39 +54,11 @@ func (s *ExcelConverterService) ProcessExcelFile(fileHeader *multipart.FileHeade
 }
 
 // GetSheetNames returns all sheet names from the Excel file
-func (s *ExcelConverterService) GetSheetNames(file *ExcelFile) []string {
-	return file.Data.GetSheetList()
-}
 
 // GetRowsFromSheet returns all rows from a specific sheet
-func (s *ExcelConverterService) GetRowsFromSheet(file *ExcelFile, sheetName string) ([][]string, error) {
-	rows, err := file.Data.GetRows(sheetName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get rows from sheet %s: %w", sheetName, err)
-	}
-	return rows, nil
-}
 
 // SaveAsXLSX saves the Excel file as XLSX format
-func (s *ExcelConverterService) SaveAsXLSX(file *ExcelFile, filename string) error {
-	return file.Data.SaveAs(filename)
-}
 
 // GetBuffer returns the Excel file as a buffer (useful for HTTP responses)
-func (s *ExcelConverterService) GetBuffer(file *ExcelFile) (*bytes.Buffer, error) {
-	buffer := new(bytes.Buffer)
-	if err := file.Data.Write(buffer); err != nil {
-		return nil, fmt.Errorf("failed to write Excel file to buffer: %w", err)
-	}
-	return buffer, nil
-}
 
 // GetNewExcelFile creates a new Excel file
-func (s *ExcelConverterService) GetNewExcelFile() *ExcelFile {
-	f := excelize.NewFile()
-	return &ExcelFile{
-		Data:     f,
-		FileName: "new_file.xlsx",
-		IsXLS:    false,
-	}
-}

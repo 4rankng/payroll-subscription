@@ -262,15 +262,8 @@ func (s *EmployeePermissionService) CanUserAccessEmployee(ctx context.Context, e
 }
 
 // CanUserDeleteEmployee checks if a user can delete an employee (only creator)
-func (s *EmployeePermissionService) CanUserDeleteEmployee(ctx context.Context, employeeID, userID uint) (bool, error) {
-	employee, err := s.employeeRepo.GetByID(ctx, employeeID)
-	if err != nil {
-		return false, err
-	}
 
-	// Only creator can delete
-	return employee.CreatedBy == userID, nil
-}
+// Only creator can delete
 
 // GetAccessibleEmployeeIDs returns all employee IDs that a user has access to
 // This includes employees they created and employees they've been granted access to

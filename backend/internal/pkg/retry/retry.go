@@ -3,7 +3,6 @@ package retry
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -163,83 +162,11 @@ func DefaultDatabaseConfig() DatabaseOperationConfig {
 }
 
 // WithDatabaseRetry executes database operations with specialized retry logic
-func WithDatabaseRetry(ctx context.Context, cfg DatabaseOperationConfig, operation func() error) error {
-	logger := observability.GetLogger()
 
-	// Create operation context with timeout
-	opCtx, cancel := context.WithTimeout(ctx, cfg.OperationTimeout)
-	defer cancel()
+// Create operation context with timeout
 
-	var lastErr error
-	for attempt := 0; attempt <= cfg.MaxRetries; attempt++ {
-		// Check if context is cancelled
-		if opCtx.Err() != nil {
-			logger.Warn("Database operation cancelled due to context",
-				"attempt", attempt,
-				"context_error", opCtx.Err())
-			return opCtx.Err()
-		}
+// Check if context is cancelled
 
-		if attempt > 0 {
-			delay := time.Duration(float64(cfg.InitialDelay) * math.Pow(cfg.BackoffFactor, float64(attempt-1)))
-			delay = min(delay, cfg.MaxDelay)
+// Log operation performance
 
-			logger.Info("Retrying database operation after delay",
-				"attempt", attempt,
-				"max_attempts", cfg.MaxRetries+1,
-				"delay_ms", delay.Milliseconds(),
-				"operation_timeout", cfg.OperationTimeout.String())
-
-			select {
-			case <-opCtx.Done():
-				return opCtx.Err()
-			case <-time.After(delay):
-			}
-		}
-
-		startTime := time.Now()
-		err := operation()
-		duration := time.Since(startTime)
-
-		if err == nil {
-			if attempt > 0 {
-				logger.Info("Database operation succeeded after retries",
-					"successful_attempt", attempt+1,
-					"duration_ms", duration.Milliseconds())
-			}
-			return nil
-		}
-
-		lastErr = err
-
-		// Log operation performance
-		logger.Info("Database operation attempt completed",
-			"attempt", attempt+1,
-			"duration_ms", duration.Milliseconds(),
-			"error", err.Error())
-
-		// Check if error is retryable
-		if !isTransientError(err) {
-			logger.Info("Non-retryable database error encountered",
-				"error", err,
-				"error_type", "permanent",
-				"duration_ms", duration.Milliseconds())
-			return err
-		}
-
-		if attempt < cfg.MaxRetries {
-			logger.Warn("Transient database error, will retry",
-				"attempt", attempt+1,
-				"max_attempts", cfg.MaxRetries+1,
-				"error", err,
-				"duration_ms", duration.Milliseconds())
-		}
-	}
-
-	logger.Error("Database operation failed after all retry attempts",
-		"max_attempts", cfg.MaxRetries+1,
-		"final_error", lastErr,
-		"total_timeout", cfg.OperationTimeout.String())
-
-	return fmt.Errorf("database operation failed after %d retries: %w", cfg.MaxRetries+1, lastErr)
-}
+// Check if error is retryable

@@ -145,15 +145,3 @@ func TestPasswordResetTokenStore_Consume_StoreUnavailable(t *testing.T) {
 		t.Errorf("err = %v, want ErrPasswordResetStoreUnavailable", err)
 	}
 }
-
-func TestPasswordResetTokenStore_Delete(t *testing.T) {
-	store, _ := newTestTokenStore(t, 30*time.Minute)
-	token, _ := store.Create(context.Background(), 8)
-	if err := store.Delete(context.Background(), token); err != nil {
-		t.Fatalf("Delete: %v", err)
-	}
-	_, err := store.Consume(context.Background(), token)
-	if !errors.Is(err, ErrPasswordResetTokenNotFound) {
-		t.Errorf("after Delete, Consume err = %v, want ErrPasswordResetTokenNotFound", err)
-	}
-}

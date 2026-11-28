@@ -173,20 +173,8 @@ func CreateStrictRateLimit(redisURL string) gin.HandlerFunc {
 }
 
 // CreateUserRateLimit creates a rate limiter with a custom rate string.
-func CreateUserRateLimit(rate string, redisURL string) gin.HandlerFunc {
-	return CreateRateLimiter(RateLimitConfig{
-		Rate:     rate,
-		RedisURL: redisURL,
-	})
-}
 
 // CreateEndpointRateLimit creates a rate limiter for specific endpoints.
-func CreateEndpointRateLimit(rate string, redisURL string) gin.HandlerFunc {
-	return CreateRateLimiter(RateLimitConfig{
-		Rate:     rate,
-		RedisURL: redisURL,
-	})
-}
 
 // CreatePasswordResetRateLimit caps password-reset requests per EMAIL ADDRESS
 // (read from the request body), not per IP — a rotating-IP attacker must not

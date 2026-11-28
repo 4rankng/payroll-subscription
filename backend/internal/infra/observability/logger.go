@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type LogConfig struct {
@@ -228,24 +226,3 @@ func (w *dailyFileWriter) prune() {
 
 // NewFileLogger creates a slog.Logger that writes JSON to the given file
 // with lumberjack rotation. Returns nil if filename is empty.
-func NewFileLogger(filename string) (*slog.Logger, error) {
-	if filename == "" {
-		return nil, nil
-	}
-	logDir := filepath.Dir(filename)
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		return nil, err
-	}
-	writer := &lumberjack.Logger{
-		Filename:   filename,
-		MaxSize:    50,
-		MaxAge:     7,
-		MaxBackups: 3,
-		LocalTime:  true,
-		Compress:   true,
-	}
-	handler := slog.NewJSONHandler(writer, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	})
-	return slog.New(handler), nil
-}

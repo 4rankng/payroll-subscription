@@ -27,9 +27,6 @@ func (s *EmployeeImportProgressService) GenerateImportKey(importID string) strin
 }
 
 // GenerateQueueKey generates the Redis key for the import job queue
-func (s *EmployeeImportProgressService) GenerateQueueKey() string {
-	return "import:employees:queue"
-}
 
 // StartImport initializes a new employee import progress tracking
 func (s *EmployeeImportProgressService) StartImport(ctx context.Context, importID string, totalRows int, userID uint, filePath string) error {
@@ -139,9 +136,6 @@ func (s *EmployeeImportProgressService) MarkAsProcessing(ctx context.Context, im
 }
 
 // CleanupProgress removes progress data (optional)
-func (s *EmployeeImportProgressService) CleanupProgress(ctx context.Context, importID string) error {
-	return s.cache.Delete(ctx, s.GenerateImportKey(importID))
-}
 
 // GetImportStatus returns the public status (without internal fields like FilePath)
 func (s *EmployeeImportProgressService) GetImportStatus(ctx context.Context, importID string) (*dto.EmployeeImportStatus, error) {

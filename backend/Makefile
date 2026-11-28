@@ -213,6 +213,9 @@ test:
 # Ensure the local-dev login accounts (admin/quanly/ketoan/giamdoc/nhanvien,
 # shared password Abc123) in the dev database. Non-production only (PAYSUB
 # D28: ketoan is its own role).
+# Abc123 is seed-only: the seed hashes it directly (validator bypass, see
+# internal/seed/dev_users.go). Passwords set through the API must satisfy the
+# policy (>=8 chars + upper/lower/digit/special), so they can never be Abc123.
 seed:
 	@go run ./cmd/api-server seed-dev-users
 

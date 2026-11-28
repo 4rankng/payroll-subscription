@@ -28,25 +28,9 @@ func TestIncrementTenantThrottle(t *testing.T) {
 	}
 }
 
-func TestIncrementTenantQueueDrop(t *testing.T) {
-	tenant := "test-tenant-2"
+// Should not panic
 
-	// Should not panic
-	IncrementTenantQueueDrop(tenant)
-	IncrementTenantQueueDrop(tenant)
-
-	// Verify metric exists by checking metrics endpoint
-	handler := MetricsHandler()
-	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-
-	responseBody := w.Body.String()
-
-	if !strings.Contains(responseBody, "tenant_queue_drop_total") {
-		t.Error("Expected metrics to contain tenant_queue_drop_total")
-	}
-}
+// Verify metric exists by checking metrics endpoint
 
 func TestMetricsHandler(t *testing.T) {
 	handler := MetricsHandler()
@@ -72,25 +56,4 @@ func TestMetricsHandler(t *testing.T) {
 	}
 }
 
-func TestMultipleTenantMetrics(t *testing.T) {
-	tenants := []string{"tenant-a", "tenant-b", "tenant-c"}
-
-	for _, tenant := range tenants {
-		IncrementTenantThrottle(tenant)
-		IncrementTenantQueueDrop(tenant)
-	}
-
-	handler := MetricsHandler()
-	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-
-	responseBody := w.Body.String()
-
-	// Verify all tenants are tracked
-	for _, tenant := range tenants {
-		if !strings.Contains(responseBody, tenant) {
-			t.Errorf("Expected metrics to contain tenant %s", tenant)
-		}
-	}
-}
+// Verify all tenants are tracked

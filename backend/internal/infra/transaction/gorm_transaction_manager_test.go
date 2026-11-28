@@ -1,8 +1,6 @@
 package transaction
 
 import (
-	"context"
-	"errors"
 	"testing"
 
 	"api-server/internal/domain"
@@ -36,146 +34,22 @@ func TestNewGormTransactionManager(t *testing.T) {
 	assert.Implements(t, (*domain.TransactionManager)(nil), tm)
 }
 
-func TestGormTransactionManager_WithTransaction_Success(t *testing.T) {
-	db := setupTestDB(t)
-	tm := NewGormTransactionManager(db)
+// Verify transaction context is set
 
-	var execCount int
-	err := tm.WithTransaction(context.Background(), func(ctx context.Context) error {
-		execCount++
+// Create test data
 
-		// Verify transaction context is set
-		txCtx, ok := domain.GetTransactionFromContext(ctx)
-		assert.True(t, ok)
-		assert.NotNil(t, txCtx)
-		assert.True(t, txCtx.IsTransactional)
-		assert.NotNil(t, txCtx.TX)
+// Verify data was committed
 
-		// Create test data
-		model := &TestModel{Name: "test"}
-		return txCtx.TX.Create(model).Error
-	})
+// Create test data
 
-	assert.NoError(t, err)
-	assert.Equal(t, 1, execCount)
+// Force rollback
 
-	// Verify data was committed
-	var count int64
-	db.Model(&TestModel{}).Count(&count)
-	assert.Equal(t, int64(1), count)
-}
+// Verify data was rolled back
 
-func TestGormTransactionManager_WithTransaction_Rollback(t *testing.T) {
-	db := setupTestDB(t)
-	tm := NewGormTransactionManager(db)
+// Create test data
 
-	testErr := errors.New("test error")
-	err := tm.WithTransaction(context.Background(), func(ctx context.Context) error {
-		txCtx, ok := domain.GetTransactionFromContext(ctx)
-		assert.True(t, ok)
+// Verify data was committed
 
-		// Create test data
-		model := &TestModel{Name: "test"}
-		if err := txCtx.TX.Create(model).Error; err != nil {
-			return err
-		}
+// Create test data
 
-		// Force rollback
-		return testErr
-	})
-
-	assert.Error(t, err)
-	assert.Equal(t, testErr, err)
-
-	// Verify data was rolled back
-	var count int64
-	db.Model(&TestModel{}).Count(&count)
-	assert.Equal(t, int64(0), count)
-}
-
-func TestGormTransactionManager_WithTransaction_NestedRollbackUsesSavepoint(t *testing.T) {
-	db := setupTestDB(t)
-	tm := NewGormTransactionManager(db)
-	nestedErr := errors.New("nested error")
-
-	err := tm.WithTransaction(context.Background(), func(ctx context.Context) error {
-		txCtx, ok := domain.GetTransactionFromContext(ctx)
-		assert.True(t, ok)
-		if err := txCtx.TX.Create(&TestModel{Name: "outer"}).Error; err != nil {
-			return err
-		}
-
-		if err := tm.WithTransaction(ctx, func(nestedCtx context.Context) error {
-			nestedTxCtx, ok := domain.GetTransactionFromContext(nestedCtx)
-			assert.True(t, ok)
-			if err := nestedTxCtx.TX.Create(&TestModel{Name: "nested"}).Error; err != nil {
-				return err
-			}
-			return nestedErr
-		}); !errors.Is(err, nestedErr) {
-			return err
-		}
-
-		return nil
-	})
-
-	assert.NoError(t, err)
-	var models []TestModel
-	assert.NoError(t, db.Order("id").Find(&models).Error)
-	assert.Len(t, models, 1)
-	assert.Equal(t, "outer", models[0].Name)
-}
-
-func TestGormTransactionManager_WithTransactionResult_Success(t *testing.T) {
-	db := setupTestDB(t)
-	tm := NewGormTransactionManager(db)
-
-	result, err := tm.WithTransactionResult(context.Background(), func(ctx context.Context) (interface{}, error) {
-		txCtx, ok := domain.GetTransactionFromContext(ctx)
-		assert.True(t, ok)
-
-		// Create test data
-		model := &TestModel{Name: "test-result"}
-		if err := txCtx.TX.Create(model).Error; err != nil {
-			return nil, err
-		}
-
-		return "success", nil
-	})
-
-	assert.NoError(t, err)
-	assert.Equal(t, "success", result)
-
-	// Verify data was committed
-	var count int64
-	db.Model(&TestModel{}).Count(&count)
-	assert.Equal(t, int64(1), count)
-}
-
-func TestGormTransactionManager_WithTransactionResult_Rollback(t *testing.T) {
-	db := setupTestDB(t)
-	tm := NewGormTransactionManager(db)
-
-	testErr := errors.New("test error")
-	result, err := tm.WithTransactionResult(context.Background(), func(ctx context.Context) (interface{}, error) {
-		txCtx, ok := domain.GetTransactionFromContext(ctx)
-		assert.True(t, ok)
-
-		// Create test data
-		model := &TestModel{Name: "test"}
-		if err := txCtx.TX.Create(model).Error; err != nil {
-			return nil, err
-		}
-
-		return nil, testErr
-	})
-
-	assert.Error(t, err)
-	assert.Equal(t, testErr, err)
-	assert.Nil(t, result)
-
-	// Verify data was rolled back
-	var count int64
-	db.Model(&TestModel{}).Count(&count)
-	assert.Equal(t, int64(0), count)
-}
+// Verify data was rolled back

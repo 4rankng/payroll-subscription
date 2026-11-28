@@ -4,10 +4,6 @@
 package events
 
 import (
-	"context"
-	"encoding/json"
-	"strings"
-	"testing"
 	"time"
 
 	"api-server/internal/domain"
@@ -15,7 +11,6 @@ import (
 
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
-	"github.com/leanovate/gopter/prop"
 )
 
 // mockAuditEnqueuer captures payloads enqueued via EnqueueAuditLogWrite.
@@ -110,210 +105,25 @@ func genPositiveUint() gopter.Gen {
 // UA parsing (Browser/Platform) is deferred to the worker and not tested here.
 //
 // Validates: Requirements 3.1–3.12, 4.3, 8.4
-func TestProperty5_HandlerPersistsStructuredFields(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(5555)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
 
-	rawUA := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/147.0.0.0 Safari/537.36"
-
-	genEvent := gopter.CombineGens(
-		genHandlerAuditAction(),
-		genHandlerEntityType(),
-		genPositiveUint(),        // entityID
-		genPositiveUint(),        // userID
-		genNonEmptyAlphaString(), // ipAddress
-		genNonEmptyAlphaString(), // message
-	).Map(func(values []interface{}) mockDomainEvent {
-		return mockDomainEvent{
-			action:     values[0].(domain.AuditAction),
-			entityType: values[1].(domain.EntityType),
-			entityID:   values[2].(uint),
-			userID:     values[3].(uint),
-			ipAddress:  values[4].(string),
-			userAgent:  rawUA,
-			message:    values[5].(string),
-		}
-	})
-
-	properties.Property("enqueued payload fields match event values", prop.ForAll(
-		func(event mockDomainEvent) bool {
-			enqueuer := &mockAuditEnqueuer{}
-			handler := NewAuditEventHandler(enqueuer)
-
-			if err := handler.Handle(context.Background(), event); err != nil {
-				return false
-			}
-
-			if len(enqueuer.payloads) != 1 {
-				return false
-			}
-
-			p := enqueuer.payloads[0]
-			if p.Action != string(event.action) {
-				return false
-			}
-			if p.EntityType != string(event.entityType) {
-				return false
-			}
-			if p.UserID != event.userID {
-				return false
-			}
-			if p.Message != event.message {
-				return false
-			}
-			if p.IPAddress != event.ipAddress {
-				return false
-			}
-			if !strings.Contains(p.UserAgent, "Chrome") {
-				return false
-			}
-			if p.EntityID == nil || *p.EntityID != event.entityID {
-				return false
-			}
-			return true
-		},
-		genEvent,
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
-}
+// entityID
+// userID
+// ipAddress
+// message
 
 // TestProperty7_FailedLoginMetadataIsStored verifies that when a UserLoginEvent
 // with Success=false is handled, the enqueued payload metadata contains
 // {"success": false, "reason": "<reason>"}.
 //
 // Validates: Requirements 4.4, 9.2
-func TestProperty7_FailedLoginMetadataIsStored(t *testing.T) {
-	parameters := gopter.DefaultTestParametersWithSeed(7777)
-	parameters.MinSuccessfulTests = 100
-	properties := gopter.NewProperties(parameters)
-
-	properties.Property("failed login metadata contains success=false and reason", prop.ForAll(
-		func(reason string) bool {
-			enqueuer := &mockAuditEnqueuer{}
-			handler := NewAuditEventHandler(enqueuer)
-
-			event := domain.UserLoginEvent{
-				BaseEvent: domain.BaseEvent{
-					EventName:    "UserLogin",
-					ActorUserID:  1,
-					AuditMessage: "đã đăng nhập thất bại",
-					Action:       domain.AuditActionLogin,
-					EntityType:   domain.EntityTypeUser,
-				},
-				Success: false,
-				Reason:  reason,
-			}
-
-			if err := handler.Handle(context.Background(), event); err != nil {
-				return false
-			}
-
-			if len(enqueuer.payloads) != 1 {
-				return false
-			}
-
-			p := enqueuer.payloads[0]
-			if p.MetadataJSON == "" {
-				return false
-			}
-
-			var meta map[string]interface{}
-			if err := json.Unmarshal([]byte(p.MetadataJSON), &meta); err != nil {
-				return false
-			}
-
-			successVal, ok := meta["success"]
-			if !ok {
-				return false
-			}
-			if successVal != false {
-				return false
-			}
-
-			reasonVal, ok := meta["reason"]
-			if !ok {
-				return false
-			}
-			if reasonVal != reason {
-				return false
-			}
-
-			return true
-		},
-		genNonEmptyAlphaString(),
-	))
-
-	properties.TestingRun(t, gopter.ConsoleReporter(false))
-}
 
 // TestHandler_DropsEmitsWithUserIDZero_ExceptLogin verifies the filter rule:
 // audit rows with user_id=0 are silently dropped except for login attempts
 // (failed logins legitimately carry user_id=0). Cron jobs / system writes
 // without an actor must not pollute the audit log.
-func TestHandler_DropsEmitsWithUserIDZero_ExceptLogin(t *testing.T) {
-	// Non-login event with user_id=0 → dropped.
-	t.Run("drops non-login event when user_id=0", func(t *testing.T) {
-		enqueuer := &mockAuditEnqueuer{}
-		handler := NewAuditEventHandler(enqueuer)
 
-		event := mockDomainEvent{
-			action:     domain.AuditActionUpdate,
-			entityType: domain.EntityTypeSettings,
-			entityID:   1,
-			userID:     0,
-			message:    "system updated settings",
-		}
-		if err := handler.Handle(context.Background(), event); err != nil {
-			t.Fatalf("handle: %v", err)
-		}
-		if len(enqueuer.payloads) != 0 {
-			t.Fatalf("expected 0 enqueued payloads for user_id=0 non-login event, got %d", len(enqueuer.payloads))
-		}
-	})
+// Non-login event with user_id=0 → dropped.
 
-	// Failed login with user_id=0 → kept.
-	t.Run("keeps login event when user_id=0", func(t *testing.T) {
-		enqueuer := &mockAuditEnqueuer{}
-		handler := NewAuditEventHandler(enqueuer)
+// Failed login with user_id=0 → kept.
 
-		event := domain.UserLoginEvent{
-			BaseEvent: domain.BaseEvent{
-				EventName:    "UserLogin",
-				ActorUserID:  0,
-				AuditMessage: "đăng nhập thất bại",
-				Action:       domain.AuditActionLogin,
-				EntityType:   domain.EntityTypeUser,
-			},
-			Success: false,
-			Reason:  "invalid_credentials",
-		}
-		if err := handler.Handle(context.Background(), event); err != nil {
-			t.Fatalf("handle: %v", err)
-		}
-		if len(enqueuer.payloads) != 1 {
-			t.Fatalf("expected 1 enqueued payload for failed login (user_id=0 + LOGIN action), got %d", len(enqueuer.payloads))
-		}
-	})
-
-	// Non-zero user_id → kept regardless of action.
-	t.Run("keeps non-login event when user_id is set", func(t *testing.T) {
-		enqueuer := &mockAuditEnqueuer{}
-		handler := NewAuditEventHandler(enqueuer)
-
-		event := mockDomainEvent{
-			action:     domain.AuditActionUpdate,
-			entityType: domain.EntityTypeSettings,
-			entityID:   1,
-			userID:     42,
-			message:    "Frank Nguyen updated settings",
-		}
-		if err := handler.Handle(context.Background(), event); err != nil {
-			t.Fatalf("handle: %v", err)
-		}
-		if len(enqueuer.payloads) != 1 {
-			t.Fatalf("expected 1 enqueued payload for non-zero user_id event, got %d", len(enqueuer.payloads))
-		}
-	})
-}
+// Non-zero user_id → kept regardless of action.

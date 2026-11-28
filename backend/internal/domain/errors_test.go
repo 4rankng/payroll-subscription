@@ -63,27 +63,10 @@ func TestIsUnauthorizedError(t *testing.T) {
 	assert.True(t, IsUnauthorizedError(unauthorizedErr))
 }
 
-func TestIsForbiddenError(t *testing.T) {
-	validationErr := NewValidationError("message")
-	assert.False(t, IsForbiddenError(validationErr))
-
-	forbiddenErr := NewForbiddenError("message")
-	assert.True(t, IsForbiddenError(forbiddenErr))
-}
-
 func TestIsConflictError(t *testing.T) {
 	validationErr := NewValidationError("message")
 	assert.False(t, IsConflictError(validationErr))
 
 	conflictErr := NewConflictError("message")
 	assert.True(t, IsConflictError(conflictErr))
-}
-
-func TestIsInternalError(t *testing.T) {
-	validationErr := NewValidationError("message")
-	assert.False(t, IsInternalError(validationErr))
-
-	innerErr := errors.New("inner error")
-	internalErr := NewInternalError("message", innerErr)
-	assert.True(t, IsInternalError(internalErr))
 }

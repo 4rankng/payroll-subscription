@@ -1,8 +1,6 @@
 package events
 
 import (
-	"context"
-
 	"api-server/internal/domain"
 )
 
@@ -14,29 +12,8 @@ type SequentialEventHandler struct {
 }
 
 // NewSequentialEventHandler creates a new sequential event handler wrapper.
-func NewSequentialEventHandler(handlers []domain.EventHandler) *SequentialEventHandler {
-	return &SequentialEventHandler{
-		handlers: handlers,
-	}
-}
 
 // Handle runs all inner handlers sequentially. If any handler returns an error,
 // it stops and returns that error.
-func (h *SequentialEventHandler) Handle(ctx context.Context, event domain.DomainEvent) error {
-	for _, handler := range h.handlers {
-		if err := handler.Handle(ctx, event); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // CanHandle returns true if any inner handler can handle the given eventType.
-func (h *SequentialEventHandler) CanHandle(eventType string) bool {
-	for _, handler := range h.handlers {
-		if handler.CanHandle(eventType) {
-			return true
-		}
-	}
-	return false
-}

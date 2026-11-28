@@ -31,12 +31,6 @@ type BatchInsertConfig struct {
 }
 
 // DefaultBatchInsertConfig returns default configuration for batch inserts
-func DefaultBatchInsertConfig() BatchInsertConfig {
-	return BatchInsertConfig{
-		BatchSize: 1000,
-		Timeout:   30 * time.Second,
-	}
-}
 
 // BatchInsert performs batch insert operations with progress tracking
 func (h *BatchOperationHelper) BatchInsert(ctx context.Context, records any, config BatchInsertConfig) error {
@@ -79,12 +73,6 @@ type BatchUpdateConfig struct {
 }
 
 // DefaultBatchUpdateConfig returns default configuration for batch updates
-func DefaultBatchUpdateConfig() BatchUpdateConfig {
-	return BatchUpdateConfig{
-		BatchSize: 500,
-		Timeout:   30 * time.Second,
-	}
-}
 
 // BatchUpdateByIDs performs batch updates by ID list
 func (h *BatchOperationHelper) BatchUpdateByIDs(ctx context.Context, model any, ids []uint, updates map[string]any, config BatchUpdateConfig) error {
@@ -146,12 +134,6 @@ type BulkUpsertConfig struct {
 }
 
 // DefaultBulkUpsertConfig returns default configuration for bulk upserts
-func DefaultBulkUpsertConfig() BulkUpsertConfig {
-	return BulkUpsertConfig{
-		BatchSize: 500,
-		Timeout:   30 * time.Second,
-	}
-}
 
 // BulkUpsert performs bulk upsert (INSERT ... ON DUPLICATE KEY UPDATE) operations
 func (h *BatchOperationHelper) BulkUpsert(ctx context.Context, records any, config BulkUpsertConfig) error {
@@ -187,13 +169,6 @@ type BatchDeleteConfig struct {
 }
 
 // DefaultBatchDeleteConfig returns default configuration for batch deletes
-func DefaultBatchDeleteConfig() BatchDeleteConfig {
-	return BatchDeleteConfig{
-		BatchSize:  500,
-		Timeout:    30 * time.Second,
-		SoftDelete: true,
-	}
-}
 
 // BatchDeleteByIDs performs batch delete operations by ID list
 func (h *BatchOperationHelper) BatchDeleteByIDs(ctx context.Context, model any, ids []uint, config BatchDeleteConfig) error {
@@ -269,13 +244,6 @@ type BatchQueryConfig struct {
 }
 
 // DefaultBatchQueryConfig returns default configuration for batch queries
-func DefaultBatchQueryConfig() BatchQueryConfig {
-	return BatchQueryConfig{
-		BatchSize: 1000,
-		Timeout:   30 * time.Second,
-		OrderBy:   "id ASC",
-	}
-}
 
 // BatchQuery performs paginated queries with batch processing
 func (h *BatchOperationHelper) BatchQuery(ctx context.Context, model any, whereClause string, args []any, config BatchQueryConfig, processor func(*BatchQueryResult) error) error {

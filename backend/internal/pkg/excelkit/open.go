@@ -1,7 +1,6 @@
 package excelkit
 
 import (
-	"bytes"
 	"io"
 	"os"
 	"strconv"
@@ -56,35 +55,11 @@ func OpenReader(r io.Reader) (*excelize.File, error) {
 // renamed file cannot take the wrong path — wrong content still fails on
 // open. Callers bound the input (uploadguard caps uploads at MaxBytes);
 // the .xls path re-checks against the unzip cap before parsing.
-func OpenWorkbook(r io.Reader) (*excelize.File, error) {
-	head := make([]byte, ole2SignatureLen)
-	n, err := io.ReadFull(r, head)
-	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
-		return nil, err
-	}
-	head = head[:n]
-	if isOLE2(head) {
-		return openXLS(io.MultiReader(bytes.NewReader(head), r))
-	}
-	return OpenReader(io.MultiReader(bytes.NewReader(head), r))
-}
 
 const ole2SignatureLen = 8
 
 // isOLE2 reports whether head starts with the OLE2 compound document
 // signature (legacy .xls).
-func isOLE2(head []byte) bool {
-	ole2 := []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}
-	if len(head) < len(ole2) {
-		return false
-	}
-	for i, b := range ole2 {
-		if head[i] != b {
-			return false
-		}
-	}
-	return true
-}
 
 // OpenFile opens a workbook from a path with decompression caps applied.
 func OpenFile(path string) (*excelize.File, error) {

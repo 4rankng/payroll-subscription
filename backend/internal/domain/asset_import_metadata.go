@@ -43,12 +43,6 @@ func (m *AssetImportMetadata) GetPercentage() int {
 }
 
 // NewAssetImportMetadata creates a new import metadata with default values
-func NewAssetImportMetadata() *AssetImportMetadata {
-	status := "pending"
-	return &AssetImportMetadata{
-		Status: &status,
-	}
-}
 
 // ToJSON converts the metadata to JSON string
 func (m *AssetImportMetadata) ToJSON() (*string, error) {
@@ -65,16 +59,3 @@ func (m *AssetImportMetadata) ToJSON() (*string, error) {
 }
 
 // FromJSON creates AssetImportMetadata from JSON string
-func FromJSON(jsonStr *string) (*AssetImportMetadata, error) {
-	if jsonStr == nil || *jsonStr == "" {
-		return NewAssetImportMetadata(), nil
-	}
-
-	var metadata AssetImportMetadata
-	err := json.Unmarshal([]byte(*jsonStr), &metadata)
-	if err != nil {
-		return nil, err
-	}
-
-	return &metadata, nil
-}

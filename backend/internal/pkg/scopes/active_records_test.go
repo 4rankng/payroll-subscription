@@ -116,20 +116,9 @@ func TestActiveRecordsPlugin_NonActiveScopedModel(t *testing.T) {
 	assert.Equal(t, 2, len(results))
 }
 
-func TestActiveRecordsPlugin_SkipActiveFilter(t *testing.T) {
-	db := setupTestDB(t)
+// Insert test data
 
-	// Insert test data
-	db.Create(&TestActiveModel{Name: "Active1", Status: "active"})
-	db.Create(&TestActiveModel{Name: "Inactive1", Status: "inactive"})
-	db.Create(&TestActiveModel{Name: "Deleted", Status: "deleted"})
-
-	// Query with skip_active_filter - should return all records
-	var results []TestActiveModel
-	SkipActiveFilter(db).Find(&results)
-
-	assert.Equal(t, 3, len(results))
-}
+// Query with skip_active_filter - should return all records
 
 func TestActiveRecordsPlugin_ExplicitFilter(t *testing.T) {
 	db := setupTestDB(t)
@@ -214,20 +203,8 @@ func TestActiveRecordsPlugin_Where(t *testing.T) {
 	}
 }
 
-func TestSkipActiveFilter(t *testing.T) {
-	db := setupTestDB(t)
+// Insert test data
 
-	// Insert test data
-	db.Create(&TestActiveModel{Name: "Active1", Status: "active"})
-	db.Create(&TestActiveModel{Name: "Inactive1", Status: "inactive"})
+// Test SkipActiveFilter function
 
-	// Test SkipActiveFilter function
-	query := SkipActiveFilter(db)
-	assert.NotNil(t, query)
-
-	// Should return all records
-	var results []TestActiveModel
-	query.Find(&results)
-
-	assert.Equal(t, 2, len(results))
-}
+// Should return all records

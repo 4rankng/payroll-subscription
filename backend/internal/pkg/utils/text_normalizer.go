@@ -58,27 +58,10 @@ func (v *VietnameseNormalizer) NormalizeForSearch(searchTerm string) string {
 }
 
 // NormalizeBatch normalizes multiple strings at once for efficiency
-func (v *VietnameseNormalizer) NormalizeBatch(texts []string) []string {
-	results := make([]string, len(texts))
-	for i, text := range texts {
-		results[i] = v.Normalize(text)
-	}
-	return results
-}
 
 // ClearCache clears the normalization cache
-func (v *VietnameseNormalizer) ClearCache() {
-	v.mutex.Lock()
-	defer v.mutex.Unlock()
-	v.cache = make(map[string]string)
-}
 
 // GetCacheSize returns the current cache size
-func (v *VietnameseNormalizer) GetCacheSize() int {
-	v.mutex.RLock()
-	defer v.mutex.RUnlock()
-	return len(v.cache)
-}
 
 // Global instance for convenience
 var globalNormalizer = NewVietnameseNormalizer()

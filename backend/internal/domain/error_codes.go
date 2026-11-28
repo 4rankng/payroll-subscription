@@ -29,28 +29,5 @@ func NewValidationErrorWithCode(code, message string) *DomainError {
 }
 
 // NewConflictErrorWithCode creates a conflict error with an error code
-func NewConflictErrorWithCode(code, message string) *DomainError {
-	return &DomainError{
-		Type:    "CONFLICT",
-		Code:    code,
-		Message: message,
-		Cause:   ErrConflict,
-	}
-}
 
 // Common error builders for timesheet domain
-func NewTimesheetExistsError() *DomainError {
-	return NewConflictErrorWithCode(ErrCodeTimesheetExists, "Timesheet entry already exists")
-}
-
-func NewAssignmentOverlapError(message string) *DomainError {
-	return NewConflictErrorWithCode(ErrCodeAssignmentOverlap, message)
-}
-
-func NewInvalidDateRangeError(message string) *DomainError {
-	return NewValidationErrorWithCode(ErrCodeInvalidDateRange, message)
-}
-
-func NewInvalidTransitionError(message string) *DomainError {
-	return NewValidationErrorWithCode(ErrCodeInvalidTransition, message)
-}

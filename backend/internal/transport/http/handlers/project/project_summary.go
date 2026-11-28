@@ -45,24 +45,5 @@ func (h *Handler) GetProjectSummary(c *gin.Context) {
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /projects/partner-summary [get]
-func (h *Handler) GetPartnerProjectSummary(c *gin.Context) {
-	// 1. Validate user context
-	userID, exists := c.Get(constants.CtxUserID)
-	if !exists {
-		response.Forbidden(c, constants.MsgUserIDNotFoundInContextVN)
-		return
-	}
 
-	if uid, ok := userID.(uint); ok {
-		summary, err := h.projectService.GetPartnerProjectSummary(c.Request.Context(), uid)
-		if err != nil {
-			response.InternalServerError(c, constants.MsgFailedToGetPartnerProjectSummaryVN)
-			return
-		}
-
-		response.Success(c, summary, constants.MsgPartnerProjectSummaryRetrievedVN)
-	} else {
-		response.Forbidden(c, constants.MsgInvalidUserIDVN)
-		return
-	}
-}
+// 1. Validate user context

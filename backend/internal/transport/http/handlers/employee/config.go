@@ -16,11 +16,3 @@ type HandlerConfig struct {
 }
 
 // NewHandlerFromConfig creates a new handler from config
-func NewHandlerFromConfig(cfg *HandlerConfig) *Handler {
-	return &Handler{
-		employeeService:        cfg.EmployeeService,
-		timesheetService:       cfg.TimesheetService,
-		projectEmployeeService: cfg.ProjectEmployeeService,
-		validator:              cfg.Validator,
-	}
-}

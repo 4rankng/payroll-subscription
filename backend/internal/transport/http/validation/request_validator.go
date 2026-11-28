@@ -2,7 +2,6 @@ package validation
 
 import (
 	"strconv"
-	"time"
 
 	"api-server/internal/constants"
 	"api-server/internal/domain"
@@ -62,133 +61,31 @@ func (v *RequestValidator) ValidateUserContext(c *gin.Context) (uint, error) {
 }
 
 // ValidateDateParam validates and parses date parameter
-func (v *RequestValidator) ValidateDateParam(c *gin.Context, paramName string) (*time.Time, error) {
-	dateStr := c.Query(paramName)
-	if dateStr == "" {
-		return nil, nil // Optional parameter
-	}
 
-	date, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		switch paramName {
-		case "from_date":
-			return nil, domain.NewValidationError(constants.MsgInvalidFromDateFormatVN)
-		case "to_date":
-			return nil, domain.NewValidationError(constants.MsgInvalidToDateFormatVN)
-		case "date":
-			return nil, domain.NewValidationError(constants.MsgInvalidDateFormatVN)
-		case "start_date":
-			return nil, domain.NewValidationError(constants.MsgInvalidStartDateFormatVN)
-		case "end_date":
-			return nil, domain.NewValidationError(constants.MsgInvalidEndDateFormatVN)
-		case "at_date":
-			return nil, domain.NewValidationError(constants.MsgInvalidAtDateFormatVN)
-		default:
-			return nil, domain.NewValidationError(constants.MsgInvalidDateFormatVN)
-		}
-	}
-
-	return &date, nil
-}
+// Optional parameter
 
 // ValidateRequiredDateParam validates required date parameter
-func (v *RequestValidator) ValidateRequiredDateParam(c *gin.Context, paramName string) (time.Time, error) {
-	dateStr := c.Query(paramName)
-	if dateStr == "" {
-		return time.Time{}, domain.NewValidationError(constants.MsgDateParameterRequiredVN)
-	}
-
-	return time.Parse("2006-01-02", dateStr)
-}
 
 // ValidatePaginationParams validates pagination query parameters
-func (v *RequestValidator) ValidatePaginationParams(c *gin.Context) (limit, offset int, err error) {
-	// Default values
-	limit = 50
-	offset = 0
 
-	// Parse limit
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if parsedLimit, parseErr := strconv.Atoi(limitStr); parseErr == nil {
-			if parsedLimit > 0 && parsedLimit <= 1000 { // Max limit of 1000
-				limit = parsedLimit
-			} else if parsedLimit > 1000 {
-				return 0, 0, domain.NewValidationError(constants.MsgLimitCannotExceed1000VN)
-			}
-		} else {
-			return 0, 0, domain.NewValidationError(constants.MsgInvalidQueryParametersVN)
-		}
-	}
+// Default values
 
-	// Parse offset
-	if offsetStr := c.Query("offset"); offsetStr != "" {
-		if parsedOffset, parseErr := strconv.Atoi(offsetStr); parseErr == nil {
-			if parsedOffset >= 0 {
-				offset = parsedOffset
-			}
-		} else {
-			return 0, 0, domain.NewValidationError(constants.MsgInvalidQueryParametersVN)
-		}
-	}
+// Parse limit
 
-	return limit, offset, nil
-}
+// Max limit of 1000
+
+// Parse offset
 
 // ValidateSearchQuery validates search query parameters
-func (v *RequestValidator) ValidateSearchQuery(c *gin.Context) (string, error) {
-	query := c.Query("search")
-	if query == "" {
-		query = c.Query("q") // Alternative parameter name
-	}
 
-	if query == "" {
-		return "", domain.NewValidationError(constants.MsgSearchQueryRequiredVN)
-	}
-
-	if len(query) < 3 {
-		return "", domain.NewValidationError(constants.MsgSearchQueryMinLengthVN)
-	}
-
-	return query, nil
-}
+// Alternative parameter name
 
 // ValidateOptionalSearchQuery validates optional search query parameters
-func (v *RequestValidator) ValidateOptionalSearchQuery(c *gin.Context) (string, error) {
-	query := c.Query("search")
-	if query == "" {
-		query = c.Query("q") // Alternative parameter name
-	}
 
-	if query != "" && len(query) < 3 {
-		return "", domain.NewValidationError(constants.MsgSearchQueryMinLengthVN)
-	}
-
-	return query, nil
-}
+// Alternative parameter name
 
 // ValidateSortParams validates sorting parameters
-func (v *RequestValidator) ValidateSortParams(c *gin.Context, allowedFields []string) (sortBy, sortOrder string, err error) {
-	sortBy = c.Query("sort_by")
-	sortOrder = c.Query("sort_order")
 
-	// Validate sort_by
-	if sortBy != "" {
-		isValidField := false
-		for _, field := range allowedFields {
-			if sortBy == field {
-				isValidField = true
-				break
-			}
-		}
-		if !isValidField {
-			return "", "", domain.NewValidationError(constants.MsgInvalidSortFieldVN)
-		}
-	}
+// Validate sort_by
 
-	// Validate sort_order
-	if sortOrder != "" && sortOrder != "asc" && sortOrder != "desc" {
-		return "", "", domain.NewValidationError(constants.MsgSortOrderMustBeAscOrDescVN)
-	}
-
-	return sortBy, sortOrder, nil
-}
+// Validate sort_order
