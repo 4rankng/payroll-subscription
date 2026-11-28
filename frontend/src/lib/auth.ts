@@ -1,6 +1,6 @@
 export type AppRole = 'admin' | 'quanly' | 'ketoan' | 'nhanvien' | 'giamdoc';
 
-// PAYR-37B item 4: the JWT no longer lives in localStorage. The server sets it
+// The JWT no longer lives in localStorage. The server sets it
 // as an HttpOnly cookie (SameSite=Lax, Secure in production) and client JS
 // cannot read it. What remains client-side is the user PROFILE (display data,
 // not a credential) and an expiry timestamp for proactive session-expiry UI.

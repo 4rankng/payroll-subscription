@@ -32,7 +32,7 @@ func TestDailyFileWriter_WritesDailyFile(t *testing.T) {
 		t.Fatalf("newDailyFileWriter: %v", err)
 	}
 
-	line := "[GIN] hello PAYR-32\n"
+	line := "[GIN] hello daily-file\n"
 	if n, werr := w.Write([]byte(line)); werr != nil || n != len(line) {
 		t.Fatalf("write: n=%d err=%v", n, werr)
 	}
@@ -124,7 +124,7 @@ func TestNewLogger_WritesJSONToDailyFile(t *testing.T) {
 	}
 }
 
-// TestGinAccessLogReachesDailyFile proves the PAYR-32 mechanism end to end at
+// TestGinAccessLogReachesDailyFile proves the daily-file mechanism end to end at
 // the code level: the GIN logger middleware writing through the same
 // MultiWriter(main.go builds) lands the access line in the daily file.
 func TestGinAccessLogReachesDailyFile(t *testing.T) {

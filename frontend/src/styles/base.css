@@ -410,7 +410,7 @@
     overflow-y: visible;
   }
 
-  /* PAYR-28: Bell FAB clearance rail for shells whose content frame uses
+  /* Bell FAB clearance rail for shells whose content frame uses
      .mobile-main-content (partner layout). 4.5rem clears the fixed bell
      (16px offset + 48px button) at >=768px; the FAB is hidden below. */
   @media (min-width: 768px) {

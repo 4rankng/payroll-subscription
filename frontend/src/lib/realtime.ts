@@ -48,7 +48,7 @@ class RealtimeService {
       return;
     }
 
-    // PAYR-37B: client JS no longer holds a token, so none is appended to
+    // Client JS no longer holds a token, so none is appended to
     // the URL. The gateway carries the session cookie on same-origin
     // upgrades automatically.
     this.isConnecting = true;

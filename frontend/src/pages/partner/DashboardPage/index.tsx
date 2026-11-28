@@ -92,7 +92,7 @@ function MonthSelector({ value, onChange }: { value: string; onChange: (v: strin
 }
 
 // ─── Leaderboard row ───────────────────────────────────────────────────────
-// PAYR-73 (DASH-07): podium tokens come from the shared rankBadgeClass helper
+// DASH-07: podium tokens come from the shared rankBadgeClass helper
 // so desktop and mobile badges always match.
 
 function LeaderRow({
@@ -270,7 +270,7 @@ const PartnerDashboardPage = () => {
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeFixClick} />
 
-        {/* ── Summary row (PAYR-70): workforce card + fee table share bottom edges ── */}
+        {/* ── Summary row: workforce card + fee table share bottom edges ── */}
         <section className="flex flex-col gap-3">
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12">
             <div className="flex lg:col-span-5">

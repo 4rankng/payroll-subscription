@@ -79,7 +79,7 @@ const ProjectCombobox = memo(function ProjectCombobox({
 
   const filtered = useMemo(() => {
     if (!search.trim()) return projects;
-    // PAYR-127: ASCII keywords match Vietnamese names ("nguyen" → "Nguyễn").
+    // ASCII keywords match Vietnamese names ("nguyen" → "Nguyễn").
     return projects.filter((p) => vietnameseIncludes(p.name, search));
   }, [projects, search]);
 

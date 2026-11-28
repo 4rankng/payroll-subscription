@@ -364,7 +364,7 @@ func Load() (*Config, error) {
 		},
 		Log: LogConfig{
 			Level: getEnv("LOG_LEVEL", "info"),
-			// PAYR-32: log directory for the daily payroll-backend-YYYYMMDD.log
+			// Log directory for the daily payroll-backend-YYYYMMDD.log
 			// files (GIN access + app logs, dual-output with stdout). Falls
 			// back to the legacy LOG_FILE's directory so existing deployments
 			// keep writing to the same mounted volume.
@@ -393,9 +393,9 @@ func Load() (*Config, error) {
 			HashSalt:   getEnv("HASH_SALT", ""),
 		},
 		CORS: CORSConfig{
-			// localhost:5173 = vite dev server. Needed for the cookie session
-			// (PAYR-37B): dev FE on :5173 calls the API on :8080 cross-origin,
-			// and credentialed CORS requires an exact origin match.
+			// localhost:5173 = vite dev server. Needed for the cookie session:
+			// the dev FE calls the API on :8080 cross-origin, and credentialed
+			// CORS requires an exact origin match.
 			AllowOrigins:     parseStringSlice(getEnv("CORS_ALLOW_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,https://tingting.vip,https://www.tingting.vip")),
 			AllowCredentials: parseBool(getEnv("CORS_ALLOW_CREDENTIALS", "true")),
 		},

@@ -72,7 +72,7 @@ const managerRow: ProjectUser = {
   granted_at: "2026-01-02T00:00:00Z",
 };
 
-describe("ProjectUserAccessTab (PAYR-30)", () => {
+describe("ProjectUserAccessTab", () => {
   beforeEach(() => {
     grantMock.mockReset();
     revokeMock.mockReset();

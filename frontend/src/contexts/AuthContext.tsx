@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (userRole && authManager.hasSession()) {
         // Restore the session from the stored profile (display data only —
-        // the credential is the server-managed HttpOnly cookie, PAYR-37B).
+        // the credential is the server-managed HttpOnly cookie).
         const username = localStorage.getItem('userUsername') || '';
         const userData: User = {
           id: String(authManager.getUserId() ?? ''),
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
     }
 
-    // One-time migration (PAYR-37B): a session created by the pre-cookie
+    // One-time migration: a session created by the pre-cookie
     // bundle still holds a legacy localStorage token. Exchange it for the
     // HttpOnly cookie via /auth/me, then re-evaluate the auth state. On any
     // failure the stale token is discarded and the user simply re-logs in.

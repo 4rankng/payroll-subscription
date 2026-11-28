@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// PAYR-30 (id 705): project access guard matrix at the HTTP layer.
+// Project access guard matrix at the HTTP layer.
 //
 // Permission model:
 //   - admin grants/revokes on any project (200), including revoking the
@@ -226,7 +226,7 @@ func setupProjectUserAccessFixture(base *APIClient, adminToken, prefix string) (
 }
 
 func runProjectUserAccessTests(client *APIClient, data *TestData, reporter *Reporter, cfg *TestConfig) {
-	reporter.PrintSection("FLOW: Project User Access Guards (PAYR-30)")
+	reporter.PrintSection("FLOW: Project User Access Guards")
 
 	fixture, teardown, err := setupProjectUserAccessFixture(client, data.AdminToken, cfg.UniquePrefix())
 	if err != nil {

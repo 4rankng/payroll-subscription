@@ -87,7 +87,7 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
         } else if (action.id === 'create-employee') {
           targetHref = '/partner/employees?modal=add_employee';
         }
-        // create-timesheet needs no role branch: /timesheet is role-shared (PAYR-134).
+        // create-timesheet needs no role branch: /timesheet is role-shared.
       }
 
       navigate(targetHref);

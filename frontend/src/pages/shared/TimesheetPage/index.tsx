@@ -35,7 +35,7 @@ import type { Timesheet } from "@/types/api/timesheet.types";
 
 /* ------------------------------------------------------------------ */
 /*  TimesheetStatsRow — inline KPI strip inside the filter card        */
-/*  (PAYR-134: left-aligned, divide-x, clickable pending/approved)     */
+/*  (left-aligned, divide-x, clickable pending/approved)              */
 /* ------------------------------------------------------------------ */
 
 interface TimesheetStatsRowProps {
@@ -149,7 +149,7 @@ export default function TimesheetPage() {
   const isQuanly = user?.role === "quanly";
   const isKetoan = user?.role === "ketoan";
   // Provider/hook role semantics preserved from the pre-merge pages
-  // (PAYR-134): admin → 'admin'; every partner role → 'quanly'.
+  // Admin → 'admin'; every partner role → 'quanly'.
   const userRole: "admin" | "quanly" = isAdmin ? "admin" : "quanly";
 
   const [bccUploadOpen, setBccUploadOpen] = useState(false);
@@ -247,7 +247,7 @@ export default function TimesheetPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Partner-page semantics (PAYR-134): the ketoan bank-transfer export and
+  // Partner-page semantics: the ketoan bank-transfer export and
   // the KPI strip stay month-scoped — "Tất cả" displays the calendar month.
   const currentMonthStr = useMemo(() => {
     const now = new Date();
@@ -393,7 +393,7 @@ export default function TimesheetPage() {
     <div className="min-h-full bg-[radial-gradient(circle_at_100%_0%,rgba(8,120,62,0.12),transparent_29rem)] px-3 py-2 sm:px-4 sm:py-3">
       <div className="mx-auto max-w-[1480px] space-y-2">
 
-        {/* Tier 1 — unboxed page header: title left, actions right (PAYR-134) */}
+        {/* Tier 1 — unboxed page header: title left, actions right */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border pb-3 motion-safe:animate-fade-in-up [animation-delay:50ms] [animation-fill-mode:both]">
           <div className="flex min-w-0 items-baseline gap-2.5">
             <h1 className="whitespace-nowrap text-lg font-bold tracking-tight text-fg-primary">
@@ -524,7 +524,7 @@ export default function TimesheetPage() {
           onExportExcel={() => timesheetManagement.handleExportExcel()}
         >
           {/* Tier 2 — one filter card: month + filters left, inline KPI strip right.
-              flex-wrap everywhere: no horizontal scrollbar (PAYR-134). */}
+              flex-wrap everywhere: no horizontal scrollbar. */}
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-input bg-card px-2.5 py-1.5 shadow-xs motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both]">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <TimesheetMonthSelector

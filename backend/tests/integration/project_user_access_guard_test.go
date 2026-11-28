@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestProjectUserAccessGuards runs the PAYR-30 HTTP guard matrix
+// TestProjectUserAccessGuards runs the HTTP guard matrix
 // (flow_project_user_access.go) against a live backend. It is skipped by
 // default so `go test ./...` stays hermetic; set PAYROLL_GUARD_IT=1 with the
 // API running (same contract as `make api-test`) to execute it.

@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 };
 
 /**
- * Sổ cái mobile (PAYR-41): same data and actions as the desktop page —
+ * Sổ cái mobile: same data and actions as the desktop page —
  * transfer batches, sao kê export/email, recipient lists.
  */
 const LedgerPageMobile = () => {

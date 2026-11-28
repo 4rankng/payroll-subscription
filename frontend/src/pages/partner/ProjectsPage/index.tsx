@@ -70,7 +70,7 @@ const STATUS_META: Record<
   },
 };
 
-// Dense pill shell shared by every status badge in this route (PAYR-75):
+// Dense pill shell shared by every status badge in this route:
 // never wraps to two lines, 11px semibold per the data-dense contract.
 const STATUS_PILL_CLASS =
   'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold';
@@ -138,7 +138,7 @@ function ProjectCard({
   const status = STATUS_META[project.status] ?? STATUS_META.active;
   const StatusIcon = status.icon;
 
-  // PAYR-74: the whole card body is one semantic interactive element that
+  // The whole card body is one semantic interactive element that
   // opens ?modal=project_details&id=<projectId>. Nested action buttons stop
   // propagation; the keydown guard ignores events from inside them.
   const handleCardKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -228,7 +228,7 @@ const STATUS_FILTERS: Array<{ value: ProjectStatus | 'all'; label: string }> = [
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
-// ─── Dense table view (PAYR-75) ─────────────────────────────────────────────
+// ─── Dense table view ─────────────────────────────────────────────────────────
 const TABLE_TH_CLASS =
   'h-9 px-3 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-muted-foreground whitespace-nowrap';
 
@@ -320,7 +320,7 @@ function ProjectTable({
   );
 }
 
-// ─── View toggle (PAYR-75) ──────────────────────────────────────────────────
+// ─── View toggle ─────────────────────────────────────────────────────────────
 const VIEW_OPTIONS: Array<{ key: 'table' | 'cards'; label: string; icon: typeof Table2 }> = [
   { key: 'table', label: 'Bảng', icon: Table2 },
   { key: 'cards', label: 'Thẻ', icon: LayoutGrid },
@@ -368,14 +368,14 @@ const ProjectsPage = () => {
     initialFilters: { page: 1, pageSize: 50 },
   });
   const { data: response, isLoading, isError, isFetching, refetch } = useProjects(filterControls.apiFilters);
-  // PAYR-74: count active projects with the same status enum the card badge
+  // Count active projects with the same status enum the card badge
   // uses (`status === 'active'`) instead of trusting the summary endpoint's
   // separate counter, which disagrees with the visible badges.
   const { data: activeProjectsPage } = useProjects({ page: 1, pageSize: 1, status: ['active'] });
   const { data: summary } = usePartnerProjectSummary();
   const { openCreateProject, openPartnerProjectDetails } = useProjectModals();
 
-  // PAYR-75: view mode defaults to the dense table for large datasets; the
+  // View mode defaults to the dense table for large datasets; the
   // explicit choice persists in component state (no router changes).
   const [viewMode, setViewMode] = useState<'table' | 'cards' | null>(null);
 
@@ -456,7 +456,7 @@ const ProjectsPage = () => {
             contentClassName="bg-white border-gray-200 shadow-lg"
           />
 
-          {/* View toggle: dense table vs. card grid (PAYR-75) */}
+          {/* View toggle: dense table vs. card grid */}
           <ViewToggle view={activeView} onChange={setViewMode} />
 
           <div className="hidden md:block h-6 w-px bg-border mx-0.5" />

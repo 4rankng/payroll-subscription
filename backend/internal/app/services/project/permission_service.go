@@ -44,7 +44,7 @@ func NewProjectPermissionService(
 // access list. Admins manage every project. A partner may manage only their
 // own project: as its creator (until an admin revokes that intrinsic owner
 // privilege) or as the holder of an explicit project_users grant. Any other
-// role has no business granting project management rights (PAYR-30).
+// role has no business granting project management rights.
 func (s *ProjectPermissionService) canManageProjectAccess(ctx context.Context, project *domain.Project, actorID uint, actorRole string) (bool, error) {
 	if actorRole == string(domain.RoleAdmin) {
 		return true, nil
@@ -67,7 +67,7 @@ func (s *ProjectPermissionService) GrantProjectAccess(ctx context.Context, proje
 	}
 
 	// Admins manage access on any project; partner-admins (unrevoked creator or
-	// holder of an explicit grant) only on their own project (PAYR-30).
+	// holder of an explicit grant) only on their own project.
 	canManage, err := s.canManageProjectAccess(ctx, project, grantedBy, granterRole)
 	if err != nil {
 		return err
@@ -140,12 +140,12 @@ func (s *ProjectPermissionService) RevokeProjectAccess(ctx context.Context, proj
 
 	// Revoking the project creator strips the intrinsic owner privilege and is
 	// admin-only: partner-admins may only manage the users they share the
-	// project with (PAYR-30).
+	// project with.
 	if userID == project.CreatedBy && revokerRole != string(domain.RoleAdmin) {
 		return domain.NewForbiddenError(constants.MsgOnlyAdminCanRevokeProjectCreatorVN)
 	}
 
-	// Admins revoke on any project; partner-admins only on their own (PAYR-30).
+	// Admins revoke on any project; partner-admins only on their own.
 	canManage, err := s.canManageProjectAccess(ctx, project, revokedBy, revokerRole)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func (s *ProjectPermissionService) RevokeProjectAccess(ctx context.Context, proj
 	}
 
 	// Revoking the creator also kills the owner privilege itself, which no
-	// project_users row represents (PAYR-30). Idempotent: a later grant re-adds
+	// project_users row represents. Idempotent: a later grant re-adds
 	// a plain management row; the intrinsic owner privilege is never restored.
 	if userID == project.CreatedBy && project.OwnerRevokedAt == nil {
 		now := clock.Now()
@@ -216,7 +216,7 @@ func (s *ProjectPermissionService) GetProjectUsers(ctx context.Context, projectI
 	}
 
 	// If owner is not in the list, add them — unless an admin revoked their
-	// intrinsic owner access (PAYR-30).
+	// intrinsic owner access.
 	if !ownerAlreadyIncluded && project.OwnerRevokedAt == nil {
 		// Get the owner user details
 		owner, err := s.userRepo.GetByID(ctx, project.CreatedBy)
@@ -253,7 +253,7 @@ func (s *ProjectPermissionService) CanUserAccessProject(ctx context.Context, pro
 		return false, err
 	}
 
-	// The creator holds intrinsic owner access until an admin revokes it (PAYR-30).
+	// The creator holds intrinsic owner access until an admin revokes it.
 	if project.CreatedBy == userID && project.OwnerRevokedAt == nil {
 		return true, nil
 	}

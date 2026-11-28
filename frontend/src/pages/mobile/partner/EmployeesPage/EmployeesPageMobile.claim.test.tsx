@@ -85,7 +85,7 @@ vi.mock("@/components/employees/EmployeeMobileCard", () => ({
   ),
 }));
 
-describe("EmployeesPageMobile partner claim (PAYR-22)", () => {
+describe("EmployeesPageMobile partner claim", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Yêu cầu quản lý is a quanly capability — authenticate as quanly.

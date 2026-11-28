@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assetService } from './asset.service';
 
-// PAYR-37: validateEvidenceUrl chỉ chấp nhận http/https — chặn javascript:,
+// validateEvidenceUrl chỉ chấp nhận http/https — chặn javascript:,
 // data:, vbscript: và các scheme khác.
 const validators = [
   { name: 'assetService', validate: (url: string) => assetService.validateEvidenceUrl(url) },

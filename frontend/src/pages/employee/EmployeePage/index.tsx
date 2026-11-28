@@ -142,8 +142,8 @@ const EmployeePage = () => {
   };
 
   // A missing/404 bulk_transfer_payment_percentage is a configuration gap, not
-  // a timesheet fetch failure — it must not blank the timesheet panel
-  // (PAYR-47). The wallet already defaults the percentage to 0 when unset.
+  // a timesheet fetch failure — it must not blank the timesheet panel.
+  // The wallet already defaults the percentage to 0 when unset.
   const payrollError = timesheetsError;
   const isInitialLoading = profileLoading || paymentSettingLoading || timesheetsLoading;
   const handleRetryPayroll = () => {

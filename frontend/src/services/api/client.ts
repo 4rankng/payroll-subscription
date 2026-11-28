@@ -55,7 +55,7 @@ class ApiClient {
     this.client = axios.create({
       baseURL: `${API_CONFIG.baseURL}${API_CONFIG.apiV1}`,
       timeout: API_CONFIG.timeout,
-      // Session lives in an HttpOnly cookie (PAYR-37B item 4): the browser
+      // Session lives in an HttpOnly cookie: the browser
       // must send it on every API call, including the cross-origin dev setup
       // (localhost:5173 → localhost:8080; CORS allows credentials). No
       // Authorization header is attached anymore — client JS cannot read the

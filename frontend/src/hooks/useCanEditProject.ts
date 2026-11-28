@@ -6,7 +6,7 @@ import { canPartnerManageProject } from '@/lib/permissions';
 
 /**
  * Hook exposing a project's access list together with whether the current
- * user may manage it (PAYR-30). The access list doubles as the
+ * user may manage it. The access list doubles as the
  * management-scope check: the API returns the creator (unless an admin
  * revoked their owner access) plus every granted manager, so a partner-admin
  * — creator OR granted manager — is exactly a user listed here.

@@ -1,5 +1,5 @@
 /**
- * Sổ cái / sao kê data shaping (PAYR-41). Pure functions only — pages and
+ * Sổ cái / sao kê data shaping. Pure functions only — pages and
  * dialogs render the results; the .ts = logic rule keeps derivation here.
  */
 import type { EmployeePayCycleRow, SaokeRecipients, TransferUploadSummary } from '@/services/api/billing.service';

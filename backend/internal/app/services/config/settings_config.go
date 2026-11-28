@@ -22,7 +22,7 @@ const (
 	// report at generation time so later changes never rewrite history.
 	SettingKeySubscriptionFeePerEmployeePerKyVnd = "subscription_fee_per_employee_per_ky_vnd"
 
-	// Sao kê statement mailing list (PRD §5.8, PAYR-41): JSON arrays of
+	// Sao kê statement mailing list (PRD §5.8): JSON arrays of
 	// email addresses. Owned by the billing sao kê endpoints, not the
 	// generic settings API — ketoan/giamdoc must edit them without holding
 	// settings permissions. Missing rows read as empty lists.

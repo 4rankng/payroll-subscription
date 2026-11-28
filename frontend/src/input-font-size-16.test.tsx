@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-describe("Input font-size ≥16px trên mobile (PAYR-25)", () => {
+describe("Input font-size ≥16px trên mobile", () => {
   const css = readFileSync(resolve(process.cwd(), "src/styles/utilities.css"), "utf8");
 
   it("mọi input/textarea/select ≥16px dưới 768px — chặn iOS Safari zoom khi focus", () => {
@@ -16,6 +16,6 @@ describe("Input font-size ≥16px trên mobile (PAYR-25)", () => {
     const mediaStart = css.lastIndexOf("@media (max-width: 767.98px)", guardIndex);
     expect(mediaStart).toBeGreaterThan(-1);
     // Guard đứng trước utility tap-target (cùng media nhưng riêng rule)
-    expect(css.indexOf("PAYR-24")).toBeGreaterThan(guardIndex);
+    expect(css.indexOf(".tap-target-44", guardIndex)).toBeGreaterThan(guardIndex);
   });
 });

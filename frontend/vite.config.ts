@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import type { PluginOption } from "vite";
 import packageJson from "./package.json";
 
-// PAYR-37: security headers cho dev/preview server — khớp với serve.json (prod).
+// Security headers cho dev/preview server — khớp với serve.json (prod).
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     host: "127.0.0.1",
     port: 3000,
     cors: false,
-    // PAYR-37: security headers parity với prod (serve.json) để dev/preview
+    // Security headers parity với prod (serve.json) để dev/preview
     // không lọt header scan và hành vi khác prod.
     headers: SECURITY_HEADERS,
   },
@@ -79,7 +79,7 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB for pdfMake
       },
-      // Service worker stays OFF in `vite dev` (PAYR-53): with it enabled,
+      // Service worker stays OFF in `vite dev`: with it enabled,
       // the worker intercepts every fetch from the dev origin — including the
       // CORS preflights for the cross-origin API (127.0.0.1:3000 → :8080) —
       // answers OPTIONS with 404 and silently kills login. Push-notification

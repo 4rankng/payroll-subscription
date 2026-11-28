@@ -9,7 +9,7 @@ import (
 )
 
 // AuthCookieName is the HttpOnly cookie that carries the session JWT
-// (PAYR-37 item 4: the token moved out of localStorage so client JS can no
+// (the token moved out of localStorage so client JS can no
 // longer read it — XSS can no longer exfiltrate a live credential).
 const AuthCookieName = "payroll_token"
 

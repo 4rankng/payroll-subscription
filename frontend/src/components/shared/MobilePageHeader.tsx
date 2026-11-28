@@ -76,7 +76,7 @@ export const MobilePageHeader = ({
       <div
         className={cn(
           'w-full min-h-0 p-0 flex items-center justify-between gap-3 flex-wrap',
-          // PAYR-38: the row must wrap at every width. The actions block owns a
+          // The row must wrap at every width. The actions block owns a
           // full row (w-full) in stacked layout, so a nowrap row above sm left
           // the flex line with negative free space and crushed the title
           // block's min-w-0 to 0px — the h1 rendered one glyph per line

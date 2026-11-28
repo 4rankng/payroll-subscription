@@ -38,7 +38,7 @@ func newMobileRulesService(repo *mobileRulesRepo) *EmployeeService {
 }
 
 
-// Dropping the mandatory-mobile policy (PAYR-66): a phone-less employee is
+// Dropping the mandatory-mobile policy: a phone-less employee is
 // legal on every create path. Pins the acceptance behavior so a silent
 // re-introduction of the requirement cannot pass CI.
 func TestCreateEmployee_MissingMobileAllowed(t *testing.T) {

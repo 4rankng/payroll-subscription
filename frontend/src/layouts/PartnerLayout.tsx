@@ -52,7 +52,7 @@ const PartnerLayout = ({ roles = ["quanly", "ketoan", "giamdoc"] }: { roles?: Ap
   return (
     // Mirrors the /partner route guard: quanly operates; ketoan reads;
     // giamdoc reads, approves and exports (PRD §4 ma trận Trang × Vai trò).
-    // /payment-history reuses the layout with admin added (PAYR-123).
+    // /payment-history reuses the layout with admin added.
     <ProtectedRoute requiredRole={roles}>
       <SidebarProvider defaultOpen={true}>
         <PartnerLayoutInner />

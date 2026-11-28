@@ -7,7 +7,7 @@ import { createEmployeeColumns } from "./employee-table-desktop";
 import type { Employee } from "@/types/api/employee.types";
 
 // Agribank — tên ngân hàng dài nhất trong dữ liệu thật, bị cắt
-// "Nông nghiệp và Phát tri…" trong evidence PAYR-34.
+// "Nông nghiệp và Phát tri…" trong evidence thực tế.
 const LONG_BANK = "Ngân hàng Nông nghiệp và Phát triển Nông thôn";
 
 const employee = {
@@ -16,7 +16,7 @@ const employee = {
   bank: { branch_name: LONG_BANK },
 } as Employee;
 
-describe("Employee table cột Ngân hàng (PAYR-34)", () => {
+describe("Employee table cột Ngân hàng", () => {
   const renderBankCell = (employee: Employee) => {
     const columns = createEmployeeColumns({ onRowClick: vi.fn() });
     const bankColumn = columns.find((column) => column.id === "bank")!;
@@ -31,7 +31,7 @@ describe("Employee table cột Ngân hàng (PAYR-34)", () => {
     expect(container.textContent).not.toContain("…");
 
     const label = screen.getByText(LONG_BANK);
-    // Wrap full theo shipmate-uiux doctrine (PAYR-27): break-words thay vì
+    // Wrap full theo shipmate-uiux doctrine: break-words thay vì
     // co ngang — cấm truncate/line-clamp/max-w cứng gây cắt giữa từ.
     expect(label).toHaveClass("break-words");
     expect(label).not.toHaveClass("truncate");

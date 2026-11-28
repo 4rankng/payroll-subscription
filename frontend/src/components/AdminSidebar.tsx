@@ -451,7 +451,7 @@ const AdminSidebar = () => {
         </SidebarContent>
 
         {/* Quick actions: version + notifications + appearance — own row ABOVE
-            the footer separator (PAYR-141): version flush left, buttons
+            the footer separator: version flush left, buttons
             clustered right when expanded; stacked and centered on the
             collapsed rail (version hidden); reachable directly outside the
             account menu. */}

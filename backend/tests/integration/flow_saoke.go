@@ -47,11 +47,11 @@ type saoKeEmailPayload struct {
 	CC         []string `json:"cc"`
 }
 
-// runSaoKeTests covers the PAYR-41 sao kê surface: recipient persistence,
+// runSaoKeTests covers the sao kê surface: recipient persistence,
 // the Excel export and the statement email, plus the uploads-list
 // matched_amount enrichment the Sổ cái page renders.
 func runSaoKeTests(client *APIClient, data *TestData, reporter *Reporter) {
-	reporter.PrintSection("FLOW: PAYR-41 Sao kê (Sổ cái)")
+	reporter.PrintSection("FLOW: Sao kê (Sổ cái)")
 
 	ketoan, err := loginSaoKeRole(client, saoKeKetoanUser)
 	if err != nil {

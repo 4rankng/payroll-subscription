@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// PAYR-30 guard matrix for project access grant/revoke.
+// Guard matrix for project access grant/revoke.
 //
 // Permission model under test:
 //   - admin grants/revokes on any project (200), unchanged for other roles;
@@ -270,7 +270,7 @@ func TestRevokeProjectAccess_Admin_AnyProject_Allowed(t *testing.T) {
 	assert.Equal(t, []uint{ptTargetID}, puRepo.deleted)
 }
 
-// --- creator revocation semantics (PAYR-30) ---
+// --- creator revocation semantics ---
 
 func TestRevokeProjectAccess_Admin_CreatorTarget_RevokesOwnerPrivilege(t *testing.T) {
 	svc, projRepo, puRepo := newOwnerRevocationService(false, ptCreatorID)

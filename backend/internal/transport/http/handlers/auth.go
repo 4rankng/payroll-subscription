@@ -22,7 +22,7 @@ type AuthHandler struct {
 	authService          *auth.AuthService
 	userService          *user.UserService
 	passwordResetService *passwordreset.Service
-	// Session cookie parameters (PAYR-37B item 4): Max-Age for freshly minted
+	// Session cookie parameters: Max-Age for freshly minted
 	// tokens and the Secure flag (on in production, off in dev).
 	cookieTTL    time.Duration
 	cookieSecure bool
@@ -39,7 +39,7 @@ func NewAuthHandler(authService *auth.AuthService, userService *user.UserService
 }
 
 // setSessionCookieFromLogin mints the HttpOnly session cookie when a login
-// flow produced an access token (PAYR-37B item 4). The token is still present
+// flow produced an access token. The token is still present
 // in the JSON body for legacy cached clients during the migration window; the
 // new SPA never reads it.
 func (h *AuthHandler) setSessionCookieFromLogin(c *gin.Context, loginResponse *dto.LoginResponse) {
@@ -182,7 +182,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 // @Router /logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// Token arrives via the Authorization header (legacy clients) or the
-	// HttpOnly session cookie (PAYR-37B item 4).
+	// HttpOnly session cookie.
 	token := extractBearerToken(c)
 	if token == "" {
 		if cookieToken, err := c.Cookie(middleware.AuthCookieName); err == nil {
@@ -229,7 +229,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	// Token arrives via the Authorization header (legacy clients) or the
-	// HttpOnly session cookie (PAYR-37B item 4); the current token is
+	// HttpOnly session cookie; the current token is
 	// blacklisted as part of the password change.
 	token := extractBearerToken(c)
 	if token == "" {

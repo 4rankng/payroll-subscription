@@ -11,7 +11,7 @@ const DEFAULT_KICKER: ConsoleKicker = '';
 
 /** Longest-prefix routes first is not required — prefixes are disjoint, but
  *  matching is segment-exact (`/admin/users` never captures
- *  `/admin/users-archive`). PAYR-126: dead prefixes removed; entries cover
+ *  `/admin/users-archive`). Dead prefixes removed; entries cover
  *  mounted routes only. */
 const ROUTE_KICKERS: ReadonlyArray<{ prefix: string; kicker: ConsoleKicker }> = [
   // NHÂN SỰ — people records and accounts.

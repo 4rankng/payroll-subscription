@@ -28,7 +28,7 @@ export default function PaymentHistoryMobilePage() {
   const { data, isLoading, isError, error, refetch } = useBankTransferHistories(filters);
   const exportMutation = useExportBankTransferHistories();
 
-  // The UI shows a fixed Vietnamese message (PAYR-122) — the raw failure is
+  // The UI shows a fixed Vietnamese message — the raw failure is
   // logged here only, for diagnosis.
   useEffect(() => {
     if (error) console.error('[payment-history] ledger load failed', error);

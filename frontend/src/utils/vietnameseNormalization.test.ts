@@ -7,7 +7,7 @@ import {
   vietnameseIncludes,
 } from './vietnameseNormalization';
 
-// PAYR-127: ASCII keywords must match Vietnamese text — search boxes fold
+// ASCII keywords must match Vietnamese text — search boxes fold
 // diacritics (and Đ→D) on both sides before comparing.
 describe('stripVietnameseDiacritics', () => {
   it('strips tone and vowel marks', () => {

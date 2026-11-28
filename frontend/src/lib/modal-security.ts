@@ -7,7 +7,7 @@ import { authManager } from '@/lib/auth';
  */
 
 // Per-tab random secret (sessionStorage) replacing the old token-derived key
-// (PAYR-37B item 4: client JS can no longer read the token). Stable within
+// (client JS can no longer read the token). Stable within
 // the tab session — modal deep-link params encrypted in this tab decrypt in
 // this tab — and unknown to any other session.
 const MODAL_SESSION_KEY_STORAGE = 'payroll_modal_sec_key';

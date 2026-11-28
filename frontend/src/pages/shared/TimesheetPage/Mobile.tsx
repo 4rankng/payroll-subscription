@@ -30,7 +30,7 @@ export default function TimesheetPageMobile() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   // Provider/hook role semantics preserved from the pre-merge pages
-  // (PAYR-134): admin → 'admin'; every partner role → 'quanly'.
+  // Admin → 'admin'; every partner role → 'quanly'.
   const userRole: "admin" | "quanly" = isAdmin ? "admin" : "quanly";
 
   const [bccUploadOpen, setBccUploadOpen] = useState(false);

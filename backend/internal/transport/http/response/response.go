@@ -191,7 +191,7 @@ func TooManyRequests(c *gin.Context, message string, retryAfter int) {
 // state machine-consumable for agent callers.
 
 // domainErrorFallback picks the friendly replacement used when a domain
-// error's message turns out to carry server internals. (PAYR-37)
+// error's message turns out to carry server internals.
 func domainErrorFallback(errType string) string {
 	switch errType {
 	case "NOT_FOUND", "not_found":

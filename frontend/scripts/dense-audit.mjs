@@ -16,7 +16,7 @@ const BASE = process.argv.includes("--base")
   ? process.argv[process.argv.indexOf("--base") + 1]
   : "http://localhost:5174";
 
-// PAYR-126: keep this list equal to the mounted route map (App.tsx) —
+// Keep this list equal to the mounted route map (App.tsx) —
 // auditing dead URLs hides real pages; missing ones skip real coverage.
 const ROUTES = [
   "/admin",
@@ -75,7 +75,7 @@ const PROBE = `(() => {
 
 async function login(page) {
   await page.goto(BASE + "/login");
-  // The ALTCHA proof-of-work widget (PAYR-16) only renders when the server
+  // The ALTCHA proof-of-work widget only renders when the server
   // requires it (per-username failure counter). The widget solves itself in
   // the page; we just wait for the verified state, then resubmit.
   await page.locator("input").nth(0).fill("frankng");

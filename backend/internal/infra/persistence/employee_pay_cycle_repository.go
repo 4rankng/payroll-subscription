@@ -112,7 +112,7 @@ func (r *EmployeePayCycleRepository) CountDistinctEmployeesByCycles(ctx context.
 const kyCycleExpr = "(CASE WHEN DAY(t.date) <= 7 THEN 1 WHEN DAY(t.date) <= 14 THEN 2 WHEN DAY(t.date) <= 21 THEN 3 ELSE 4 END)"
 
 // BankTransferHistory returns the employee-Kỳ records with their per-posting
-// bank trace for the rebuilt Lịch sử trả lương page (PRD PAYR-42 §5.7), plus
+// bank trace for the rebuilt Lịch sử trả lương page (PRD §5.7), plus
 // the summary strip over the whole filtered set. Postings are the employee's
 // customer-paid timesheets inside the Kỳ window; the transfer code is the
 // verifying upload's filename and the bank reference the timesheet's

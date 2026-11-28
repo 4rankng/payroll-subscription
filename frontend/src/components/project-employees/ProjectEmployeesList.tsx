@@ -162,7 +162,7 @@ export function ProjectEmployeesList({
   // Display-only employment state, derived from the same date semantics the
   // management hook uses (compare plain yyyy-MM-dd keys, no TZ conversion).
   const todayKey = format(new Date(), 'yyyy-MM-dd');
-  // Removal is a write action: only quanly/admin see it (PAYR-76).
+  // Removal is a write action: only quanly/admin see it.
   const canRemoveEmployees = canPartnerManageProject();
 
   const assignmentStatePill = (
@@ -203,7 +203,7 @@ export function ProjectEmployeesList({
         )}
       </div>
 
-      {/* Employee dense table (PAYR-76) — spans the full drawer width */}
+      {/* Employee dense table — spans the full drawer width */}
       <div className="flex-1 overflow-auto pt-2">
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center space-y-4">

@@ -24,7 +24,7 @@ interface ToolbarSegment {
   inert?: boolean;
 }
 
-// PAYR-33 toolbar (shared with TimesheetPage): actions render as one bordered
+// Toolbar (shared with TimesheetPage): actions render as one bordered
 // segmented strip so they read — and wrap — as a single unit instead of loose
 // buttons breaking into ragged rows at laptop widths.
 const SEGMENT_BASE =

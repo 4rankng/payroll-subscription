@@ -20,7 +20,7 @@ type APIClient struct {
 	HTTPClient *http.Client
 	Token      string
 	// CookieToken authenticates via the HttpOnly session cookie channel
-	// (PAYR-37B) instead of the Authorization header. When set, no Bearer
+	// (the session JWT travels in the cookie) instead of the Authorization header. When set, no Bearer
 	// header is attached — mirroring the cookie-only browser client.
 	CookieToken string
 	Headers     map[string]string

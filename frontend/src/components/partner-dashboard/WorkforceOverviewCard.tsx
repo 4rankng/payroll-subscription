@@ -10,7 +10,7 @@ interface WorkforceOverviewCardProps {
 }
 
 /**
- * PAYR-70 (DASH-03): left summary card. Compact donut + 12px two-row
+ * DASH-03: left summary card. Compact donut + 12px two-row
  * breakdown (label · count · share, dot-separated) and a full-width
  * two-column financial footer that always fills the panel height.
  */

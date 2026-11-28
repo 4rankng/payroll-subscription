@@ -36,7 +36,7 @@ func setupCORS(router *gin.Engine, cfg *config.Config) {
 		corsConfig.AllowOrigins = cfg.CORS.AllowOrigins
 	} else {
 		// Mirrors config defaults, plus vite dev (:5173) for the cookie
-		// session (PAYR-37B): credentialed CORS needs an exact origin match.
+		// session: credentialed CORS needs an exact origin match.
 		corsConfig.AllowOrigins = []string{
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",

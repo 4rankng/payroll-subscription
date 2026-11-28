@@ -60,7 +60,7 @@ vi.mock("@/components/modals/ImportMobilesModal", () => ({
     open ? <p>modal-import-mobiles</p> : null,
 }));
 
-describe("EmployeesPageMobile admin actions (PAYR-22)", () => {
+describe("EmployeesPageMobile admin actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

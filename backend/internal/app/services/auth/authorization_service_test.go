@@ -74,7 +74,7 @@ func isEmployeeSelfServicePath(path string, method string) bool {
 		return method == "GET" || method == "PUT"
 	}
 	if path == "/api/v1/me/password" {
-		// Self-service own-password change — allowed for nhanvien (PAYR-48).
+		// Self-service own-password change — allowed for nhanvien.
 		return method == "PUT"
 	}
 	return method == "GET" && strings.HasPrefix(path, "/api/v1/me/")

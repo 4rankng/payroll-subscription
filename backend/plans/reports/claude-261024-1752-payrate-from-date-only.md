@@ -1,13 +1,13 @@
 # Payrate flow: from_date-only rewrite — session report (24/10/2026)
 
-Ticket: PAYR-3 (backend, → QA), PAYR-4 (frontend, → QA), PAYR-5 (verification, Todo, blocked by 3+4).
+Workstream split: backend (→ QA), frontend (→ QA), verification (blocked by backend+frontend).
 Plan: ~/.claude/plans/tighten-improve-the-flow-spicy-cosmos.md (approved). Webchat consults: Gemini 24/10 ×2 (entry-flow design; from_date-only verdict).
 
 ## Outcome
 
 The payrate change flow is rebuilt on the owner's from_date-only ruling: a config's end is implied by its successor (resolution: latest `from_date <= work date` — unchanged), and everything that materialized `to_date` — the source of every incident artifact — is deleted.
 
-### Backend (PAYR-3)
+### Backend
 - Create = pure INSERT, must start strictly after the latest config; structured error `PAYRATE_NOT_LATEST` with `latest_id`/`latest_from_date` context.
 - Update = in-place on the latest row only (replaced rows are view-only, error names the successor); kept guards: paid floor, sibling-order check, earliest-linked-timesheet bound, `recalculateMutableTimesheets` (aborts on missing paytype).
 - Delete = pure soft-delete; approved/paid links hard-block (`PAYRATE_IMMUTABLE_LINKED`); mutable-only links re-price under the covering config in the same tx; timeline heals by resolution.
@@ -18,7 +18,7 @@ The payrate change flow is rebuilt on the owner's from_date-only ruling: a confi
 - Dry-run: lost-position warning, key-drift warning (case variants vs latest config), `mutable_timesheets_affected` count, non-latest/sibling mirrors.
 - Migration 137 (idempotent, guarded): drops `uq_payrates_one_open_per_project` + `open_project_id`; codifies `live_from_date` + `uq_payrates_live_project_from_date` for fresh envs. `to_date`/`chk_payrates_date_order` drop later (after one pay cycle). **Deploy order: migration BEFORE the new build.**
 
-### Frontend (PAYR-4)
+### Frontend
 - Carry-forward: create seeds a deep clone of the latest config; min date = latest + 1 with Vietnamese note; generic template only for first-ever config.
 - Confirmation step before creates/rate changes: diff summary (changed cells, added/removed positions, key-drift warnings, timesheets to re-price). Date-only corrections still save directly.
 - Failed mutations surface inline (were silently swallowed).
@@ -34,6 +34,6 @@ The payrate change flow is rebuilt on the owner's from_date-only ruling: a confi
 
 ## Follow-ups found during the wave
 1. `make reset-passwords` uses root + `MYSQL_ROOT_PASSWORD` which is empty in this dev container — target fails; I ran its steps manually as `payroll_user`. Fix the Makefile.
-2. QA-driven UI browser run + integration scenarios in `tests/integration/` remain (PAYR-5).
+2. QA-driven UI browser run + integration scenarios in `tests/integration/` remain.
 3. After one pay cycle on prod: migration to drop `to_date` + `chk_payrates_date_order`.
 4. Backend not committed yet (working tree, main). Commit on owner's word.

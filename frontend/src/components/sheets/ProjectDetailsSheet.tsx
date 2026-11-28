@@ -95,7 +95,7 @@ function ProjectDetailsSheet({
   // Check permissions using hooks (all hooks must run before any early return)
   const canEditProject = useCanEditProject(project);
   const canManageEmployees = useCanManageProjectEmployees(project);
-  // Shared gate with the access tab (PAYR-30): admin, creator, or granted
+  // Shared gate with the access tab: admin, creator, or granted
   // project manager.
   const { canManageProjectAccess } = useProjectAccessManagement(project);
 
@@ -318,7 +318,7 @@ function ProjectDetailsSheet({
   };
 
   // Check if current user can manage project access (admin, creator, or
-  // granted project manager — PAYR-30 shares one gate with the access tab).
+  // granted project manager — shares one gate with the access tab).
   // Computed above, before the loading early-returns, to keep hook order stable.
 
   // Clamp tab: if a deep-link points to 'access' but the viewer lacks permission,

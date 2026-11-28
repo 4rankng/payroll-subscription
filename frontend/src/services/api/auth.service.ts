@@ -14,8 +14,7 @@ import type {
 
 /**
  * Persist the user profile returned by the login endpoints. Display data
- * only — the credential itself is the server-managed HttpOnly cookie
- * (PAYR-37B item 4).
+ * only — the credential itself is the server-managed HttpOnly cookie.
  */
 function storeUserProfile(user: User): void {
   localStorage.setItem('userRole', user.role);
@@ -41,7 +40,7 @@ class AuthService {
     );
 
     if (response.data && response.data.user) {
-      // Session = HttpOnly cookie set by the server (PAYR-37B item 4). The
+      // Session = HttpOnly cookie set by the server. The
       // response body's access_token is ignored — client JS must never hold
       // the token. Store only the user profile for display + role-based UI.
       const user = response.data.user;
@@ -249,7 +248,7 @@ class AuthService {
   }
 
   /**
-   * One-time migration bootstrap (PAYR-37B item 4): a session created by the
+   * One-time migration bootstrap: a session created by the
    * pre-cookie bundle still holds the JWT in localStorage. Send it once as a
    * Bearer header — the server validates it AND auto-sets the session cookie
    * on the response — then persist the profile and delete the legacy token.

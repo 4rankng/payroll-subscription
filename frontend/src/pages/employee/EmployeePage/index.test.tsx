@@ -54,7 +54,7 @@ describe("EmployeePage data recovery", () => {
     expect(refetchSetting).toHaveBeenCalledOnce();
   });
 
-  it("keeps the timesheet panel normal when only the payment setting fails (PAYR-47)", () => {
+  it("keeps the timesheet panel normal when only the payment setting fails", () => {
     vi.mocked(useSettingByKey).mockReturnValue({ ...settingQuery, data: undefined, isError: true } as unknown as ReturnType<typeof useSettingByKey>);
     render(<MemoryRouter><EmployeePage /></MemoryRouter>);
 

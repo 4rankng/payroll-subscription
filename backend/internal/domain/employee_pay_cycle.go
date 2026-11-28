@@ -28,7 +28,7 @@ func (EmployeePayCycle) TableName() string { return "employee_pay_cycles" }
 
 // BankTransferHistoryPosting is one bank posting inside an employee-Kỳ
 // record: a single customer-paid timesheet with its transfer trace (PRD
-// PAYR-42 §5.7 — one ledger row per posting, nothing collapsed).
+// §5.7 — one ledger row per posting, nothing collapsed).
 type BankTransferHistoryPosting struct {
 	TimesheetID   uint64     `json:"timesheet_id"`
 	TransferCode  string     `json:"transfer_code"`
@@ -89,7 +89,7 @@ type EmployeePayCycleRepository interface {
 	// table input. Months with no paid records simply have no rows.
 	CountDistinctEmployeesByCycles(ctx context.Context, fromMonth, toMonth string) ([]CycleMonthCount, error)
 	// BankTransferHistory serves the rebuilt Lịch sử trả lương page (PRD
-	// PAYR-42 §5.7): employee-Kỳ records with their per-posting bank trace,
+	// §5.7): employee-Kỳ records with their per-posting bank trace,
 	// filtered by work month, Kỳ, and a free search across employee name,
 	// CCCD, transfer code and bank reference; paginated, with the summary
 	// strip aggregates for the WHOLE filtered set.

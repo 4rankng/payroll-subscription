@@ -385,12 +385,12 @@ function hexToRgbArr(hex: string): [number, number, number] {
 }
 
 // ---------------------------------------------------------------------------
-// Button palette (PAYR-26): white copy on the solid emerald button family must
+// Button palette: white copy on the solid emerald button family must
 // clear AA 4.5:1 at 12px text. emerald-600 measured 3.77:1 on the "Duyệt"
 // buttons — the family was darkened to emerald-700 (and hover emerald-800).
 // ---------------------------------------------------------------------------
 
-describe("Button palette white-on-emerald (PAYR-26)", () => {
+describe("Button palette white-on-emerald", () => {
   it.each([
     ["emerald-700 (primary action bg)", "#047857"],
     ["emerald-800 (hover bg)", "#065f46"],

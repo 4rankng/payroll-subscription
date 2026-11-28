@@ -11,7 +11,7 @@ import { buildLedgerBatches, buildSaokeSummary, type LedgerBatch, type SaokeSumm
 import { showErrorNotification, showSuccessNotification } from '@/utils/error-handler';
 
 /**
- * Sổ cái / sao kê hooks (PAYR-41). Keys are module-scoped like useBilling —
+ * Sổ cái / sao kê hooks. Keys are module-scoped like useBilling —
  * this module owns its cache identity.
  */
 export const saokeKeys = {

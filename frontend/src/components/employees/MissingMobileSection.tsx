@@ -131,7 +131,7 @@ export const MissingMobileSection = ({
   onEmployeeClick,
 }: MissingMobileSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  // PAYR-72: the two count pills are tab selectors. Default 'all' keeps both
+  // The two count pills are tab selectors. Default 'all' keeps both
   // inline tables visible; tapping a pill narrows to that list only.
   const [activeTab, setActiveTab] = useState<'all' | 'missing' | 'duplicate'>('all');
   const isMobile = useIsMobile();
@@ -214,7 +214,7 @@ export const MissingMobileSection = ({
                 </span>
               </button>
             )}
-            {/* PAYR-72: 1-click path to the bulk phone import on the
+            {/* 1-click path to the bulk phone import on the
                 employees page (URL-modal entry point). Manager-only: the
                 import modal 403s for ketoan/giamdoc, so they never see a
                 dead link here. */}

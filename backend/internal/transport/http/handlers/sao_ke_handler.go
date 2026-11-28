@@ -16,7 +16,7 @@ import (
 // saoKeContentType is the MIME type of the statement workbook download.
 const saoKeContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-// SaoKeHandler serves the Sổ cái sao kê surface (PRD §5.8, PAYR-41):
+// SaoKeHandler serves the Sổ cái sao kê surface (PRD §5.8):
 // statement workbook export, the persisted recipient list, and statement
 // email dispatch — ketoan and giamdoc per the casbin policy.
 type SaoKeHandler struct {

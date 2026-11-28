@@ -176,7 +176,7 @@ func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest, ipAddress
 		}
 	}
 
-	// Email-OTP 2FA gate removed (PAYR-52): every role mints its token here.
+	// Email-OTP 2FA gate removed: every role mints its token here.
 
 	accessToken, err := s.generateAccessToken(user)
 	if err != nil {

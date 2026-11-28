@@ -74,7 +74,7 @@ func main() {
 	}
 	observability.SetLogger(logger)
 
-	// PAYR-32: mirror GIN access + panic output into the persistent daily
+	// Mirror GIN access + panic output into the persistent daily
 	// file (same shared writer as the app log) while keeping stdout/stderr
 	// for `docker logs`. Must run before the router is built — gin.Logger()
 	// captures gin.DefaultWriter at middleware-creation time.

@@ -25,7 +25,7 @@ export function ProjectUserAccessTab({ project }: ProjectUserAccessTabProps) {
   const isAdmin = userRole === 'admin';
   const isProjectCreator = project.created_by === currentUserId;
 
-  // Shared gate with the details sheet (PAYR-30): a partner-admin is the
+  // Shared gate with the details sheet: a partner-admin is the
   // project creator OR the holder of an explicit project_users grant — both
   // appear in the access list the API returns.
   const { projectUsers, isLoadingUsers, canManageProjectAccess } =

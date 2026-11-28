@@ -160,7 +160,7 @@ export const createEmployeeColumns = (
           return <span className="text-muted-foreground">—</span>;
         }
         return (
-          // Shipmate-uiux doctrine (PAYR-34): wrap full — no hard clip, no
+          // Shipmate-uiux doctrine: wrap full — no hard clip, no
           // ellipsis. Long bank names (e.g. "Nông nghiệp và Phát triển Nông thôn")
           // flow onto extra lines instead of being cut mid-word.
           <div className="flex items-center gap-2 min-w-0">

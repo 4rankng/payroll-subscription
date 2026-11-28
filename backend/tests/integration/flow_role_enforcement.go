@@ -9,7 +9,7 @@ import (
 
 const flowRoleEnforcement = "RoleEnforcement"
 
-// runRoleEnforcementTests pins PAYR-37 item 5: authorization is decided
+// runRoleEnforcementTests pins the server-side contract: authorization is decided
 // server-side (Casbin, deny-by-default) on EVERY protected route — the
 // client-stored role is display data only. Two accounts of different roles
 // cross-call each other's routes and every denial must come from the backend.
@@ -119,7 +119,7 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		return nil
 	})
 
-	// --- Cookie channel (PAYR-37 item 4): same RBAC verdicts, cookie-only ---
+	// --- Cookie channel: same RBAC verdicts, cookie-only ---
 
 	empCookie := NewAPIClient(client.BaseURL)
 	reporter.RunTest(flowRoleEnforcement, "Cookie login sets HttpOnly session cookie", func() error {

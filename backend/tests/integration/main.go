@@ -95,8 +95,7 @@ func main() {
 	// Phase 7: Auth & User Management
 	runAuthUserTests(client, testData, reporter, cfg)
 
-	// Phase 7.4: Server-side role enforcement pin (PAYR-37 item 5) + cookie
-	// channel auth (PAYR-37 item 4).
+	// Phase 7.4: Server-side role enforcement pin + cookie channel auth.
 	runRoleEnforcementTests(client, testData, reporter, cfg)
 
 	// Phase 7.5: Self-service password reset (no-token contracts; see flow file)
@@ -127,7 +126,7 @@ func main() {
 	// Phase 9.5: PAYSUB billing — upload verification read model + FR-6 surfaces
 	runBillingTests(client, testData, reporter)
 
-	// Phase 9.6: PAYR-41 sao kê — Sổ cái export/recipients/email
+	// Phase 9.6: sao kê — Sổ cái export/recipients/email
 	runSaoKeTests(client, testData, reporter)
 
 	// Phase 10: Read-only flows

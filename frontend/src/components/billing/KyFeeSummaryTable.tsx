@@ -82,7 +82,7 @@ export const KyFeeSummaryTable = memo(function KyFeeSummaryTable({
   const headSize = isMobile ? 'px-2 py-1.5 text-[11px]' : 'px-2.5 py-2 text-[11px] font-semibold leading-[1.35] tracking-[0.03em]';
 
   return (
-    /* PAYR-70 (DASH-03): desktop variant fills the grid row height so both
+    /* DASH-03: desktop variant fills the grid row height so both
        summary cards share bottom edges; mobile keeps its natural height. */
     <ConsolePanel className={cn('flex flex-col gap-3', !isMobile && 'h-full', className)}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">

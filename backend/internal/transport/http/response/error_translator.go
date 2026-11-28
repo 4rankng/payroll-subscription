@@ -10,7 +10,7 @@ import (
 // internalDetailRe matches Go/OS internals that must never reach clients:
 // stack-frame file references (file.go:12), goroutine dumps, panics, runtime
 // errors, absolute filesystem paths (unix + windows) and raw MySQL server
-// error codes. (PAYR-37)
+// error codes.
 var internalDetailRe = regexp.MustCompile(`\.[Gg][Oo]:\d+|(?i:goroutine)\s+\d+\s*\[|(?i:panic)\s*[:(]|(?i:runtime error:)|(^|[\s("'\x60+:,])/(?:[\w.\-~]+/)+[\w.\-~]+|(?i:[a-z]:\\)|(?i:error)\s+1\d{3}`)
 
 // rawErrorFragmentRe matches raw error syntax (stdlib/syscall English without
@@ -24,7 +24,6 @@ var rawErrorFragmentRe = regexp.MustCompile(`^[a-z0-9][a-z0-9 .,'()_-]*$`)
 // never expose stack traces or server paths. A dangling raw-error fragment
 // before the cut is dropped too. When nothing readable remains, the category
 // fallback is returned. Messages without internals pass through unchanged.
-// (PAYR-37)
 func sanitizeInternalDetails(message, fallback string) string {
 	loc := internalDetailRe.FindStringIndex(message)
 	if loc == nil {

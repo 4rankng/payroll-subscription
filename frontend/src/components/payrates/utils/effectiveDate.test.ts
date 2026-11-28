@@ -32,7 +32,7 @@ describe("defaultCreateEffectiveFrom", () => {
     expect(defaultCreateEffectiveFrom(null, TODAY)).toBe("2026-11-18");
   });
 
-  it("defaults to today — never to the past latest + 1 (PAYR-39)", () => {
+  it("defaults to today — never to the past latest + 1", () => {
     // Latest config started 09/12/2025; the old default was 10/12/2025,
     // which customers read as re-pricing history.
     expect(defaultCreateEffectiveFrom({ fromDate: "2025-12-09" }, TODAY)).toBe("2026-11-18");

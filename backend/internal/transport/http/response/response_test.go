@@ -43,7 +43,7 @@ func TestHandleDomainErrorIncludesCodeAndDetails(t *testing.T) {
 	}
 }
 
-// TestErrorResponsesHideServerInternals pins PAYR-37: error responses must
+// TestErrorResponsesHideServerInternals pins the contract: error responses must
 // never expose stack traces, filesystem paths or raw database errors — only
 // friendly messages.
 func TestErrorResponsesHideServerInternals(t *testing.T) {

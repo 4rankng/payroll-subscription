@@ -53,7 +53,7 @@ func GetLogger() *slog.Logger {
 		// Fallback for import-time callers (package-level vars) that run
 		// before main() loads config: stdout only. Deliberately no file
 		// output here — creating it with a guessed directory would claim the
-		// shared DailyWriter sync.Once with the wrong dir (PAYR-32 lesson).
+		// shared DailyWriter sync.Once with the wrong dir (lesson learned).
 		instance = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		}))
@@ -84,7 +84,7 @@ func NewLogger(cfg LogConfig) (*slog.Logger, error) {
 		level = slog.LevelInfo
 	}
 
-	// Dual output (PAYR-32): stdout always (so `docker logs` keeps working)
+	// Dual output: stdout always (so `docker logs` keeps working)
 	// plus the persistent daily file on the /app/logs volume when available.
 	// If the log directory cannot be created/opened we keep stdout-only
 	// logging instead of failing the process.

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
-describe("Tap targets ≥44px trên mobile (PAYR-24)", () => {
+describe("Tap targets ≥44px trên mobile", () => {
   it("Button gốc mở rộng hit area bằng .tap-target-44 (gỡ nút 36px diện rộng)", () => {
     render(<Button>Nhấn</Button>);
     expect(screen.getByRole("button", { name: "Nhấn" }).className).toContain("tap-target-44");

@@ -196,7 +196,7 @@ describe("ProjectDetailsSheet", () => {
     expect(navigateMock).toHaveBeenCalledWith("/partner/projects/58/payrates/91/edit");
   });
 
-  it("shows the Phân quyền tab to a partner who holds a project grant (PAYR-30)", () => {
+  it("shows the Phân quyền tab to a partner who holds a project grant", () => {
     currentRole = "quanly";
     accessManage.list = [managerRow];
 
@@ -226,7 +226,7 @@ describe("ProjectDetailsSheet", () => {
     expect(screen.queryByText("Phân quyền")).not.toBeInTheDocument();
   });
 
-  it("survives the deep-link loading → loaded transition (hook order, PAYR-30)", () => {
+  it("survives the deep-link loading → loaded transition (hook order)", () => {
     currentRole = "quanly";
     accessManage.list = [managerRow];
     mockUseProject.mockReturnValue({ data: undefined, isLoading: true });

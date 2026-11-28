@@ -53,8 +53,7 @@ type LoginRequest struct {
 }
 
 // LoginResponse represents the login response. User + AccessToken are always
-// populated on success; the session token is also set as an HttpOnly cookie
-// (PAYR-37B).
+// populated on success; the session token is also set as an HttpOnly cookie.
 type LoginResponse struct {
 	User        *UserResponse `json:"user,omitempty"`
 	AccessToken string        `json:"access_token,omitempty"`

@@ -1,4 +1,4 @@
-// PAYR-16 UI drive-through (real login page, ALTCHA enforced).
+// UI drive-through (real login page, ALTCHA enforced).
 // 1) Cross the threshold via API (3 wrong-password logins).
 // 2) UI: username blur -> ALTCHA widget appears (AC-04), auto-solves (AC-02 UI).
 // 3) UI: correct password + payload -> login succeeds (AC-02).
@@ -27,7 +27,7 @@ const login = async (password) => {
 // 1) Ensure the threshold is crossed through the real login endpoint. A wrong
 // password yields 401; once the counter is at/over the threshold, the captcha
 // gate yields 400 with the captcha error (and still increments the counter —
-// PAYR-16 AC-03 side effect).
+// AC-03 side effect).
 for (let i = 1; i <= 3; i++) {
   const { status, body } = await login("WrongPassword");
   log(`wrong login ${i}: HTTP ${status} "${(body.message ?? "").slice(0, 60)}"`);

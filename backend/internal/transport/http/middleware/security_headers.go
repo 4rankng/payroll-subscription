@@ -12,7 +12,7 @@ func SecurityHeaders() gin.HandlerFunc {
 
 		// Prevent clickjacking attacks. SAMEORIGIN (not DENY): the app may
 		// embed its own pages in same-origin iframes (previews); cross-origin
-		// framing stays blocked. (PAYR-37)
+		// framing stays blocked.
 		c.Header("X-Frame-Options", "SAMEORIGIN")
 
 		// Enable XSS protection (for older browsers)

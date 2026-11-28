@@ -186,8 +186,8 @@ const PartnerSidebar = () => {
           </SidebarMenu>
         </SidebarContent>
 
-        {/* PAYR-71 compact bell opening the existing notifications sheet —
-            own row above the footer separator (PAYR-141): version flush
+        {/* Compact bell opening the existing notifications sheet —
+            own row above the footer separator: version flush
             left, bell right when expanded, bell centered on the collapsed
             rail (version hidden). */}
         <div className={cn("flex px-2 pb-1.5 items-center", isCollapsed && "justify-center")}>
@@ -227,7 +227,7 @@ const PartnerSidebar = () => {
         <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
         <SidebarFooter className="p-2 shrink-0">
           {/* The account pill keeps the full footer width on its own row;
-              PAYR-124's squeeze concern lives on — the pill never shares its
+              The squeeze concern lives on — the pill never shares its
               row. */}
           <div className={cn("flex", isCollapsed ? "flex-col items-center" : "items-center")}>
           <DropdownMenu>

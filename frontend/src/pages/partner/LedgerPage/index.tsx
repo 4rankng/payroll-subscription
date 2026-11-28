@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 };
 
 /**
- * Sổ cái (PAYR-41, ketoan/giamdoc): company transfer-upload batches with the
+ * Sổ cái (ketoan/giamdoc): company transfer-upload batches with the
  * money they settled, plus the sao kê export/email flows and their recipient
  * lists.
  */

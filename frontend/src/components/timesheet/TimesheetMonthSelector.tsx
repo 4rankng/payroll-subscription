@@ -48,7 +48,7 @@ export const TimesheetMonthSelector: React.FC<TimesheetMonthSelectorProps> = ({
     onChange('all');
   }, [onChange]);
 
-  // "T5/2026" compact label (PAYR-134); "Chọn tháng" when Tất cả
+  // "T5/2026" compact label; "Chọn tháng" when Tất cả
   const monthShort = `T${format(selectedDate, 'M/yyyy')}`;
 
   return (

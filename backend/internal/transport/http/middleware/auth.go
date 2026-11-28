@@ -41,7 +41,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 			return
 		}
 
-		// Migration auto-upgrade (PAYR-37B item 4): the caller authenticated
+		// Migration auto-upgrade: the caller authenticated
 		// via a legacy Bearer header and has no session cookie yet. Mint one
 		// for the token's remaining lifetime so a cached old-SPA session
 		// converts to cookie auth on its first post-deploy request — no
