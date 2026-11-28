@@ -121,7 +121,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
                       : undefined}
                   />
                   <div className="col-span-2 flex items-center justify-between gap-2 border-t border-slate-200 pt-2.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-500">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-600">
                       Thành tiền
                     </span>
                     <span className="text-base font-bold tabular-nums text-slate-900">
@@ -272,7 +272,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
 function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-600">{label}</p>
       <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-slate-900">{value || "—"}</p>
     </div>
   );

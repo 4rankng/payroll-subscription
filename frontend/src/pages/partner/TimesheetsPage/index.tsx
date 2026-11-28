@@ -315,7 +315,7 @@ export default function TimesheetsPage() {
   }
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_100%_0%,rgba(8,120,62,0.12),transparent_29rem)] p-3 sm:p-4">
+    <div className="min-h-full bg-[radial-gradient(circle_at_100%_0%,rgba(8,120,62,0.12),transparent_29rem)] px-3 py-2 sm:px-4 sm:py-3">
       <div className="mx-auto max-w-[1480px] space-y-2">
 
         {/* Header — single 44px chrome row (title + record count) */}
@@ -358,16 +358,18 @@ export default function TimesheetsPage() {
           userRole="quanly"
           onExportExcel={() => timesheetManagement.handleExportExcel()}
         >
-          {/* Toolbar — one 40px row: month + filters on the left, actions on the right */}
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-input bg-card px-2 py-1 shadow-xs motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both]">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {/* Toolbar — one 40px row on desktop (nowrap + horizontal scroll
+              when actions overflow; TIME-01 chrome target): month + filters
+              left, actions right. Mobile keeps wrapping. */}
+          <div className="flex flex-wrap items-center justify-between gap-2 overflow-x-auto rounded-xl border border-input bg-card px-2 py-1 shadow-xs motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both] sm:flex-nowrap">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:shrink-0 sm:flex-nowrap">
               <TimesheetMonthSelector
                 value={timesheetManagement.selectedMonth}
                 onChange={timesheetManagement.setSelectedMonth}
               />
               <TimesheetFilters />
             </div>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 sm:flex-nowrap">
               {isQuanly && (
                 <>
                   <Button

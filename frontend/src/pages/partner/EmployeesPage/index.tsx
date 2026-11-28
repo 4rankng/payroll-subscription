@@ -245,7 +245,7 @@ const EmployeesPage = () => {
                     <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="inline-flex items-center gap-1 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-px text-[11px] font-semibold leading-[1.35] text-amber-600">
+                          <span className="inline-flex items-center gap-1 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-px text-[11px] font-semibold leading-[1.35] text-amber-700">
                             <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                             Thiếu NH
                           </span>

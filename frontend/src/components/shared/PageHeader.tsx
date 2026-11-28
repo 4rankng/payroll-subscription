@@ -71,7 +71,7 @@ export const PageHeader = ({
                 {eyebrow ? (
                   <p
                     data-slot="page-header-eyebrow"
-                    className="mb-1 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-gray-500"
+                    className="mb-1 text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-gray-600"
                   >
                     {eyebrow}
                   </p>
@@ -93,7 +93,7 @@ export const PageHeader = ({
                     className={cn(
                       'mt-1',
                       metaVariant === 'sans'
-                        ? 'text-xs text-gray-500'
+                        ? 'text-xs text-gray-600'
                         : 'font-financial text-[11px] text-muted-foreground',
                     )}
                   >

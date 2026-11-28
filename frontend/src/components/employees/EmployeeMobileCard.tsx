@@ -95,7 +95,7 @@ export const EmployeeMobileCard = React.memo(function EmployeeMobileCard({
               ) : (
                 <AlertTriangle
                   aria-hidden="true"
-                  className="h-2.5 w-2.5 text-amber-600"
+                  className="h-2.5 w-2.5 text-amber-700"
                 />
               )}
               <span className="sr-only">
