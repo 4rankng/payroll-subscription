@@ -39,7 +39,6 @@ const EmployeePage = () => {
   const {
     data: bulkTransferSetting,
     isLoading: paymentSettingLoading,
-    isError: paymentSettingError,
     isFetching: paymentSettingFetching,
     refetch: refetchPaymentSetting,
   } = useSettingByKey("bulk_transfer_payment_percentage", !!profile);
@@ -90,7 +89,7 @@ const EmployeePage = () => {
     };
   }, [bulkTransferPercentage, infiniteData]);
   const { observerRef } = useInfiniteScroll({
-    hasMore: !!hasNextPage && !timesheetsError && !paymentSettingError,
+    hasMore: !!hasNextPage && !timesheetsError,
     isLoading: isFetchingNextPage || timesheetsLoading,
     onLoadMore: () => { fetchNextPage(); },
   });
@@ -142,7 +141,10 @@ const EmployeePage = () => {
     setPasswordSheetOpen(false);
   };
 
-  const payrollError = timesheetsError || paymentSettingError;
+  // A missing/404 bulk_transfer_payment_percentage is a configuration gap, not
+  // a timesheet fetch failure — it must not blank the timesheet panel
+  // (PAYR-47). The wallet already defaults the percentage to 0 when unset.
+  const payrollError = timesheetsError;
   const isInitialLoading = profileLoading || paymentSettingLoading || timesheetsLoading;
   const handleRetryPayroll = () => {
     if (timesheetsFetching || paymentSettingFetching) return;

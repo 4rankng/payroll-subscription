@@ -33,6 +33,10 @@ var bootFlags = []settingRow{
 	// (the settings form creates the row on first save; its missing-row
 	// default is visible=true, matching this value).
 	{key: "transfer_bank_visible", value: "true", valueType: "string"},
+	// Seeded so GET /settings/key/bulk_transfer_payment_percentage stops
+	// 404ing on fresh deploys; the employee mobile page reads it for the
+	// advance-payment wallet, and a missing row blanked the timesheet panel.
+	{key: "bulk_transfer_payment_percentage", value: "0", valueType: "number"},
 	// Same rationale for the FlexPay (OnePay) beneficiary block.
 	{key: "flexpay_transfer_bank_visible", value: "true", valueType: "string"},
 	// Subscription fee per distinct employee per Kỳ (FR-4): seeded so the
