@@ -189,7 +189,11 @@ const PartnerSidebar = () => {
         {/* Footer — user menu */}
         <SidebarSeparator className="bg-card/[0.06] m-0 shrink-0" />
         <SidebarFooter className="p-2 shrink-0">
-          <div className={cn("flex gap-2", isCollapsed ? "flex-col items-center" : "items-center")}>
+          {/* PAYR-124: the bell sits on its own row above the account pill so
+              the pill keeps the full footer width — sharing one row squeezed
+              the user's name into an ellipsis. Version stays on its own row
+              below. */}
+          <div className={cn("mb-1.5 flex", isCollapsed ? "flex-col items-center gap-1" : "items-center")}>
           {/* PAYR-71: compact bell opening the existing notifications sheet. */}
           <button
             type="button"
@@ -216,6 +220,8 @@ const PartnerSidebar = () => {
               </span>
             )}
           </button>
+          </div>
+          <div className={cn("flex", isCollapsed ? "flex-col items-center" : "items-center")}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
