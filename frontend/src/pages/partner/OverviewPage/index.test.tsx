@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
-import { useBillingKySummary, useBillingReconStatus } from '@/hooks/api/useBillingDashboard';
+import { useBillingKySummary } from '@/hooks/api/useBillingDashboard';
 import FeeInsightsPage from '.';
 
 // Regression (staging report): a failing billing endpoint whose body carries
@@ -12,7 +12,6 @@ import FeeInsightsPage from '.';
 
 vi.mock('@/hooks/api/useBillingDashboard', () => ({
   useBillingKySummary: vi.fn(),
-  useBillingReconStatus: vi.fn(),
 }));
 
 vi.mock('@/components/shared/PageHeader', () => ({
@@ -28,12 +27,6 @@ const mockHooks = () => {
     // error body (`error.response?.data || error`).
     error: { status: 'error', http_status: 502 },
   } as unknown as ReturnType<typeof useBillingKySummary>);
-  vi.mocked(useBillingReconStatus).mockReturnValue({
-    data: undefined,
-    isLoading: false,
-    isError: false,
-    error: null,
-  } as unknown as ReturnType<typeof useBillingReconStatus>);
 };
 
 describe('FeeInsightsPage error alert', () => {

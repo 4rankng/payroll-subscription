@@ -20,21 +20,6 @@ export interface KySummaryData {
   fee_per_employee_per_ky_vnd: number;
 }
 
-export type ReconState = 'waiting_file' | 'mismatch' | 'reconciled';
-
-export interface ReconKy {
-  cycle: number;
-  uploads: number;
-  parsed_rows: number;
-  matched_rows: number;
-  state: ReconState;
-}
-
-export interface ReconStatusData {
-  work_month: string;
-  kyes: ReconKy[];
-}
-
 export interface KyColumnCell {
   ky: KyId;
   /** Distinct employees billed in this Kỳ for the month (0 when absent). */
@@ -67,18 +52,6 @@ export interface FeeTrendPoint {
   workMonth: string;
   label: string;
   feeVnd: number;
-}
-
-export interface ReconKyCard {
-  /** Pay-cycle id; widened to number since the API may send any cycle. */
-  ky: number;
-  uploads: number;
-  parsedRows: number;
-  matchedRows: number;
-  state: ReconState;
-  stateLabel: string;
-  /** Rows found in the workbook but not matched to timesheets. */
-  mismatchRows: number;
 }
 
 /** "2026-11" → "T11/2026". */
@@ -162,23 +135,4 @@ export function buildFeeTrendSeries(
       feeVnd: employeeKyTotal * feePerEmployeePerKyVnd,
     };
   });
-}
-
-export const RECON_STATE_LABELS: Record<ReconState, string> = {
-  waiting_file: 'Chờ file',
-  mismatch: 'Có dòng lệch',
-  reconciled: 'Đã đối chiếu',
-};
-
-/** Recon card model with Vietnamese state labels and mismatch counts. */
-export function buildReconCards(kyes: ReconKy[]): ReconKyCard[] {
-  return kyes.map((ky) => ({
-    ky: ky.cycle,
-    uploads: ky.uploads,
-    parsedRows: ky.parsed_rows,
-    matchedRows: ky.matched_rows,
-    state: ky.state,
-    stateLabel: RECON_STATE_LABELS[ky.state] ?? ky.state,
-    mismatchRows: Math.max(0, ky.parsed_rows - ky.matched_rows),
-  }));
 }
