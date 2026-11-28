@@ -35,6 +35,8 @@ Payroll **subscription** platform for Vietnamese companies. Monorepo with a Go b
 - Commit format: `<type>(<scope>): <subject>` — e.g. `feat(timesheet): add bulk export`
 - `make dev` starts backend (air hot-reload on :8080) and frontend (vite dev on :5173)
 - `make deploy` builds and deploys to production server via SSH
+- `make deploy-staging` builds HEAD images (amd64) and deploys them to staging — pay.tingtingsoft.vn / 139.59.121.152 (staging tracks the working tree; ghcr `:latest` belongs to production)
+- Frontend is data-dense: 11px/12px for data, labels and toolbars; `EmployeesPage` (partner) is the reference pattern — match its density, avoid decorative toolbar labels, and nest tables in panels with `ResponsiveTable … embedded` to avoid double borders
 
 ### Testing Requirements
 - `make api-test` — integration tests against live backend

@@ -1,4 +1,7 @@
-.PHONY: deploy dev db seed api-test backup restore sandbox mirror-bases
+.PHONY: deploy deploy-staging dev db seed api-test backup restore sandbox mirror-bases
+
+# Staging droplet (pay.tingtingsoft.vn) — see deploy-staging below.
+STAGING_SERVER := 139.59.121.152
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GHCR base-image mirroring
@@ -38,6 +41,26 @@ deploy:
 	cd backend && make push
 	@echo "=== Deploying to production ==="
 	cd backend && make deploy
+
+# Build both images from the working tree (linux/amd64), load them onto the
+# staging droplet and recreate backend+frontend. Staging tracks HEAD, not
+# ghcr :latest — that tag belongs to production. No GHCR creds on the box:
+# images travel as `docker save | ssh … docker load`.
+deploy-staging:
+	@echo "=== Building staging images (linux/amd64) ==="
+	docker buildx inspect bb >/dev/null 2>&1 || docker buildx create --name bb --driver docker-container
+	docker buildx use bb
+	cd backend && docker buildx build --platform linux/amd64 --tag payroll-backend:staging --load .
+	cd frontend && docker buildx build --platform linux/amd64 \
+		--build-arg VITE_API_BASE_URL=https://pay.tingtingsoft.vn \
+		--build-arg VITE_API_VERSION=/api/v1 \
+		--build-arg VITE_API_TIMEOUT=30000 \
+		--tag payroll-frontend:staging --load .
+	@echo "=== Transferring images to staging ($(STAGING_SERVER)) ==="
+	docker save payroll-backend:staging | gzip -1 | ssh root@$(STAGING_SERVER) 'gunzip | docker load'
+	docker save payroll-frontend:staging | gzip -1 | ssh root@$(STAGING_SERVER) 'gunzip | docker load'
+	@echo "=== Recreating staging containers ==="
+	ssh root@$(STAGING_SERVER) 'cd /opt/payroll && docker compose up -d --force-recreate --no-deps backend frontend && sleep 8 && docker ps --format "{{.Names}} {{.Status}}" | grep payroll'
 
 # Start both frontend and backend dev servers
 dev:
