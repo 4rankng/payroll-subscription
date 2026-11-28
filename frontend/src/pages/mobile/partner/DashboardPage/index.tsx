@@ -179,13 +179,6 @@ const PartnerDashboardMobile = () => {
       tone: 'success',
     },
     {
-      label: 'Có thể nghỉ',
-      value: Math.max(0, (summary?.total_employees ?? 0) - (summary?.total_working_employees ?? 0)).toLocaleString('vi-VN'),
-      helper: 'Không hoạt động',
-      icon: Users,
-      tone: 'warning',
-    },
-    {
       label: 'Đã thanh toán',
       value: formatKpiValue(summary?.paid_salary_this_month ?? 0),
       helper: periodLabel,
@@ -205,7 +198,7 @@ const PartnerDashboardMobile = () => {
             <Skeleton className="h-7 w-36" />
             <Skeleton className="h-8 w-44" />
             <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, i) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <Skeleton key={i} className="h-[76px] rounded-lg" />
               ))}
             </div>
@@ -228,7 +221,7 @@ const PartnerDashboardMobile = () => {
       <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
 
       <KyFeeSummaryTable variant="mobile" />
-      <PaidSeriesSection compactLegend />
+      <PaidSeriesSection month={apiMonth} />
 
       <MobileSurface className="p-4">
         <div className="mb-3 flex items-baseline gap-2">

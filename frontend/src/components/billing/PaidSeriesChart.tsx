@@ -1,41 +1,57 @@
+import { useMemo } from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-
 import { format, parseISO } from 'date-fns';
 
 import { formatCurrency } from '@/utils/formatters';
 import type { PaidSeriesRow } from '@/services/api/billing.service';
+import { cn } from '@/lib/utils';
 
 export interface ProjectLabel {
   id: number;
   name: string;
 }
 
-interface PaidSeriesChartProps {
-  rows: PaidSeriesRow[];
-  projects: ProjectLabel[];
-  metric: 'employee_count' | 'amount';
-  label: string;
-  /**
-   * Opt-in legend cap (mobile dashboards): rank projects by their total over
-   * the window, keep the top `legendLimit` series and aggregate everything
-   * else into one "Khác" series. The legend renders in a bounded scroll
-   * container so it can never overflow into the section below. Default is
-   * off — the desktop admin surface keeps the full per-project legend.
-   */
-  legendLimit?: number;
+/** Named stacked series: one project, or the aggregated "Khác" tail. */
+export interface PaidSeriesDef {
+  name: string;
+  /** Project ids aggregated into this series (one, or many for "Khác"). */
+  projectIds: number[];
+  color: string;
 }
 
-function metricOf(row: PaidSeriesRow, metric: 'employee_count' | 'amount'): number {
-  return metric === 'amount' ? row.amount : row.employee_count;
+const TOP_PROJECT_COUNT = 8;
+const SERIES_COLORS = [
+  '#0ea5e9',
+  '#22c55e',
+  '#f59e0b',
+  '#a855f7',
+  '#ef4444',
+  '#14b8a6',
+  '#6366f1',
+  '#e11d48',
+];
+const OTHER_COLOR = '#94A3B8';
+
+/**
+ * Compact VND for chart axis ticks only — "1,2 tỷ" / "200 tr". Full vi-VN
+ * strings stay in tooltips, cards, and tables (see bd7eb793: the global
+ * compact formatter was removed; this is scoped to chart axes).
+ */
+export function formatCompactVndTick(value: number): string {
+  if (value >= 1_000_000_000) {
+    return `${(value / 1_000_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',')} tỷ`;
+  }
+  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)} tr`;
+  if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
+  return String(value);
 }
 
 function projectNameOf(projects: ProjectLabel[], projectId: number, fallback?: string): string {
@@ -43,10 +59,84 @@ function projectNameOf(projects: ProjectLabel[], projectId: number, fallback?: s
 }
 
 /**
- * FR-6 time-series chart: one bar series per project on the payment-date
- * axis. Metric selects employees vs amount; explicit variant components
- * below are the only intended entry points.
+ * Shared series definition for both FR-6 charts: rank projects by their
+ * paid-amount total over the window, keep the top N as named series and fold
+ * the long tail into one neutral "Khác". Both charts must render the exact
+ * same series set so one HTML legend covers them (PAYR ticket: sliver bars +
+ * duplicated rainbow legend made the section unreadable).
  */
+export function buildPaidSeriesDefs(
+  rows: PaidSeriesRow[],
+  projects: ProjectLabel[],
+  topN: number = TOP_PROJECT_COUNT,
+): PaidSeriesDef[] {
+  const totals = new Map<number, { amount: number; employees: number }>();
+  const rowNames = new Map<number, string>();
+  for (const row of rows) {
+    const name = row.project_name ?? row.project_code;
+    if (name && !rowNames.has(row.project_id)) rowNames.set(row.project_id, name);
+    const slot = totals.get(row.project_id) ?? { amount: 0, employees: 0 };
+    slot.amount += row.amount;
+    slot.employees += row.employee_count;
+    totals.set(row.project_id, slot);
+  }
+
+  const ranked = [...totals.keys()].sort((a, b) => {
+    const ta = totals.get(a) ?? { amount: 0, employees: 0 };
+    const tb = totals.get(b) ?? { amount: 0, employees: 0 };
+    return tb.amount - ta.amount || tb.employees - ta.employees;
+  });
+
+  const named = (projectIds: number[]): PaidSeriesDef[] => {
+    const seen = new Map<string, number>();
+    return projectIds.map((projectId) => {
+      const base = projectNameOf(projects, projectId, rowNames.get(projectId));
+      // Series names double as chart data keys — keep them unique, but the
+      // owner banned raw database ids on any user-facing surface, so unnamed
+      // projects get an ordinal suffix instead of "#<id>".
+      const count = seen.get(base) ?? 0;
+      seen.set(base, count + 1);
+      const name = count === 0 ? base : `${base} ${count + 1}`;
+      return { name, projectIds: [projectId], color: SERIES_COLORS[(count) % SERIES_COLORS.length] };
+    });
+  };
+
+  if (ranked.length <= topN) return named(ranked);
+  const rest = ranked.slice(topN);
+  return [
+    ...named(ranked.slice(0, topN)),
+    { name: `Khác (${rest.length} dự án)`, projectIds: rest, color: OTHER_COLOR },
+  ];
+}
+
+/** Shared HTML legend — normal flow above both charts, can never overlap them. */
+export function PaidSeriesLegend({
+  series,
+  className,
+}: {
+  series: PaidSeriesDef[];
+  className?: string;
+}) {
+  if (series.length === 0) return null;
+  return (
+    <ul className={cn('mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5', className)}>
+      {series.map((def) => (
+        <li
+          key={def.name}
+          className="inline-flex min-w-0 items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"
+        >
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: def.color }}
+          />
+          <span className="max-w-[180px] truncate">{def.name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function formatChartDate(iso: string): string {
   try {
     return format(parseISO(iso), 'dd/MM');
@@ -55,132 +145,121 @@ function formatChartDate(iso: string): string {
   }
 }
 
-interface SeriesDef {
-  name: string;
-  /** Project ids aggregated into this series (one, or many for "Khác"). */
-  projectIds: number[];
-  color: string;
+interface TooltipPayloadEntry {
+  name?: string;
+  value?: number | string;
+  color?: string;
 }
 
-/** Bounded vertical legend: scrolls instead of pushing into the next section. */
-function BoundedLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
-  if (!payload?.length) return null;
-  return (
-    <ul className="mx-auto mt-1 flex max-h-24 max-w-full flex-col gap-0.5 overflow-y-auto px-2 text-[11px] leading-4">
-      {payload.map((entry) => (
-        <li key={entry.value} className="flex min-w-0 items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="min-w-0 truncate text-slate-600">{entry.value}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function SeriesChart({ rows, projects, metric, label, legendLimit }: PaidSeriesChartProps) {
-  if (rows.length === 0) {
-    return <p className="text-sm text-slate-600">Chưa có dữ liệu thanh toán</p>;
-  }
-
-  const dates = [...new Set(rows.map((r) => r.date))].sort();
-  const byProject = new Map<number, Record<string, number>>();
-  // The API enriches each row with the project name/code (PAYR-61) — the
-  // projects prop is only a last-resort lookup for older cached responses.
-  const rowNames = new Map<number, string>();
-  for (const row of rows) {
-    const name = row.project_name ?? row.project_code;
-    if (name && !rowNames.has(row.project_id)) rowNames.set(row.project_id, name);
-  }
-  for (const row of rows) {
-    const slot = byProject.get(row.project_id) ?? {};
-    slot[row.date] = (slot[row.date] ?? 0) + metricOf(row, metric);
-    byProject.set(row.project_id, slot);
-  }
-
-  // Rank projects by their window total so the legend cap keeps the
-  // heaviest payers and folds the long tail into "Khác".
-  const totals = new Map<number, number>();
-  for (const [projectId, slot] of byProject) {
-    totals.set(projectId, Object.values(slot).reduce((sum, v) => sum + v, 0));
-  }
-  const ranked = [...byProject.keys()].sort(
-    (a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0),
-  );
-
-  let series: SeriesDef[];
-  if (legendLimit && ranked.length > legendLimit) {
-    const top = ranked.slice(0, legendLimit);
-    const rest = ranked.slice(legendLimit);
-    series = [
-      ...top.map((projectId, i) => ({
-        name: projectNameOf(projects, projectId, rowNames.get(projectId)),
-        projectIds: [projectId],
-        color: PROJECT_COLORS[i % PROJECT_COLORS.length],
-      })),
-      {
-        name: 'Khác',
-        projectIds: rest,
-        color: PROJECT_COLORS[legendLimit % PROJECT_COLORS.length],
-      },
-    ];
-  } else {
-    series = ranked.map((projectId, i) => ({
-      name: projectNameOf(projects, projectId, rowNames.get(projectId)),
-      projectIds: [projectId],
-      color: PROJECT_COLORS[i % PROJECT_COLORS.length],
-    }));
-  }
-
-  const data = dates.map((d) => {
-    const point: Record<string, string | number> = { date: formatChartDate(d) };
-    for (const def of series) {
-      point[def.name] = def.projectIds.reduce(
-        (sum, projectId) => sum + (byProject.get(projectId)?.[d] ?? 0),
-        0,
-      );
-    }
-    return point;
-  });
+/**
+ * DASH-02: opaque, viewport-safe tooltip — zero-value series filtered,
+ * rows sorted descending, bold Tổng cộng footer. Series are already capped
+ * at top-8 + "Khác", so the list can never balloon to one row per project.
+ */
+function PaidSeriesTooltip({
+  active,
+  payload,
+  metric,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  metric: 'employee_count' | 'amount';
+}) {
+  if (!active || !payload?.length) return null;
+  const rows = payload
+    .filter((entry) => Number(entry.value ?? 0) !== 0)
+    .sort((a, b) => Number(b.value ?? 0) - Number(a.value ?? 0));
+  if (rows.length === 0) return null;
+  const total = rows.reduce((sum, entry) => sum + Number(entry.value ?? 0), 0);
+  const formatValue = (value: number) => (metric === 'amount' ? formatCurrency(value) : String(value));
 
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatChartDate} fontSize={12} />
-          <YAxis
-            fontSize={12}
-            width={metric === 'amount' ? 76 : 40}
-            tickFormatter={(v: number) => (metric === 'amount' ? formatCurrency(v) : String(v))}
-          />
-          <Tooltip />
-          {legendLimit ? (
-            <Legend content={<BoundedLegend />} />
-          ) : (
-            <Legend />
-          )}
-          {series.map((def) => (
-            <Bar key={def.name} dataKey={def.name} fill={def.color} />
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
-      <p className="mt-1 text-xs text-slate-600">{label}</p>
+    <div className="z-40 max-w-[260px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-[11px] shadow-lg">
+      <ul className="flex flex-col gap-0.5">
+        {rows.map((entry) => (
+          <li key={entry.name} className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="min-w-0 flex-1 truncate text-slate-600">{entry.name}</span>
+            <span className="font-medium tabular-nums text-slate-700">
+              {formatValue(Number(entry.value ?? 0))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1.5 flex items-center justify-between gap-3 border-t border-gray-100 pt-1 font-semibold tabular-nums text-slate-900">
+        <span>Tổng cộng</span>
+        <span>{formatValue(total)}</span>
+      </p>
     </div>
   );
 }
 
-const PROJECT_COLORS = ['#0ea5e9', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6'];
+interface SeriesChartProps {
+  rows: PaidSeriesRow[];
+  series: PaidSeriesDef[];
+  metric: 'employee_count' | 'amount';
+}
+
+function SeriesChart({ rows, series, metric }: SeriesChartProps) {
+  const isAmount = metric === 'amount';
+  const data = useMemo(() => {
+    const metricByKey = new Map<string, number>();
+    for (const r of rows) {
+      const key = `${r.project_id}|${r.date}`;
+      metricByKey.set(key, (metricByKey.get(key) ?? 0) + (isAmount ? r.amount : r.employee_count));
+    }
+    const dates = [...new Set(rows.map((r) => r.date))].sort();
+    return dates.map((date) => {
+      const point: Record<string, string | number> = { date: formatChartDate(date) };
+      for (const def of series) {
+        point[def.name] = def.projectIds.reduce(
+          (sum, projectId) => sum + (metricByKey.get(`${projectId}|${date}`) ?? 0),
+          0,
+        );
+      }
+      return point;
+    });
+  }, [rows, series, isAmount]);
+
+  if (series.length === 0) return null;
+
+  return (
+    <div className="h-72 w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 8, right: 12, left: 12, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="date" fontSize={11} tickMargin={8} minTickGap={24} />
+          <YAxis
+            fontSize={11}
+            width={isAmount ? 56 : 32}
+            axisLine={false}
+            tickLine={false}
+            allowDecimals={false}
+            tickFormatter={isAmount ? formatCompactVndTick : (v: number) => String(v)}
+          />
+          <Tooltip
+            cursor={{ fill: 'rgba(100, 116, 139, 0.08)' }}
+            content={<PaidSeriesTooltip metric={metric} />}
+          />
+          {series.map((def) => (
+            <Bar key={def.name} dataKey={def.name} stackId="paid" fill={def.color} maxBarSize={28} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
 /** FR-6 (1): number of paid employees per project over time. */
-export function PaidEmployeesChart(props: Omit<PaidSeriesChartProps, 'metric' | 'label'>) {
-  return <SeriesChart {...props} metric="employee_count" label="Nhân viên đã trả" />;
+export function PaidEmployeesChart(props: Omit<SeriesChartProps, 'metric'>) {
+  return <SeriesChart {...props} metric="employee_count" />;
 }
 
 /** FR-6 (2): paid amount per project over time. */
-export function PaidAmountChart(props: Omit<PaidSeriesChartProps, 'metric' | 'label'>) {
-  return <SeriesChart {...props} metric="amount" label="Số tiền đã trả" />;
+export function PaidAmountChart(props: Omit<SeriesChartProps, 'metric'>) {
+  return <SeriesChart {...props} metric="amount" />;
 }

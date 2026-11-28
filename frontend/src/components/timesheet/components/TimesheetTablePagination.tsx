@@ -20,7 +20,7 @@ export function TimesheetTablePagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-3 px-3 py-2 sm:px-4">
       <p className="text-xs text-muted-foreground tabular-nums">
         {Math.min((page - 1) * pageSize + 1, totalRecords)}–
         {Math.min(page * pageSize, totalRecords)} / {totalRecords} {label}
