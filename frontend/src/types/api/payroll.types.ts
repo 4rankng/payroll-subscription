@@ -9,6 +9,20 @@ export interface PaymentHistory {
   position: string;
   total_paid_amount: number;
   paid_date: string; // ISO 8601 format (UTC)
+  /** 1-based ledger line number from the backend bank-entry projection. */
+  stt?: number;
+  /** Pay cycle 1..4 this entry belongs to. */
+  ky?: number;
+  /** Cycle window label, e.g. "01/11 → 07/11". */
+  ky_window?: string;
+  /** Original transfer-upload filename that verified the payment (Ghi chú CK). */
+  transfer_note?: string;
+  /** Bank transaction reference code (Mã bút toán). */
+  bank_transaction_code?: string;
+  /** RFC 3339 instant of when the bank entry was processed (+07 offset). */
+  processed_at?: string;
+  /** Amount actually received by the employee, VND. */
+  actual_received_vnd?: number;
 }
 
 export interface PaymentHistoryFilters {

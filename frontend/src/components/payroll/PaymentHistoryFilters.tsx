@@ -1,12 +1,18 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useEffect, useRef } from 'react';
+import { addMonths, endOfMonth, format, startOfMonth, subMonths } from 'date-fns';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { Input } from '@/components/ui/input';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useProjects } from '@/hooks/api/useProjects';
 import { useEmployees } from '@/hooks/api/useEmployees';
 import { useProjectEmployees } from '@/hooks/api/useProjectEmployees';
 import { SearchBar } from '@/components/shared/SearchBar';
+import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import type { PaymentHistoryFilters as FiltersType } from '@/types/api/payroll.types';
+
+/** Calendar bounds keep the ledger span within the hook's 36-month fan-out. */
+const CALENDAR_MIN_DATE = startOfMonth(addMonths(new Date(), -35));
+const CALENDAR_MAX_DATE = new Date();
 
 interface PaymentHistoryFiltersProps {
   filters: FiltersType;
@@ -14,6 +20,8 @@ interface PaymentHistoryFiltersProps {
   onClearFilters: () => void;
   hasFilters: boolean;
   totalResults?: number;
+  /** Bump to programmatically focus the range inputs (empty-state quick action). */
+  dateFocusSignal?: number;
 }
 
 export const PaymentHistoryFilters = memo(function PaymentHistoryFilters({
@@ -21,6 +29,7 @@ export const PaymentHistoryFilters = memo(function PaymentHistoryFilters({
   onFiltersChange,
   onClearFilters,
   hasFilters,
+  dateFocusSignal,
 }: PaymentHistoryFiltersProps) {
   const { data: projectsData } = useProjects({ pageSize: 100, status: ['active', 'paused', 'completed'] });
 
@@ -37,18 +46,9 @@ export const PaymentHistoryFilters = memo(function PaymentHistoryFilters({
 
   const employeesData = useMemo(() => {
     if (selectedProjectId && projectEmployeesData?.data) {
-      return {
-        data: projectEmployeesData.data.map(a => ({ id: a.employee_id, name: a.employee_name })),
-        pagination: projectEmployeesData.pagination,
-      };
+      return projectEmployeesData;
     }
-    if (allEmployeesData?.data) {
-      return {
-        data: allEmployeesData.data.map(e => ({ id: e.id, name: e.fullname })),
-        pagination: allEmployeesData.pagination,
-      };
-    }
-    return undefined;
+    return allEmployeesData;
   }, [selectedProjectId, projectEmployeesData, allEmployeesData]);
 
   const isLoadingEmployees = selectedProjectId ? isLoadingProjectEmployees : isLoadingAllEmployees;
@@ -69,6 +69,62 @@ export const PaymentHistoryFilters = memo(function PaymentHistoryFilters({
     set('employeeId', value === 'all' ? undefined : [parseInt(value)]);
   };
 
+  // Keep the range valid when one bound moves past the other: picking a
+  // "from" after the current "to" pulls "to" along (and vice versa).
+  const handleStartDateChange = (date: string) => {
+    const toDate = filters.toDate;
+    onFiltersChange({
+      ...filters,
+      fromDate: date,
+      toDate: toDate && date > toDate ? date : toDate,
+      page: 1,
+    });
+  };
+
+  const handleEndDateChange = (date: string) => {
+    const fromDate = filters.fromDate;
+    onFiltersChange({
+      ...filters,
+      fromDate: fromDate && date < fromDate ? date : fromDate,
+      toDate: date,
+      page: 1,
+    });
+  };
+
+  const now = new Date();
+  const presets = useMemo(
+    () => [
+      {
+        label: 'Tháng này',
+        from: format(startOfMonth(now), 'yyyy-MM-dd'),
+        to: format(endOfMonth(now), 'yyyy-MM-dd'),
+      },
+      {
+        label: 'Tháng trước',
+        from: format(startOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'),
+        to: format(endOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'),
+      },
+      {
+        label: '3 tháng gần nhất',
+        from: format(startOfMonth(subMonths(now, 2)), 'yyyy-MM-dd'),
+        to: format(endOfMonth(now), 'yyyy-MM-dd'),
+      },
+    ],
+    // `now` is intentionally read once per mount so preset labels stay stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const rangeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!dateFocusSignal) return;
+    const input = rangeRef.current?.querySelector<HTMLInputElement>(
+      'input[aria-label="Ngày bắt đầu"]',
+    );
+    input?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    input?.focus();
+  }, [dateFocusSignal]);
+
   return (
     <div className="console-filter-bar overflow-x-auto">
       <SearchBar
@@ -78,21 +134,39 @@ export const PaymentHistoryFilters = memo(function PaymentHistoryFilters({
         className="w-44 shrink-0"
       />
 
-      <Input
-        type="date"
-        value={filters.fromDate || ''}
-        onChange={(e) => set('fromDate', e.target.value)}
-        className="h-8 w-[130px] shrink-0 text-xs"
-        aria-label="Từ ngày"
-      />
-      <span className="text-muted-foreground text-xs shrink-0">–</span>
-      <Input
-        type="date"
-        value={filters.toDate || ''}
-        onChange={(e) => set('toDate', e.target.value)}
-        className="h-8 w-[130px] shrink-0 text-xs"
-        aria-label="Đến ngày"
-      />
+      <div ref={rangeRef} className="flex shrink-0 items-center gap-1">
+        <DateRangePicker
+          variant="compact"
+          className="tabular-nums"
+          startDate={filters.fromDate}
+          endDate={filters.toDate}
+          onStartDateChange={handleStartDateChange}
+          onEndDateChange={handleEndDateChange}
+          minDate={CALENDAR_MIN_DATE}
+          maxDate={CALENDAR_MAX_DATE}
+        />
+        {presets.map((preset) => {
+          const active = filters.fromDate === preset.from && filters.toDate === preset.to;
+          return (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() =>
+                onFiltersChange({ ...filters, fromDate: preset.from, toDate: preset.to, page: 1 })
+              }
+              aria-pressed={active}
+              className={cn(
+                'h-8 shrink-0 whitespace-nowrap rounded-md px-2 text-[12px] leading-none transition-colors',
+                active
+                  ? 'bg-accent font-medium text-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
+      </div>
 
       <SearchableSelect
         value={selectedProjectId?.toString() || 'all'}

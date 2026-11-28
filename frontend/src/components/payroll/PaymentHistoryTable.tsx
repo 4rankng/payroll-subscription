@@ -1,14 +1,26 @@
-import { useMemo, useCallback } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { formatDateTime, formatCurrency } from '@/utils/formatters';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { RotateCw, Upload } from 'lucide-react';
+import { formatDateVn, formatDateTimeVn, formatFullCurrency } from '@/utils/formatters';
 import type { ColumnDef, SortingState, OnChangeFn } from '@tanstack/react-table';
 import type { PaymentHistory } from '@/types/api/payroll.types';
+
+/** Every row in this ledger passed transfer-upload verification. */
+const RECONCILED_LABEL = 'Đã đối chiếu';
 
 interface PaymentHistoryTableProps {
   data: PaymentHistory[];
   isLoading?: boolean;
+  /** True once the request has been loading for 3s — shows a status label. */
+  slowLoading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
+  onPickDateRange?: () => void;
+  onUploadStatement?: () => void;
   pagination?: {
     page: number;
     pageSize: number;
@@ -17,105 +29,245 @@ interface PaymentHistoryTableProps {
   } | null;
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
-export function PaymentHistoryTable({ data, isLoading, pagination, sorting, onSortingChange }: PaymentHistoryTableProps) {
+/** Sort keys for the client-side sort over merged month ledgers. */
+const sortValueGetters: Record<string, (row: PaymentHistory) => string | number> = {
+  processed_at: (row) => row.processed_at || row.paid_date || '',
+  bank_transaction_code: (row) => row.bank_transaction_code ?? '',
+  employee_name: (row) => row.employee_name ?? '',
+  project_name: (row) => row.project_name ?? '',
+  transfer_note: (row) => row.transfer_note ?? '',
+  total_paid_amount: (row) => row.total_paid_amount ?? 0,
+};
+
+export function PaymentHistoryTable({
+  data,
+  isLoading,
+  slowLoading,
+  error,
+  onRetry,
+  onPickDateRange,
+  onUploadStatement,
+  pagination,
+  sorting,
+  onSortingChange,
+  onPageChange,
+  onPageSizeChange,
+}: PaymentHistoryTableProps) {
   const columns: ColumnDef<PaymentHistory>[] = useMemo(() => [
     {
-      id: 'stt',
-      header: 'STT',
-      enableSorting: false,
-      size: 44,
+      id: 'processed_at',
+      header: 'Ngày CK',
+      enableSorting: true,
+      size: 150,
       cell: ({ row }) => {
-        const pageOffset = ((pagination?.page || 1) - 1) * (pagination?.pageSize || 20);
+        const payment = row.original;
+        const text = payment.processed_at
+          ? formatDateTimeVn(payment.processed_at)
+          : payment.paid_date
+            ? formatDateVn(payment.paid_date)
+            : '—';
         return (
-          <div className="text-center typography-data-medium">
-            {pageOffset + row.index + 1}
-          </div>
+          <time
+            dateTime={payment.processed_at || payment.paid_date || undefined}
+            className="whitespace-nowrap tabular-nums text-muted-foreground"
+          >
+            {text}
+          </time>
+        );
+      },
+    },
+    {
+      accessorKey: 'bank_transaction_code',
+      header: 'Mã bút toán',
+      enableSorting: true,
+      size: 150,
+      cell: ({ row }) => {
+        const code = row.original.bank_transaction_code;
+        if (!code) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span
+            className="block max-w-[150px] truncate font-mono text-[12px] text-foreground"
+            title={code}
+          >
+            {code}
+          </span>
         );
       },
     },
     {
       accessorKey: 'employee_name',
       header: 'Nhân viên',
-      size: 160,
+      enableSorting: true,
+      size: 170,
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.employee_name}</span>
-      ),
-    },
-    {
-      accessorKey: 'employee_cccd',
-      header: 'CCCD',
-      size: 130,
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.employee_cccd}</span>
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground" title={row.original.employee_name}>
+            {row.original.employee_name}
+          </p>
+          {row.original.employee_cccd && (
+            <p
+              className="truncate text-[11px] leading-tight text-muted-foreground tabular-nums"
+              title={row.original.employee_cccd}
+            >
+              {row.original.employee_cccd}
+            </p>
+          )}
+        </div>
       ),
     },
     {
       accessorKey: 'project_name',
       header: 'Dự án',
+      enableSorting: true,
       size: 140,
-      cell: ({ row }) => row.original.project_name,
+      cell: ({ row }) => (
+        <span className="line-clamp-2 text-foreground" title={row.original.project_name}>
+          {row.original.project_name || '—'}
+        </span>
+      ),
     },
     {
-      accessorKey: 'position',
-      header: 'Vị trí',
+      accessorKey: 'transfer_note',
+      header: 'Ngân hàng',
       enableSorting: true,
-      size: 130,
-      cell: ({ row }) => row.original.position,
+      size: 160,
+      cell: ({ row }) => {
+        const note = row.original.transfer_note;
+        if (!note) return <span className="text-muted-foreground">—</span>;
+        return (
+          <span className="block max-w-[160px] truncate text-muted-foreground" title={note}>
+            {note}
+          </span>
+        );
+      },
     },
     {
       accessorKey: 'total_paid_amount',
-      header: 'Số tiền',
+      header: 'Số tiền (₫)',
+      enableSorting: true,
       size: 130,
+      meta: { align: 'right', num: true },
       cell: ({ row }) => (
-        <div className="text-right font-semibold text-emerald-700">
-          {formatCurrency(row.original.total_paid_amount)}
-        </div>
+        <span className="whitespace-nowrap font-semibold tabular-nums text-emerald-700">
+          {formatFullCurrency(row.original.total_paid_amount)}
+        </span>
       ),
     },
     {
-      accessorKey: 'paid_date',
-      header: 'Ngày thanh toán',
-      size: 150,
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{formatDateTime(row.original.paid_date)}</span>
+      id: 'status',
+      header: 'Trạng thái',
+      enableSorting: false,
+      size: 110,
+      cell: () => (
+        <Badge variant="success" className="text-[11px] font-semibold leading-[1.35]">
+          {RECONCILED_LABEL}
+        </Badge>
       ),
     },
-  ], [pagination?.page, pagination?.pageSize]);
+  ], []);
 
-  // Loading skeleton
-  if (isLoading) {
+  // Months are merged in the hook and paginated client-side, so sorting also
+  // applies here before slicing the requested page.
+  const pageRows = useMemo(() => {
+    const first = sorting?.[0];
+    const getter = first ? sortValueGetters[first.id] : undefined;
+    const rows = getter
+      ? [...data].sort((a, b) => {
+          const valueA = getter(a);
+          const valueB = getter(b);
+          const cmp =
+            typeof valueA === 'number' && typeof valueB === 'number'
+              ? valueA - valueB
+              : String(valueA).localeCompare(String(valueB), 'vi');
+          return first!.desc ? -cmp : cmp;
+        })
+      : data;
+    const page = pagination?.page ?? 1;
+    const pageSize = pagination?.pageSize ?? rows.length;
+    return pageSize > 0 ? rows.slice((page - 1) * pageSize, page * pageSize) : rows;
+  }, [data, sorting, pagination]);
+
+  if (error) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className="flex gap-4">
-            <Skeleton className="h-12 flex-1" />
-          </div>
-        ))}
+      <div role="alert" className="console-panel p-4">
+        <p className="text-[13px] font-semibold text-foreground">
+          Không tải được lịch sử đối chiếu
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+          {error.message || 'Không thể truy vấn dữ liệu từ máy chủ.'} Vui lòng thử lại.
+        </p>
+        {onRetry && (
+          <Button variant="outline" size="sm" className="mt-3 h-8 text-[12px]" onClick={onRetry}>
+            <RotateCw className="mr-1.5 size-3.5" />
+            Thử lại
+          </Button>
+        )}
       </div>
     );
   }
 
-  // Empty state
+  // Loading skeleton with a 3s slow-load status label (never an endless skeleton).
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <div className="space-y-1">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-md" />
+          ))}
+        </div>
+        {slowLoading && (
+          <p role="status" aria-live="polite" className="px-1 text-[12px] tabular-nums text-muted-foreground">
+            Đang tải lịch sử đối chiếu…
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Empty state with quick actions.
   if (data.length === 0) {
     return (
       <EmptyState
         title="Không tìm thấy lịch sử thanh toán"
         description="Chưa có lịch sử thanh toán nào trong khoảng thời gian này."
         size="sm"
-      />
+        action={
+          onPickDateRange
+            ? { label: 'Chọn khoảng thời gian khác', onClick: onPickDateRange }
+            : undefined
+        }
+      >
+        {onUploadStatement && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2 h-8 text-[12px]"
+            onClick={onUploadStatement}
+          >
+            <Upload className="mr-1.5 size-3.5" />
+            Tải lên sao kê
+          </Button>
+        )}
+      </EmptyState>
     );
   }
 
   return (
     <DataTable
-      data={data}
+      data={pageRows}
       columns={columns}
       sorting={sorting}
       onSortingChange={onSortingChange}
-      showPagination={false}
-      caption="Bảng lịch sử thanh toán"
+      showPagination
+      pagination={pagination ?? undefined}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      density="dense"
+      caption="Bảng lịch sử đối chiếu chuyển khoản"
     />
   );
 }

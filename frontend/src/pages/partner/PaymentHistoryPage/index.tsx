@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -7,9 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PaymentHistoryTable } from '@/components/payroll/PaymentHistoryTable';
 import { PaymentHistoryFilters } from '@/components/payroll/PaymentHistoryFilters';
 import { useBankTransferHistories, useExportBankTransferHistories } from '@/hooks/api/usePaymentHistory';
-import { formatFullCurrency } from '@/utils/formatters';
+import { formatFullCurrency, formatInt } from '@/utils/formatters';
 import type { SortingState } from '@tanstack/react-table';
 import type { PaymentHistoryFilters as FiltersType } from '@/types/api/payroll.types';
+
+/** The statement-upload entry (Tải lên kết quả chuyển khoản) lives here. */
+const STATEMENT_UPLOAD_PATH = '/partner/timesheet';
 
 function SummaryStrip({ summary, isLoading }: { summary?: { total_amount_vnd: number; bank_entry_count: number; employee_count: number }; isLoading: boolean }) {
   if (isLoading) {
@@ -27,27 +31,40 @@ function SummaryStrip({ summary, isLoading }: { summary?: { total_amount_vnd: nu
       </div>
       <div className="console-panel px-3 py-2">
         <p className="console-kicker">Bút toán ngân hàng</p>
-        <p className="console-value mt-1 text-lg font-semibold">{(summary?.bank_entry_count ?? 0).toLocaleString('vi-VN')}</p>
+        <p className="console-value mt-1 text-lg font-semibold">{formatInt(summary?.bank_entry_count ?? 0)}</p>
       </div>
       <div className="console-panel px-3 py-2">
         <p className="console-kicker">Nhân viên</p>
-        <p className="console-value mt-1 text-lg font-semibold">{(summary?.employee_count ?? 0).toLocaleString('vi-VN')}</p>
+        <p className="console-value mt-1 text-lg font-semibold">{formatInt(summary?.employee_count ?? 0)}</p>
       </div>
     </div>
   );
 }
 
 export default function PaymentHistoryPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<FiltersType>(() => ({
     fromDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     toDate: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
     page: 1,
     pageSize: 50,
   }));
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'paid_date', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'processed_at', desc: true }]);
+  const [dateFocusSignal, setDateFocusSignal] = useState(0);
 
-  const { data, isLoading } = useBankTransferHistories(filters);
+  const { data, isLoading, isError, error, refetch } = useBankTransferHistories(filters);
   const exportMutation = useExportBankTransferHistories();
+
+  // 3s slow-load status: flips the "Đang tải lịch sử đối chiếu…" label on.
+  const [slowLoading, setSlowLoading] = useState(false);
+  useEffect(() => {
+    if (!isLoading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   const handleFiltersChange = useCallback((newFilters: FiltersType) => {
     setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }));
@@ -66,15 +83,38 @@ export default function PaymentHistoryPage() {
     exportMutation.mutate(filters);
   }, [exportMutation, filters]);
 
+  const handlePageChange = useCallback((page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  }, []);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setFilters((prev) => ({ ...prev, pageSize, page: 1 }));
+  }, []);
+
+  const handlePickDateRange = useCallback(() => {
+    setDateFocusSignal((signal) => signal + 1);
+  }, []);
+
+  const handleUploadStatement = useCallback(() => {
+    navigate(STATEMENT_UPLOAD_PATH);
+  }, [navigate]);
+
   const hasFilters = useMemo(() => {
     return !!(filters.search || filters.projectId?.length || filters.employeeId?.length || filters.position);
   }, [filters]);
+
+  const tableError = isError
+    ? error instanceof Error
+      ? error
+      : new Error('Không thể truy vấn dữ liệu từ máy chủ.')
+    : null;
 
   return (
     <div className="space-y-3 p-3 sm:p-4">
       <PageHeader
         title="Lịch sử trả lương"
         meta="Bút toán chuyển khoản đã đối chiếu"
+        metaVariant="sans"
       >
         <Button variant="outline" size="sm" onClick={handleExport} disabled={exportMutation.isPending}>
           <Download className="mr-1.5 size-3.5" />
@@ -82,18 +122,24 @@ export default function PaymentHistoryPage() {
         </Button>
       </PageHeader>
 
-      <SummaryStrip summary={data?.summary} isLoading={isLoading} />
+      {!isError && <SummaryStrip summary={data?.summary} isLoading={isLoading} />}
 
       <PaymentHistoryFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onClearFilters={handleClearFilters}
         hasFilters={hasFilters}
+        dateFocusSignal={dateFocusSignal}
       />
 
       <PaymentHistoryTable
         data={data?.rows ?? []}
         isLoading={isLoading}
+        slowLoading={slowLoading}
+        error={tableError}
+        onRetry={() => void refetch()}
+        onPickDateRange={handlePickDateRange}
+        onUploadStatement={handleUploadStatement}
         pagination={{
           page: data?.page ?? 1,
           pageSize: data?.page_size ?? 50,
@@ -102,6 +148,8 @@ export default function PaymentHistoryPage() {
         }}
         sorting={sorting}
         onSortingChange={setSorting}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

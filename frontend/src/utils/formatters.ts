@@ -1,5 +1,7 @@
 // Common formatting utilities used across all pages
 
+import { VN_TIMEZONE } from '@/utils/vn-time';
+
 const DEFAULT_CURRENCY_CODE = 'VND';
 
 export interface CurrencyDisplayParts {
@@ -157,6 +159,66 @@ export const formatCurrencyFromString = (amountStr?: string | null, currency?: s
   if (!amountStr) return '- ₫';
   const num = Number(amountStr.replace(/,/g, ''));
   return formatCurrency(num, currency);
+};
+
+// ─── Canonical Vietnamese display helpers ───────────────────────────────────
+// Timezone-pinned variants below render in Asia/Ho_Chi_Minh so output never
+// depends on the host device timezone. The legacy formatDate/formatDateTime
+// above keep their existing host-timezone behavior for existing callers.
+
+const vnDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: VN_TIMEZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+const vnHourMinuteFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: VN_TIMEZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** Canonical integer with vi-VN grouping: 1747 → "1.747". */
+export const formatInt = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '0';
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value);
+};
+
+/** Canonical hours with vi-VN decimal comma: 8.6 → "8,60 giờ". */
+export const formatHours = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '0,00 giờ';
+  return `${new Intl.NumberFormat('vi-VN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)} giờ`;
+};
+
+/** Canonical calendar date in Asia/Ho_Chi_Minh: → "DD/MM/YYYY". Invalid input → "—". */
+export const formatDateVn = (date: string | Date | null | undefined): string => {
+  const dateObj = date instanceof Date ? date : date ? new Date(date) : null;
+  if (!dateObj || Number.isNaN(dateObj.getTime())) return '—';
+  return vnDateFormatter.format(dateObj);
+};
+
+/** Canonical transfer timestamp in Asia/Ho_Chi_Minh: → "DD/MM/YYYY HH:mm (+07)". Invalid input → "—". */
+export const formatDateTimeVn = (date: string | Date | null | undefined): string => {
+  const dateObj = date instanceof Date ? date : date ? new Date(date) : null;
+  if (!dateObj || Number.isNaN(dateObj.getTime())) return '—';
+  const time = vnHourMinuteFormatter.format(dateObj);
+  // "2-digit" h23 can render "24:xx" near midnight in some engines.
+  const normalized = time.startsWith('24') ? `00${time.slice(2)}` : time;
+  return `${vnDateFormatter.format(dateObj)} ${normalized} (+07)`;
+};
+
+/** Compact VND for tight KPI contexts: 105_000_000 → "105 tr". */
+export const formatCompactVND = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '0 tr';
+  const millions = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(
+    value / 1_000_000,
+  );
+  return `${millions} tr`;
 };
 
 export const formatNumber = (value: number, decimals = 1) => {
