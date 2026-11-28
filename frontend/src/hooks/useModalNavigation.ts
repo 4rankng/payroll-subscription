@@ -246,8 +246,13 @@ export function useEmployeeModals() {
   const { openModal } = useModalNavigation();
 
   return {
-    openEmployeeDetails: useCallback((employeeId: string, tab?: 'details' | 'projects' | 'timesheet' | 'payroll') => {
-      openModal(MODAL_IDS.EMPLOYEE_DETAILS, { id: employeeId, ...(tab && { tab }) });
+    openEmployeeDetails: useCallback((employeeId: string, tab?: 'details' | 'projects' | 'timesheet' | 'payroll', focus?: 'mobile') => {
+      openModal(MODAL_IDS.EMPLOYEE_DETAILS, {
+        id: employeeId,
+        ...(tab && { tab }),
+        // DASH-06 banner fix links deep-focus the phone field (?focus=mobile).
+        ...(focus && { focus }),
+      });
     }, [openModal]),
 
     openAddEmployee: useCallback((projectId?: string) => {

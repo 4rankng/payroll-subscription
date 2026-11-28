@@ -1,2 +1,2 @@
 export { WorkforceOverviewCard } from './WorkforceOverviewCard';
-export { KpiEmployeeListSheet, type KpiEmployeeCategory } from './KpiEmployeeListSheet';
+export { ROLE_EYEBROW, rankBadgeClass } from './leaderboard';

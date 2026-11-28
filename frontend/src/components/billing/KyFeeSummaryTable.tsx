@@ -118,7 +118,7 @@ export const KyFeeSummaryTable = memo(function KyFeeSummaryTable({
               đối chiếu.
             </p>
             <Button asChild size="sm" className="h-8 text-xs">
-              <Link to="/partner/billing">Tải lên &amp; đối soát chuyển khoản</Link>
+              <Link to="/partner/timesheet">Tải lên &amp; đối soát chuyển khoản</Link>
             </Button>
           </div>
         )

@@ -14,6 +14,7 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader';
 import { ConsolePanel } from '@/components/shared/console-panel';
 import { useTopPaidEmployees } from '@/hooks/api/useDashboard';
+import { billingKeys } from '@/hooks/api/useBilling';
 import { QueryKeys } from '@/lib/queryKeys';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { useAuth } from '@/contexts';
@@ -21,6 +22,7 @@ import { MissingMobileSection } from '@/components/employees/MissingMobileSectio
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { WorkforceOverviewCard } from '@/components/partner-dashboard/WorkforceOverviewCard';
+import { ROLE_EYEBROW, rankBadgeClass } from '@/components/partner-dashboard/leaderboard';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
 import type { TopPaidEmployeeItem } from '@/types/api/dashboard.types';
@@ -28,13 +30,6 @@ import { monthOptions, formatVND } from './utils';
 
 const ALL_VALUE = 'all';
 const OTHER_MONTH_VALUE = 'other-month';
-
-/** PAYR-71 (DASH-05): sans-serif 11px uppercase eyebrow derived from role. */
-const ROLE_EYEBROW: Record<string, string> = {
-  quanly: 'QUẢN LÝ',
-  ketoan: 'KẾ TOÁN',
-  giamdoc: 'GIÁM ĐỐC',
-};
 
 // ─── Month selector ────────────────────────────────────────────────────────
 function MonthSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -97,12 +92,8 @@ function MonthSelector({ value, onChange }: { value: string; onChange: (v: strin
 }
 
 // ─── Leaderboard row ───────────────────────────────────────────────────────
-// PAYR-73 (DASH-07): podium tokens — gold / silver / bronze — then neutral.
-const RANK_BADGE = [
-  'bg-amber-100 text-amber-700 ring-1 ring-amber-300',
-  'bg-slate-100 text-slate-600 ring-1 ring-slate-300',
-  'bg-orange-100 text-orange-700 ring-1 ring-orange-300',
-];
+// PAYR-73 (DASH-07): podium tokens come from the shared rankBadgeClass helper
+// so desktop and mobile badges always match.
 
 function LeaderRow({
   item,
@@ -115,7 +106,7 @@ function LeaderRow({
   maxAmount: number;
   onOpen: (employeeId: string) => void;
 }) {
-  const badge = RANK_BADGE[rank - 1] ?? 'bg-muted text-muted-foreground ring-1 ring-border/60';
+  const badge = rankBadgeClass(rank);
   const barWidth = maxAmount > 0 ? Math.max(4, Math.round((item.total_paid_vnd / maxAmount) * 100)) : 0;
 
   return (
@@ -231,7 +222,11 @@ const PartnerDashboardPage = () => {
 
   const queryClient = useQueryClient();
   const handleRefresh = useCallback(() => {
+    // The dashboard renders dashboard, billing (FR-6 charts + kỳ fee table)
+    // and the phone-warning banner data — refresh all three families.
     void queryClient.invalidateQueries({ queryKey: QueryKeys.dashboard.all });
+    void queryClient.invalidateQueries({ queryKey: billingKeys.all });
+    void queryClient.invalidateQueries({ queryKey: QueryKeys.employees.all });
   }, [queryClient]);
 
   // Employee rows open the employee details sheet through the URL-driven
@@ -239,6 +234,12 @@ const PartnerDashboardPage = () => {
   const { openEmployeeDetails } = useEmployeeModals();
   const handleEmployeeClick = useCallback(
     (employee: { id: number }) => openEmployeeDetails(employee.id.toString()),
+    [openEmployeeDetails],
+  );
+  // DASH-06: banner rows deep-link the phone field (?focus=mobile) — the
+  // banner context IS the fix context.
+  const handleEmployeeFixClick = useCallback(
+    (employee: { id: number }) => openEmployeeDetails(employee.id.toString(), undefined, 'mobile'),
     [openEmployeeDetails],
   );
 
@@ -267,7 +268,7 @@ const PartnerDashboardPage = () => {
         />
 
         {/* Mobile warnings render nothing when clean (no dead card). */}
-        <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
+        <MissingMobileSection onEmployeeClick={handleEmployeeFixClick} />
 
         {/* ── Summary row (PAYR-70): workforce card + fee table share bottom edges ── */}
         <section className="flex flex-col gap-3">
@@ -279,7 +280,7 @@ const PartnerDashboardPage = () => {
               <KyFeeSummaryTable className="h-full" />
             </div>
           </div>
-          <PaidSeriesSection month={apiMonth} />
+          <PaidSeriesSection month={apiMonth} layout="segmented" />
         </section>
 
         {/* ── Leaderboard ── */}
