@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -122,5 +123,8 @@ func writePaymentHistoryError(c *gin.Context, err error) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	response.InternalServerError(c, err.Error())
+	// Internal failures never reach the client raw — the response carries a
+	// fixed Vietnamese message and the detail stays in the server log.
+	slog.Error("payment history internal error", "err", err)
+	response.InternalServerError(c, "Không thể truy vấn lịch sử thanh toán. Vui lòng thử lại sau.")
 }

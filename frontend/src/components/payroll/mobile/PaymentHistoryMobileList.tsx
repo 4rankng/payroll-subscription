@@ -39,7 +39,7 @@ export function PaymentHistoryMobileList({
           Không tải được lịch sử đối chiếu
         </p>
         <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-          {error.message || 'Không thể truy vấn dữ liệu từ máy chủ.'} Vui lòng thử lại.
+          Không thể truy vấn dữ liệu từ máy chủ. Vui lòng thử lại.
         </p>
         {onRetry && (
           <Button
