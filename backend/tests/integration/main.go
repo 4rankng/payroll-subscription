@@ -112,6 +112,7 @@ func main() {
 	// Phase 8: CRUD flows
 	runEmployeeCRUDTests(client, testData, reporter, cfg)
 	runProjectCRUDTests(client, testData, reporter, cfg)
+	runProjectPartnerSummaryTests(client, testData, reporter, cfg)
 	runProjectUserAccessTests(client, testData, reporter, cfg)
 
 	// Phase 9: Domain flows
