@@ -12,6 +12,7 @@ import { FileCheck2, FileWarning, FileX2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { getConsoleKicker } from '@/lib/console';
 import { useLocation } from 'react-router-dom';
+import type { ApiError } from '@/services/api/client';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -103,7 +104,13 @@ const FeeInsightsPage = () => {
   const recon = useBillingReconStatus();
 
   if (kySummary.isError || recon.isError) {
-    const error = (kySummary.error ?? recon.error) as Error;
+    const error = (kySummary.error ?? recon.error) as unknown as ApiError;
+    // Non-JSON failure bodies (proxy 502/504 HTML, empty panic response)
+    // carry no message — show the HTTP status or a connection fallback
+    // instead of an empty string after the colon.
+    const detail =
+      error?.message?.trim() ||
+      (error?.http_status ? `Lỗi máy chủ (HTTP ${error.http_status})` : "Lỗi kết nối đến máy chủ.");
     return (
       <div className="mx-auto max-w-[1280px] space-y-3 p-3 sm:p-4">
         <PageHeader
@@ -113,7 +120,7 @@ const FeeInsightsPage = () => {
         />
         <Card>
           <CardContent className="py-10 text-center text-sm text-destructive">
-            Không thể tải dữ liệu tổng quan: {error.message}
+            Không thể tải dữ liệu tổng quan: {detail}
           </CardContent>
         </Card>
       </div>
