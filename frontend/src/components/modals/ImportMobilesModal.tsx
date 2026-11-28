@@ -10,12 +10,16 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import {
+  Download,
   FileSpreadsheet,
   Loader2,
   Upload,
   X,
 } from "lucide-react";
-import { useBackfillEmployeeMobiles } from "@/hooks/api/useEmployees";
+import {
+  useBackfillEmployeeMobiles,
+  useExportMissingMobileTemplate,
+} from "@/hooks/api/useEmployees";
 import type { MobileBackfillResult } from "@/types/api/employee.types";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -45,6 +49,8 @@ export function ImportMobilesModal({
 
   const { mutateAsync: backfillMobiles, isPending } =
     useBackfillEmployeeMobiles();
+  const { mutate: downloadTemplate, isPending: isDownloadingTemplate } =
+    useExportMissingMobileTemplate();
 
   const resetState = useCallback(() => {
     setFile(null);
@@ -124,7 +130,7 @@ export function ImportMobilesModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="rounded-xl sm:max-w-lg gap-0">
-        <DialogHeader className="pb-1">
+        <DialogHeader>
           <DialogTitle className="text-sm font-semibold">
             Nhập số điện thoại
           </DialogTitle>
@@ -153,7 +159,7 @@ export function ImportMobilesModal({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={cn(
-                  "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-5 py-7 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-5 py-7 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   isDragging
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/40 hover:bg-muted/40"
@@ -181,7 +187,7 @@ export function ImportMobilesModal({
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+              <div className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-card p-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <FileSpreadsheet className="h-4 w-4" />
                 </span>
@@ -217,36 +223,51 @@ export function ImportMobilesModal({
               </div>
             )}
 
-            <div className="flex justify-end gap-2 mt-3">
+            <div className="mt-3 flex items-center justify-between gap-2">
               <button
-                onClick={handleClose}
-                disabled={isPending}
-                className="h-8 px-3 rounded-md text-xs font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                onClick={() => downloadTemplate()}
+                disabled={isDownloadingTemplate}
+                title="Tải danh sách nhân viên chưa có SĐT (file .xlsx mẫu)"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
               >
-                Đóng
-              </button>
-              <button
-                onClick={handleUpload}
-                disabled={!file || isPending}
-                className={cn(
-                  "h-8 px-3 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors",
-                  !file || isPending
-                    ? "bg-primary/50 text-primary-foreground pointer-events-none"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90"
-                )}
-              >
-                {isPending ? (
+                {isDownloadingTemplate ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Upload className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5" />
                 )}
-                {isPending ? "Đang tải lên..." : "Tải lên"}
+                Tải file mẫu
               </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleClose}
+                  disabled={isPending}
+                  className="h-8 px-3 rounded-md text-xs font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={!file || isPending}
+                  className={cn(
+                    "h-8 px-3 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors",
+                    !file || isPending
+                      ? "bg-primary/50 text-primary-foreground pointer-events-none"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  )}
+                >
+                  {isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
+                  {isPending ? "Đang tải lên..." : "Tải lên"}
+                </button>
+              </div>
             </div>
           </>
         ) : (
           <>
-            <p className="px-1 pt-1 text-xs text-muted-foreground">
+            <p className="mt-3 px-1 text-xs text-muted-foreground">
               Đã xử lý {result.total_rows} dòng
             </p>
 

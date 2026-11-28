@@ -109,6 +109,9 @@ func main() {
 	// Phase 7.6: import-mobiles RBAC (admin|quanly pass, others 403)
 	runEmployeeImportMobilesTests(client, testData, reporter, cfg)
 
+	// Phase 7.65: "NV chưa có SĐT" template export (the workbook source half)
+	runEmployeeMobileTemplateTests(client, testData, reporter, cfg)
+
 	// Phase 8: CRUD flows
 	runEmployeeCRUDTests(client, testData, reporter, cfg)
 	runProjectCRUDTests(client, testData, reporter, cfg)

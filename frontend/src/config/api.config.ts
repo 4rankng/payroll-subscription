@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
     import: '/employees/import',
     importStatus: (id: string) => `/employees/import/${id}/status`,
     importMobiles: '/employees/import-mobiles',
+    exportMissingMobileTemplate: '/employees/export-missing-mobile-template',
     byId: (id: number) => `/employees/${id}`,
     summaryById: (id: number) => `/employees/${id}/summary`,
     byCCCD: (cccd: string) => `/employees/cccd/${cccd}`,

@@ -394,6 +394,15 @@ export const useBackfillEmployeeMobiles = () => {
   });
 };
 
+// Download the "NV chưa có SĐT" template the ImportMobilesModal pairs with
+// its upload. Pure download — nothing to invalidate.
+export const useExportMissingMobileTemplate = () => {
+  return useMutation({
+    mutationFn: () => employeeService.downloadMissingMobileTemplate(),
+    // Error handling is now done globally in React Query
+  });
+};
+
 // Export employees to Excel
 export const useExportEmployees = () => {
   return useMutation({

@@ -395,6 +395,18 @@ class EmployeeService {
   }
 
   /**
+   * Download the "NV chưa có SĐT" workbook: one row per employee with no
+   * mobile on file, Mobile column blank. The user fills Mobile and uploads
+   * the same file through backfillMobiles.
+   */
+  async downloadMissingMobileTemplate(): Promise<void> {
+    await apiClient.download(
+      API_ENDPOINTS.employees.exportMissingMobileTemplate,
+      `NV_chua_co_SDT_${new Date().toISOString().split('T')[0]}.xlsx`
+    );
+  }
+
+  /**
    * Export employees to Excel
    */
   async exportEmployees(filters?: EmployeeFilters): Promise<ApiResponse<void>> {

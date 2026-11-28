@@ -15,8 +15,11 @@ func setupEmployeeRoutes(protected *gin.RouterGroup, container *Container) {
 		employees.POST("", container.Handlers.Employee.CreateEmployee)
 		employees.GET("", container.Handlers.Employee.ListEmployees)
 		employees.GET("/export", container.Handlers.Employee.ExportEmployees)
-		// Admin-only: upload the filled workbook back — fills EMPTY mobiles by CCCD, never overwrites
+		// Admin or quanly: upload the filled workbook back — fills EMPTY mobiles by CCCD, never overwrites
 		employees.POST("/import-mobiles", container.Handlers.Employee.ImportMobiles)
+		// The workbook's source half — same admin/quanly gate as the import:
+		// one row per employee with no mobile on file, Mobile left blank.
+		employees.GET("/export-missing-mobile-template", container.Handlers.Employee.ExportMissingMobileTemplate)
 		// Data-quality nudge: employees with no mobile on file (login/Zalo/check-in
 		// gaps). parseEmployeeFilters scopes the list to the caller's set.
 		employees.GET("/missing-mobile", container.Handlers.Employee.GetEmployeesMissingMobile)
