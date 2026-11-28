@@ -122,7 +122,6 @@ export const API_ENDPOINTS = {
     resetAll: '/timesheets/reset-all',
     import: '/timesheets/import',
     export: '/timesheets/export',
-    uploadEntriesExcel: '/timesheets/upload-entries-excel',
     payrollReport: '/timesheets/payroll/report',
     emailPayrollReport: '/timesheets/payroll/report/send-email',
     uploadSettlementResult: '/timesheets/payroll/upload-settlement-result',

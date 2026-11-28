@@ -30,7 +30,6 @@ Components for the timesheet management feature: entry tables, calendar view, bu
 | `TimesheetEntryMobile.tsx` | Mobile timesheet entry form |
 | `MobileHourEntry.tsx` | Mobile hour input component |
 | `MobileTimesheetSummary.tsx` | Mobile summary card |
-| `TimesheetImportDialog.tsx` | Excel/CSV import dialog |
 | `TimesheetsExportDialog.tsx` | Export dialog (Excel, CSV, PDF) |
 | `TimesheetTemplateExportDialog.tsx` | Template download for bulk import |
 | `BCCUploadModal.tsx` | BCC (Bang Cham Cong) timesheet upload modal |
