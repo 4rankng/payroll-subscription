@@ -22,6 +22,7 @@ import { MissingMobileSection } from '@/components/employees/MissingMobileSectio
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { WorkforceOverviewCard } from '@/components/partner-dashboard/WorkforceOverviewCard';
+import { ApprovalRequestsCard } from '@/components/partner-dashboard/ApprovalRequestsCard';
 import { ROLE_EYEBROW, rankBadgeClass } from '@/components/partner-dashboard/leaderboard';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -269,6 +270,9 @@ const PartnerDashboardPage = () => {
 
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeFixClick} />
+
+        {/* PRD §5.2: pending-approval requests card. */}
+        <ApprovalRequestsCard />
 
         {/* ── Summary row: workforce card + fee table share bottom edges ── */}
         <section className="flex flex-col gap-3">

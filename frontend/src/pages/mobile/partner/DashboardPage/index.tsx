@@ -8,6 +8,7 @@ import { MobilePageShell, MobileSurface } from '@/components/shared/MobilePageSh
 import { MobilePageHeader } from '@/components/shared/MobilePageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
+import { ApprovalRequestsCard } from '@/components/partner-dashboard/ApprovalRequestsCard';
 import { useTopPaidEmployees } from '@/hooks/api/useDashboard';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
@@ -146,6 +147,9 @@ const PartnerDashboardMobile = () => {
 
       {/* Mobile warnings render nothing when clean (no dead card). */}
       <MissingMobileSection onEmployeeClick={handleEmployeeFixClick} />
+
+      {/* PRD §5.2: pending-approval requests card. */}
+      <ApprovalRequestsCard />
 
       {/* DASH-04: the 3-card KPI strip is gone — the workforce overview card
           (donut + breakdown + financial footer) is the single summary block. */}
