@@ -24,6 +24,7 @@ import { cx } from "@/utils/cx";
  */
 const ForgotPassword = () => {
   const [identifier, setIdentifier] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const navigate = useNavigate();
 
@@ -33,7 +34,10 @@ const ForgotPassword = () => {
     async (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = identifier.trim();
-      if (!trimmed) return;
+      if (!trimmed) {
+        setFieldError("Vui lòng nhập email.");
+        return;
+      }
 
       // Email → Resend magic link. Stay on page, show "check inbox" state.
       try {
@@ -81,13 +85,23 @@ const ForgotPassword = () => {
                     inputMode="email"
                     placeholder="email@cua-ban.vn"
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value);
+                      setFieldError(null);
+                    }}
                     className="pl-9 sm:pl-9"
                     required
                     autoComplete="email"
+                    aria-invalid={!!fieldError}
+                    aria-describedby="identifier-error"
                     disabled={pending}
                   />
                 </div>
+                {fieldError && (
+                  <p id="identifier-error" role="alert" className="text-sm text-fg-error-primary">
+                    {fieldError}
+                  </p>
+                )}
                 {/* Channel hint — neutral; does NOT confirm the value exists in the DB. */}
                 {identifier.trim() && (
                   <p className="text-xs text-fg-tertiary">

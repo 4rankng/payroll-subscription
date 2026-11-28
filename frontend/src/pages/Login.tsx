@@ -16,6 +16,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
   const loginMutation = useLogin();
   const loginError = loginMutation.error;
   const resetLogin = loginMutation.reset;
@@ -50,6 +51,16 @@ const Login = () => {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      // The form is noValidate, so empty submits must show per-field hints
+      // instead of reaching the API.
+      const u = emailOrUsername.trim();
+      if (!u || !password) {
+        setFieldErrors({
+          username: u ? undefined : "Vui lòng nhập tên đăng nhập.",
+          password: password ? undefined : "Vui lòng nhập mật khẩu.",
+        });
+        return;
+      }
       // Guard the entire submit window synchronously so a double click/Enter
       // cannot create two login requests.
       if (loginSubmitInFlightRef.current) return;
@@ -184,14 +195,24 @@ const Login = () => {
                         type="text"
                         placeholder="CCCD, số điện thoại hoặc tên đăng nhập"
                         value={emailOrUsername}
-                        onChange={(e) => setEmailOrUsername(e.target.value)}
+                        onChange={(e) => {
+                          setEmailOrUsername(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, username: undefined }));
+                        }}
                         className="pl-9 sm:pl-9"
                         required
                         autoComplete="username"
                         autoCapitalize="none"
+                        aria-invalid={!!fieldErrors.username}
+                        aria-describedby="login-username-error"
                         disabled={isDisabled}
                       />
                     </div>
+                    {fieldErrors.username && (
+                      <p id="login-username-error" role="alert" className="text-sm text-fg-error-primary">
+                        {fieldErrors.username}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -206,10 +227,15 @@ const Login = () => {
                         spellCheck={false}
                         placeholder="Nhập mật khẩu của bạn"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                        }}
                         className="pr-12 pl-9 sm:pr-10 sm:pl-9"
                         required
                         autoComplete="current-password"
+                        aria-invalid={!!fieldErrors.password}
+                        aria-describedby="login-password-error"
                         disabled={isDisabled}
                       />
                       <button
@@ -221,6 +247,11 @@ const Login = () => {
                         {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
                       </button>
                     </div>
+                    {fieldErrors.password && (
+                      <p id="login-password-error" role="alert" className="text-sm text-fg-error-primary">
+                        {fieldErrors.password}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex justify-end pb-3 pt-3">

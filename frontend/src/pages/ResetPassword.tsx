@@ -28,6 +28,7 @@ const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
   const [matchError, setMatchError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const mutation = useConfirmPasswordReset();
@@ -55,6 +56,14 @@ const ResetPassword = () => {
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!token) return;
+      if (!newPassword || !confirmPassword) {
+        setFieldErrors({
+          newPassword: newPassword ? undefined : "Vui lòng nhập mật khẩu mới.",
+          confirmPassword: confirmPassword ? undefined : "Vui lòng xác nhận mật khẩu.",
+        });
+        return;
+      }
+      setFieldErrors({});
       if (newPassword !== confirmPassword) {
         setMatchError("Mật khẩu xác nhận không khớp.");
         return;
@@ -147,10 +156,15 @@ const ResetPassword = () => {
               type={showPassword ? "text" : "password"}
               placeholder="Nhập mật khẩu mới"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
+              }}
               className="pr-12 pl-9 sm:pr-10 sm:pl-9"
               required
               autoComplete="new-password"
+              aria-invalid={!!fieldErrors.newPassword}
+              aria-describedby="newPassword-error"
               disabled={mutation.isPending}
             />
             <button
@@ -162,6 +176,11 @@ const ResetPassword = () => {
               {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
             </button>
           </div>
+          {fieldErrors.newPassword && (
+            <p id="newPassword-error" role="alert" className="text-sm text-fg-error-primary">
+              {fieldErrors.newPassword}
+            </p>
+          )}
           {newPassword && <PasswordStrengthIndicator password={newPassword} />}
         </div>
 
@@ -174,13 +193,23 @@ const ResetPassword = () => {
               type={showPassword ? "text" : "password"}
               placeholder="Nhập lại mật khẩu mới"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+              }}
               className="pl-9 sm:pl-9"
               required
               autoComplete="new-password"
+              aria-invalid={!!fieldErrors.confirmPassword}
+              aria-describedby="confirmPassword-error"
               disabled={mutation.isPending}
             />
           </div>
+          {fieldErrors.confirmPassword && (
+            <p id="confirmPassword-error" role="alert" className="text-sm text-fg-error-primary">
+              {fieldErrors.confirmPassword}
+            </p>
+          )}
           {matchError && <p className="text-xs font-semibold text-fg-error-primary">{matchError}</p>}
         </div>
 

@@ -86,6 +86,34 @@ describe("Login page contract (W10)", () => {
     expect(mocks.mutateAsync).toHaveBeenCalledWith({ username: "frankng", password: "Admin123" });
   });
 
+  it("shows per-field hints and skips the API on empty submit", async () => {
+    render(<MemoryRouter><Login /></MemoryRouter>);
+
+    // Both fields empty: no request, per-field hints instead of the generic alert.
+    fireEvent.submit(document.querySelector("form")!);
+
+    expect(await screen.findByText("Vui lòng nhập tên đăng nhập.")).toBeInTheDocument();
+    expect(screen.getByText("Vui lòng nhập mật khẩu.")).toBeInTheDocument();
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+
+    // Typing into a field clears only that field's hint.
+    fireEvent.change(screen.getByPlaceholderText("CCCD, số điện thoại hoặc tên đăng nhập"), {
+      target: { value: "frankng" },
+    });
+    expect(screen.queryByText("Vui lòng nhập tên đăng nhập.")).not.toBeInTheDocument();
+    expect(screen.getByText("Vui lòng nhập mật khẩu.")).toBeInTheDocument();
+
+    // Once both fields are filled the submit reaches the mutation.
+    fireEvent.change(screen.getByPlaceholderText("Nhập mật khẩu của bạn"), {
+      target: { value: "Admin123" },
+    });
+    expect(screen.queryByText("Vui lòng nhập mật khẩu.")).not.toBeInTheDocument();
+    fireEvent.submit(document.querySelector("form")!);
+    await waitFor(() => {
+      expect(mocks.mutateAsync).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("renders the error alert when the mutation failed", () => {
     loginState.current = {
       isPending: false,
