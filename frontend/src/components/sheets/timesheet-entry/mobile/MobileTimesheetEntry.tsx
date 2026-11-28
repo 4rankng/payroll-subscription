@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { formatHours } from "@/utils/formatters";
 import {
   Select,
   SelectContent,
@@ -591,7 +592,7 @@ export function MobileTimesheetEntry({
                 <div className="flex items-center gap-2 shrink-0">
                   {totalHours > 0 && (
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {totalHours}h
+                      {formatHours(totalHours)}
                     </span>
                   )}
                   {earnings > 0 && (

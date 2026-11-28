@@ -4,7 +4,7 @@ import { Clock, Banknote, CheckCircle, XCircle, Eye, Star, Calendar as CalendarI
 import { Timesheet } from '@/types/api/timesheet.types';
 import { cn } from '@/lib/utils';
 import { getPaytypeText, formatDateWithWeekday } from '../utils/timesheetHelpers';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { getStatusColor, getStatusIcon, getStatusLabel } from '../utils/timesheetStatusHelpers';
 
 interface TimesheetEntryCardProps {
@@ -89,7 +89,7 @@ export function TimesheetEntryCard({
           <div className="col-span-2 flex items-center justify-center gap-1.5">
             <Clock className="w-4 h-4 text-muted-foreground" />
             <Badge variant="secondary" className="font-semibold text-green-700 bg-green-50">
-              {entry.hours_worked}h
+              {formatHours(entry.hours_worked)}
             </Badge>
           </div>
 
@@ -134,7 +134,7 @@ export function TimesheetEntryCard({
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 <Badge variant="secondary" className="typography-body-small font-semibold text-green-700 bg-green-50">
-                  {entry.hours_worked}h
+                  {formatHours(entry.hours_worked)}
                 </Badge>
               </div>
             </div>
@@ -306,7 +306,7 @@ export function TimesheetEntryCard({
             <p className="typography-label-medium text-muted-foreground">Ca làm việc</p>
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="typography-data font-semibold text-green-700">{entry.hours_worked}h</span>
+              <span className="typography-data font-semibold text-green-700">{formatHours(entry.hours_worked)}</span>
             </div>
           </div>
           <div className="space-y-1">

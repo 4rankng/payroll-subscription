@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatHours } from "@/utils/formatters";
 
 interface HoursWarningBadgeProps {
   totalHours: number;
@@ -29,7 +30,7 @@ export const HoursWarningBadge = memo(
           status === "excessive" ? "text-destructive" : "text-warning",
         )}
       >
-        {totalHours}h —{" "}
+        {formatHours(totalHours)} —{" "}
         {status === "excessive"
           ? "Vượt quá 16h, kiểm tra lại"
           : "Vượt quá 12h, chú ý tăng ca"}

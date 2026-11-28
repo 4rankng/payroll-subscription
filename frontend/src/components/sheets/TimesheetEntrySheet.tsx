@@ -6,8 +6,8 @@ import { X, AlertTriangle, ClipboardPenLine, Building2, UsersRound } from 'lucid
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronsUpDown, Check } from 'lucide-react';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/utils/formatters';
 import { NewTimesheetEntry } from '@/types/api/timesheet.types';
 import { useCreateTimesheets } from '@/hooks/api/useTimesheets';
 import { useTimesheetProjects } from '@/hooks/api/useProjects';
@@ -625,7 +625,7 @@ function TimesheetEntrySheetComponent({
                   <span className="font-semibold text-foreground">{footerSummary.employees}</span> nhân viên
                 </span>
                 <span>
-                  <span className="font-semibold text-foreground">{footerSummary.totalHours}h</span> tổng giờ
+                  <span className="font-semibold text-foreground">{formatHours(footerSummary.totalHours)}</span>
                 </span>
                 <span className="font-semibold text-success">{formatCurrency(footerSummary.totalPayout)}</span>
                 {(footerSummary.newFieldCount > 0 || footerSummary.editedFieldCount > 0 || footerSummary.deletedFieldCount > 0) && (

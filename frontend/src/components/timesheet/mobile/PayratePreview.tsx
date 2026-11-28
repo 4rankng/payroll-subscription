@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, Calculator } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 
 interface PayratePreviewProps {
   payrate: number;
@@ -46,7 +46,7 @@ export function PayratePreview({
                 <span className="typography-body-medium text-muted-foreground">Số giờ:</span>
               </div>
               <Badge variant="secondary" className="font-mono">
-                {hours}h
+                {formatHours(hours)}
               </Badge>
             </div>
 
@@ -68,7 +68,7 @@ export function PayratePreview({
           {/* Calculation formula */}
           <div className="bg-muted/30 rounded-xl p-3 mt-4">
             <p className="typography-body-small text-muted-foreground text-center font-mono">
-              {formatCurrency(payrate)} × {hours}h = {formatCurrency(amount)}
+              {formatCurrency(payrate)} × {formatHours(hours)} = {formatCurrency(amount)}
             </p>
           </div>
 

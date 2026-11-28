@@ -5,7 +5,7 @@ import { Plus, Clock, Banknote, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Timesheet } from '@/types/api/timesheet.types';
 import { getAggregatedStatus, type CalendarTimesheetEntry } from '../utils/timesheetCalendarHelpers';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import type { ProjectCalendarData } from '../utils/timesheetCalendarHelpers';
 
 interface MobileDayListViewProps {
@@ -95,7 +95,7 @@ export function MobileDayListView({
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{project.monthlyStats.totalHours}h</span>
+          <span className="font-semibold text-foreground">{formatHours(project.monthlyStats.totalHours)}</span>
           <span className="font-semibold text-foreground">{formatCurrency(project.monthlyStats.totalAmount)}</span>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function MobileDayListView({
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="text-xs font-semibold text-foreground">{totalHours}h</span>
+                      <span className="text-xs font-semibold text-foreground">{formatHours(totalHours)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Banknote className="h-3 w-3 text-muted-foreground shrink-0" />

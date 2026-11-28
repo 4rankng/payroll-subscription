@@ -6,6 +6,7 @@ import { AlertTriangle, ChevronDown } from 'lucide-react';
 import { EntryRow } from './EntryRow';
 import type { TimesheetEntry } from '../types/multi-timesheet.types';
 import type { Employee } from '@/types/api/employee.types';
+import { formatHours } from '@/utils/formatters';
 import { formatCurrency as formatVND } from '@/utils/formatters';
 import { calculateTimesheetPreviewAmount } from '@/components/timesheet/components/timesheet-pay-unit';
 
@@ -143,8 +144,7 @@ export const GroupedEntryCard = memo(({
             </div>
             <div className="w-px h-5 bg-border shrink-0" />
             <div className="text-right">
-              <div className="text-xs font-semibold text-foreground tabular-nums leading-none">{totalHours}h</div>
-              <div className="text-xs text-muted-foreground leading-none mt-0.5">giờ</div>
+              <div className="text-xs font-semibold text-foreground tabular-nums leading-none">{formatHours(totalHours)}</div>
             </div>
           </div>
           <ChevronDown className={cn(

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, X, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 
 interface TimesheetSummary {
   totalEmployees: number;
@@ -47,7 +47,7 @@ export function MobileTimesheetSummary({
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="typography-body-medium text-foreground">
-            Tổng giờ: {summary.totalHours.toFixed(1)}h
+            Tổng giờ: {formatHours(summary.totalHours)}
           </span>
           <span className="typography-body-medium text-muted-foreground">
             {summary.entriesCompleted}/{summary.totalEmployees} nhân viên

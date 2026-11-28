@@ -13,7 +13,7 @@ import {
   CalendarDay,
   type CalendarTimesheetEntry
 } from './utils/timesheetCalendarHelpers';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { CalendarDayCell } from './components/CalendarDayCell';
 import { MobileDayListView } from './components/MobileDayListView';
 import { TimesheetEntryModal } from './components/TimesheetEntryModal';
@@ -430,7 +430,7 @@ function ProjectCalendar({ project, year, month, onDayClick, onEntryClick, bulkT
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-xs">
               <Clock className="w-3 h-3 mr-1" />
-              {project.monthlyStats.totalHours}h
+              {formatHours(project.monthlyStats.totalHours)}
             </Badge>
             <Badge variant="secondary" className="text-xs">
               <HandCoins className="w-3 h-3 mr-1" />

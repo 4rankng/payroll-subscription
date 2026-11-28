@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Timer, Plus, Minus, AlertTriangle } from 'lucide-react';
+import { formatHours } from '@/utils/formatters';
 
 interface HoursWorkedInputProps {
   hours: number;
@@ -131,10 +132,10 @@ export function HoursWorkedInput({
         <div className="bg-muted/50 rounded-xl p-3">
           <div className="flex items-center justify-between typography-body-small">
             <span className="text-muted-foreground">
-              {hours <= 8 ? 'Giờ hành chính' : `Giờ hành chính: 8h, Làm thêm: ${hours - 8}h`}
+              {hours <= 8 ? 'Giờ hành chính' : `Giờ hành chính: ${formatHours(8)}, Làm thêm: ${formatHours(hours - 8)}`}
             </span>
             <Badge variant={isOvertime ? "warning" : "secondary"} className="typography-body-small">
-              {hours}h
+              {formatHours(hours)}
             </Badge>
           </div>
         </div>

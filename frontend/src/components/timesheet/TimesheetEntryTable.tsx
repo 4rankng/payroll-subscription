@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatHours } from '@/utils/formatters';
 import { DataTable } from '@/components/ui/data-table';
 import { AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -382,7 +383,7 @@ export function TimesheetEntryTable({
                     "typography-body-small",
                     getHourStatusColor(hourStatus)
                   )}>
-                    Tổng: {totalHours.toFixed(1)}h
+                    Tổng: {formatHours(totalHours)}
                   </span>
                 )}
                 {!isValidPosition && (

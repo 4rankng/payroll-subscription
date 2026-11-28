@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { TimesheetEntry } from '../types/multi-timesheet.types';
 import { findPreferredDayType } from '@/utils/vietnamese';
 import { handleNumericInputKeyDown } from '@/utils/numericInput';
+import { formatHours } from '@/utils/formatters';
 import { hasEntryChangedFromOriginal } from '../hooks/utils/entryChange';
 import { formatCurrency as formatVND } from '@/utils/formatters';
 
@@ -393,7 +394,7 @@ export const EntryRow = memo(({
                     hourStatus === 'excessive' ? 'bg-destructive/15 text-destructive' : 'bg-warning/15 text-warning'
                   )}>
                     <AlertTriangle className="h-2 w-2" />
-                    {totalHours}h
+                    {formatHours(totalHours)}
                   </span>
                 )}
               </div>

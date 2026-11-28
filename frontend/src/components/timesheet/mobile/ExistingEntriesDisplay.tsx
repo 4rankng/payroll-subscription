@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Edit, Trash2, CheckCircle, AlertCircle, XCircle, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 interface TimesheetEntry {
@@ -207,7 +207,7 @@ export function ExistingEntriesDisplay({
                 {formatCurrency(existingTimesheets.reduce((sum, entry) => sum + entry.amount, 0))}
               </p>
               <p className="typography-body-small text-muted-foreground">
-                {existingTimesheets.reduce((sum, entry) => sum + entry.hours_worked, 0).toFixed(1)}h
+                {formatHours(existingTimesheets.reduce((sum, entry) => sum + entry.hours_worked, 0))}
               </p>
             </div>
           </div>

@@ -39,7 +39,7 @@ import {
   formatDateWithWeekday,
   getVietnameseWeekdayInfo
 } from './utils/timesheetHelpers';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { createGroupBulkApprovalContent } from '@/utils/timesheetBulkHelpers';
 import { cn } from '@/lib/utils';
 
@@ -243,7 +243,7 @@ export function TimesheetGroupedTable({
                     <div className="flex items-center justify-center gap-1.5">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <Badge variant="secondary" className="typography-data font-bold text-green-700 bg-green-50 px-3">
-                        {group.totalHours}h
+                        {formatHours(group.totalHours)}
                       </Badge>
                     </div>
                     <p className="typography-body-small text-muted-foreground mt-1">
@@ -362,7 +362,7 @@ export function TimesheetGroupedTable({
                             <span className="typography-label-small text-green-700">Ca làm việc</span>
                           </div>
                           <p className="typography-title-medium font-bold text-green-800">
-                            {group.totalHours}h
+                            {formatHours(group.totalHours)}
                           </p>
                         </div>
 

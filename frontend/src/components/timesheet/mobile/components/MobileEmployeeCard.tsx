@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/formatters';
 import { MobileHourEntry } from './MobileHourEntry';
 import { DEFAULT_POSITIONS } from '@/types/api/payrate.types';
+import { formatHours } from '@/utils/formatters';
 import { getPositionBadgeStyle, getItemIndex } from '@/utils/badge-styles';
 
 interface Employee {
@@ -123,7 +124,7 @@ export function MobileEmployeeCard({
                   hourStatus === 'exceeded' ? "text-orange-700" :
                   "text-foreground"
                 )}>
-                  {totalHours.toFixed(1)}h
+                  {formatHours(totalHours)}
                 </div>
                 {totalAmount > 0 && (
                   <div className="typography-body-small text-muted-foreground">

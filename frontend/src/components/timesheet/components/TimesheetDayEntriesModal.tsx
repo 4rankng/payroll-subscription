@@ -4,7 +4,7 @@ import { Calendar, Clock, Banknote } from 'lucide-react';
 import { Timesheet } from '@/types/api/timesheet.types';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatHours } from '@/utils/formatters';
 import { TimesheetEntryCard } from './TimesheetEntryCard';
 
 interface TimesheetDayEntriesModalProps {
@@ -74,7 +74,7 @@ export function TimesheetDayEntriesModal({
                 <div>
                   <p className="typography-body-small text-muted-foreground">Ca làm việc</p>
                   <Badge variant="secondary" className="typography-data font-bold text-green-700 bg-green-100 mt-0.5">
-                    {entries.reduce((sum, e) => sum + e.hours_worked, 0)}h
+                    {formatHours(entries.reduce((sum, e) => sum + e.hours_worked, 0))}
                   </Badge>
                 </div>
               </div>
