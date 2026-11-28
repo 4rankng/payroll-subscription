@@ -662,6 +662,7 @@ const EmployeesPage = () => {
             sorting={sorting}
             onSortingChange={onSortingChange}
             variant="console"
+            embedded
             emptyState={
               <EmptyState
                 title="Không có nhân viên nào"

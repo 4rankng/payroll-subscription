@@ -310,11 +310,6 @@ const ProjectsPage = () => {
       {/* ── UNIFIED TOOLBAR ── */}
       <div className="rounded-xl border border-input bg-card p-3 shadow-xs">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="hidden items-center gap-2 border-r border-border pr-3 lg:flex">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary"><FilterFunnel02 className="h-4 w-4" aria-hidden="true" /></div>
-            <span className="text-xs font-semibold text-muted-foreground">Lọc danh sách</span>
-          </div>
-
           {/* Status filter (single-select, matches D3's FilterPill pattern) */}
           <FilterPill
             value={statusFilter}
