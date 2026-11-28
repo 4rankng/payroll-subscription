@@ -1,16 +1,12 @@
 import { useMemo } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RotateCw, Upload } from 'lucide-react';
 import { formatDateVn, formatDateTimeVn, formatFullCurrency } from '@/utils/formatters';
 import type { ColumnDef, SortingState, OnChangeFn } from '@tanstack/react-table';
 import type { PaymentHistory } from '@/types/api/payroll.types';
-
-/** Every row in this ledger passed transfer-upload verification. */
-const RECONCILED_LABEL = 'Đã đối chiếu';
 
 interface PaymentHistoryTableProps {
   data: PaymentHistory[];
@@ -155,17 +151,6 @@ export function PaymentHistoryTable({
         <span className="whitespace-nowrap font-semibold tabular-nums text-emerald-700">
           {formatFullCurrency(row.original.total_paid_amount)}
         </span>
-      ),
-    },
-    {
-      id: 'status',
-      header: 'Trạng thái',
-      enableSorting: false,
-      size: 110,
-      cell: () => (
-        <Badge variant="success" className="text-[11px] font-semibold leading-[1.35]">
-          {RECONCILED_LABEL}
-        </Badge>
       ),
     },
   ], []);

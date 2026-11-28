@@ -202,14 +202,15 @@ export const formatDateVn = (date: string | Date | null | undefined): string => 
   return vnDateFormatter.format(dateObj);
 };
 
-/** Canonical transfer timestamp in Asia/Ho_Chi_Minh: → "DD/MM/YYYY HH:mm (+07)". Invalid input → "—". */
+/** Canonical transfer timestamp in Asia/Ho_Chi_Minh: → "DD/MM/YYYY HH:mm".
+ *  No offset suffix — every surface in the app renders Vietnam time. */
 export const formatDateTimeVn = (date: string | Date | null | undefined): string => {
   const dateObj = date instanceof Date ? date : date ? new Date(date) : null;
   if (!dateObj || Number.isNaN(dateObj.getTime())) return '—';
   const time = vnHourMinuteFormatter.format(dateObj);
   // "2-digit" h23 can render "24:xx" near midnight in some engines.
   const normalized = time.startsWith('24') ? `00${time.slice(2)}` : time;
-  return `${vnDateFormatter.format(dateObj)} ${normalized} (+07)`;
+  return `${vnDateFormatter.format(dateObj)} ${normalized}`;
 };
 
 export const formatNumber = (value: number, decimals = 1) => {

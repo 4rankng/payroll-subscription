@@ -1,13 +1,9 @@
 import { EmptyState } from '@/components/shared/EmptyState';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RotateCw, Upload } from 'lucide-react';
 import { formatDateVn, formatDateTimeVn, formatFullCurrency } from '@/utils/formatters';
 import type { PaymentHistory } from '@/types/api/payroll.types';
-
-/** Every row in this ledger passed transfer-upload verification. */
-const RECONCILED_LABEL = 'Đã đối chiếu';
 
 // Dense ledger rows (UU bridge tokens): identity + amount on the first line,
 // metadata on the second — no cards, no icon chips, no wasted vertical space.
@@ -139,12 +135,6 @@ export function PaymentHistoryMobileList({
                   {payment.transfer_note}
                 </span>
               )}
-              <Badge
-                variant="success"
-                className="ml-auto shrink-0 text-[11px] font-semibold leading-[1.35]"
-              >
-                {RECONCILED_LABEL}
-              </Badge>
             </p>
           )}
         </div>
