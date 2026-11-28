@@ -71,6 +71,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     initializeAuth();
 
+    // Self-heal the cached profile: the sidebars render the localStorage
+    // name, so a stale or corrupted cache (user.name mojibake) must be
+    // refreshed from /auth/me on load. Silent: 401 goes through the global
+    // interceptor, other failures keep the cached state.
+    if (authManager.hasSession()) {
+      authService.syncProfile().then((fresh) => {
+        if (fresh) initializeAuth();
+      });
+    }
+
     // One-time migration (PAYR-37B): a session created by the pre-cookie
     // bundle still holds a legacy localStorage token. Exchange it for the
     // HttpOnly cookie via /auth/me, then re-evaluate the auth state. On any

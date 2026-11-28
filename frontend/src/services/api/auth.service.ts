@@ -106,6 +106,23 @@ class AuthService {
   }
 
   /**
+   * Re-sync the localStorage-cached profile with the server via /auth/me.
+   * AuthContext hydrates display data from localStorage, so a stale or
+   * corrupted cache would render forever without this refresh. Returns null
+   * on failure: 401 is handled by the global interceptor, transient errors
+   * keep the cached state.
+   */
+  async syncProfile(): Promise<User | null> {
+    try {
+      const user = await this.getCurrentUser();
+      storeUserProfile(user);
+      return user;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Change user password
    */
   async changePassword(data: ChangePasswordData | ChangePasswordRequest): Promise<ApiResponse<void>> {
