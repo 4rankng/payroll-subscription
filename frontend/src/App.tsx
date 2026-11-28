@@ -119,6 +119,41 @@ const PaymentHistoryShell = () => {
   return role === "admin" ? <AdminLayout /> : <PartnerLayout roles={["quanly", "ketoan", "giamdoc"]} />;
 };
 
+// Canonical /projects + /employees + /ledger surfaces: one URL, the shell and
+// the page follow the signed-in role — admin keeps the console chrome, partner
+// roles keep the partner nav.
+const ProjectsShell = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout />;
+};
+const EmployeesShell = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout />;
+};
+// PRD §5.8: Sổ cái — admin/ketoan/giamdoc only; PartnerLayout's roles prop
+// blocks quanly, AdminLayout blocks everyone but admin.
+const LedgerShell = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? <AdminLayout /> : <PartnerLayout roles={["ketoan", "giamdoc"]} />;
+};
+
+const ProjectsPageRouter = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? (
+    <ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />
+  ) : (
+    <ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />
+  );
+};
+const EmployeesPageRouter = () => {
+  const role = authManager.getUserRole();
+  return role === "admin" ? (
+    <ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />
+  ) : (
+    <ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />
+  );
+};
+
 const DashboardRoleRouter = () => {
   const role = authManager.getUserRole();
   if (role === "quanly") {
@@ -194,22 +229,17 @@ initInvalidationService(queryClient);
 setupQueryPersistence(queryClient);
 
 // Component that uses location hook inside Router context
-/** Legacy /partner|/admin users bookmarks → canonical /users, query kept. */
-const UsersRedirect = () => {
-  const search = useLocation().search;
-  return <Navigate replace to={{ pathname: "/users", search }} />;
+/** Legacy /admin|/partner bookmarks → canonical URL, query kept. */
+const LEGACY_PREFIX_TARGETS: Record<string, string> = {
+  "/": "/dashboard",
+  "/overview": "/dashboard",
+  "/timesheets": "/timesheet",
 };
-
-/** Legacy /partner|/admin payment-history bookmarks → canonical URL, query kept. */
-const PaymentHistoryRedirect = () => {
-  const search = useLocation().search;
-  return <Navigate replace to={{ pathname: "/payment-history", search }} />;
-};
-
-/** Legacy /admin|/partner timesheet bookmarks → canonical URL, query kept. */
-const TimesheetRedirect = () => {
-  const search = useLocation().search;
-  return <Navigate replace to={{ pathname: "/timesheet", search }} />;
+const LegacyPrefixRedirect = () => {
+  const { pathname, search } = useLocation();
+  const rest = pathname.replace(/^\/(admin|partner)/, "") || "/";
+  const target = LEGACY_PREFIX_TARGETS[rest] ?? rest;
+  return <Navigate to={`${target}${search}`} replace />;
 };
 
 /** /timesheet shell follows the signed-in role — admin keeps the
@@ -295,41 +325,39 @@ const AppContent = () => {
           <Route index element={<DashboardRoleRouter />} />
         </Route>
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-          {/* PRD §5.1: the old financial admin dashboard is replaced by the fee-insights overview. */}
-          <Route index element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
-          <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
-          <Route path="projects" element={<ResponsivePage desktopComponent={ProjectsPage} mobileComponent={ProjectsPageMobile} />} />
-          <Route path="employees" element={<ResponsivePage desktopComponent={EmployeesPage} mobileComponent={EmployeesPageMobile} />} />
-          {/* Bảng công moved to the canonical /timesheet route below. */}
-          <Route path="settings" element={<ResponsivePage desktopComponent={SettingsPage} mobileComponent={SettingsPageMobile} />} />
-          <Route path="audit-log" element={<ResponsivePage desktopComponent={AuditLogPage} mobileComponent={AuditLogPageMobile} />} />
-          <Route path="email" element={<EmailPage />} />
-          <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
-          <Route path="*" element={<NotFound />} />
+        {/* Canonical role-split surfaces — one URL, content by role. */}
+        <Route path="/projects" element={<ProjectsShell />}>
+          <Route index element={<ProjectsPageRouter />} />
+          <Route path=":projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
         </Route>
-
-        {/* Partner Routes — quanly operates; giamdoc + ketoan read and export reports (D28) */}
-        <Route path="/partner" element={<ProtectedRoute requiredRole={["quanly", "ketoan", "giamdoc"]}><PartnerLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Navigate to="/dashboard" replace />} />
-          {/* PRD §5.1: fee-insights overview — ketoan/giamdoc landing (PRD §4). */}
-          <Route path="overview" element={<ResponsivePage desktopComponent={FeeInsightsPage} mobileComponent={FeeInsightsPageMobile} />} />
-          <Route path="projects" element={<ResponsivePage desktopComponent={PartnerProjectsPage} mobileComponent={PartnerProjectsPageMobile} />} />
-          <Route path="employees" element={<ResponsivePage desktopComponent={PartnerEmployeesPage} mobileComponent={PartnerEmployeesPageMobile} />} />
-          {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (ketoan/giamdoc). */}
-          <Route path="ledger" element={<ProtectedRoute requiredRole={["ketoan", "giamdoc"]}><ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} /></ProtectedRoute>} />
-          <Route path="projects/:projectId/payrates/:payrateId/edit" element={<ResponsivePage desktopComponent={PayrateEditPage} mobileComponent={PayrateEditPageMobile} />} />
+        <Route path="/employees" element={<EmployeesShell />}>
+          <Route index element={<EmployeesPageRouter />} />
         </Route>
+        {/* PRD §5.8: Sổ cái — company transfer ledger + sao kê (admin/ketoan/giamdoc). */}
+        <Route path="/ledger" element={<LedgerShell />}>
+          <Route index element={<ResponsivePage desktopComponent={PartnerLedgerPage} mobileComponent={PartnerLedgerPageMobile} />} />
+        </Route>
+        <Route path="/settings" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<ResponsivePage desktopComponent={SettingsPage} mobileComponent={SettingsPageMobile} />} />
+        </Route>
+        <Route path="/audit-log" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<ResponsivePage desktopComponent={AuditLogPage} mobileComponent={AuditLogPageMobile} />} />
+        </Route>
+        <Route path="/email" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<EmailPage />} />
+        </Route>
+        {/* Old fee-insights URL — same page lives on /dashboard for these roles. */}
+        <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
+        {/* Legacy /admin|/partner bookmarks → canonical, query kept. */}
+        <Route path="/admin/*" element={<LegacyPrefixRedirect />} />
+        <Route path="/partner/*" element={<LegacyPrefixRedirect />} />
 
         {/* PRD §5.3 (owner call): one canonical /users directory — admin +
-            giamdoc full control; /admin/users + /partner/users redirect. */}
+            giamdoc full control. Legacy /admin/users + /partner/users
+            bookmarks redirect via the /admin|/partner catch-alls above. */}
         <Route path="/users" element={<UsersShell />}>
           <Route index element={<ResponsivePage desktopComponent={UsersPage} mobileComponent={UsersPageMobile} />} />
         </Route>
-        <Route path="/admin/users" element={<UsersRedirect />} />
-        <Route path="/partner/users" element={<UsersRedirect />} />
 
         {/* PRD §5.7: Lịch sử trả lương — payment history under one canonical
             URL shared by quanly/ketoan/giamdoc/admin. Admin crosses into the
@@ -337,9 +365,6 @@ const AppContent = () => {
         <Route path="/payment-history" element={<PaymentHistoryShell />}>
           <Route index element={<ResponsivePage desktopComponent={PartnerPaymentHistoryPage} mobileComponent={PartnerPaymentHistoryPageMobile} />} />
         </Route>
-        {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
-        <Route path="/partner/payment-history" element={<PaymentHistoryRedirect />} />
-        <Route path="/admin/payment-history" element={<PaymentHistoryRedirect />} />
 
         {/* Bảng công — one canonical /timesheet shared by admin +
             partner roles. The shell follows the signed-in role (see
@@ -347,10 +372,6 @@ const AppContent = () => {
         <Route path="/timesheet" element={<TimesheetShell />}>
           <Route index element={<ResponsivePage desktopComponent={TimesheetPage} mobileComponent={TimesheetPageMobile} />} />
         </Route>
-        {/* Legacy bookmarks redirect to the canonical URL, query preserved. */}
-        <Route path="/admin/timesheet" element={<TimesheetRedirect />} />
-        <Route path="/admin/timesheets" element={<TimesheetRedirect />} />
-        <Route path="/partner/timesheet" element={<TimesheetRedirect />} />
 
         {/* Employee Routes */}
         <Route path="/employee" element={<ProtectedRoute requiredRole="nhanvien"><EmployeeRouter /></ProtectedRoute>} />

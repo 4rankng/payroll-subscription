@@ -88,7 +88,7 @@ describe("Admin mobile pagination", () => {
 describe.each([["desktop", AdminProjectsPage], ["mobile", AdminProjectsPageMobile]] as const)("Admin %s dashboard filter", (_label, Component) => {
   it("applies the URL status once without a render loop and allows clearing it", () => {
     mocks.useProjects.mockReturnValue(queryResult({ data: { data: [], pagination: { page: 1, pageSize: 20, totalPages: 0, totalRecords: 0 } } }));
-    renderPage(Component, "/admin/projects?status=active");
+    renderPage(Component, "/projects?status=active");
     expect(mocks.useProjects).toHaveBeenLastCalledWith(expect.objectContaining({ status: ["active"] }));
     expect(mocks.useProjects.mock.calls.length).toBeLessThan(10);
     fireEvent.click(screen.getByRole("button", { name: "Xóa bộ lọc" }));

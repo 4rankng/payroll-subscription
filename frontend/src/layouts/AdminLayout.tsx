@@ -8,6 +8,7 @@ import { SectionErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/contexts";
 import { useIsMobile, useIsTablet } from "@/hooks/useBreakpoint";
 import {
+  BookOpen01,
   Briefcase01,
   Clipboard,
   Clock,
@@ -19,16 +20,17 @@ import {
 import type { NavGroup, NavLeaf } from "@/components/MobileBottomNav";
 
 const ADMIN_NAV_GROUPS: NavGroup[] = [
-  { title: "Tổng quan", icon: Home01, path: "/admin", end: true },
+  { title: "Tổng quan", icon: Home01, path: "/dashboard", end: true },
   { title: "Lương tuần", icon: Clock, path: "/timesheet" },
 ];
 
 export const ADMIN_MORE_ITEMS: NavLeaf[] = [
-  { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log" },
+  { title: "Nhật ký", icon: Clipboard, path: "/audit-log" },
   { title: "Người dùng", icon: UserEdit, path: "/users" },
-  { title: "Dự án", icon: Briefcase01, path: "/admin/projects" },
-  { title: "Nhân viên", icon: Users01, path: "/admin/employees" },
-  { title: "Cài đặt", icon: Settings01, path: "/admin/settings" },
+  { title: "Sổ cái", icon: BookOpen01, path: "/ledger" },
+  { title: "Dự án", icon: Briefcase01, path: "/projects" },
+  { title: "Nhân viên", icon: Users01, path: "/employees" },
+  { title: "Cài đặt", icon: Settings01, path: "/settings" },
 ];
 
 const AdminLayoutInner = () => {

@@ -31,17 +31,17 @@ interface RouteSpec {
 
 const ROUTES: RouteSpec[] = [
   // Admin — one per template
-  { path: '/admin', role: 'admin', template: 'dashboard' },
-  { path: '/admin/users', role: 'admin', template: 'list' },
-  { path: '/admin/employees', role: 'admin', template: 'list' },
+  { path: '/dashboard', role: 'admin', template: 'dashboard' },
+  { path: '/users', role: 'admin', template: 'list' },
+  { path: '/employees', role: 'admin', template: 'list' },
   { path: '/timesheet', role: 'admin', template: 'list' },
-  { path: '/admin/ledger', role: 'admin', template: 'list' },
-  { path: '/admin/settings', role: 'admin', template: 'settings' },
-  { path: '/admin/wallet', role: 'admin', template: 'list' },
+  { path: '/ledger', role: 'admin', template: 'list' },
+  { path: '/settings', role: 'admin', template: 'settings' },
+  { path: '/wallet', role: 'admin', template: 'list' },
   // Partner — one per template
-  { path: '/partner/dashboard', role: 'partner', template: 'dashboard' },
-  { path: '/partner/projects', role: 'partner', template: 'list' },
-  { path: '/partner/employees', role: 'partner', template: 'list' },
+  { path: '/dashboard', role: 'partner', template: 'dashboard' },
+  { path: '/projects', role: 'partner', template: 'list' },
+  { path: '/employees', role: 'partner', template: 'list' },
   { path: '/timesheet', role: 'partner', template: 'list' },
 ];
 

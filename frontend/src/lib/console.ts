@@ -10,18 +10,17 @@ export type ConsoleKicker = '' | 'NHÂN SỰ' | 'TÀI CHÍNH';
 const DEFAULT_KICKER: ConsoleKicker = '';
 
 /** Longest-prefix routes first is not required — prefixes are disjoint, but
- *  matching is segment-exact (`/admin/users` never captures
- *  `/admin/users-archive`). Dead prefixes removed; entries cover
+ *  matching is segment-exact (`/users` never captures
+ *  `/users-archive`). Dead prefixes removed; entries cover
  *  mounted routes only. */
 const ROUTE_KICKERS: ReadonlyArray<{ prefix: string; kicker: ConsoleKicker }> = [
   // NHÂN SỰ — people records and accounts.
   { prefix: '/users', kicker: 'NHÂN SỰ' },
-  { prefix: '/admin/employees', kicker: 'NHÂN SỰ' },
-  { prefix: '/partner/employees', kicker: 'NHÂN SỰ' },
+  { prefix: '/employees', kicker: 'NHÂN SỰ' },
 
   // TÀI CHÍNH — money movement.
   { prefix: '/payment-history', kicker: 'TÀI CHÍNH' },
-  { prefix: '/partner/ledger', kicker: 'TÀI CHÍNH' },
+  { prefix: '/ledger', kicker: 'TÀI CHÍNH' },
 ];
 
 export const getConsoleKicker = (pathname: string): ConsoleKicker => {

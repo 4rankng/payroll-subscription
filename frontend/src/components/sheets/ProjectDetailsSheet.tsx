@@ -254,9 +254,9 @@ function ProjectDetailsSheet({
 
   const handleEditPayrate = useCallback((payrateId: number) => {
     if (!project) return;
-    const basePath = userRole === 'quanly' ? '/partner' : '/admin';
-    navigate(`${basePath}/projects/${project.id}/payrates/${payrateId}/edit`);
-  }, [navigate, project, userRole]);
+    const basePath = "/projects";
+    navigate(`${basePath}/${project.id}/payrates/${payrateId}/edit`);
+  }, [navigate, project]);
 
   const handleCompleteCancel = () => {
     setIsCompleteModalOpen(false);

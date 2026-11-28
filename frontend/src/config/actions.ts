@@ -34,7 +34,7 @@ export const allActions: Action[] = [
     label: 'Bảng điều khiển',
     description: 'Xem tổng quan hệ thống',
     icon: FolderOpen,
-    href: '/admin',
+    href: '/dashboard',
     category: 'navigation',
     permissions: ['admin']
   },
@@ -43,7 +43,7 @@ export const allActions: Action[] = [
     label: 'Bảng điều khiển',
     description: 'Xem tổng quan dự án',
     icon: FolderOpen,
-    href: '/partner/projects',
+    href: '/projects',
     category: 'navigation',
     permissions: ['quanly']
   },
@@ -61,7 +61,7 @@ export const allActions: Action[] = [
     label: 'Dự án',
     description: 'Xem và Dự án',
     icon: FolderOpen,
-    href: '/admin/projects',
+    href: '/projects',
     category: 'navigation',
     permissions: ['admin']
   },
@@ -70,7 +70,7 @@ export const allActions: Action[] = [
     label: 'Nhân viên',
     description: 'Quản lý thông tin nhân viên',
     icon: UserCheck,
-    href: '/admin/employees',
+    href: '/employees',
     category: 'navigation',
     permissions: ['admin']
   },
@@ -79,7 +79,7 @@ export const allActions: Action[] = [
     label: 'Nhân viên',
     description: 'Nhân viên dự án',
     icon: UserCheck,
-    href: '/partner/employees',
+    href: '/employees',
     category: 'navigation',
     permissions: ['quanly']
   },
@@ -117,7 +117,7 @@ export const allActions: Action[] = [
     label: 'Tạo dự án',
     description: 'Thêm dự án mới',
     icon: FolderPlus,
-    href: '/admin/projects?modal=project_create',
+    href: '/projects?modal=project_create',
     category: 'creation',
     permissions: ['admin'],
   },
@@ -126,7 +126,7 @@ export const allActions: Action[] = [
     label: 'Thêm nhân viên',
     description: 'Thêm nhân viên mới',
     icon: Users,
-    href: '/admin/employees?modal=add_employee',
+    href: '/employees?modal=add_employee',
     category: 'creation',
     permissions: ['admin', 'quanly'],
   },

@@ -30,14 +30,14 @@ export const PARTNER_NAV_ITEMS: PartnerNavItem[] = [
   { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["quanly"] },
   { title: "Tổng quan", icon: Grid01, path: "/dashboard", end: true, roles: ["ketoan", "giamdoc"] },
   { title: "Người dùng", icon: Users01, path: "/users", end: true, roles: ["giamdoc"] },
-  { title: "Dự án", icon: Briefcase01, path: "/partner/projects", roles: ALL_STAFF },
-  { title: "Nhân viên", icon: Users01, path: "/partner/employees", roles: ALL_STAFF },
+  { title: "Dự án", icon: Briefcase01, path: "/projects", roles: ALL_STAFF },
+  { title: "Nhân viên", icon: Users01, path: "/employees", roles: ALL_STAFF },
   { title: "Bảng công", icon: Calendar, path: "/timesheet", end: true, roles: ALL_STAFF },
   // Rebuilt payroll payment history; canonical
   // /payment-history shared by all staff roles plus admin.
   { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", roles: ["quanly", "ketoan", "giamdoc", "admin"] },
   // Company transfer ledger + sao kê export/email.
-  { title: "Sổ cái", icon: BookOpen01, path: "/partner/ledger", end: true, roles: ["ketoan", "giamdoc"] },
+  { title: "Sổ cái", icon: BookOpen01, path: "/ledger", end: true, roles: ["ketoan", "giamdoc"] },
 ];
 
 export const partnerNavItems = (role?: string): PartnerNavItem[] =>

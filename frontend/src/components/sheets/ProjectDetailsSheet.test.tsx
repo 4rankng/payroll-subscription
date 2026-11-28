@@ -177,10 +177,10 @@ describe("ProjectDetailsSheet", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Trigger payrate edit" }));
 
-    expect(navigateMock).toHaveBeenCalledWith("/admin/projects/58/payrates/91/edit");
+    expect(navigateMock).toHaveBeenCalledWith("/projects/58/payrates/91/edit");
   });
 
-  it("navigates partners to the partner payrate editor", () => {
+  it("navigates partners to the payrate editor", () => {
     currentRole = "quanly";
 
     render(
@@ -193,7 +193,7 @@ describe("ProjectDetailsSheet", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Trigger payrate edit" }));
 
-    expect(navigateMock).toHaveBeenCalledWith("/partner/projects/58/payrates/91/edit");
+    expect(navigateMock).toHaveBeenCalledWith("/projects/58/payrates/91/edit");
   });
 
   it("shows the Phân quyền tab to a partner who holds a project grant", () => {

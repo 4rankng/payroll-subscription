@@ -13,7 +13,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
     ...actual,
     useNavigate: () => mocks.navigate,
     // Console kicker reads the pathname; the page renders without a Router here.
-    useLocation: () => ({ pathname: "/partner/employees", search: "", hash: "", state: null, key: "default" }),
+    useLocation: () => ({ pathname: "/employees", search: "", hash: "", state: null, key: "default" }),
   };
 });
 

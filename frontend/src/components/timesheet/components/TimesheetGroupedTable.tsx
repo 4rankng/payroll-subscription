@@ -510,7 +510,7 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
               className="cursor-pointer hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/partner/projects/${entry.project_id}/payrates/new/edit`);
+                navigate(`/projects/${entry.project_id}/payrates/new/edit`);
               }}
             >
               ⚠ chưa có

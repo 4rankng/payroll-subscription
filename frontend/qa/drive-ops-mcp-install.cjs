@@ -53,11 +53,11 @@ function dbScalar(sql) {
     await page.fill('#emailOrUsername', 'frankng');
     await page.fill('#password', 'Admin123');
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/admin/, { timeout: 20000 });
+    await page.waitForURL(/\/dashboard/, { timeout: 20000 });
     log(`login ok -> ${page.url()}`);
 
     // ── open Settings → API tab ──────────────────────────────────────────
-    await page.goto('http://localhost:3000/admin/settings?tab=api', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/settings?tab=api', { waitUntil: 'networkidle' });
     await page.waitForSelector('#ops-mcp-install', { timeout: 15000 });
     log('settings API tab loaded, ops section present');
 
@@ -139,7 +139,7 @@ function dbScalar(sql) {
 
     // ── 6. mobile 390px: section usable, no horizontal overflow ──────────
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://localhost:3000/admin/settings?tab=api', { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:3000/settings?tab=api', { waitUntil: 'networkidle' });
     await page.waitForSelector('#ops-mcp-install', { timeout: 15000 });
     assert('install guide visible at 390px', await page.locator('#ops-mcp-install-title').isVisible());
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

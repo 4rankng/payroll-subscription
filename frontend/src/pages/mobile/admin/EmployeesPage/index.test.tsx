@@ -75,11 +75,11 @@ describe("EmployeesPageMobile deep links", () => {
   it("opens the add modal and still applies a status filter from one URL", async () => {
     const { getByTestId } = render(
       <MemoryRouter
-        initialEntries={["/admin/employees?action=add&status=working"]}
+        initialEntries={["/employees?action=add&status=working"]}
       >
         <Routes>
           <Route
-            path="/admin/employees"
+            path="/employees"
             element={
               <>
                 <EmployeesPageMobile />

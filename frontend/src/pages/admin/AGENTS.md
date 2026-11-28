@@ -106,7 +106,7 @@ Page-level route components for the Admin role. Admins have full access to all f
 ### Working In This Directory
 
 - Pages are composition layers — do not add business logic here.
-- Each page corresponds to a route in `App.tsx` under `/admin/*`.
+- Each page corresponds to a route in `App.tsx` (canonical, unprefixed — e.g. `/projects`, `/employees`, `/settings`).
 - Pages import components from `../../components/` and hooks from `../../hooks/`.
 - Admin pages are wrapped with `ProtectedRoute` checking for admin role.
 

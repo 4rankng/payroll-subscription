@@ -50,14 +50,14 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
       id: 'create-project',
       label: 'Tạo dự án',
       icon: () => <IconImage src="/icons/add-project.png" alt="Add project" />,
-      href: '/admin/projects?modal=project_create',
+      href: '/projects?modal=project_create',
       permissions: ['admin', 'quanly'],
     },
     {
       id: 'create-employee',
       label: 'Thêm nhân viên',
       icon: () => <IconImage src="/icons/add-worker.png" alt="Add employee" />,
-      href: '/admin/employees?modal=add_employee',
+      href: '/employees?modal=add_employee',
       permissions: ['admin', 'quanly'],
     },
     {
@@ -78,19 +78,7 @@ export const QuickActions = ({ className }: QuickActionsProps) => {
 
     // Handle navigation actions
     if (action.href) {
-      let targetHref = action.href;
-
-      if (user.role === 'quanly') {
-        // Update URLs for partner role with same modals
-        if (action.id === 'create-project') {
-          targetHref = '/partner/projects?modal=project_create';
-        } else if (action.id === 'create-employee') {
-          targetHref = '/partner/employees?modal=add_employee';
-        }
-        // create-timesheet needs no role branch: /timesheet is role-shared.
-      }
-
-      navigate(targetHref);
+      navigate(action.href);
     }
   };
 

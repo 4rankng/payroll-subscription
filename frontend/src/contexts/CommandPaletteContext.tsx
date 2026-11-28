@@ -68,7 +68,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Home',
         category: 'navigation',
         keywords: ['dashboard', 'tổng quan', 'home'],
-        action: () => navigate(user?.role === 'admin' ? '/admin' : '/partner'),
+        action: () => navigate('/dashboard'),
         role: 'both'
       },
       {
@@ -78,7 +78,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'HelpCircle',
         category: 'navigation',
         keywords: ['help', 'trợ giúp', 'hướng dẫn'],
-        action: () => navigate(user?.role === 'admin' ? '/admin/help' : '/partner/help'),
+        action: () => navigate('/help'),
         role: 'both'
       }
     ];
@@ -102,7 +102,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'FolderOpen',
         category: 'navigation',
         keywords: ['projects', 'dự án', 'project'],
-        action: () => navigate('/admin/projects'),
+        action: () => navigate('/projects'),
         role: 'admin'
       },
       {
@@ -112,7 +112,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'UserCheck',
         category: 'navigation',
         keywords: ['employees', 'nhân viên', 'employee'],
-        action: () => navigate('/admin/employees'),
+        action: () => navigate('/employees'),
         role: 'admin'
       },
       {
@@ -133,7 +133,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'UserPlus',
         category: 'action',
         keywords: ['add employee', 'thêm nhân viên', 'tạo nhân viên'],
-        action: () => navigate('/admin/employees?modal=add_employee'),
+        action: () => navigate('/employees?modal=add_employee'),
         role: 'admin'
       },
       {
@@ -143,7 +143,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'FolderPlus',
         category: 'action',
         keywords: ['add project', 'tạo dự án', 'thêm dự án'],
-        action: () => navigate('/admin/projects?modal=project_create'),
+        action: () => navigate('/projects?modal=project_create'),
         role: 'admin'
       },
     ];
@@ -157,7 +157,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'FolderOpen',
         category: 'navigation',
         keywords: ['projects', 'dự án'],
-        action: () => navigate('/partner'),
+        action: () => navigate('/dashboard'),
         role: 'quanly'
       },
       {
@@ -167,7 +167,7 @@ export const CommandPaletteProvider = ({ children }: CommandPaletteProviderProps
         icon: 'Users',
         category: 'navigation',
         keywords: ['employees', 'nhân viên', 'team'],
-        action: () => navigate('/partner/employees'),
+        action: () => navigate('/employees'),
         role: 'quanly'
       },
       {

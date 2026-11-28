@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell01,
   Briefcase01,
+  BookOpen01,
   CalendarCheck01,
   ChevronDown,
   ChevronUp,
@@ -72,12 +73,13 @@ type MenuItem = {
 export const ADMIN_MENU_ITEMS: MenuItem[] = [
   { title: "Tổng quan", icon: Home01, path: "/dashboard", end: true, group: "top" },
   { title: "Người dùng", icon: UserEdit, path: "/users", group: "quan-ly" },
-  { title: "Dự án", icon: Briefcase01, path: "/admin/projects", group: "quan-ly" },
-  { title: "Nhân viên", icon: Users01, path: "/admin/employees", group: "quan-ly" },
+  { title: "Dự án", icon: Briefcase01, path: "/projects", group: "quan-ly" },
+  { title: "Nhân viên", icon: Users01, path: "/employees", group: "quan-ly" },
   { title: "Bảng công", icon: CalendarCheck01, path: "/timesheet", group: "quan-ly" },
   { title: "Lịch sử trả lương", icon: FileCheck01, path: "/payment-history", group: "quan-ly" },
-  { title: "Nhật ký", icon: Clipboard, path: "/admin/audit-log", group: "he-thong" },
-  { title: "Cài đặt", icon: Settings01, path: "/admin/settings", group: "he-thong" },
+  { title: "Sổ cái", icon: BookOpen01, path: "/ledger", group: "quan-ly" },
+  { title: "Nhật ký", icon: Clipboard, path: "/audit-log", group: "he-thong" },
+  { title: "Cài đặt", icon: Settings01, path: "/settings", group: "he-thong" },
 ];
 
 const menuGroups = [

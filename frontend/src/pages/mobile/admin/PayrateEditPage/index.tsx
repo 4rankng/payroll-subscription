@@ -31,7 +31,7 @@ import {
 import { dateToString } from '@/utils/dateHelpers';
 import { defaultCreateEffectiveFrom, earliestAllowedEffectiveFrom } from '@/components/payrates/utils/effectiveDate';
 import { useProject } from '@/hooks/api/useProjects';
-import { authManager } from '@/lib/auth';
+
 import {
   useProjectPayRates,
   useCreateProjectPayRate,
@@ -252,9 +252,9 @@ export default function PayrateEditPageMobile() {
     clearServerField('rates');
   }, [ratesLocked, clearServerField]);
 
-  const basePath = authManager.getUserRole() === 'quanly' ? '/partner' : '/admin';
+  const basePath = '/projects';
   const goBack = useCallback(() => {
-    navigate(`${basePath}/projects?modal=project_details&id=${numProjectId}`);
+    navigate(`${basePath}?modal=project_details&id=${numProjectId}`);
   }, [navigate, basePath, numProjectId]);
 
   // From-date-only model: rate changes always create a NEW config version;

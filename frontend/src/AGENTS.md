@@ -52,7 +52,7 @@ Container directory for all application source code. Entry points (`main.tsx`, `
 ### Common Patterns
 
 - **Provider nesting**: `main.tsx` wraps `App` with `QueryClientProvider`, `AuthProvider`, `AppStateProvider`, etc.
-- **Route structure**: Routes split by role (`/admin/*`, `/partner/*`, `/employee/*`) with `ProtectedRoute` guards.
+- **Route structure**: Canonical role-split URLs (`/dashboard`, `/projects`, `/employees`, `/ledger`, `/users`, `/timesheet`, `/payment-history`, …) — layout and page content follow the signed-in role; `/employee/*` for nhanvien. `ProtectedRoute` guards; legacy `/admin/*` + `/partner/*` bookmarks redirect to the canonical URL (query kept).
 - **Barrel exports**: Most subdirectories export via `index.ts` files.
 
 ## Dependencies

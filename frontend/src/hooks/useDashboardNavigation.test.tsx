@@ -27,6 +27,6 @@ describe("useDashboardNavigation", () => {
 
     act(() => result.current.navigateToActiveEmployees());
 
-    expect(navigate).toHaveBeenCalledWith("/admin/employees?status=working");
+    expect(navigate).toHaveBeenCalledWith("/employees?status=working");
   });
 });

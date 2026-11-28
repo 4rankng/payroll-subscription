@@ -21,7 +21,6 @@ import {
   useDeletePayRate,
 } from '@/hooks/api/usePayRates';
 import { Project } from '@/types/api/project.types';
-import { authManager } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +35,7 @@ export function PayrateConfigTab({ project }: PayrateConfigTabProps) {
   const deletePayRate = useDeletePayRate();
 
   const navigate = useNavigate();
-  const payrateBasePath = authManager.getUserRole() === 'quanly' ? '/partner' : '/admin';
+  const payrateBasePath = '/projects';
 
   // Two-step inline delete confirm + surfaced failure (server still hard-blocks
   // configs with approved/paid timesheets).
@@ -95,18 +94,18 @@ export function PayrateConfigTab({ project }: PayrateConfigTabProps) {
   const canModifyPayrates = project.status !== 'cancelled' && project.status !== 'completed';
 
   const handleStartCreateNew = useCallback(() => {
-    navigate(`${payrateBasePath}/projects/${project.id}/payrates/new/edit`);
+    navigate(`${payrateBasePath}/${project.id}/payrates/new/edit`);
   }, [navigate, payrateBasePath, project.id]);
 
   const handleStartEditCurrent = useCallback(() => {
     if (activePayrate) {
-      navigate(`${payrateBasePath}/projects/${project.id}/payrates/${activePayrate.id}/edit`);
+      navigate(`${payrateBasePath}/${project.id}/payrates/${activePayrate.id}/edit`);
     }
   }, [navigate, payrateBasePath, project.id, activePayrate]);
 
   const handleStartEditUpcoming = useCallback(() => {
     if (upcomingPayrate) {
-      navigate(`${payrateBasePath}/projects/${project.id}/payrates/${upcomingPayrate.id}/edit`);
+      navigate(`${payrateBasePath}/${project.id}/payrates/${upcomingPayrate.id}/edit`);
     }
   }, [navigate, payrateBasePath, project.id, upcomingPayrate]);
 

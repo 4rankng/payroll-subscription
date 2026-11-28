@@ -12,15 +12,15 @@ import { CustomAssertions } from '../utils/assertions';
  * - login errors surface in the inline [role="alert"] /
  *   [data-testid="error-message"] (useLogin sets skipGlobalError — login
  *   failures do NOT toast)
- * - post-login destinations are role-based: admin → /admin, partner →
- *   /partner/dashboard; the fake session uses a structurally valid JWT and
+ * - post-login destinations are role-based: every staff role → /dashboard;
+ *   the fake session uses a structurally valid JWT and
  *   the captured dashboard fixtures (see ApiHelpers.mockDashboardData) so the
  *   401-logout interceptor cannot bounce the mocked session.
  * Every test's intent is unchanged; only selectors/expectations were
  * retargeted to reality.
  */
 test.describe('Authentication Flow', () => {
-  // Dev-server on-demand compile (vite serves :3000; first /admin hit compiles
+  // Dev-server on-demand compile (vite serves :3000; first /dashboard hit compiles
   // the admin chunk graph) — same concession the visual-baseline spec makes.
   test.setTimeout(120_000);
 
@@ -48,7 +48,7 @@ test.describe('Authentication Flow', () => {
     await apiHelpers.mockLoginSuccess({ email: 'admin@example.com', password: 'admin123' });
     await apiHelpers.mockDashboardData('admin');
 
-    await loginPage.login('admin@example.com', 'admin123', '**/admin');
+    await loginPage.login('admin@example.com', 'admin123', '**/dashboard');
     await loginPage.expectToBeLoggedIn();
     await dashboardPage.expectToBeOnDashboard();
     await dashboardPage.expectAdminFeatures();
@@ -113,9 +113,8 @@ test.describe('Authentication Flow', () => {
 
   test('should redirect to login page when accessing protected routes', async ({ page }) => {
     // Try to access a real protected route without authentication. (/dashboard
-    // is not an app route — it renders NotFound; /partner/dashboard is guarded
-    // by ProtectedRoute, which navigates to /login.)
-    await page.goto('/partner/dashboard');
+    // is guarded by ProtectedRoute, which navigates to /login.)
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/.*login/);
   });
 
@@ -124,7 +123,7 @@ test.describe('Authentication Flow', () => {
     await apiHelpers.mockLoginSuccess({ email: 'admin@example.com', password: 'admin123' });
     await apiHelpers.mockDashboardData('admin');
     await apiHelpers.mockLogout();
-    await loginPage.login('admin@example.com', 'admin123', '**/admin');
+    await loginPage.login('admin@example.com', 'admin123', '**/dashboard');
 
     await dashboardPage.logout();
     await loginPage.expectToBeOnLoginPage();
@@ -142,7 +141,7 @@ test.describe('Authentication Flow', () => {
       localStorage.setItem('token', 'expired-token');
     });
 
-    await page.goto('/partner/dashboard');
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/.*login/);
   });
 
@@ -150,7 +149,7 @@ test.describe('Authentication Flow', () => {
     // Mock successful login
     await apiHelpers.mockLoginSuccess({ email: 'admin@example.com', password: 'admin123' });
     await apiHelpers.mockDashboardData('admin');
-    await loginPage.login('admin@example.com', 'admin123', '**/admin');
+    await loginPage.login('admin@example.com', 'admin123', '**/dashboard');
 
     // Refresh page
     await page.reload();
@@ -205,7 +204,7 @@ test.describe('Admin Authentication', () => {
     await apiHelpers.mockLoginSuccess(adminUser);
     await apiHelpers.mockDashboardData('admin');
     await loginPage.goto();
-    await loginPage.login(adminUser.email, adminUser.password, '**/admin');
+    await loginPage.login(adminUser.email, adminUser.password, '**/dashboard');
 
     await dashboardPage.expectAdminFeatures();
 

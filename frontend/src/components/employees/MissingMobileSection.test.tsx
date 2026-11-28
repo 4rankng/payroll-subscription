@@ -237,7 +237,7 @@ describe('MissingMobileSection', () => {
     );
 
     const bulkLink = screen.getByRole('link', { name: 'Nhập SĐT hàng loạt' });
-    expect(bulkLink).toHaveAttribute('href', '/partner/employees?modal=employee_import');
+    expect(bulkLink).toHaveAttribute('href', '/employees?modal=employee_import');
   });
 
   it('hides the bulk import link from read-only roles (no 403 trap)', () => {

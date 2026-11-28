@@ -10,7 +10,7 @@ import { chromium } from '@playwright/test';
 import { PNG } from 'pngjs';
 
 const URL = process.env.MEASURE_URL || 'http://localhost:3000';
-const TARGET = process.argv[2] || '/admin/users';
+const TARGET = process.argv[2] || '/users';
 
 function enc(o) { return Buffer.from(JSON.stringify(o)).toString('base64url'); }
 function mockJwt(role) {

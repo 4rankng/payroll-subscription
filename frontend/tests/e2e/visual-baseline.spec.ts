@@ -55,8 +55,8 @@ import { fileURLToPath } from "node:url";
 // QA credentials documented in frontend/CLAUDE.md (all QA accounts share one
 // password). Post-login destinations mirror the redirects in pages/Login.tsx.
 const LOGINS = {
-  admin: { username: "frankng", password: "Admin123", destination: /\/admin$/ },
-  partner: { username: "cuongnv", password: "Admin123", destination: /\/partner\/dashboard$/ },
+  admin: { username: "frankng", password: "Admin123", destination: /\/dashboard$/ },
+  partner: { username: "cuongnv", password: "Admin123", destination: /\/dashboard$/ },
 } as const;
 
 // Surfaces with nodes observed to flake between runs. Every entry names what
@@ -92,20 +92,20 @@ interface Surface {
   path: string;
 }
 
-// /admin renders the dashboard at its index route.
+// /dashboard renders the dashboard at its index route. Titles keep the
+// admin/partner prefix: the capture loop derives the login role from them.
 const ADMIN_SURFACES: Surface[] = [
-  { title: "admin/dashboard", path: "/admin" },
-  { title: "admin/users", path: "/admin/users" },
-  { title: "admin/projects", path: "/admin/projects" },
-  { title: "admin/employees", path: "/admin/employees" },
+  { title: "admin/dashboard", path: "/dashboard" },
+  { title: "admin/users", path: "/users" },
+  { title: "admin/projects", path: "/projects" },
+  { title: "admin/employees", path: "/employees" },
   { title: "admin/timesheet", path: "/timesheet" },
-  { title: "admin/ledger", path: "/admin/ledger" },
+  { title: "admin/ledger", path: "/ledger" },
 ];
 
 const PARTNER_SURFACES: Surface[] = [
-  { title: "partner/dashboard", path: "/partner/dashboard" },
-  { title: "partner/timesheets", path: "/timesheet" },
-  { title: "partner/projects", path: "/partner/projects" },
+  { title: "partner/dashboard", path: "/dashboard" },
+  { title: "partner/projects", path: "/projects" },
   { title: "partner/payment-history", path: "/payment-history" },
 ];
 

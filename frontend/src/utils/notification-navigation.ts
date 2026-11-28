@@ -11,15 +11,15 @@ interface NavigationTarget {
 const SAFE_ROUTES = {
   admin: [
     '/timesheet',
-    '/admin/approvals',
-    '/admin/employees',
-    '/admin/projects',
-    '/admin/settings',
+    '/approvals',
+    '/employees',
+    '/projects',
+    '/settings',
   ],
   quanly: [
     '/timesheet',
-    '/partner/employees',
-    '/partner/project',
+    '/employees',
+    '/projects',
   ],
   nhanvien: [
     '/employee/timesheet',
@@ -47,7 +47,7 @@ export const getNotificationNavigation = (notification: Notification): Navigatio
     case 'approval_result': {
       if (userRole === 'admin') {
         return {
-          path: '/admin/approvals',
+          path: '/approvals',
           params: metadata?.approval_id ? { approval: String(metadata.approval_id) } : {},
           highlight: metadata?.approval_id ? `approval-${metadata.approval_id}` : undefined
         };
@@ -102,8 +102,8 @@ export const buildNavigationUrl = (target: NavigationTarget): string => {
 
 export const getFallbackPath = (userRole: string): string => {
   switch (userRole) {
-    case 'admin': return '/admin/notifications';
-    case 'quanly': return '/partner/notifications';
+    case 'admin': return '/notifications';
+    case 'quanly': return '/notifications';
     case 'nhanvien': return '/employee/timesheet';
     default: return '/';
   }

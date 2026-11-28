@@ -232,7 +232,7 @@ export function useModalRoute<T extends ModalParams = ModalParams>(
     onUnauthorized: () => {
       // Redirect to appropriate page on unauthorized access
       const userRole = options.onUnauthorized || (() => {
-        navigate(window.location.pathname.includes('/admin') ? '/admin' : '/partner');
+        navigate('/dashboard');
       });
       userRole();
     }
