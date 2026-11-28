@@ -66,6 +66,12 @@ type UserRepository interface {
 	// scoped UPDATE (not full-row Save) so concurrent profile edits aren't
 	// clobbered (Red Team Failure-Mode-F8).
 	UpdatePasswordAndInvalidateSessions(ctx context.Context, userID uint, hashedPassword string, invalidBefore time.Time) error
+	// UpdateUserAndInvalidateSessions saves the user record AND advances
+	// tokens_invalid_before in a single DB transaction. Used when an admin
+	// changes the account's role: every previously-issued session must die
+	// with the old role, and a partial commit (role changed but sessions not
+	// killed) would leave the old role's tokens valid until expiry.
+	UpdateUserAndInvalidateSessions(ctx context.Context, user *User, invalidBefore time.Time) error
 	Delete(ctx context.Context, id uint) error
 	List(ctx context.Context, limit, offset int) ([]*User, error)
 	ListByRole(ctx context.Context, role UserRole) ([]*User, error)

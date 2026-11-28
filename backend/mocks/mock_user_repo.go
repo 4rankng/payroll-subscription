@@ -348,20 +348,6 @@ func (mr *MockUserRepositoryMockRecorder) UpdateLastLogin(arg0, arg1, arg2 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateLastLogin", reflect.TypeOf((*MockUserRepository)(nil).UpdateLastLogin), arg0, arg1, arg2)
 }
 
-// UpdateOTPLockout mocks base method.
-func (m *MockUserRepository) UpdateOTPLockout(arg0 context.Context, arg1 uint, arg2 int, arg3 *time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOTPLockout", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateOTPLockout indicates an expected call of UpdateOTPLockout.
-func (mr *MockUserRepositoryMockRecorder) UpdateOTPLockout(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOTPLockout", reflect.TypeOf((*MockUserRepository)(nil).UpdateOTPLockout), arg0, arg1, arg2, arg3)
-}
-
 // UpdatePasswordAndInvalidateSessions mocks base method.
 func (m *MockUserRepository) UpdatePasswordAndInvalidateSessions(arg0 context.Context, arg1 uint, arg2 string, arg3 time.Time) error {
 	m.ctrl.T.Helper()
@@ -388,4 +374,18 @@ func (m *MockUserRepository) UpdateTokensInvalidBefore(arg0 context.Context, arg
 func (mr *MockUserRepositoryMockRecorder) UpdateTokensInvalidBefore(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTokensInvalidBefore", reflect.TypeOf((*MockUserRepository)(nil).UpdateTokensInvalidBefore), arg0, arg1, arg2)
+}
+
+// UpdateUserAndInvalidateSessions mocks base method.
+func (m *MockUserRepository) UpdateUserAndInvalidateSessions(arg0 context.Context, arg1 *domain.User, arg2 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserAndInvalidateSessions", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserAndInvalidateSessions indicates an expected call of UpdateUserAndInvalidateSessions.
+func (mr *MockUserRepositoryMockRecorder) UpdateUserAndInvalidateSessions(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserAndInvalidateSessions", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserAndInvalidateSessions), arg0, arg1, arg2)
 }

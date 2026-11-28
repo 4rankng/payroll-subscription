@@ -69,6 +69,9 @@ func (r *exportUserRepo) UpdatePasswordAndInvalidateSessions(context.Context, ui
 func (r *exportUserRepo) UpdateTokensInvalidBefore(context.Context, uint, time.Time) error {
 	panic("not impl")
 }
+func (r *exportUserRepo) UpdateUserAndInvalidateSessions(context.Context, *domain.User, time.Time) error {
+	panic("not impl")
+}
 func (r *exportUserRepo) Delete(context.Context, uint) error  { panic("not impl") }
 func (r *exportUserRepo) Restore(context.Context, uint) error { panic("not impl") }
 func (r *exportUserRepo) List(context.Context, int, int) ([]*domain.User, error) {

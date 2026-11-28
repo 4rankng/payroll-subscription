@@ -114,6 +114,9 @@ func (r *fakeUserRepo) UpdateLastLogin(context.Context, uint, time.Time) error  
 func (r *fakeUserRepo) UpdateTokensInvalidBefore(context.Context, uint, time.Time) error {
 	panic("not impl")
 }
+func (r *fakeUserRepo) UpdateUserAndInvalidateSessions(context.Context, *domain.User, time.Time) error {
+	panic("not impl")
+}
 func (r *fakeUserRepo) UpdateOTPLockout(context.Context, uint, int, *time.Time) error {
 	panic("not impl")
 }

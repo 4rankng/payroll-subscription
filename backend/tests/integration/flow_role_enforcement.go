@@ -217,4 +217,31 @@ func runRoleEnforcementTests(client *APIClient, data *TestData, reporter *Report
 		}
 		return nil
 	})
+
+	reporter.RunTest(flowRoleEnforcement, "Role change forces the old session back to login", func() error {
+		// The employee fixture's live session must die the instant an admin
+		// changes the account's role: the old tab is forced to re-login
+		// instead of silently riding the new role.
+		var me UserResponse
+		if _, err := empClient.GetInto("/api/v1/auth/me", &me); err != nil {
+			return fmt.Errorf("pre-change /auth/me: %w", err)
+		}
+		var updated UserResponse
+		if _, err := admin.PutInto(fmt.Sprintf("/api/v1/users/%d", created.ID), UpdateUserRequest{Role: new("ketoan")}, &updated); err != nil {
+			return fmt.Errorf("change role: %w", err)
+		}
+		if updated.Role != "ketoan" {
+			return fmt.Errorf("role change not applied, got role=%s", updated.Role)
+		}
+		// The pre-change token (Bearer, minted before the role switch) must
+		// now be rejected — not served with the new role.
+		_, status, err := empClient.Get("/api/v1/auth/me")
+		if err != nil {
+			return fmt.Errorf("post-change /auth/me: %w", err)
+		}
+		if status != http.StatusUnauthorized {
+			return fmt.Errorf("expected 401 for the pre-change session after a role change, got %d", status)
+		}
+		return nil
+	})
 }

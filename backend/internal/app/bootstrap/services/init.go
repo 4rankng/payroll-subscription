@@ -228,11 +228,16 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	// Create audit service
 	auditService := infraServices.NewAuditService(eventBus)
 
+	authService := auth.NewAuthService(userService, repos.Employee, repos.BlacklistedToken, eventBus, cfg.Auth.JWTSecret, cfg.Auth.AccessTTL, cfg.Google.ClientID, nonceStore, cacheService, logger)
+	// A role change advances tokens_invalid_before from UserService; drop the
+	// auth layer's cached verdict so the forced re-login is immediate.
+	userService.OnSessionsInvalidated = authService.DropTokensInvalidBeforeCache
+
 	servicesStruct := &Services{
 		User:                    userService,
 		PasswordResetJobManager: passwordResetJobManager,
 		EmailPasswordReset:      emailPasswordResetService,
-		Auth:                    auth.NewAuthService(userService, repos.Employee, repos.BlacklistedToken, eventBus, cfg.Auth.JWTSecret, cfg.Auth.AccessTTL, cfg.Google.ClientID, nonceStore, cacheService, logger),
+		Auth:                    authService,
 		Authorization:           authorizationService,
 		Dashboard:               dashboardService,
 		Project:                 project.NewProjectService(repos.Project, repos.Employee, repos.ProjectEmployee, repos.Timesheet, eventBus, cacheService, logger),

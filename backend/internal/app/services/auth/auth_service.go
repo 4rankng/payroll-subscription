@@ -361,6 +361,19 @@ func (s *AuthService) tokenInvalidatedForUser(ctx context.Context, claims *Claim
 	return invalidatedAt(user.TokensInvalidBefore)
 }
 
+// DropTokensInvalidBeforeCache removes the cached tokens_invalid_before
+// verdict for a user. A write path that advances the stamp outside this
+// service (a role change in UserService) calls it so the rejection is enforced
+// on the very next request instead of after the authLookupCacheTTL window.
+func (s *AuthService) DropTokensInvalidBeforeCache(ctx context.Context, userID uint) {
+	if s.lookupCache == nil {
+		return
+	}
+	if err := s.lookupCache.Delete(ctx, authTokensInvalidBeforeCacheKey(userID)); err != nil {
+		s.logger.Warn("Failed to drop tokens_invalid_before cache", "error", err, "user_id", userID)
+	}
+}
+
 // invalidateBlacklistCache drops the cached not-blacklisted verdict for a JTI.
 // Every blacklist write (Logout, password change) must call it so the
 // revocation is enforced on the next request, not after the 5s TTL.

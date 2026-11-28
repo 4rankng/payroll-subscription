@@ -233,8 +233,19 @@ func (s *UserService) UpdateUser(ctx context.Context, id uint, req dto.UpdateUse
 		}
 	}
 
-	// Save updated user
-	if err := s.UserRepo.Update(ctx, user); err != nil {
+	// A role change kills every existing session: the old role's tokens must
+	// not keep working after the switch (old tabs are forced to re-login). The
+	// save and the invalidation commit together, and the auth layer's cached
+	// token verdict is dropped so the rejection lands on the next request.
+	if user.Role != originalUser.Role {
+		if err := s.UserRepo.UpdateUserAndInvalidateSessions(ctx, user, s.clk.Now()); err != nil {
+			s.logger.Error("Failed to update user role and invalidate sessions", "error", err, "user_id", id)
+			return nil, err
+		}
+		if s.OnSessionsInvalidated != nil {
+			s.OnSessionsInvalidated(ctx, id)
+		}
+	} else if err := s.UserRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update user", "error", err, "user_id", id)
 		return nil, err
 	}

@@ -35,6 +35,12 @@ type UserService struct {
 	// tokens_invalid_before stamp on a password reset) stay testable per ADR-006.
 	clk clock.Clock
 
+	// OnSessionsInvalidated fires after a role change advances the user's
+	// tokens_invalid_before. Bootstrap wires it to the auth layer's cached
+	// token-verdict drop so the forced re-login lands on the very next request
+	// instead of after that cache's TTL. Optional — nil skips the notification.
+	OnSessionsInvalidated func(ctx context.Context, userID uint)
+
 	// Logger
 	logger *slog.Logger
 }

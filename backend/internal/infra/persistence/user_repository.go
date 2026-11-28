@@ -160,11 +160,45 @@ func (r *UserRepository) GetUsernamesByPrefix(ctx context.Context, prefix string
 }
 
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
+	return r.saveUser(r.DB.WithContext(ctx), user)
+}
+
+// UpdateUserAndInvalidateSessions saves the user record AND advances
+// tokens_invalid_before in one transaction. A role change must kill every
+// existing session atomically with the switch: a partial commit (role changed
+// but sessions not killed) would leave the old role's tokens valid until
+// expiry. Mirrors UpdatePasswordAndInvalidateSessions.
+func (r *UserRepository) UpdateUserAndInvalidateSessions(ctx context.Context, user *domain.User, invalidBefore time.Time) error {
+	ops := func(tx *gorm.DB) error {
+		if err := r.saveUser(tx, user); err != nil {
+			return err
+		}
+		if err := tx.Model(&domain.User{}).Where("id = ?", user.ID).
+			Update("tokens_invalid_before", invalidBefore).Error; err != nil {
+			return err
+		}
+		return nil
+	}
+	if err := r.ExecuteInTransaction(ctx, ops); err != nil {
+		// saveUser maps its failures onto domain errors (conflict/validation);
+		// keep those intact so the handler can translate them.
+		var de *domain.DomainError
+		if errors.As(err, &de) {
+			return err
+		}
+		return domain.NewInternalError("failed to update user and invalidate sessions", err)
+	}
+	return nil
+}
+
+// saveUser persists the full user row and maps duplicate-key failures onto
+// domain conflict errors. Shared by Update and UpdateUserAndInvalidateSessions.
+func (r *UserRepository) saveUser(db *gorm.DB, user *domain.User) error {
 	if err := user.IsValid(); err != nil {
 		return err
 	}
 
-	if err := r.DB.WithContext(ctx).Save(user).Error; err != nil {
+	if err := db.Save(user).Error; err != nil {
 		errMsg := err.Error()
 		if errors.Is(err, gorm.ErrDuplicatedKey) || strings.Contains(errMsg, "Duplicate entry") {
 			if strings.Contains(errMsg, "cccd") || strings.Contains(errMsg, "unique_user_cccd") {
