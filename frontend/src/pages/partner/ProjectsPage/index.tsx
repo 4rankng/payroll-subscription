@@ -29,6 +29,7 @@ import { useProjectFilters } from '@/hooks/projects/useProjectFilters';
 import { useProjectModals } from '@/hooks/useModalNavigation';
 import { usePartnerProjectSummary } from '@/hooks/partner/usePartnerProjectSummary';
 import type { Project } from '@/types/api/project.types';
+import { canPartnerManageProject } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 // ─── Status meta ──────────────────────────────────────────────────────────
@@ -279,14 +280,14 @@ const ProjectsPage = () => {
           <PageHeader
             title="Dự án"
             description="Quản lý và theo dõi các dự án được phân quyền"
-            actions={[
+            actions={canPartnerManageProject() ? [
               {
                 label: 'Thêm dự án',
                 onClick: () => openCreateProject(),
                 icon: Plus,
                 variant: 'default' as const,
               },
-            ]}
+            ] : []}
           />
           <div className="mt-6 grid gap-2 sm:grid-cols-3">
             {[

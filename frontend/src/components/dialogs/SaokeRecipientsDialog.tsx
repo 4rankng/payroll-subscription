@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
-  DialogNavyHeader,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -54,15 +56,24 @@ export function SaokeRecipientsDialog({ open, onOpenChange }: SaokeRecipientsDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg" hideCloseButton>
-        <DialogNavyHeader
-          title="Danh sách người nhận sao kê"
-          description="Chỉnh sửa danh sách To và CC dùng cho các email sao kê."
-        />
+      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
+        <DialogHeader className="items-start space-y-0.5 border-b px-5 py-4 text-left">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Danh sách người nhận sao kê
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Chỉnh sửa danh sách To và CC dùng cho các email sao kê.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-recipients-to">Người nhận (To)</Label>
+        <div className="space-y-4 p-5">
+          <div>
+            <Label
+              htmlFor="saoke-recipients-to"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Người nhận (To) {to.length > 0 && <span className="font-normal">· {to.length}</span>}
+            </Label>
             <TagInput
               id="saoke-recipients-to"
               value={to}
@@ -72,18 +83,23 @@ export function SaokeRecipientsDialog({ open, onOpenChange }: SaokeRecipientsDia
               }}
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
-              placeholder="email1@congty.vn, email2@congty.vn"
+              placeholder="Nhập email..."
               disabled={updateRecipients.isPending}
             />
             {to.length === 0 && (
-              <p role="alert" className="text-xs text-destructive">
+              <p role="alert" className="mt-1.5 text-xs text-destructive">
                 Cần ít nhất 1 người nhận.
               </p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-recipients-cc">Người nhận cc (CC)</Label>
+          <div>
+            <Label
+              htmlFor="saoke-recipients-cc"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Người nhận (CC) {cc.length > 0 && <span className="font-normal">· {cc.length}</span>}
+            </Label>
             <TagInput
               id="saoke-recipients-cc"
               value={cc}
@@ -93,14 +109,19 @@ export function SaokeRecipientsDialog({ open, onOpenChange }: SaokeRecipientsDia
               }}
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
-              placeholder="Không bắt buộc"
+              placeholder="Nhập email..."
               disabled={updateRecipients.isPending}
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="justify-between border-t bg-muted/30 px-5 py-3.5">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={() => onOpenChange(false)}
+          >
             Đóng
           </Button>
           <Button type="button" onClick={handleSave} disabled={!canSave}>

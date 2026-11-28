@@ -263,10 +263,11 @@ export const useModalStore = create<ModalStore>()(
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        console.error('Failed to open modal:', errorMessage);
         set({ error: errorMessage, isLoading: false });
         toast({
           title: "Lỗi hệ thống",
-          description: errorMessage,
+          description: "Không thể mở chức năng này. Vui lòng thử lại.",
           variant: "destructive"
         });
       }

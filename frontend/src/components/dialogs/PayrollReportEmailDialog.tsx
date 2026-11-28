@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
-  DialogNavyHeader,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,15 +75,26 @@ export function PayrollReportEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg" hideCloseButton>
-        <DialogNavyHeader
-          title="Gửi sao kê qua email"
-          description="Chọn ngày báo cáo và danh sách người nhận, xem trước rồi gửi."
-        />
+      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
+        {/* Header — bleeds to the rounded edges, white, hairline divider */}
+        <DialogHeader className="items-start space-y-0.5 border-b px-5 py-4 text-left">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Gửi sao kê qua email
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Chọn ngày báo cáo và danh sách người nhận, xem trước rồi gửi.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-email-report-date">Ngày báo cáo</Label>
+        {/* Body */}
+        <div className="space-y-4 p-5">
+          <div>
+            <Label
+              htmlFor="saoke-email-report-date"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Ngày báo cáo
+            </Label>
             <Input
               id="saoke-email-report-date"
               type="date"
@@ -90,12 +103,18 @@ export function PayrollReportEmailDialog({
                 setReportDate(event.target.value);
                 setShowPreview(false);
               }}
+              className="h-9 w-48 tabular-nums"
               required
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-email-to">Người nhận (To)</Label>
+          <div>
+            <Label
+              htmlFor="saoke-email-to"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Người nhận (To) {to.length > 0 && <span className="font-normal">· {to.length}</span>}
+            </Label>
             <TagInput
               id="saoke-email-to"
               value={to}
@@ -105,18 +124,23 @@ export function PayrollReportEmailDialog({
               }}
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
-              placeholder="email1@congty.vn, email2@congty.vn"
+              placeholder="Nhập email..."
               disabled={sendEmail.isPending}
             />
             {to.length === 0 && (
-              <p role="alert" className="text-xs text-destructive">
+              <p role="alert" className="mt-1.5 text-xs text-destructive">
                 Cần ít nhất 1 người nhận.
               </p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-email-cc">Người nhận cc (CC)</Label>
+          <div>
+            <Label
+              htmlFor="saoke-email-cc"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Người nhận (CC) {cc.length > 0 && <span className="font-normal">· {cc.length}</span>}
+            </Label>
             <TagInput
               id="saoke-email-cc"
               value={cc}
@@ -126,7 +150,7 @@ export function PayrollReportEmailDialog({
               }}
               validateToken={validateEmail}
               invalidTokenMessage={(token) => `"${token}" không phải email hợp lệ`}
-              placeholder="Không bắt buộc"
+              placeholder="Nhập email..."
               disabled={sendEmail.isPending}
             />
           </div>
@@ -134,16 +158,24 @@ export function PayrollReportEmailDialog({
           {showPreview && <SaokePreviewPanel summary={summary} reportDate={reportDate} />}
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        {/* Footer — Đóng separated left, actions grouped right */}
+        <DialogFooter className="justify-between border-t bg-muted/30 px-5 py-3.5">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={() => onOpenChange(false)}
+          >
             Đóng
           </Button>
-          <Button type="button" variant="outline" onClick={() => setShowPreview(true)}>
-            Xem sao kê
-          </Button>
-          <Button type="button" onClick={handleSend} disabled={!canSend}>
-            {sendEmail.isPending ? 'Đang gửi...' : 'Gửi email'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => setShowPreview(true)}>
+              Xem sao kê
+            </Button>
+            <Button type="button" onClick={handleSend} disabled={!canSend}>
+              {sendEmail.isPending ? 'Đang gửi...' : 'Gửi email'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

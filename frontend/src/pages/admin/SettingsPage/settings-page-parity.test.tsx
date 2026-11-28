@@ -29,8 +29,8 @@ vi.mock('@/components/email/AdminEmailComposer', () => ({
   AdminEmailComposer: () => null,
 }));
 
-// The employee-policy panel and the fee card read the settings API directly;
-// stubbed so the tab wiring, the fee card and the toggle row are under test.
+// The fee card reads the settings API directly; stubbed so the tab wiring
+// and the fee card are under test.
 vi.mock('@/hooks/api/useSettings', () => ({
   useSettings: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
   useSetting: () => ({ data: undefined, isLoading: false, isError: false, refetch: vi.fn() }),
@@ -66,7 +66,7 @@ describe.each([
       </MemoryRouter>,
     );
 
-    const feeInput = screen.getByLabelText('Phí (VND/NV/kỳ)') as HTMLInputElement;
+    const feeInput = screen.getByLabelText('Phí (đ/NV/kỳ)') as HTMLInputElement;
     expect(feeInput).toHaveValue(10000);
     expect(feeInput).toHaveAttribute('min', '0');
     expect(feeInput).toHaveAttribute('max', '999999999');
@@ -81,7 +81,7 @@ describe.each([
       </MemoryRouter>,
     );
 
-    fireEvent.change(screen.getByLabelText('Phí (VND/NV/kỳ)'), { target: { value: '12000' } });
+    fireEvent.change(screen.getByLabelText('Phí (đ/NV/kỳ)'), { target: { value: '12000' } });
     expect(mocks.formState.setSubscriptionFeeVnd).toHaveBeenCalledWith('12000');
     // The form state holder is a plain mock object: re-render to let the
     // card observe the dirty state the change handler just recorded.
@@ -105,22 +105,8 @@ describe.each([
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Không thể tải cài đặt');
-    expect(screen.queryByLabelText('Phí (VND/NV/kỳ)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Phí (đ/NV/kỳ)')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
     expect(mocks.retryLoading).toHaveBeenCalledOnce();
-  });
-
-  it('keeps the employee mobile policy settings available', () => {
-    render(
-      <MemoryRouter initialEntries={['/admin/settings?tab=employees']}>
-        <PageComponent />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('tab', { name: /Nhân viên/ })).toHaveAttribute('data-state', 'active');
-    // The same panel renders in both views; a missing settings row is OFF.
-    expect(
-      screen.getByRole('switch', { name: 'Bắt buộc số điện thoại khi thêm nhân viên mới' }),
-    ).not.toBeChecked();
   });
 });

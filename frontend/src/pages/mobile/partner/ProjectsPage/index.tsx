@@ -37,6 +37,7 @@ import {
   XClose,
 } from "@untitledui/icons";
 import type { Project } from "@/types/api/project.types";
+import { canPartnerManageProject } from "@/lib/permissions";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -119,14 +120,16 @@ const ProjectsPageMobile = () => {
         sticky={false}
         bordered={false}
         actions={
-          <Button
-            size="sm"
-            className="h-11 px-4 shrink-0 rounded-xl"
-            onClick={() => openCreateProject()}
-          >
-            <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
-            Thêm
-          </Button>
+          canPartnerManageProject() ? (
+            <Button
+              size="sm"
+              className="h-11 px-4 shrink-0 rounded-xl"
+              onClick={() => openCreateProject()}
+            >
+              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+              Thêm
+            </Button>
+          ) : undefined
         }
       />
 

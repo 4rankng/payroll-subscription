@@ -65,7 +65,7 @@ export const FeeInsightsPageMobile = () => {
     <div className="mx-auto w-full max-w-full space-y-3 overflow-x-hidden p-3">
       <PageHeader
         title="Tổng quan"
-        description="Insights phí subscription"
+        description="Thống kê phí theo tháng"
         kicker={getConsoleKicker(location.pathname)}
       />
 

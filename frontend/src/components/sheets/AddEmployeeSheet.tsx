@@ -9,7 +9,6 @@ import { X, User, UserPlus, Plus, Loader2, AlertTriangle, Search, HandHeart } fr
 import { toast } from '@/components/ui/sonner';
 import { CreateEmployeeData, DuplicateCheckMatch } from '@/types/api/employee.types';
 import { useCreateEmployee, useDuplicateCheck, useRequestEmployeeAccess } from '@/hooks/api/useEmployees';
-import { useMultipleSettings } from '@/hooks/api/useSettings';
 import { useDebounce } from '@/hooks/useDebounce';
 import { SlideSheetTemplate } from './templates/SlideSheetTemplate';
 import { useModalNavigation } from '@/hooks/useModalNavigation';
@@ -148,11 +147,6 @@ function AddEmployeeSheetComponent({
   const userRole = authManager.getUserRole();
   const isAdmin = userRole === 'admin';
   const requestAccess = useRequestEmployeeAccess();
-  // Missing row = OFF: only a stored 'true' makes mobile mandatory on create.
-  // useMultipleSettings maps the 404 of a never-saved row to undefined
-  // instead of failing the query.
-  const { data: mobileRequiredSettings } = useMultipleSettings(['employee.mobile_required']);
-  const mobileRequired = mobileRequiredSettings?.[0]?.value === 'true';
 
   const [formData, setFormData] = useState<CreateEmployeeData>({
     fullname: '',
@@ -246,9 +240,7 @@ function AddEmployeeSheetComponent({
       newErrors.email = 'Email không hợp lệ';
     }
 
-    if (mobileRequired && !formData.mobile?.trim()) {
-      newErrors.mobile = 'Số điện thoại là bắt buộc';
-    } else if (formData.mobile && !/^\d+$/.test(formData.mobile.replace(/\s/g, ''))) {
+    if (formData.mobile && !/^\d+$/.test(formData.mobile.replace(/\s/g, ''))) {
       newErrors.mobile = 'Số điện thoại chỉ được chứa số';
     } else if (formData.mobile) {
       const cccdGuard = validateMobileNotCCCD(formData.mobile);
@@ -280,7 +272,7 @@ function AddEmployeeSheetComponent({
     if (formData.address?.trim()) {
       requestData.address = formData.address.trim();
     }
-    if (formData.mobile?.trim() || mobileRequired) {
+    if (formData.mobile?.trim()) {
       requestData.mobile = formData.mobile?.trim() ?? '';
     }
     if (formData.date_of_birth?.trim()) {
@@ -394,7 +386,7 @@ function AddEmployeeSheetComponent({
               {errors.cccd && <p role="alert" className="typography-body-small text-financial-negative">{errors.cccd}</p>}
             </Field>
 
-            <Field id="mobile" label="Số điện thoại" required={mobileRequired}>
+            <Field id="mobile" label="Số điện thoại">
               <Input
                 id="mobile"
                 placeholder="0901234567"

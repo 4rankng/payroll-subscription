@@ -16,6 +16,7 @@ import {
 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
 import { authManager } from "@/lib/auth";
+import { roleLabel } from "@/lib/permissions";
 import {
   getSidebarCollapsedState,
   Sidebar,
@@ -239,7 +240,7 @@ const PartnerSidebar = () => {
                     <div className="flex flex-col gap-0.5">
                       <p className="text-sm font-semibold">{user.name}</p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">Quản lý</p>
+                      <p className="text-xs text-muted-foreground">{roleLabel(user.role)}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

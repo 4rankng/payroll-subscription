@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Loader2, CheckCheck, X, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCheck, X } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
@@ -128,14 +128,7 @@ export const NotificationSheet = ({ isOpen, onClose, variant = 'employee' }: Not
             style={{ paddingTop: headerPaddingTop }}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
-              <button
-                onClick={onClose}
-                className="inline-flex items-center justify-center rounded-full h-11 min-h-11 w-11 border-0 bg-transparent p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Đóng"
-              >
-                <ArrowLeft className="h-6 w-6" />
-              </button>
-              <h2 className="min-w-0 flex-1 text-center text-base font-bold text-foreground">Thông báo</h2>
+              <h2 className="min-w-0 flex-1 text-left text-base font-bold text-foreground">Thông báo</h2>
               {activeView === 'unread' && unreadNotifications.length > 0 ? (
                 <button
                   onClick={() => markAllAsRead.mutate()}
@@ -151,6 +144,13 @@ export const NotificationSheet = ({ isOpen, onClose, variant = 'employee' }: Not
               ) : (
                 <div className="w-11" />
               )}
+              <button
+                onClick={onClose}
+                className="ml-auto inline-flex shrink-0 items-center justify-center rounded-full h-11 min-h-11 w-11 border-0 bg-transparent p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Đóng"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Tab switcher */}

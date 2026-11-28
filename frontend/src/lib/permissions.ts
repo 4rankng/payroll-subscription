@@ -8,6 +8,22 @@ import { Timesheet } from '@/types/api/timesheet.types';
 
 export type UserRole = 'admin' | 'quanly' | 'ketoan' | 'nhanvien' | 'giamdoc';
 
+/** Vietnamese display name per role — single source for profile menus. */
+export const roleLabel = (userRole?: UserRole | string | null): string => {
+  switch (userRole) {
+    case 'admin':
+      return 'Quản trị viên';
+    case 'quanly':
+      return 'Quản lý';
+    case 'ketoan':
+      return 'Kế toán';
+    case 'giamdoc':
+      return 'Giám đốc';
+    default:
+      return 'Nhân viên';
+  }
+};
+
 /**
  * Check if user can edit a timesheet entry
  * Rules (approved timesheets are immutable — reset them first):
@@ -79,4 +95,35 @@ export const canDeleteTimesheet = (
   }
 
   return false;
+};
+
+/**
+ * Check if user can view partner employees (list and detail).
+ * ketoan/giamdoc hold read-only access; nhanvien has none.
+ */
+export const canViewEmployees = (userRole?: UserRole | null): boolean => {
+  const role = userRole || authManager.getUserRole();
+
+  return role === 'admin' || role === 'quanly' || role === 'ketoan' || role === 'giamdoc';
+};
+
+/**
+ * Check if user can claim employee management (yêu cầu quản lý).
+ * Backend grants request-access to admin and quanly only.
+ */
+export const canClaimEmployee = (userRole?: UserRole | null): boolean => {
+  const role = userRole || authManager.getUserRole();
+
+  return role === 'admin' || role === 'quanly';
+};
+
+/**
+ * Check if user can create users.
+ * Backend grants POST /users to admin and giamdoc (PRD §5.3 full-control
+ * user management); quanly/ketoan hold read-only user access.
+ */
+export const canCreateUser = (userRole?: UserRole | null): boolean => {
+  const role = userRole || authManager.getUserRole();
+
+  return role === 'admin' || role === 'giamdoc';
 };

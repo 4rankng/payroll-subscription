@@ -59,7 +59,7 @@ export const FilterPill = React.memo(function FilterPill({
             // must scroll rather than be clipped by the rounded overflow-hidden
             // shell. `--radix-select-content-available-height` is the space
             // Radix measured between the trigger and the viewport edge.
-            'z-50 min-w-[10rem] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-sm',
+            'z-40 min-w-[10rem] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-sm',
             'max-h-[min(20rem,var(--radix-select-content-available-height))]',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',

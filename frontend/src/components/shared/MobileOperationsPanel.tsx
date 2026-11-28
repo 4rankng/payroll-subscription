@@ -80,7 +80,7 @@ export function MobileOperationsPanel({
       actions={
         <div className="text-right">
           <p className="console-kicker">{primaryLabel}</p>
-          <p className="console-value mt-0.5 font-display text-xl font-semibold leading-6 tracking-tight text-foreground tabular-nums">
+          <p className="console-value mt-0.5 min-w-0 font-display text-xl font-semibold leading-6 tracking-tight text-foreground tabular-nums">
             {primaryValue}
           </p>
           {primaryHint && (
@@ -138,7 +138,7 @@ function OperationMetricCell({ metric, className }: { metric: MobileOperationMet
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
           <span className="min-w-0 truncate text-[12px] leading-4 text-foreground">{metric.label}</span>
-          <span className={cn('console-value shrink-0 text-[13px] font-semibold tabular-nums', tone.value)}>
+          <span className={cn('console-value min-w-0 truncate text-right text-[13px] font-semibold tabular-nums', tone.value)}>
             {metric.value}
           </span>
         </span>

@@ -22,7 +22,7 @@ export const usePartnerEmployeesData = (scope?: 'global') => {
   const shouldUseSearch = debouncedSearchTerm.trim().length > 0;
 
   // Use the existing employees hook which calls /api/v1/employees with pagination
-  const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useEmployees({
+  const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError, refetch: refetchEmployees } = useEmployees({
     page,
     pageSize,
     sortBy,
@@ -35,7 +35,7 @@ export const usePartnerEmployeesData = (scope?: 'global') => {
     scope,
   });
 
-  const { data: searchData, isLoading: isSearching, error: searchError } = useEmployeeSearch(
+  const { data: searchData, isLoading: isSearching, error: searchError, refetch: refetchSearch } = useEmployeeSearch(
     debouncedSearchTerm,
     {
       pageSize: 50,
@@ -81,6 +81,15 @@ export const usePartnerEmployeesData = (scope?: 'global') => {
   
   const isLoading = shouldUseSearch ? isSearching : isLoadingEmployees;
   const error = shouldUseSearch ? searchError : employeesError;
+
+  // Retry the query that backs the current view (search vs. plain list).
+  const refetch = useCallback(() => {
+    if (shouldUseSearch) {
+      void refetchSearch();
+    } else {
+      void refetchEmployees();
+    }
+  }, [shouldUseSearch, refetchSearch, refetchEmployees]);
 
   const searchEmployees = useCallback((term: string) => {
     setSearchTerm(term);
@@ -158,6 +167,7 @@ export const usePartnerEmployeesData = (scope?: 'global') => {
     pagination,
     isLoading,
     error,
+    refetch,
     searchEmployees,
     clearSearch,
     searchTerm,

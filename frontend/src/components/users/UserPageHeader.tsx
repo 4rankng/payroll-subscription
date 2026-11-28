@@ -4,7 +4,8 @@ import { useLocation } from "react-router-dom";
 import { Download, Plus } from "lucide-react";
 
 interface UserPageHeaderProps {
-  onAddUser: () => void;
+  /** Omit for roles without user-create permission — hides the CTA. */
+  onAddUser?: () => void;
   onExportUsers: () => void;
   isExporting?: boolean;
   /** Drives the console meta line (exact user count). */
@@ -27,12 +28,12 @@ export const UserPageHeader = ({ onAddUser, onExportUsers, isExporting = false, 
           variant: 'outline' as const,
           className: isExporting ? 'opacity-50 pointer-events-none' : '',
         },
-        {
+        ...(onAddUser ? [{
           label: 'Thêm người dùng',
           onClick: onAddUser,
           icon: Plus,
           variant: 'default' as const,
-        },
+        }] : []),
       ]}
     />
   );

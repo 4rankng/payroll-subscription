@@ -123,7 +123,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  {f.isPayrateLoading || f.isPayUnitLoading ? (
+                  {(f.isPayrateLoading || f.isPayUnitLoading) && !f.isPayrateError && !f.isPayUnitError ? (
                     <div className="flex flex-col items-end gap-1">
                       <div className="h-6 w-24 bg-slate-200 rounded animate-pulse" />
                       <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
@@ -170,7 +170,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider px-0.5">Loại ngày</Label>
-                <Select value={f.formData.dayType} onValueChange={(v) => f.handleFormChange("dayType", v as "Ngày thường" | "Ngày nghỉ" | "Ngày lễ")}
+                <Select value={f.formData.dayType || undefined} onValueChange={(v) => f.handleFormChange("dayType", v as "Ngày thường" | "Ngày nghỉ" | "Ngày lễ")}
                   disabled={f.isReadOnly}>
                   <SelectTrigger className="h-10 bg-slate-50 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20">
                     <SelectValue placeholder="Chọn loại ngày" />

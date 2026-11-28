@@ -3,17 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { getConsoleKicker } from './console';
 
 describe('getConsoleKicker', () => {
-  it('defaults staff dashboards and ops routes to VẬN HÀNH', () => {
-    expect(getConsoleKicker('/admin/dashboard')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/projects')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/timesheet')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/approvals')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/settings')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/system-health')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/audit-log')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/zns-tracking')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/partner/dashboard')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/partner/timesheet')).toBe('VẬN HÀNH');
+  it('returns no kicker for staff dashboards and ops routes (owner 28/11)', () => {
+    expect(getConsoleKicker('/admin/dashboard')).toBe('');
+    expect(getConsoleKicker('/admin/projects')).toBe('');
+    expect(getConsoleKicker('/admin/timesheet')).toBe('');
+    expect(getConsoleKicker('/admin/approvals')).toBe('');
+    expect(getConsoleKicker('/admin/settings')).toBe('');
+    expect(getConsoleKicker('/admin/system-health')).toBe('');
+    expect(getConsoleKicker('/admin/audit-log')).toBe('');
+    expect(getConsoleKicker('/admin/zns-tracking')).toBe('');
+    expect(getConsoleKicker('/partner/dashboard')).toBe('');
+    expect(getConsoleKicker('/partner/timesheet')).toBe('');
+    expect(getConsoleKicker('/')).toBe('');
   });
 
   it('maps people routes to NHÂN SỰ', () => {
@@ -40,14 +41,14 @@ describe('getConsoleKicker', () => {
   });
 
   it('does not let a prefix capture a longer sibling segment', () => {
-    expect(getConsoleKicker('/admin/users-archive')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/admin/employeesx')).toBe('VẬN HÀNH');
+    expect(getConsoleKicker('/admin/users-archive')).toBe('');
+    expect(getConsoleKicker('/admin/employeesx')).toBe('');
   });
 
-  it('falls back to VẬN HÀNH for non-staff and unknown paths', () => {
-    expect(getConsoleKicker('/login')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/')).toBe('VẬN HÀNH');
-    expect(getConsoleKicker('/definitely-not-a-route')).toBe('VẬN HÀNH');
+  it('falls back to no kicker for non-staff and unknown paths', () => {
+    expect(getConsoleKicker('/login')).toBe('');
+    expect(getConsoleKicker('/')).toBe('');
+    expect(getConsoleKicker('/definitely-not-a-route')).toBe('');
   });
 
   it('ignores query strings and trailing slashes', () => {

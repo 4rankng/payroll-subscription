@@ -4,9 +4,10 @@
  * dependency so it is testable and usable from any layout.
  */
 
-export type ConsoleKicker = 'VẬN HÀNH' | 'NHÂN SỰ' | 'TÀI CHÍNH' | 'KẾ TOÁN';
+export type ConsoleKicker = '' | 'NHÂN SỰ' | 'TÀI CHÍNH' | 'KẾ TOÁN';
 
-const DEFAULT_KICKER: ConsoleKicker = 'VẬN HÀNH';
+// Owner 28/11: no default eyebrow — unmatched routes render no kicker text.
+const DEFAULT_KICKER: ConsoleKicker = '';
 
 /** Longest-prefix routes first is not required — prefixes are disjoint, but
  *  matching is segment-exact (`/admin/users` never captures

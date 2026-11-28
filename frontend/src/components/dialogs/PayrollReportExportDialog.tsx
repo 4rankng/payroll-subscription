@@ -3,8 +3,10 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
-  DialogNavyHeader,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,15 +49,24 @@ export function PayrollReportExportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg" hideCloseButton>
-        <DialogNavyHeader
-          title="Xuất sao kê"
-          description="Chọn ngày báo cáo và tải file sao kê Excel."
-        />
+      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
+        <DialogHeader className="items-start space-y-0.5 border-b px-5 py-4 text-left">
+          <DialogTitle className="text-base font-semibold text-foreground">
+            Xuất sao kê
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Chọn ngày báo cáo và tải file sao kê Excel.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="saoke-export-report-date">Ngày báo cáo</Label>
+        <div className="space-y-4 p-5">
+          <div>
+            <Label
+              htmlFor="saoke-export-report-date"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Ngày báo cáo
+            </Label>
             <Input
               id="saoke-export-report-date"
               type="date"
@@ -64,26 +75,34 @@ export function PayrollReportExportDialog({
                 setReportDate(event.target.value);
                 setShowPreview(false);
               }}
+              className="h-9 w-48 tabular-nums"
             />
           </div>
 
           {showPreview && <SaokePreviewPanel summary={summary} reportDate={reportDate} />}
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Đóng
-          </Button>
-          <Button type="button" variant="outline" onClick={() => setShowPreview(true)}>
-            Xem trước
-          </Button>
+        <DialogFooter className="justify-between border-t bg-muted/30 px-5 py-3.5">
           <Button
             type="button"
-            onClick={handleExport}
-            disabled={exportSaoke.isPending || reportDate.length === 0}
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={() => onOpenChange(false)}
           >
-            {exportSaoke.isPending ? 'Đang xuất...' : 'Xuất Excel'}
+            Đóng
           </Button>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={() => setShowPreview(true)}>
+              Xem trước
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExport}
+              disabled={exportSaoke.isPending || reportDate.length === 0}
+            >
+              {exportSaoke.isPending ? 'Đang xuất...' : 'Xuất Excel'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

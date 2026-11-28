@@ -70,7 +70,7 @@ const FeeInsightsPage = () => {
       <div className="mx-auto max-w-[1280px] space-y-3 p-3 sm:p-4">
         <PageHeader
           title="Tổng quan"
-          description="Insights phí subscription"
+          description="Thống kê phí theo tháng"
           kicker={getConsoleKicker(location.pathname)}
         />
         <Card>
@@ -96,7 +96,7 @@ const FeeInsightsPage = () => {
     <div className="mx-auto max-w-[1280px] space-y-3 p-3 sm:p-4">
       <PageHeader
         title="Tổng quan"
-        description="Insights phí subscription"
+        description="Thống kê phí theo tháng"
         kicker={getConsoleKicker(location.pathname)}
       />
 
@@ -116,7 +116,7 @@ const FeeInsightsPage = () => {
                       </TableHead>
                     ))}
                     <TableHead className="text-right">Tổng</TableHead>
-                    <TableHead className="text-right">Phí tháng (VND)</TableHead>
+                    <TableHead className="text-right">Phí tháng (đ)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -160,7 +160,7 @@ const FeeInsightsPage = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Xu hướng phí theo tháng (VND — đơn giá {formatVnd(feePerEmployeePerKyVnd)}/Tổng)
+                Xu hướng phí theo tháng (đ — đơn giá {formatVnd(feePerEmployeePerKyVnd)}/Tổng)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -182,7 +182,7 @@ const FeeInsightsPage = () => {
                         width={90}
                       />
                       <Tooltip
-                        formatter={(value) => [`${formatVnd(Number(value))} VND`, 'Phí tháng']}
+                        formatter={(value) => [`${formatVnd(Number(value))} đ`, 'Phí tháng']}
                       />
                       <Bar dataKey="feeVnd" name="Phí tháng" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                     </BarChart>
