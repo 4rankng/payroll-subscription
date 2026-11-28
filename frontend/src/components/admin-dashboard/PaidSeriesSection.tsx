@@ -53,7 +53,7 @@ export function PaidSeriesSection({ month }: PaidSeriesSectionProps) {
     () => (projects ?? []).map((p) => ({ id: p.id, name: p.name })),
     [projects],
   );
-  const paidRows = rows ?? [];
+  const paidRows = useMemo(() => rows ?? [], [rows]);
   const series = useMemo<PaidSeriesDef[]>(
     () => (paidRows.length > 0 ? buildPaidSeriesDefs(paidRows, labels) : []),
     [paidRows, labels],
