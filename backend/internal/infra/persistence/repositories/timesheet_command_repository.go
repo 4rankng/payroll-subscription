@@ -131,7 +131,7 @@ func (r *TimesheetCommandRepository) BulkApprove(ctx context.Context, ids []uint
 				"approved_by":      approvedBy,
 				"approved_at":      now,
 				"rejection_reason": "",
-					}).Error
+			}).Error
 	})
 }
 
