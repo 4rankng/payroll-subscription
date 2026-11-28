@@ -82,8 +82,8 @@ const DialogContent = React.forwardRef<
         {description ? <DialogPrimitive.Description className="sr-only">{description}</DialogPrimitive.Description> : null}
         {children}
         {!hideCloseButton && (
-          <DialogPrimitive.Close className="absolute right-3 top-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 outline-none focus:ring-2 focus:ring-white/30 sm:right-4">
-            <X className="w-4 h-4 text-white" />
+          <DialogPrimitive.Close className="absolute right-3 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground outline-none focus:ring-2 focus:ring-ring">
+            <X className="w-4 h-4" />
             <span className="sr-only">Đóng</span>
           </DialogPrimitive.Close>
         )}
@@ -92,40 +92,6 @@ const DialogContent = React.forwardRef<
   );
 })
 DialogContent.displayName = DialogPrimitive.Content.displayName
-
-type DialogNavyHeaderProps = {
-  title: React.ReactNode;
-  description?: React.ReactNode;
-  action?: React.ReactNode;
-  className?: string;
-  children?: React.ReactNode;
-};
-
-const DialogNavyHeader = React.forwardRef<HTMLDivElement, DialogNavyHeaderProps>(
-  ({ title, description, action, className, children }, ref) => (
-    <div
-      ref={ref}
-      className={cn("bg-brand-section_subtle px-5 pt-5 pb-4 text-white flex-shrink-0", className)}
-      style={{ '--foreground': '0 0% 100%', '--muted-foreground': '152 30% 78%' } as React.CSSProperties}
-    >
-      <div className="flex justify-between items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <DialogPrimitive.Title className="break-words text-base font-semibold tracking-tight text-white leading-tight">{title}</DialogPrimitive.Title>
-          {description && (
-            <DialogPrimitive.Description className="text-emerald-200/75 text-xs mt-1">{description}</DialogPrimitive.Description>
-          )}
-        </div>
-        {action && <div className="flex items-center flex-shrink-0 pt-0.5">{action}</div>}
-        <DialogPrimitive.Close className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 outline-none focus:ring-2 focus:ring-white/30">
-          <X className="w-4 h-4 text-white" />
-          <span className="sr-only">Đóng</span>
-        </DialogPrimitive.Close>
-      </div>
-      {children}
-    </div>
-  )
-);
-DialogNavyHeader.displayName = "DialogNavyHeader";
 
 const DialogHeader = ({
   className,
@@ -198,7 +164,6 @@ export {
   DialogClose,
   DialogTrigger,
   DialogContent,
-  DialogNavyHeader,
   DialogHeader,
   DialogFooter,
   DialogTitle,

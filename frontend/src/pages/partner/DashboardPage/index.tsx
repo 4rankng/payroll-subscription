@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
 import { format, startOfMonth } from 'date-fns';
-import { Banknote, Users, UserCheck, Wallet } from 'lucide-react';
 import { UserX01 } from '@untitledui/icons';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,17 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { ConsoleKpi, ConsolePanel } from '@/components/shared/console-panel';
-import { useDashboardSummary, useTopPaidEmployees } from '@/hooks/api/useDashboard';
+import { ConsolePanel } from '@/components/shared/console-panel';
+import { useTopPaidEmployees } from '@/hooks/api/useDashboard';
 import { useEmployeeModals } from '@/hooks/useModalNavigation';
 import { MissingMobileSection } from '@/components/employees/MissingMobileSection';
 import { PaidSeriesSection } from '@/components/admin-dashboard/PaidSeriesSection';
 import { KyFeeSummaryTable } from '@/components/billing/KyFeeSummaryTable';
 import { WorkforceOverviewCard } from '@/components/partner-dashboard/WorkforceOverviewCard';
-import { KpiEmployeeListSheet, type KpiEmployeeCategory } from '@/components/partner-dashboard/KpiEmployeeListSheet';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { formatFullCurrency } from '@/utils/formatters';
 import type { TopPaidEmployeeItem } from '@/types/api/dashboard.types';
 import { monthOptions, formatVND } from './utils';
 
@@ -122,23 +119,6 @@ function LeaderRow({ item, rank }: { item: TopPaidEmployeeItem; rank: number }) 
 }
 
 // ─── Skeletons ─────────────────────────────────────────────────────────────
-function StatRowSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="console-panel flex items-center gap-2.5 px-3 py-2">
-          <Skeleton className="size-9 shrink-0 rounded-md" />
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Skeleton className="h-2.5 w-16" />
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-2.5 w-20" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function LeaderboardSkeleton() {
   return (
     <div className="space-y-2 pt-2">
@@ -183,15 +163,7 @@ const PartnerDashboardPage = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(
     format(startOfMonth(new Date()), 'yyyy-MM'),
   );
-  const [kpiSheet, setKpiSheet] = useState<{ open: boolean; category: KpiEmployeeCategory }>({
-    open: false,
-    category: 'all',
-  });
-
   const handleMonthChange = useCallback((value: string) => setSelectedMonth(value), []);
-  const openKpiSheet = useCallback((category: KpiEmployeeCategory) => {
-    setKpiSheet({ open: true, category });
-  }, []);
 
   // Employee rows in the mobile-warning section open the employee details
   // sheet through the URL-driven modal system — same wiring as the partner
@@ -203,7 +175,6 @@ const PartnerDashboardPage = () => {
   );
 
   const apiMonth = selectedMonth === ALL_VALUE ? undefined : selectedMonth;
-  const { data: summary, isLoading: isSummaryLoading } = useDashboardSummary(apiMonth);
   const { data: topPaid, isLoading: isTopLoading } = useTopPaidEmployees(
     apiMonth ? { month: apiMonth } : undefined,
   );
@@ -225,46 +196,7 @@ const PartnerDashboardPage = () => {
           onMonthChange={handleMonthChange}
         />
 
-        {/* ── KPI strip ── */}
-        {isSummaryLoading ? (
-          <StatRowSkeleton />
-        ) : (
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 motion-safe:animate-fade-in-up">
-            <ConsoleKpi
-              label="Tổng chi trả"
-              value={formatFullCurrency(summary?.total_paid_salary ?? 0)}
-              title={formatVND(summary?.total_paid_salary ?? 0)}
-              icon={Banknote}
-              tone="primary"
-              hint={periodLabel}
-              onClick={() => openKpiSheet('all')}
-            />
-            <ConsoleKpi
-              label="Đang làm việc"
-              value={(summary?.total_working_employees ?? 0).toLocaleString('vi-VN')}
-              icon={UserCheck}
-              tone="secondary"
-              onClick={() => openKpiSheet('working')}
-            />
-            <ConsoleKpi
-              label="Có thể nghỉ"
-              value={Math.max(0, (summary?.total_employees ?? 0) - (summary?.total_working_employees ?? 0)).toLocaleString('vi-VN')}
-              icon={Users}
-              tone="gold"
-              hint="không hoạt động"
-              onClick={() => openKpiSheet('inactive')}
-            />
-            <ConsoleKpi
-              label="Đã thanh toán"
-              value={formatFullCurrency(summary?.paid_salary_this_month ?? 0)}
-              title={formatVND(summary?.paid_salary_this_month ?? 0)}
-              icon={Wallet}
-              tone="neutral"
-              hint={periodLabel}
-              onClick={() => openKpiSheet('new')}
-            />
-          </div>
-        )}
+        {/* ── KPI strip removed (owner 28/11) ── */}
 
         {/* Mobile warnings render nothing when clean (no dead card). */}
         <MissingMobileSection onEmployeeClick={handleEmployeeClick} />
@@ -277,7 +209,7 @@ const PartnerDashboardPage = () => {
               <KyFeeSummaryTable />
             </div>
           </div>
-          <PaidSeriesSection />
+          <PaidSeriesSection month={apiMonth} />
         </section>
 
         {/* ── Leaderboard ── */}
@@ -317,18 +249,6 @@ const PartnerDashboardPage = () => {
             )}
           </div>
         </ConsolePanel>
-
-        {/* KPI employee list sheet */}
-        <KpiEmployeeListSheet
-          open={kpiSheet.open}
-          onOpenChange={(open) => setKpiSheet((prev) => ({ ...prev, open }))}
-          category={kpiSheet.category}
-          month={apiMonth}
-          onEmployeeClick={(id) => {
-            setKpiSheet((prev) => ({ ...prev, open: false }));
-            openEmployeeDetails(id.toString());
-          }}
-        />
       </div>
     </div>
   );

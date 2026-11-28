@@ -12,7 +12,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 
-export type KpiEmployeeCategory = 'all' | 'working' | 'inactive' | 'new';
+export type KpiEmployeeCategory = 'all' | 'working' | 'new';
 
 interface KpiEmployeeListSheetProps {
   open: boolean;
@@ -25,7 +25,6 @@ interface KpiEmployeeListSheetProps {
 const CATEGORY_LABELS: Record<KpiEmployeeCategory, string> = {
   all: 'Tất cả nhân viên',
   working: 'Đang làm việc',
-  inactive: 'Có thể nghỉ',
   new: 'Nhân viên mới',
 };
 
@@ -33,8 +32,6 @@ function getCategoryFilter(category: KpiEmployeeCategory, month?: string) {
   switch (category) {
     case 'working':
       return { status: 'working' as const, pageSize: 100 };
-    case 'inactive':
-      return { include_inactive: true, pageSize: 100 };
     case 'new':
       return { pageSize: 100, ...(month ? { month } : {}) };
     case 'all':

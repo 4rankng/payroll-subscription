@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -77,14 +76,14 @@ export function PayrollReportEmailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
         {/* Header — bleeds to the rounded edges, white, hairline divider */}
-        <DialogHeader className="items-start space-y-0.5 border-b px-5 py-4 text-left">
+        <div className="flex items-start justify-between gap-3 border-b bg-card px-5 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
             Gửi sao kê qua email
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             Chọn ngày báo cáo và danh sách người nhận, xem trước rồi gửi.
           </DialogDescription>
-        </DialogHeader>
+        </div>
 
         {/* Body */}
         <div className="space-y-4 p-5">

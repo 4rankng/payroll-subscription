@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Dialog, DialogContent, DialogNavyHeader, DialogTrigger } from './dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
 import { useIsMobile } from '@/hooks/useBreakpoint';
 
 vi.mock('@/hooks/useBreakpoint', () => ({ useIsMobile: vi.fn(() => false) }));
@@ -12,8 +12,13 @@ describe('shared dialog header', () => {
     render(
       <Dialog>
         <DialogTrigger>Mở kết quả</DialogTrigger>
-        <DialogContent contentPadding="none" hideCloseButton>
-          <DialogNavyHeader title="Kết quả chuyển tiền" description="Kiểm tra kết quả trước khi tiếp tục." />
+        <DialogContent contentPadding="none">
+          <div className="flex items-start justify-between gap-3 border-b bg-card px-5 py-4">
+            <div>
+              <DialogTitle>Kết quả chuyển tiền</DialogTitle>
+              <DialogDescription>Kiểm tra kết quả trước khi tiếp tục.</DialogDescription>
+            </div>
+          </div>
           <p>Nội dung kết quả</p>
         </DialogContent>
       </Dialog>,

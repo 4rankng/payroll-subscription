@@ -49,7 +49,7 @@ export function WorkforceOverviewCard({ month }: WorkforceOverviewCardProps) {
             centreValue={String(summary?.total_employees ?? 0)}
             centreLabel="Tổng NV"
           />
-          <div className="grid w-full grid-cols-2 gap-x-6 gap-y-2 sm:w-auto">
+          <div className="grid w-full grid-cols-2 gap-x-6 gap-y-2">
             {segments.map((seg) => (
               <div key={seg.label} className="flex items-center gap-2">
                 <span

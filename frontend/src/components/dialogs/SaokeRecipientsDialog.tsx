@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -57,14 +56,14 @@ export function SaokeRecipientsDialog({ open, onOpenChange }: SaokeRecipientsDia
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg">
-        <DialogHeader className="items-start space-y-0.5 border-b px-5 py-4 text-left">
+        <div className="flex items-start justify-between gap-3 border-b bg-card px-5 py-4">
           <DialogTitle className="text-base font-semibold text-foreground">
             Danh sách người nhận sao kê
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             Chỉnh sửa danh sách To và CC dùng cho các email sao kê.
           </DialogDescription>
-        </DialogHeader>
+        </div>
 
         <div className="space-y-4 p-5">
           <div>
