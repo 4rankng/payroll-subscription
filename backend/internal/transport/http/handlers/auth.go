@@ -206,7 +206,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	// Drop the session cookie regardless of which channel carried the token.
 	middleware.ClearAuthCookie(c, h.cookieSecure)
-	response.Success(c, nil, "Logout successful")
+	response.Success(c, nil, constants.MsgLogoutSuccessVN)
 }
 
 // @Summary Change password

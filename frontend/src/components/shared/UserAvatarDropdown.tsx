@@ -12,6 +12,7 @@ import {
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { UserProfileSheet } from '@/components/sheets/UserProfileSheet';
 import { useAuth } from '@/contexts';
+import { useLogout } from '@/hooks/api/useAuth';
 import { useModalNavigation } from '@/hooks/useModalNavigation';
 import { MODAL_IDS } from '@/constants/modalRegistry';
 import { cn } from '@/lib/utils';
@@ -22,7 +23,8 @@ interface UserAvatarDropdownProps {
 }
 
 export const UserAvatarDropdown = ({ className }: UserAvatarDropdownProps) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { mutate: logout } = useLogout();
   const { openModal } = useModalNavigation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 

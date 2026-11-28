@@ -1,10 +1,8 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useLogout } from "@/hooks/api/useAuth";
 import {
   useEmployeeProfile,
   useUpdateEmployeePassword,
@@ -28,8 +26,7 @@ import {
 } from "@/utils/employeePortal/mobileHome";
 
 const EmployeePage = () => {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { mutate: logout } = useLogout();
 
   const month = useEmployeeMonth();
   const [passwordSheetOpen, setPasswordSheetOpen] = useState(false);
@@ -128,9 +125,6 @@ const EmployeePage = () => {
 
   const handleLogout = () => {
     logout();
-    localStorage.removeItem("userRole");
-    toast({ title: "Đăng xuất thành công" });
-    navigate("/login");
   };
 
   const handleChangePassword = async (data: { currentPassword: string; newPassword: string }) => {

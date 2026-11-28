@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Briefcase01,
   Calendar,
@@ -14,7 +14,6 @@ import {
   ChevronSelectorVertical,
 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
-import { authManager } from "@/lib/auth";
 import { roleLabel } from "@/lib/permissions";
 import {
   getSidebarCollapsedState,
@@ -44,6 +43,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { UserProfileSheet } from "@/components/sheets/UserProfileSheet";
 import { SidebarToggle } from "@/components/shared/SidebarToggle";
 import { useAuth } from "@/contexts";
+import { useLogout } from "@/hooks/api/useAuth";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
 import { useAdminTheme } from "@/hooks/useAdminTheme";
 import { MODAL_IDS } from "@/constants/modalRegistry";
@@ -123,8 +123,8 @@ const NavItem = React.memo(({ item, isCollapsed, onNavigate }: NavItemProps) => 
 NavItem.displayName = "NavItem";
 
 const PartnerSidebar = () => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { mutate: logout } = useLogout();
   const menuItems = partnerNavItems(user?.role);
   const { theme, toggle: toggleTheme } = useAdminTheme();
   const dark = theme === "dark";
@@ -139,12 +139,10 @@ const PartnerSidebar = () => {
   }, [isMobile, setOpenMobile]);
 
   const handleLogout = useCallback(() => {
-    authManager.clearSession();
-    localStorage.removeItem("userRole");
+    // Legacy key outside authManager's stored-profile set.
     localStorage.removeItem("username");
     logout();
-    navigate("/login");
-  }, [logout, navigate]);
+  }, [logout]);
 
   return (
     <>

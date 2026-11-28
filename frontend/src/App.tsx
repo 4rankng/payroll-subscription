@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import { lazyWithReload as lazy } from "@/lib/lazy";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -59,6 +59,7 @@ const EmployeeRouter = lazy(() => import("./pages/employee/EmployeeRouter"));
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { authManager } from "@/lib/auth";
+import { useLogout } from "@/hooks/api/useAuth";
 import { SecureModalProvider } from "@/components/modals/SecureModalProvider";
 import ModalRouter from "@/components/modals/ModalRouter";
 import { ForceChangePasswordDialog } from "@/components/ForceChangePasswordDialog";
@@ -77,7 +78,12 @@ const PageSuspenseFallback = React.memo(() => (
 ));
 
 const LogoutRedirect = () => {
-  authManager.clearSession();
+  // Revoke the server session too — clearing local state alone leaves the
+  // cookie token valid until it expires.
+  const { mutate: logout } = useLogout();
+  useEffect(() => {
+    logout();
+  }, [logout]);
   return <Navigate to="/login" replace />;
 };
 

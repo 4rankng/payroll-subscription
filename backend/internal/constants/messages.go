@@ -648,6 +648,7 @@ const (
 	MsgTokenBlacklistedVN            = "Token đã bị vô hiệu hóa"
 	MsgFailedToCheckTokenBlacklistVN = "Không thể kiểm tra danh sách đen token"
 	MsgFailedToBlacklistTokenVN      = "Không thể vô hiệu hóa token"
+	MsgLogoutSuccessVN               = "Đăng xuất thành công"
 
 	// Dashboard Services - Vietnamese
 	MsgInvalidPeriodFormatVN                  = "Định dạng khoảng thời gian không hợp lệ. Phải là: day, week, month, quarter, year"

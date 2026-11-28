@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 // UU PRO restyle (W13a): lucide → verified @untitledui/icons. The dark
 // --admin-sidebar-* surface stays the role identity (variables.css remains
 // authoritative); only glyph + token vocabulary changes here.
@@ -24,7 +23,6 @@ import {
   Users01,
 } from "@untitledui/icons";
 import { cn } from "@/lib/utils";
-import { authManager } from "@/lib/auth";
 import { roleLabel } from "@/lib/permissions";
 import {
   getSidebarCollapsedState,
@@ -54,6 +52,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { UserProfileSheet } from "@/components/sheets/UserProfileSheet";
 import { SidebarToggle } from "@/components/shared/SidebarToggle";
 import { useAuth } from "@/contexts";
+import { useLogout } from "@/hooks/api/useAuth";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
 import { useAdminTheme } from "@/hooks/useAdminTheme";
 import { MODAL_IDS } from "@/constants/modalRegistry";
@@ -263,9 +262,9 @@ const NavGroup = React.memo(
 NavGroup.displayName = "NavGroup";
 
 const AdminSidebar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { mutate: logout } = useLogout();
   const { theme, toggle: toggleTheme } = useAdminTheme();
   const dark = theme === "dark";
   const { isMobile, setOpenMobile, open, openMobile } = useSidebar();
@@ -381,12 +380,10 @@ const AdminSidebar = () => {
   }, [isMobile, setOpenMobile]);
 
   const handleLogout = useCallback(() => {
-    authManager.clearSession();
-    localStorage.removeItem("userRole");
+    // Legacy key outside authManager's stored-profile set.
     localStorage.removeItem("username");
     logout();
-    navigate("/login");
-  }, [logout, navigate]);
+  }, [logout]);
 
   const groupedSections = useMemo(() => menuGroups.filter((g) => g.label !== null), []);
 

@@ -7,6 +7,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { MODAL_IDS } from "@/constants/modalRegistry";
 import { useAuth, useBottomNav } from "@/contexts";
+import { useLogout } from "@/hooks/api/useAuth";
 import { useUnreadNotifications } from "@/hooks/api/useNotifications";
 import { useIsMobile } from "@/hooks/useBreakpoint";
 import { useModalNavigation } from "@/hooks/useModalNavigation";
@@ -48,7 +49,8 @@ export const MobileBottomNav = ({ groups, moreItems }: MobileBottomNavProps) => 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const { override } = useBottomNav();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { mutate: logout } = useLogout();
   const { openModal } = useModalNavigation();
   const { data: unreadData } = useUnreadNotifications();
   const unreadCount = unreadData?.count || 0;
