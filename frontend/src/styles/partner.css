@@ -444,3 +444,25 @@ html.partner-route-active :is([role="menu"], [role="listbox"]) {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+ * Partner typography scope (11px–12px data-dense contract).
+ * Scoped to [data-partner-ui] so the admin console keeps ADR-013 styling.
+ * Kickers stay readable: no wide-tracked ALL CAPS; tables cap header
+ * tracking; the page-header meta line renders sans at 12px.
+ * ======================================================================== */
+
+[data-partner-ui] .console-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+[data-partner-ui] .console-table thead th {
+  letter-spacing: 0.03em;
+}
+
+[data-partner-ui] [data-slot="page-header-meta"] {
+  font-family: var(--font-family-display);
+  font-size: 12px;
+}

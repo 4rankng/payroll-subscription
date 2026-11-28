@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatFullCurrency } from '@/utils/formatters';
 import type { PaidSeriesRow } from '@/services/api/billing.service';
 import { cn } from '@/lib/utils';
 
@@ -29,30 +29,16 @@ export interface PaidSeriesDef {
 
 const TOP_PROJECT_COUNT = 8;
 const SERIES_COLORS = [
-  '#0ea5e9',
-  '#22c55e',
-  '#f59e0b',
-  '#a855f7',
-  '#ef4444',
-  '#14b8a6',
-  '#6366f1',
-  '#e11d48',
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(var(--chart-6))',
+  'hsl(var(--chart-7))',
+  'hsl(var(--chart-8))',
 ];
-const OTHER_COLOR = '#94A3B8';
-
-/**
- * Compact VND for chart axis ticks only — "1,2 tỷ" / "200 tr". Full vi-VN
- * strings stay in tooltips, cards, and tables (see bd7eb793: the global
- * compact formatter was removed; this is scoped to chart axes).
- */
-export function formatCompactVndTick(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1).replace(/\.0$/, '').replace('.', ',')} tỷ`;
-  }
-  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)} tr`;
-  if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
-  return String(value);
-}
+const OTHER_COLOR = 'hsl(var(--chart-other))';
 
 function projectNameOf(projects: ProjectLabel[], projectId: number, fallback?: string): string {
   return projects.find((p) => p.id === projectId)?.name ?? fallback ?? '(dự án)';
@@ -235,14 +221,20 @@ function SeriesChart({ rows, series, metric }: SeriesChartProps) {
           <XAxis dataKey="date" fontSize={11} tickMargin={8} minTickGap={24} />
           <YAxis
             fontSize={11}
-            width={isAmount ? 56 : 32}
+            width={isAmount ? 88 : 32}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
-            tickFormatter={isAmount ? formatCompactVndTick : (v: number) => String(v)}
+            tickFormatter={
+              isAmount
+                ? (v: number) => formatFullCurrency(v, { showSymbol: false })
+                : (v: number) => String(v)
+            }
           />
           <Tooltip
             cursor={{ fill: 'rgba(100, 116, 139, 0.08)' }}
+            wrapperStyle={{ zIndex: 40, maxWidth: 260 }}
+            isAnimationActive={false}
             content={<PaidSeriesTooltip metric={metric} />}
           />
           {series.map((def) => (

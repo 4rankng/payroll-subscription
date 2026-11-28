@@ -5,7 +5,6 @@ import type { PaidSeriesRow } from '@/services/api/billing.service';
 import {
   PaidSeriesLegend,
   buildPaidSeriesDefs,
-  formatCompactVndTick,
 } from './PaidSeriesChart';
 
 vi.mock('@/hooks/api/useProjects', () => ({
@@ -57,15 +56,6 @@ describe('buildPaidSeriesDefs', () => {
     const defs = buildPaidSeriesDefs(rows, [], 6);
 
     expect(defs.map((d) => d.projectIds[0])).toEqual([3, 1, 2]);
-  });
-});
-
-describe('formatCompactVndTick', () => {
-  it('compacts billion and million ranges without clipping digits', () => {
-    expect(formatCompactVndTick(1_200_000_000)).toBe('1,2 tỷ');
-    expect(formatCompactVndTick(1_000_000_000)).toBe('1 tỷ');
-    expect(formatCompactVndTick(200_000_000)).toBe('200 tr');
-    expect(formatCompactVndTick(0)).toBe('0');
   });
 });
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatVietnameseName } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 import { User, AlertCircle } from "lucide-react";
 import type { EmployeeFormProps } from "../types";
 
@@ -48,6 +49,7 @@ function hasInvalidNameChars(value: string): boolean {
 export function EmployeeEditForm({
   formData,
   onInputChange,
+  focusMobile = false,
 }: EmployeeFormProps) {
   const [nameWarning, setNameWarning] = useState(false);
 
@@ -94,7 +96,11 @@ export function EmployeeEditForm({
           <Field id="mobile" label="Số điện thoại">
             <Input
               id="mobile"
-              className="h-11 text-sm sm:h-9"
+              autoFocus={focusMobile}
+              className={cn(
+                "h-11 text-sm sm:h-9",
+                focusMobile && "ring-2 ring-primary ring-offset-1"
+              )}
               value={formData.mobile || ''}
               onChange={(e) => onInputChange("mobile", e.target.value)}
             />

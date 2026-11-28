@@ -53,6 +53,8 @@ export function EmployeeDetailsSheet({
   const [searchParams] = useSearchParams();
 
   const employeeId = searchParams.get('id');
+  // DASH-06 banner row links append &focus=mobile to deep-link the phone field.
+  const focus = searchParams.get('focus');
 
   const { data: fetchedEmployee, isError } = useEmployee(
     employeeId ? parseInt(employeeId) : 0,
@@ -78,6 +80,7 @@ export function EmployeeDetailsSheet({
       fetchError={isError}
       isOpen={isOpen}
       onClose={handleClose}
+      focusMobile={focus === 'mobile'}
       onUpdate={onUpdate}
       onDelete={onDelete}
       onRefetch={handleRefetch}

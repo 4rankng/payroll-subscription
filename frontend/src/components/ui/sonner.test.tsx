@@ -25,6 +25,7 @@ interface CapturedToasterProps {
   theme: string;
   duration: number;
   className?: string;
+  style?: { zIndex?: number };
   toastOptions: {
     duration: number;
     classNames: Record<string, string>;
@@ -41,6 +42,7 @@ describe('sonner toaster (UU restyle contract)', () => {
     expect(props.duration).toBe(3000);
     expect(props.toastOptions.duration).toBe(3000);
     expect(props.className).toBe('toaster group');
+    expect(props.style?.zIndex).toBe(70);
 
     const classNames = props.toastOptions.classNames;
     // Existing hook points stay (values restyled; title/closeButton added).

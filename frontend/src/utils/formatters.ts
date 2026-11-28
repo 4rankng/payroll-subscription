@@ -212,15 +212,6 @@ export const formatDateTimeVn = (date: string | Date | null | undefined): string
   return `${vnDateFormatter.format(dateObj)} ${normalized} (+07)`;
 };
 
-/** Compact VND for tight KPI contexts: 105_000_000 → "105 tr". */
-export const formatCompactVND = (value: number | null | undefined): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) return '0 tr';
-  const millions = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(
-    value / 1_000_000,
-  );
-  return `${millions} tr`;
-};
-
 export const formatNumber = (value: number, decimals = 1) => {
   return new Intl.NumberFormat('vi-VN', {
     minimumFractionDigits: decimals,

@@ -50,6 +50,8 @@ interface EmployeeDetailsSheetProps {
   onUpdate?: (employeeId: number, employeeData: Partial<Employee>) => Promise<void> | void;
   onDelete?: (employee: Employee) => void;
   onRefetch?: () => void;
+  /** DASH-06: focus + highlight the phone field (banner row links). */
+  focusMobile?: boolean;
 }
 
 export function EmployeeDetailsSheet({
@@ -59,7 +61,8 @@ export function EmployeeDetailsSheet({
   onClose,
   onUpdate,
   onDelete,
-  onRefetch
+  onRefetch,
+  focusMobile = false
 }: EmployeeDetailsSheetProps) {
   // ALL HOOKS MUST BE CALLED AT THE TOP - Rules of Hooks
   const queryClient = useQueryClient();
@@ -348,6 +351,7 @@ export function EmployeeDetailsSheet({
               employee={employee}
               formData={formData}
               onInputChange={handleInputChange}
+              focusMobile={focusMobile}
             />
           ) : (
             <>

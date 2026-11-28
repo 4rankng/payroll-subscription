@@ -65,6 +65,8 @@ html.admin-console-toto {
   --chart-4: 347 77% 41%;
   --chart-5: 262 52% 40%;
   --chart-6: 142 72% 29%;
+  --chart-7: 170 83% 34%;
+  --chart-8: 43 81% 45%;
   --chart-other: 199 16% 58%;
 
   --selection: 170 83% 34%;
@@ -151,6 +153,8 @@ html.admin-console-toto.dark {
   --chart-4: 343 100% 68%;
   --chart-5: 262 60% 62%;
   --chart-6: 142 60% 45%;
+  --chart-7: 45 93% 55%;
+  --chart-8: 12 75% 58%;
   --chart-other: 199 24% 60%;
 
   --selection: 169 79% 54%;
