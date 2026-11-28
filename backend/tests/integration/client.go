@@ -454,7 +454,7 @@ func (c *APIClient) DownloadPost(path string, body any) ([]byte, http.Header, in
 }
 
 // UploadBytes sends a multipart form file upload from in-memory bytes and returns the API response.
-func (c *APIClient) UploadBytes(path, fileField, filename string, data []byte) (*APIResponse, int, error) {
+func (c *APIClient) UploadBytes(path, fileField, filename string, data []byte, fields map[string]string) (*APIResponse, int, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
@@ -464,6 +464,12 @@ func (c *APIClient) UploadBytes(path, fileField, filename string, data []byte) (
 	}
 	if _, err := part.Write(data); err != nil {
 		return nil, 0, fmt.Errorf("write data: %w", err)
+	}
+
+	for key, val := range fields {
+		if err := writer.WriteField(key, val); err != nil {
+			return nil, 0, fmt.Errorf("write field %s: %w", key, err)
+		}
 	}
 
 	if err := writer.Close(); err != nil {

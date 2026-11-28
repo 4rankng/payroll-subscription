@@ -58,6 +58,8 @@ export interface TransferUploadSummary {
   matched_rows: number;
   /** SUM(employee_pay_cycles.paid_amount) for this upload (Sổ cái Tổng tiền). */
   matched_amount: number;
+  /** Stored original workbook; null for rows from before workbook storage. */
+  asset_id: number | null;
 }
 
 export interface EmployeePayCycleRow {

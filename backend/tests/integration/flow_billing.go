@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"api-server/internal/pkg/clock"
+
+	"github.com/xuri/excelize/v2"
 )
 
 const flowBilling = "Billing"
@@ -219,7 +223,155 @@ func runBillingTests(client *APIClient, data *TestData, reporter *Reporter) {
 		return nil
 	})
 
+	runUploadRoundTripTests(admin, reporter, projectID, employeeID, thisMonth, stamp)
+
 	cleanupBillingFixtures(projectID, employeeID, stamp)
+}
+
+// billingUploadOutcome is the POST /billing/uploads payload.
+type billingUploadOutcome struct {
+	UploadID  uint64 `json:"upload_id"`
+	Status    string `json:"status"`
+	Duplicate bool   `json:"duplicate"`
+	RowsTotal int    `json:"rows_total"`
+	RowsOK    int    `json:"rows_ok"`
+}
+
+// billingUploadRow is one GET /billing/uploads list row.
+type billingUploadRow struct {
+	ID          uint64  `json:"id"`
+	AssetID     *uint64 `json:"asset_id"`
+	ParsedRows  int     `json:"parsed_rows"`
+	MatchedRows int     `json:"matched_rows"`
+}
+
+// buildTransferResultWorkbook renders a one-row transfer result workbook in
+// the upload format the parser accepts.
+func buildTransferResultWorkbook(cccd, reference string) ([]byte, error) {
+	f := excelize.NewFile()
+	sheet := f.GetSheetName(0)
+	rows := [][]interface{}{
+		{"Họ tên", "CCCD", "Số tiền", "Mã tham chiếu"},
+		{"Nguyễn Văn A", cccd, "800000", reference},
+	}
+	for i, row := range rows {
+		if err := f.SetSheetRow(sheet, fmt.Sprintf("A%d", i+1), &row); err != nil {
+			return nil, err
+		}
+	}
+	var buf bytes.Buffer
+	if err := f.Write(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// runUploadRoundTripTests drives POST /billing/uploads end to end (PAYSUB-23
+// / PAYSUB-24): verification must persist the parsed/matched row counters,
+// keep the original workbook downloadable, and answer an identical re-upload
+// with the healed outcome instead of re-processing.
+func runUploadRoundTripTests(admin *APIClient, reporter *Reporter, projectID, employeeID uint, thisMonth, stamp string) {
+	cccd, err := queryPayrollScalar(fmt.Sprintf("SELECT IFNULL(cccd, '') FROM employees WHERE id = %d", employeeID))
+	if err != nil || cccd == "" {
+		reporter.Skip(flowBilling, "Upload round-trip tests", fmt.Sprintf("fixture employee has no CCCD (err=%v)", err))
+		return
+	}
+	// One approved + pending timesheet in the Kỳ 2 window (days 8-14).
+	pendingDate := thisMonth + "-10"
+	if err := plantPaidTimesheet(projectID, employeeID, pendingDate); err != nil {
+		reporter.Skip(flowBilling, "Upload round-trip tests", fmt.Sprintf("plant pending timesheet: %v", err))
+		return
+	}
+	if err := execPayrollSQL(fmt.Sprintf(
+		"UPDATE timesheets SET payment_status = 'pending', payment_date = NULL, paid_at = NULL WHERE project_id = %d AND employee_id = %d AND date = '%s'",
+		projectID, employeeID, pendingDate)); err != nil {
+		reporter.Skip(flowBilling, "Upload round-trip tests", fmt.Sprintf("flip timesheet to pending: %v", err))
+		return
+	}
+
+	filename := fmt.Sprintf("it-billing-%s-api.xlsx", stamp)
+	data, err := buildTransferResultWorkbook(cccd, fmt.Sprintf("it-billing-%s-row", stamp))
+	if err != nil {
+		reporter.Skip(flowBilling, "Upload round-trip tests", fmt.Sprintf("build workbook: %v", err))
+		return
+	}
+	fields := map[string]string{"cycle": "2", "work_month": thisMonth}
+
+	var outcome billingUploadOutcome
+	reporter.RunTest(flowBilling, "Upload verification returns the verified outcome", func() error {
+		resp, status, err := admin.UploadBytes("/api/v1/billing/uploads", "file", filename, data, fields)
+		if err != nil {
+			return fmt.Errorf("upload: %w", err)
+		}
+		if status >= 400 || resp.Status == "error" {
+			return fmt.Errorf("upload returned HTTP %d: %s", status, resp.Message)
+		}
+		if err := json.Unmarshal(resp.Data, &outcome); err != nil {
+			return fmt.Errorf("decode upload outcome: %w", err)
+		}
+		if outcome.Status != "verified" || outcome.Duplicate || outcome.RowsTotal != 1 || outcome.RowsOK != 1 {
+			return fmt.Errorf("outcome want verified 1/1 fresh, got %+v", outcome)
+		}
+		return nil
+	})
+
+	var stored billingUploadRow
+	reporter.RunTest(flowBilling, "Upload list persists counters and the workbook link", func() error {
+		var payload struct {
+			Items []billingUploadRow `json:"items"`
+		}
+		if _, err := admin.GetInto(fmt.Sprintf("/api/v1/billing/uploads?work_month=%s&limit=200", thisMonth), &payload); err != nil {
+			return fmt.Errorf("list uploads: %w", err)
+		}
+		for _, row := range payload.Items {
+			if row.ID == outcome.UploadID {
+				stored = row
+				break
+			}
+		}
+		if stored.ID != outcome.UploadID {
+			return fmt.Errorf("upload %d missing from list", outcome.UploadID)
+		}
+		if stored.ParsedRows != 1 || stored.MatchedRows != 1 {
+			return fmt.Errorf("counters want parsed 1/matched 1, got %d/%d", stored.ParsedRows, stored.MatchedRows)
+		}
+		if stored.AssetID == nil {
+			return fmt.Errorf("asset_id is null — original workbook was not kept")
+		}
+		return nil
+	})
+
+	reporter.RunTest(flowBilling, "Uploaded workbook is downloadable", func() error {
+		if stored.AssetID == nil {
+			return fmt.Errorf("no asset to download (previous step failed)")
+		}
+		bin, _, status, err := admin.DownloadFile("GET", fmt.Sprintf("/api/v1/assets/%d/download", *stored.AssetID), nil)
+		if err != nil {
+			return fmt.Errorf("download: %w", err)
+		}
+		if status != http.StatusOK || len(bin) == 0 {
+			return fmt.Errorf("download HTTP %d with %d bytes; want 200 with the workbook", status, len(bin))
+		}
+		return nil
+	})
+
+	reporter.RunTest(flowBilling, "Identical re-upload returns the healed outcome", func() error {
+		resp, status, err := admin.UploadBytes("/api/v1/billing/uploads", "file", filename, data, fields)
+		if err != nil {
+			return fmt.Errorf("re-upload: %w", err)
+		}
+		if status >= 400 || resp.Status == "error" {
+			return fmt.Errorf("re-upload returned HTTP %d: %s", status, resp.Message)
+		}
+		var dup billingUploadOutcome
+		if err := json.Unmarshal(resp.Data, &dup); err != nil {
+			return fmt.Errorf("decode duplicate outcome: %w", err)
+		}
+		if !dup.Duplicate || dup.UploadID != outcome.UploadID || dup.RowsTotal != 1 || dup.RowsOK != 1 {
+			return fmt.Errorf("duplicate outcome want healed 1/1, got %+v", dup)
+		}
+		return nil
+	})
 }
 
 // cleanupBillingFixtures removes this flow's planted rows (idempotent across

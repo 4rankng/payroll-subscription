@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useLedgerBatches } from '@/hooks/api/useSaoke';
+import { TransferFileLink } from '@/components/billing/TransferFileLink';
 import { getConsoleKicker } from '@/lib/console';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
 
@@ -110,9 +111,7 @@ const LedgerPage = () => {
                   return (
                     <TableRow key={batch.id}>
                       <TableCell>
-                        <span className="block truncate" title={batch.original_filename}>
-                          {batch.original_filename}
-                        </span>
+                        <TransferFileLink assetId={batch.asset_id} filename={batch.original_filename} />
                         {batch.status !== 'verified' && (
                           <Badge className={`${status.className} mt-1`}>{status.label}</Badge>
                         )}

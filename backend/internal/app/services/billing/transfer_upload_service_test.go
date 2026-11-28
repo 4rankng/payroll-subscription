@@ -75,6 +75,23 @@ func (s *kyPaidStub) BankTransferHistory(ctx context.Context, f domain.BankTrans
 	return nil, domain.BankTransferHistorySummary{}, nil
 }
 
+// assetStorerStub records what the service stores for re-download.
+type assetStorerStub struct {
+	calls []storedResultFile
+}
+
+type storedResultFile struct {
+	data       []byte
+	filename   string
+	uploadType string
+	uploadedBy uint
+}
+
+func (s *assetStorerStub) UploadAssetFromBytes(ctx context.Context, data []byte, filename string, uploadType string, uploadedBy uint) (*domain.Asset, error) {
+	s.calls = append(s.calls, storedResultFile{data: data, filename: filename, uploadType: uploadType, uploadedBy: uploadedBy})
+	return &domain.Asset{ID: uint(len(s.calls)), Filename: filename, UploadType: uploadType, UploadedBy: uploadedBy}, nil
+}
+
 // transferResultBytes builds a one-row transfer result workbook in the
 // upload format the parser accepts.
 func transferResultBytes(t *testing.T, reference string) []byte {
@@ -113,7 +130,7 @@ func TestProcessUploadDuplicateHealsStaleCounters(t *testing.T) {
 		Cycle: 4, WorkMonth: "2026-11", EmployeeID: 1, ProjectID: 1,
 		TimesheetID: 1, SourceUploadID: prior.ID, PaidAmount: 800000, CreatedAt: now,
 	}}}
-	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, nil, nil)
+	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, nil, nil, nil)
 
 	result, err := svc.ProcessUpload(context.Background(), 4, "2026-11", "proof.xlsx", transferResultBytes(t, "FT-HEAL"), 1)
 	if err != nil {
@@ -153,7 +170,7 @@ func TestProcessUploadDuplicateKeepsCorrectCounters(t *testing.T) {
 		Cycle: 4, WorkMonth: "2026-11", EmployeeID: 1, ProjectID: 1,
 		TimesheetID: 1, SourceUploadID: prior.ID, PaidAmount: 800000, CreatedAt: now,
 	}}}
-	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, nil, nil)
+	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, nil, nil, nil)
 
 	result, err := svc.ProcessUpload(context.Background(), 4, "2026-11", "proof.xlsx", transferResultBytes(t, "FT-HEAL"), 1)
 	if err != nil {
@@ -164,6 +181,73 @@ func TestProcessUploadDuplicateKeepsCorrectCounters(t *testing.T) {
 	}
 	if len(uploads.updates) != 0 {
 		t.Fatalf("healthy counters must not be rewritten, got %d updates", len(uploads.updates))
+	}
+}
+
+// TestProcessUploadDuplicateBackfillsStoredWorkbook (PAYSUB-24): a verified
+// upload whose row predates workbook storage must gain its asset on an
+// identical re-upload, so the Sổ cái file name becomes downloadable.
+func TestProcessUploadDuplicateBackfillsStoredWorkbook(t *testing.T) {
+	now := time.Now()
+	prior := &domain.TransferUpload{
+		ID: 7, Cycle: 4, WorkMonth: "2026-11", FileHash: "prior-hash",
+		OriginalFilename: "proof.xlsx", UploadedBy: 1,
+		Status: domain.TransferUploadStatusVerified, ParsedRows: 1, MatchedRows: 1,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	uploads := &uploadRepoStub{prior: prior}
+	ky := &kyPaidStub{rows: []domain.EmployeePayCycle{{
+		Cycle: 4, WorkMonth: "2026-11", EmployeeID: 1, ProjectID: 1,
+		TimesheetID: 1, SourceUploadID: prior.ID, PaidAmount: 800000, CreatedAt: now,
+	}}}
+	assets := &assetStorerStub{}
+	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, assets, nil, nil)
+
+	data := transferResultBytes(t, "FT-ASSET")
+	result, err := svc.ProcessUpload(context.Background(), 4, "2026-11", "proof.xlsx", data, 1)
+	if err != nil {
+		t.Fatalf("process upload: %v", err)
+	}
+	if !result.Duplicate || result.RowsTotal != 1 || result.RowsOK != 1 {
+		t.Fatalf("outcome mismatch: %+v", result)
+	}
+	if len(assets.calls) != 1 {
+		t.Fatalf("want exactly 1 stored workbook, got %d", len(assets.calls))
+	}
+	stored := assets.calls[0]
+	if stored.filename != "proof.xlsx" || stored.uploadType != domain.UploadTypeBulkTransferResult || string(stored.data) != string(data) {
+		t.Fatalf("stored workbook mismatch: filename=%q type=%q bytes_equal=%v",
+			stored.filename, stored.uploadType, string(stored.data) == string(data))
+	}
+	if len(uploads.updates) != 1 || uploads.updates[0].AssetID == nil || *uploads.updates[0].AssetID != 1 {
+		t.Fatalf("asset link must be repaired onto the upload row, got %+v", uploads.updates)
+	}
+}
+
+// TestProcessUploadDuplicateKeepsStoredWorkbook: an upload that already has
+// its asset is never re-stored or rewritten on a duplicate re-upload.
+func TestProcessUploadDuplicateKeepsStoredWorkbook(t *testing.T) {
+	now := time.Now()
+	assetID := uint64(9)
+	prior := &domain.TransferUpload{
+		ID: 7, Cycle: 4, WorkMonth: "2026-11", FileHash: "prior-hash",
+		OriginalFilename: "proof.xlsx", AssetID: &assetID, UploadedBy: 1,
+		Status: domain.TransferUploadStatusVerified, ParsedRows: 1, MatchedRows: 1,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	uploads := &uploadRepoStub{prior: prior}
+	ky := &kyPaidStub{rows: []domain.EmployeePayCycle{{
+		Cycle: 4, WorkMonth: "2026-11", EmployeeID: 1, ProjectID: 1,
+		TimesheetID: 1, SourceUploadID: prior.ID, PaidAmount: 800000, CreatedAt: now,
+	}}}
+	assets := &assetStorerStub{}
+	svc := NewTransferUploadService(uploads, ky, nil, nil, nil, assets, nil, nil)
+
+	if _, err := svc.ProcessUpload(context.Background(), 4, "2026-11", "proof.xlsx", transferResultBytes(t, "FT-ASSET"), 1); err != nil {
+		t.Fatalf("process upload: %v", err)
+	}
+	if len(assets.calls) != 0 || len(uploads.updates) != 0 {
+		t.Fatalf("healthy upload must not be rewritten: stores=%d updates=%d", len(assets.calls), len(uploads.updates))
 	}
 }
 
@@ -179,7 +263,7 @@ func TestProcessUploadDuplicateUnparsableFallsBackToStoredOutcome(t *testing.T) 
 		CreatedAt: now, UpdatedAt: now,
 	}
 	uploads := &uploadRepoStub{prior: prior}
-	svc := NewTransferUploadService(uploads, &kyPaidStub{}, nil, nil, nil, nil, nil)
+	svc := NewTransferUploadService(uploads, &kyPaidStub{}, nil, nil, nil, nil, nil, nil)
 
 	result, err := svc.ProcessUpload(context.Background(), 4, "2026-11", "proof.xlsx", []byte("not a workbook"), 1)
 	if err != nil {

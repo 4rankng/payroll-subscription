@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLedgerBatches } from '@/hooks/api/useSaoke';
+import { TransferFileLink } from '@/components/billing/TransferFileLink';
 import { formatDateTime, formatFullCurrency } from '@/utils/formatters';
 
 const currentWorkMonth = (): string => {
@@ -91,9 +92,11 @@ const LedgerPageMobile = () => {
                 return (
                   <div key={batch.id} className="space-y-1.5 border-b border-border/70 pb-3 last:border-b-0 last:pb-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="break-all text-sm font-semibold text-foreground">
-                        {batch.original_filename}
-                      </p>
+                      <TransferFileLink
+                        assetId={batch.asset_id}
+                        filename={batch.original_filename}
+                        className="text-sm font-semibold"
+                      />
                       {batch.status !== 'verified' && (
                         <Badge className={status.className}>{status.label}</Badge>
                       )}

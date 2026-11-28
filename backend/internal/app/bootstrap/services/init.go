@@ -89,7 +89,6 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	employeeNotificationService := notification.NewEmployeeNotificationService(notificationService, repos.Employee, logger)
 	transactionManager := infraServices.NewTransactionManager(db.DB)
 	settingsService := config.NewSettingsService(repos.Settings, transactionManager, cacheService, eventBus)
-	billingService := billing.NewTransferUploadService(repos.TransferUpload, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, transactionManager, notificationService, logger)
 	settingsConfigService := config.NewSettingsConfigService(settingsService)
 	// A committed settings change must reach the in-process business-settings
 	// cache immediately: exports and statements read the beneficiary details
@@ -99,6 +98,7 @@ func Initialize(repos *bootstrapRepos.Repositories, cfg *appConfig.Config, logge
 	excelConverterService := reporting.NewExcelConverterService()
 	fileStorage := storage.NewLocalFileStorage(cfg.Asset.StoragePath, cfg.Asset.BaseURL)
 	assetService := asset.NewAssetService(repos.Asset, fileStorage, cfg.Asset.MaxFileSize, eventBus)
+	billingService := billing.NewTransferUploadService(repos.TransferUpload, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, transactionManager, assetService, notificationService, logger)
 	billingReportService := billing.NewBillingReportService(repos.BillingReport, repos.EmployeePayCycle, repos.Timesheet, repos.Employee, repos.Project, settingsConfigService, assetService, notificationService, logger)
 	paymentHistoryService := billing.NewPaymentHistoryService(repos.Timesheet, repos.Employee, repos.Project, repos.EmployeePayCycle, repos.TransferUpload, repos.ProjectEmployee, logger)
 

@@ -51,6 +51,7 @@ type TransferUploadService struct {
 	timesheets domain.TimesheetRepository
 	employees  domain.EmployeeRepository
 	txManager  domain.TransactionManager
+	assets     assetStorer
 	notifier   BillingNotifier
 	logger     *slog.Logger
 }
@@ -61,6 +62,7 @@ func NewTransferUploadService(
 	timesheets domain.TimesheetRepository,
 	employees domain.EmployeeRepository,
 	txManager domain.TransactionManager,
+	assets assetStorer,
 	notifier BillingNotifier,
 	logger *slog.Logger,
 ) *TransferUploadService {
@@ -73,6 +75,7 @@ func NewTransferUploadService(
 		timesheets: timesheets,
 		employees:  employees,
 		txManager:  txManager,
+		assets:     assets,
 		notifier:   notifier,
 		logger:     logger,
 	}
@@ -105,11 +108,24 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 	}
 
 	rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data))
+	// Keep the customer's original result workbook (FR-2): the upload row
+	// links it through asset_id so the Sổ cái can hand the exact file back
+	// for re-checking, verified and rejected alike.
+	var assetID *uint64
+	if s.assets != nil {
+		stored, err := s.assets.UploadAssetFromBytes(ctx, data, filename, domain.UploadTypeBulkTransferResult, uploadedBy)
+		if err != nil {
+			return nil, fmt.Errorf("billing: store result file: %w", err)
+		}
+		id := uint64(stored.ID)
+		assetID = &id
+	}
 	upload := &domain.TransferUpload{
 		Cycle:            cycle,
 		WorkMonth:        workMonth,
 		FileHash:         fileHash,
 		OriginalFilename: filename,
+		AssetID:          assetID,
 		UploadedBy:       uploadedBy,
 		Status:           domain.TransferUploadStatusPending,
 		CreatedAt:        clock.Now(),
@@ -174,12 +190,13 @@ func (s *TransferUploadService) ProcessUpload(ctx context.Context, cycle int, wo
 
 // priorOutcome returns the recorded outcome of a verified prior upload when
 // the identical file is re-uploaded — the books are never touched twice.
-// Builds that finalized an upload without persisting its row counters left
-// them at zero, so the outcome is reconstructed exactly: the identical bytes
-// re-parse to the file's row count, and the billing atoms the upload owns
-// are its matched rows. When the reconstruction differs from the stored
-// counters they are repaired, so re-uploading a file converges its Sổ cái
-// row instead of echoing stale zeros.
+// Builds that finalized an upload without persisting its row counters or
+// storing the workbook left residue, so the outcome is reconstructed exactly:
+// the identical bytes re-parse to the file's row count, the billing atoms the
+// upload owns are its matched rows, and the same bytes are stored as the
+// asset the row links. When the reconstruction differs from what is stored,
+// it is repaired in one update, so re-uploading a file converges its Sổ cái
+// row instead of echoing stale zeros or a dead filename.
 func (s *TransferUploadService) priorOutcome(ctx context.Context, prior *domain.TransferUpload, data []byte) (*UploadResult, error) {
 	result := &UploadResult{
 		UploadID:   prior.ID,
@@ -190,25 +207,36 @@ func (s *TransferUploadService) priorOutcome(ctx context.Context, prior *domain.
 		RowsFailed: prior.ParsedRows - prior.MatchedRows,
 		Failures:   []RowFailure{},
 	}
-	rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data))
-	if parseErr != nil {
-		// Same bytes verified before, so a parse failure is not reachable
-		// under the app's own rules; fall back to the stored outcome.
-		return result, nil
+	repaired := false
+	if prior.AssetID == nil && s.assets != nil {
+		stored, err := s.assets.UploadAssetFromBytes(ctx, data, prior.OriginalFilename, domain.UploadTypeBulkTransferResult, prior.UploadedBy)
+		if err != nil {
+			return nil, fmt.Errorf("billing: store result file: %w", err)
+		}
+		id := uint64(stored.ID)
+		prior.AssetID = &id
+		repaired = true
 	}
-	matched, err := s.countUploadMatches(ctx, prior.ID, prior.WorkMonth)
-	if err != nil {
-		return nil, err
+	if rows, parseErr := ParseTransferResultExcel(bytes.NewReader(data)); parseErr == nil {
+		matched, err := s.countUploadMatches(ctx, prior.ID, prior.WorkMonth)
+		if err != nil {
+			return nil, err
+		}
+		result.RowsTotal = len(rows)
+		result.RowsOK = matched
+		result.RowsFailed = len(rows) - matched
+		if prior.ParsedRows != result.RowsTotal || prior.MatchedRows != matched {
+			prior.ParsedRows = result.RowsTotal
+			prior.MatchedRows = matched
+			repaired = true
+		}
 	}
-	result.RowsTotal = len(rows)
-	result.RowsOK = matched
-	result.RowsFailed = len(rows) - matched
-	if prior.ParsedRows != result.RowsTotal || prior.MatchedRows != matched {
-		prior.ParsedRows = result.RowsTotal
-		prior.MatchedRows = matched
+	// A parse failure is not reachable under the app's own rules (the same
+	// bytes verified before), so that branch keeps the stored outcome.
+	if repaired {
 		prior.UpdatedAt = clock.Now()
 		if err := s.uploads.Update(ctx, prior); err != nil {
-			return nil, fmt.Errorf("billing: repair upload counters: %w", err)
+			return nil, fmt.Errorf("billing: repair upload residue: %w", err)
 		}
 	}
 	return result, nil
