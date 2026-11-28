@@ -15,6 +15,8 @@ import { InlineAlert } from "@/components/shared/InlineAlert";
 import { ContextStrip } from "@/components/shared/ContextStrip";
 import { useTimesheetEntryForm } from "./useTimesheetEntryForm";
 import { getPayrateUnit } from "./timesheet-pay-unit";
+import { formatFullCurrency } from "@/utils/formatters";
+import { formatTimesheetHours } from "../utils/timesheetGrouping";
 
 interface TimesheetEntryModalProps {
   isOpen: boolean;
@@ -39,7 +41,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={f.isLoading ? undefined : onClose}>
-      <DialogContent className="sm:max-w-[480px] gap-0 overflow-hidden rounded-2xl shadow-2xl" contentPadding="none" hideCloseButton>
+      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl bg-white shadow-2xl" contentPadding="none" hideCloseButton>
         {/* Header */}
         <div className="bg-emerald-950 px-5 pt-5 pb-4 text-white flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
@@ -95,15 +97,44 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
           {f.isPayUnitError && (
             <InlineAlert severity="error" icon={AlertTriangle} message="Không thể xác định cách tính lương của dự án. Vui lòng thử lại." />
           )}
-          {!f.isPayrateLoading && !f.isPayrateError && f.availableHourTypes.length === 0 && (
+          {!f.isReadOnly && !f.isPayrateLoading && !f.isPayrateError && f.availableHourTypes.length === 0 && (
             <InlineAlert severity="warning" icon={AlertTriangle} message="Dự án chưa có cấu hình loại giờ." />
           )}
 
           {/* Form fields */}
           <div className="space-y-3">
+            {f.isReadOnly ? (
+              /* Read-only shift summary — straight from the timesheet row, no
+                 edit-only payrate/project-config calls (ketoan/giamdoc). */
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+                  <ReadOnlyField label="Loại ca" value={existingEntry?.hour_type} />
+                  <ReadOnlyField label="Loại ngày" value={existingEntry?.day_type} />
+                  <ReadOnlyField
+                    label="Thời gian làm việc"
+                    value={existingEntry ? `${formatTimesheetHours(existingEntry.hours_worked || 0)} giờ` : undefined}
+                  />
+                  <ReadOnlyField
+                    label={f.isFlexibleProject ? "Đơn giá ca" : "Đơn giá giờ"}
+                    value={existingEntry?.payrate
+                      ? `${formatFullCurrency(existingEntry.payrate, { showSymbol: false })} ${getPayrateUnit(f.isFlexibleProject)}`
+                      : undefined}
+                  />
+                  <div className="col-span-2 flex items-center justify-between gap-2 border-t border-slate-200 pt-2.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-500">
+                      Thành tiền
+                    </span>
+                    <span className="text-base font-bold tabular-nums text-slate-900">
+                      {formatFullCurrency(existingEntry?.amount ?? 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+            <>
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.03em] leading-[1.35] flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-blue-700" />Thời gian làm việc
                 </span>
                 {existingEntry && existingEntry.status === "pending_approval" && (
@@ -116,7 +147,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
               <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300">
                 <div className="flex-1">
                   <div className="relative">
-                    <Input id="hoursWorked" type="number" min="0" max="24" step="0.5"
+                    <Input id="hoursWorked" type="text" inputMode="decimal"
                       value={f.formData.hoursWorked} onChange={f.handleHoursChange} disabled={f.isReadOnly}
                       className="w-full border-2 border-slate-300 rounded-lg py-3 px-4 text-2xl font-bold text-slate-900 focus:border-blue-500 tabular-nums pr-14 h-auto" />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 font-medium text-sm pointer-events-none">giờ</span>
@@ -132,14 +163,12 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
                     <>
                       <div className="text-xs text-slate-600 font-medium mb-0.5">Tạm tính:</div>
                       <div className="text-xl font-bold text-blue-700 tabular-nums leading-none">
-                        {f.displayAmount.toLocaleString("vi-VN")}
-                        <span className="ml-[0.2em] align-[0.1em] text-[0.58em] font-bold tracking-normal text-muted-foreground">₫</span>
+                        {formatFullCurrency(f.displayAmount)}
                       </div>
                       {f.displayPayrate != null && (
                         <div className="text-xs text-slate-600 mt-0.5">
                           {f.isFlexibleProject ? "Lương trọn ca" : "Đơn giá"}:{" "}
-                          {f.displayPayrate.toLocaleString("vi-VN")}
-                          {getPayrateUnit(f.isFlexibleProject)}
+                          {formatFullCurrency(f.displayPayrate, { showSymbol: false })} {getPayrateUnit(f.isFlexibleProject)}
                         </div>
                       )}
                     </>
@@ -151,7 +180,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
             {/* Hour type + Day type */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider px-0.5">Loại ca</Label>
+                <Label className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.03em] leading-[1.35] px-0.5">Loại ca</Label>
                 <Select value={f.formData.hourType} onValueChange={(v) => f.handleFormChange("hourType", v)}
                   disabled={f.isReadOnly || f.isPayrateLoading || f.isPayrateError}>
                   <SelectTrigger className="h-10 bg-slate-50 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20">
@@ -169,7 +198,7 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider px-0.5">Loại ngày</Label>
+                <Label className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.03em] leading-[1.35] px-0.5">Loại ngày</Label>
                 <Select value={f.formData.dayType || undefined} onValueChange={(v) => f.handleFormChange("dayType", v as "Ngày thường" | "Ngày nghỉ" | "Ngày lễ")}
                   disabled={f.isReadOnly}>
                   <SelectTrigger className="h-10 bg-slate-50 border-slate-300 focus:border-blue-500 focus:ring-blue-500/20">
@@ -181,6 +210,8 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
                 </Select>
               </div>
             </div>
+            </>
+            )}
           </div>
 
           {/* Actions */}
@@ -234,5 +265,15 @@ export function TimesheetEntryModal(props: TimesheetEntryModalProps) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Dense label/value cell for the read-only shift summary. */
+function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-slate-500">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-slate-900">{value || "—"}</p>
+    </div>
   );
 }

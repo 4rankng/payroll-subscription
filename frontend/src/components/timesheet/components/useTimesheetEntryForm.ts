@@ -60,8 +60,12 @@ export function useTimesheetEntryForm({
   const resetTimesheetMutation = useResetTimesheet();
   const { user } = useAuth();
 
+  // Edit-capable payroll roles: only admin/quanly may call the payrate config
+  // endpoints; ketoan/giamdoc get 403 — their modal reads from the row data.
+  const hasPayrollAccess = user?.role === "admin" || user?.role === "quanly";
+
   const { data: payrateData, isLoading: isPayrateLoading, isError: isPayrateError, error: payrateError } =
-    useCurrentPayRate(projectId, isOpen && !!projectId);
+    useCurrentPayRate(projectId, isOpen && !!projectId && hasPayrollAccess);
   // 403 = the user's role cannot access this project's payrate — show a
   // permission message instead of the "project has no payrate config" setup flow.
   const payrateForbidden = isForbiddenError(payrateError);
@@ -69,14 +73,16 @@ export function useTimesheetEntryForm({
     data: projectData,
     isLoading: isPayUnitLoading,
     isError: isPayUnitError,
-  } = useProject(projectId, isOpen && !!projectId);
-  const { data: projectEmployeesData } = useActiveProjectEmployees(projectId, isOpen && !!projectId);
+  } = useProject(projectId, isOpen && !!projectId && hasPayrollAccess);
+  const { data: projectEmployeesData } = useActiveProjectEmployees(projectId, isOpen && !!projectId && hasPayrollAccess);
   const projectPayUnit = projectData
     ? projectData.is_flexible
       ? "shift"
       : "hour"
     : null;
-  const isFlexibleProject = projectPayUnit === "shift";
+  // Without payroll access (ketoan/giamdoc) the pay unit is unknown — the rate
+  // unit then falls back to the flag stored on the timesheet row itself.
+  const isFlexibleProject = projectPayUnit === "shift" || !!existingEntry?.projectIsFlexible;
 
   const isEditing = !!existingEntry;
   const isReadOnly = existingEntry ? !canEditTimesheet(existingEntry, user?.role) : false;
@@ -220,10 +226,13 @@ export function useTimesheetEntryForm({
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  // Accept both `,` and `.` decimal separators — Vietnamese keyboards type
+  // "8,5" for eight and a half hours.
   const handleHoursChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === "" || /^\d*\.?\d*$/.test(value)) {
-      setFormData((prev) => ({ ...prev, hoursWorked: value === "" ? 0 : parseFloat(value) || 0 }));
+    const raw = e.target.value;
+    if (raw === "" || /^\d*[.,]?\d*$/.test(raw)) {
+      const parsed = parseFloat(raw.replace(",", "."));
+      setFormData((prev) => ({ ...prev, hoursWorked: raw === "" ? 0 : parsed || 0 }));
     }
   }, []);
 
@@ -326,9 +335,11 @@ export function useTimesheetEntryForm({
     dateValidation,
     liveAmount,
     displayAmount:
-      projectPayUnit === null
-        ? null
-        : liveAmount ?? existingEntry?.amount ?? null,
+      hasPayrollAccess
+        ? projectPayUnit === null
+          ? null
+          : liveAmount ?? existingEntry?.amount ?? null
+        : existingEntry?.amount ?? null,
     displayPayrate: existingEntry?.payrate ?? null,
     isFlexibleProject,
     displayProjectName,

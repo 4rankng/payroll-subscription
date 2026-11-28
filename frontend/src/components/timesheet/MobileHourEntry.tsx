@@ -34,7 +34,8 @@ export function MobileHourEntry({
 
   const handleHoursChange = (value: string) => {
     setLocalHours(value);
-    const numericValue = parseFloat(value) || 0;
+    // Accept both `,` and `.` decimal separators.
+    const numericValue = parseFloat(value.replace(",", ".")) || 0;
     if (numericValue >= 0 && numericValue <= 24) {
       onHoursChange(hourType, numericValue);
     }
@@ -105,7 +106,8 @@ export function MobileHourEntry({
           
           <div className="flex-1">
             <Input
-              type="number"
+              type="text"
+              inputMode="decimal"
               min="0"
               max="24"
               step="0.5"

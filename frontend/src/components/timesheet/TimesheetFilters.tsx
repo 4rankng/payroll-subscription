@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { FilterPill } from '@/components/shared/FilterPill';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { SearchableDropdown } from '@/components/ui/searchable-dropdown';
 import { EmployeeDropdownAdapter } from '@/components/timesheet/EmployeeDropdownAdapter';
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SlidersHorizontal } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { useTimesheetContext } from '@/components/timesheet/TimesheetContext';
+import { cn } from '@/lib/utils';
 
 const STATUS_OPTIONS = [
   { value: 'pending_approval', label: 'Chờ duyệt' },
@@ -19,36 +19,50 @@ const STATUS_OPTIONS = [
   { value: 'rejected', label: 'Bị loại' },
 ];
 
+/** Solid status dropdown: opaque white surface, hard border and a strong
+ *  shadow so table text never bleeds through while it is open. */
+const SolidStatusFilter = ({ className }: { className?: string }) => {
+  const { filters } = useTimesheetContext();
+  const { statusFilter, onStatusChange } = filters;
+  const activeLabel = STATUS_OPTIONS.find(o => o.value === statusFilter)?.label;
+
+  return (
+    <Select value={statusFilter} onValueChange={onStatusChange}>
+      <SelectTrigger
+        aria-label="Trạng thái"
+        className={cn(
+          'inline-flex h-11 min-h-11 w-auto items-center gap-1.5 rounded-lg border px-3 py-0 text-sm font-medium whitespace-nowrap select-none outline-brand transition-colors duration-100 sm:h-9 sm:min-h-9 sm:px-2.5',
+          statusFilter !== 'all'
+            ? 'border-primary/30 bg-primary/8 text-primary hover:bg-primary/12'
+            : 'border-border/60 bg-card text-muted-foreground hover:border-border hover:text-foreground hover:bg-accent/40',
+          className,
+        )}
+      >
+        <span>{statusFilter !== 'all' ? activeLabel : 'Trạng thái'}</span>
+      </SelectTrigger>
+      <SelectContent className="z-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+        <SelectItem value="all">Trạng thái</SelectItem>
+        {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+};
+
 export const TimesheetFilters = () => {
   const { filters } = useTimesheetContext();
   const {
-    selectedMonth,
-    onMonthChange,
     selectedProject,
     onProjectChange,
     selectedEmployee,
     onEmployeeChange,
     statusFilter,
-    onStatusChange,
     projects,
     projectEmployees,
     searchTerm = '',
     onSearchChange,
-    userRole = 'admin',
   } = filters;
 
   const isMobile = useIsMobile();
-
-  const monthOptions = useMemo(() => {
-    const now = new Date();
-    return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      return {
-        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-        label: `T${d.getMonth() + 1}/${d.getFullYear()}`,
-      };
-    });
-  }, []);
 
   const projectOptions = useMemo(() =>
     projects.map(p => {
@@ -58,8 +72,9 @@ export const TimesheetFilters = () => {
 
   const shouldUseProjectEmployees = selectedProject !== 'all' && projectEmployees && projectEmployees.length > 0;
 
+  // The month control lives in the page header / toolbar (TimesheetMonthSelector),
+  // so only the filters owned here count toward the badge.
   const activeFilterCount = [
-    selectedMonth !== 'all',
     statusFilter !== 'all',
     selectedProject !== 'all',
     selectedEmployee !== 'all',
@@ -78,15 +93,7 @@ export const TimesheetFilters = () => {
           />
         )}
         <div className="flex items-center gap-1.5">
-        <Select value={selectedMonth} onValueChange={onMonthChange}>
-          <SelectTrigger aria-label="Lọc tháng bảng công" className="h-11 w-[112px] shrink-0 text-xs border-border/60">
-            <SelectValue placeholder="Tháng" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            {monthOptions.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <SolidStatusFilter className="shrink-0" />
         <Sheet>
           <SheetTrigger asChild>
             <button
@@ -94,9 +101,9 @@ export const TimesheetFilters = () => {
               aria-label="Bộ lọc"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              {activeFilterCount > 1 && (
+              {activeFilterCount > 0 && (
                 <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 p-0 text-xs flex items-center justify-center rounded-full">
-                  {activeFilterCount - 1}
+                  {activeFilterCount}
                 </Badge>
               )}
             </button>
@@ -108,9 +115,9 @@ export const TimesheetFilters = () => {
             <div className="space-y-3 pb-4" style={{ paddingBottom: "max(16px, calc(16px + env(safe-area-inset-bottom)))" }}>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Trạng thái</Label>
-                <Select value={statusFilter} onValueChange={onStatusChange}>
-                  <SelectTrigger aria-label="Lọc trạng thái bảng công" className="h-11"><SelectValue placeholder="Tất cả trạng thái" /></SelectTrigger>
-                  <SelectContent>
+                <Select value={statusFilter} onValueChange={filters.onStatusChange}>
+                  <SelectTrigger aria-label="Trạng thái bảng công" className="h-11"><SelectValue placeholder="Tất cả trạng thái" /></SelectTrigger>
+                  <SelectContent className="z-40 border border-gray-200 bg-white shadow-lg">
                     <SelectItem value="all">Tất cả trạng thái</SelectItem>
                     {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                   </SelectContent>
@@ -159,23 +166,7 @@ export const TimesheetFilters = () => {
 
       <div className="h-5 w-px bg-border/50 shrink-0 hidden sm:block" />
 
-      {userRole !== 'quanly' && (
-        <FilterPill
-          value={selectedMonth}
-          onChange={onMonthChange}
-          placeholder="Tháng"
-          options={monthOptions}
-          className="bg-card"
-        />
-      )}
-
-      <FilterPill
-        value={statusFilter}
-        onChange={onStatusChange}
-        placeholder="Trạng thái"
-        options={STATUS_OPTIONS}
-        className="bg-card"
-      />
+      <SolidStatusFilter />
 
       <SearchableDropdown
         value={selectedProject}

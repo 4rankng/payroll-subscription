@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, Clock3, FileUp, Plus, X } from "lucide-react";
 import { TimesheetMonthSelector } from "@/components/timesheet/TimesheetMonthSelector";
 import { TimesheetFilters } from "@/components/timesheet/TimesheetFilters";
 import { TimesheetListTable } from "@/components/timesheet/TimesheetListTable";
@@ -9,40 +10,33 @@ import { TimesheetProvider } from "@/components/timesheet/TimesheetContext";
 import { useIsMobile } from '@/hooks/useBreakpoint';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useTimesheetManagement } from "@/hooks/timesheet/useTimesheetManagement";
 import { useEmployeeModals, useTimesheetModals } from "@/hooks/useModalNavigation";
 import { useTimesheetStatsConfig } from "@/hooks/useTimesheetStatsConfig";
-import {
-  AlertCircle,
-  CheckCircle,
-  ClipboardCheck,
-  Clock,
-  Download01,
-  FilterLines,
-  Users01,
-  Wallet01,
-} from "@untitledui/icons";
+import { Clock, Download01 } from "@untitledui/icons";
 import { BCCUploadModal } from "@/components/timesheet/BCCUploadModal";
 import { UploadHistorySheet } from "@/components/timesheet/UploadHistorySheet";
-import { PartnerTimesheetActions } from "@/components/timesheet/PartnerTimesheetActions";
 import { TransferUploadPanel } from "@/components/billing/TransferUploadPanel";
 import { billingKeys } from "@/hooks/api/useBilling";
 import { billingService } from "@/services/api/billing.service";
 import { useAuth } from "@/contexts";
 import { cn } from "@/lib/utils";
+import { formatFullCurrency } from "@/utils/formatters";
+import { formatTimesheetHours } from "@/components/timesheet/utils/timesheetGrouping";
 import type { Employee } from "@/types/api/employee.types";
 import type { Timesheet } from "@/types/api/timesheet.types";
 
 /* ------------------------------------------------------------------ */
-/*  TimesheetStatsRow — watermark-style stat tiles                     */
+/*  TimesheetStatsRow — single 44px horizontal metric strip            */
 /* ------------------------------------------------------------------ */
 
 interface TimesheetStatsRowProps {
   isLoading: boolean;
-  employeeCount: number;
-  totalEntries: number;
+  totalHours: number;
+  totalPay: number;
   pendingCount: number;
-  pendingEmployees: number;
   approvedCount: number;
   statusFilter: string;
   onToggleStatus: (status: string) => void;
@@ -50,23 +44,20 @@ interface TimesheetStatsRowProps {
 
 function TimesheetStatsRow({
   isLoading,
-  employeeCount,
-  totalEntries,
+  totalHours,
+  totalPay,
   pendingCount,
-  pendingEmployees,
   approvedCount,
   statusFilter,
   onToggleStatus,
 }: TimesheetStatsRowProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-2.5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border/60 bg-card px-3 py-2.5">
-            <div className="space-y-1.5">
-              <div className="h-2.5 w-16 bg-muted rounded animate-pulse" />
-              <div className="h-5 w-12 bg-muted rounded animate-pulse" />
-            </div>
+      <div className="flex h-11 items-center gap-4 rounded-xl border border-input bg-card px-3 shadow-xs">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <div className="h-2.5 w-14 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-12 bg-muted rounded animate-pulse" />
           </div>
         ))}
       </div>
@@ -75,66 +66,46 @@ function TimesheetStatsRow({
 
   const cells = [
     {
-      key: "employees",
-      label: "Nhân viên",
-      value: employeeCount,
-      icon: Users01,
-      iconText: "text-success",
-      watermark: "text-success/15",
+      key: "total_hours",
+      label: "Tổng giờ",
+      value: `${formatTimesheetHours(totalHours)} giờ`,
       active: false,
       onClick: undefined as (() => void) | undefined,
+      dot: "",
     },
     {
-      key: "entries",
-      label: "Tổng công",
-      value: totalEntries,
-      icon: ClipboardCheck,
-      iconText: "text-muted-foreground",
-      watermark: "text-muted-foreground",
+      key: "total_pay",
+      label: "Tổng chi trả",
+      value: formatFullCurrency(totalPay),
       active: false,
       onClick: undefined,
+      dot: "",
     },
     {
       key: "pending_approval",
       label: "Chờ duyệt",
-      value: pendingCount,
-      icon: AlertCircle,
-      iconText: pendingCount > 0 ? "text-warning" : "text-muted-foreground",
-      watermark: pendingCount > 0 ? "text-warning/15" : "text-muted-foreground",
+      value: pendingCount.toLocaleString("vi-VN"),
       active: statusFilter === "pending_approval",
       onClick: pendingCount > 0
         ? () => onToggleStatus(statusFilter === "pending_approval" ? "all" : "pending_approval")
         : undefined,
-    },
-    {
-      key: "pending_payment",
-      label: "NV chờ TT",
-      value: pendingEmployees,
-      icon: Wallet01,
-      iconText: pendingEmployees > 0 ? "text-info" : "text-muted-foreground",
-      watermark: pendingEmployees > 0 ? "text-info/15" : "text-muted-foreground",
-      active: statusFilter === "pending_payment",
-      onClick: pendingEmployees > 0
-        ? () => onToggleStatus(statusFilter === "pending_payment" ? "all" : "pending_payment")
-        : undefined,
+      dot: pendingCount > 0 ? "bg-amber-400" : "bg-muted-foreground/40",
     },
     {
       key: "approved",
       label: "Đã duyệt",
-      value: approvedCount,
-      icon: CheckCircle,
-      iconText: approvedCount > 0 ? "text-success" : "text-muted-foreground",
-      watermark: approvedCount > 0 ? "text-success/15" : "text-muted-foreground",
+      value: approvedCount.toLocaleString("vi-VN"),
       active: statusFilter === "approved",
       onClick: approvedCount > 0
         ? () => onToggleStatus(statusFilter === "approved" ? "all" : "approved")
         : undefined,
+      dot: approvedCount > 0 ? "bg-green-500" : "bg-muted-foreground/40",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-2.5">
-      {cells.map(({ key, label, value, icon: Icon, iconText, watermark, active, onClick }) => (
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-input bg-border/40 shadow-xs sm:flex sm:h-11 sm:gap-0 sm:bg-card">
+      {cells.map(({ key, label, value, active, onClick, dot }) => (
         <div
           key={key}
           onClick={onClick}
@@ -143,36 +114,21 @@ function TimesheetStatsRow({
           onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
           aria-pressed={onClick ? active : undefined}
           className={cn(
-            "group relative rounded-xl border bg-card px-3.5 py-3 overflow-hidden shadow-xs outline-brand transition-all focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2",
-            active ? "border-primary/40 bg-primary/5" : "border-input",
-            onClick && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-xs-skeumorphic",
+            "flex min-h-11 min-w-0 items-center justify-center gap-1.5 bg-card px-2.5 py-1.5 outline-brand transition-colors sm:h-full sm:min-h-full sm:flex-1 sm:py-0",
+            onClick && "cursor-pointer hover:bg-muted/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2",
+            active && "bg-primary/5",
           )}
         >
-          <Icon
-            aria-hidden="true"
-            className={cn(
-              "absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 pointer-events-none",
-              "transition-transform duration-300 group-hover:scale-105",
-              watermark,
-            )}
-          />
-          <div className="relative pr-10">
-            <div className="flex items-center gap-1.5">
-              <Icon aria-hidden="true" className={cn("h-3 w-3 shrink-0", iconText)} />
-              <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground leading-tight truncate">
-                {label}
-              </span>
-            </div>
-            <p className={cn(
-              "mt-1 break-words font-display text-[18px] font-bold tabular-nums leading-tight tracking-normal",
-              active ? "text-primary" : "text-foreground",
-            )}>
-              {value.toLocaleString("vi-VN")}
-            </p>
-          </div>
-          {active && (
-            <div className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary z-10" />
-          )}
+          <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dot)} aria-hidden="true" />
+          <span className="text-[11px] font-semibold leading-[1.35] tracking-[0.03em] text-muted-foreground whitespace-nowrap">
+            {label}
+          </span>
+          <span className={cn(
+            "truncate text-sm font-bold tabular-nums leading-none",
+            active ? "text-primary" : "text-foreground",
+          )}>
+            {value}
+          </span>
         </div>
       ))}
     </div>
@@ -182,6 +138,9 @@ function TimesheetStatsRow({
 export default function TimesheetsPage() {
   const [bccUploadOpen, setBccUploadOpen] = useState(false);
   const [bccHistoryOpen, setBccHistoryOpen] = useState(false);
+  const [bulkApproveOpen, setBulkApproveOpen] = useState(false);
+  const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const { openTimesheetEntry } = useTimesheetModals();
   const { openEmployeeDetails } = useEmployeeModals();
@@ -228,6 +187,7 @@ export default function TimesheetsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isKetoan = user?.role === "ketoan";
+  const isQuanly = user?.role === "quanly";
 
   const bankTransferExport = useMutation({
     mutationFn: async () => {
@@ -296,14 +256,44 @@ export default function TimesheetsPage() {
     [timesheetManagement],
   );
 
+  // Hours/pay strip values are summed over the timesheet rows currently
+  // loaded for the active filters (the grouped endpoint pages by employee).
+  const loadedTimesheets = timesheetManagement.timesheets;
+  const totalHours = useMemo(
+    () => loadedTimesheets.reduce((sum, t) => sum + (t.hours_worked || 0), 0),
+    [loadedTimesheets],
+  );
+  const totalPay = useMemo(
+    () => loadedTimesheets.reduce((sum, t) => sum + (t.amount || 0), 0),
+    [loadedTimesheets],
+  );
+
+  const pendingTimesheets = useMemo(
+    () => loadedTimesheets.filter((t) => t.status === "pending_approval"),
+    [loadedTimesheets],
+  );
+
+  const handleBulkApprove = useCallback(async () => {
+    await timesheetManagement.handleBulkApprove(pendingTimesheets.map((t) => t.id));
+    setBulkApproveOpen(false);
+  }, [timesheetManagement, pendingTimesheets]);
+
+  const handleBulkReject = useCallback(async () => {
+    const reason = bulkRejectReason.trim();
+    if (!reason) return;
+    await timesheetManagement.handleBulkReject(
+      pendingTimesheets.map((t) => t.id),
+      reason,
+    );
+    setBulkRejectReason("");
+    setBulkRejectOpen(false);
+  }, [timesheetManagement, pendingTimesheets, bulkRejectReason]);
+
   const summaryStats = useMemo(() => {
     const s = timesheetStats.summary;
     if (!s) return null;
     return {
-      employeeCount: s.totalEmployees ?? 0,
-      totalEntries: s.totalEntries,
       pendingCount: s.pendingApproval,
-      pendingEmployees: s.pendingEmployees ?? 0,
       approvedCount: s.approvedEntries,
     };
   }, [timesheetStats.summary]);
@@ -313,36 +303,12 @@ export default function TimesheetsPage() {
     timesheetManagement.timesheets.length === 0
   ) {
     return (
-      <div className="mx-auto max-w-[1280px] space-y-4 p-3 sm:p-4">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-28" />
-          <Skeleton className="h-4 w-56" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-28 rounded-xl" />
-          <Skeleton className="h-9 w-32 rounded-xl" />
-          <Skeleton className="h-9 w-36 rounded-xl" />
-        </div>
-        <Skeleton className="h-11 w-full max-w-lg rounded-xl" />
-        <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="border-b px-4 py-3">
-            <div className="flex gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-3 w-16" />
-              ))}
-            </div>
-          </div>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="border-b px-4 py-3 flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-3.5 w-32" />
-                <Skeleton className="h-2.5 w-20" />
-              </div>
-              <Skeleton className="h-5 w-16 rounded-md" />
-              <Skeleton className="h-3.5 w-12" />
-            </div>
-          ))}
+      <div className="min-h-full bg-[radial-gradient(circle_at_100%_0%,rgba(8,120,62,0.12),transparent_29rem)] p-3 sm:p-4">
+        <div className="mx-auto max-w-[1480px] space-y-2">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-[420px] w-full rounded-xl" />
         </div>
       </div>
     );
@@ -350,36 +316,34 @@ export default function TimesheetsPage() {
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_100%_0%,rgba(8,120,62,0.12),transparent_29rem)] p-3 sm:p-4">
-      <div className="mx-auto max-w-[1480px] space-y-4">
+      <div className="mx-auto max-w-[1480px] space-y-2">
 
-        {/* Header */}
-        <div className="rounded-xl border border-input bg-card p-3 shadow-xs motion-safe:animate-fade-in-up [animation-delay:50ms] [animation-fill-mode:both] sm:p-4">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="font-display text-display-sm font-semibold tracking-tight text-fg-primary flex items-center gap-2 sm:text-display-md">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/15">
-                  <Clock className="h-5 w-5" aria-hidden="true" />
-                </span>
-                Bảng công
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">Theo dõi bảng công, yêu cầu sửa và lịch sử chi trả theo tháng</p>
-            </div>
-            <TimesheetMonthSelector
-              value={timesheetManagement.selectedMonth}
-              onChange={timesheetManagement.setSelectedMonth}
-            />
+        {/* Header — single 44px chrome row (title + record count) */}
+        <div className="flex h-11 items-center justify-between gap-2 rounded-xl border border-input bg-card px-3 shadow-xs motion-safe:animate-fade-in-up [animation-delay:50ms] [animation-fill-mode:both]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/15">
+              <Clock className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <h1 className="text-lg font-bold tracking-tight text-fg-primary whitespace-nowrap">
+              Bảng công
+            </h1>
+            <span className="hidden min-w-0 truncate text-xs text-muted-foreground lg:inline">
+              Theo dõi bảng công, yêu cầu sửa và lịch sử chi trả theo tháng
+            </span>
           </div>
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
+            {timesheetManagement.timesheets.length} bản ghi
+          </span>
         </div>
 
-        {/* Stats — watermark-style stat tiles. 5 cells: 2-col on mobile, 5-col on lg+ */}
+        {/* Stats — one dense horizontal strip: Tổng giờ · Tổng chi trả · Chờ duyệt · Đã duyệt */}
         {summaryStats && (
-          <div className="motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both]">
+          <div className="motion-safe:animate-fade-in-up [animation-delay:80ms] [animation-fill-mode:both]">
             <TimesheetStatsRow
               isLoading={timesheetStats.isLoading}
-              employeeCount={summaryStats.employeeCount}
-              totalEntries={summaryStats.totalEntries}
+              totalHours={totalHours}
+              totalPay={totalPay}
               pendingCount={summaryStats.pendingCount}
-              pendingEmployees={summaryStats.pendingEmployees}
               approvedCount={summaryStats.approvedCount}
               statusFilter={timesheetManagement.statusFilter}
               onToggleStatus={timesheetManagement.setStatusFilter}
@@ -387,17 +351,105 @@ export default function TimesheetsPage() {
           </div>
         )}
 
-        <div className="motion-safe:animate-fade-in-up [animation-delay:120ms] [animation-fill-mode:both]">
-          <PartnerTimesheetActions
-            onAddTimesheet={() => openTimesheetEntry()}
-            onOpenBccHistory={() => setBccHistoryOpen(true)}
-            onUploadBcc={() => setBccUploadOpen(true)}
-          />
-        </div>
+        <TimesheetProvider
+          management={timesheetManagement}
+          onEdit={timesheetManagement.handleEdit}
+          onDelete={handleDelete}
+          userRole="quanly"
+          onExportExcel={() => timesheetManagement.handleExportExcel()}
+        >
+          {/* Toolbar — one 40px row: month + filters on the left, actions on the right */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-input bg-card px-2 py-1 shadow-xs motion-safe:animate-fade-in-up [animation-delay:100ms] [animation-fill-mode:both]">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <TimesheetMonthSelector
+                value={timesheetManagement.selectedMonth}
+                onChange={timesheetManagement.setSelectedMonth}
+              />
+              <TimesheetFilters />
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {isQuanly && (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => openTimesheetEntry()}
+                    className="h-8 gap-1.5 px-2.5 text-xs"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    Nhập công
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBccUploadOpen(true)}
+                    className="h-8 gap-1.5 px-2.5 text-xs"
+                  >
+                    <FileUp className="h-3.5 w-3.5" aria-hidden="true" />
+                    Tải lên BCC
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBccHistoryOpen(true)}
+                    className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground"
+                  >
+                    <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Lịch sử BCC
+                  </Button>
+                  {pendingTimesheets.length > 0 && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBulkApproveOpen(true)}
+                        disabled={timesheetManagement.isLoading}
+                        className="h-8 gap-1.5 border-green-600/40 px-2.5 text-xs text-green-700 hover:bg-green-50"
+                      >
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Duyệt {pendingTimesheets.length}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setBulkRejectReason(""); setBulkRejectOpen(true); }}
+                        disabled={timesheetManagement.isLoading}
+                        className="h-8 gap-1.5 border-red-600/40 px-2.5 text-xs text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                        Loại {pendingTimesheets.length}
+                      </Button>
+                    </>
+                  )}
+                </>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void timesheetManagement.handleExportExcel()}
+                disabled={timesheetManagement.isLoading}
+                className="h-8 gap-1.5 px-2.5 text-xs"
+              >
+                <Download01 className="h-3.5 w-3.5" aria-hidden="true" />
+                Xuất Excel
+              </Button>
+            </div>
+          </div>
 
-        {/* Chuyển khoản ngân hàng — ketoan only: bulk-transfer export + result upload */}
+          {/* Grid — sticky header + frozen name column live in TimesheetGroupedTable */}
+          <div className="motion-safe:animate-fade-in-up [animation-delay:130ms] [animation-fill-mode:both]">
+            {isMobile ? <TimesheetMobileList /> : <TimesheetListTable />}
+          </div>
+        </TimesheetProvider>
+
+        {/* Chuyển khoản ngân hàng — ketoan only; workflow panel sits below the grid */}
         {isKetoan && (
-          <div className="rounded-xl border border-input bg-card shadow-xs motion-safe:animate-fade-in-up [animation-delay:130ms] [animation-fill-mode:both]">
+          <div className="rounded-xl border border-input bg-card shadow-xs motion-safe:animate-fade-in-up [animation-delay:150ms] [animation-fill-mode:both]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/55 bg-muted/25 px-3 py-2 sm:px-4">
               <div>
                 <p className="text-[12px] font-bold text-foreground">Chuyển khoản ngân hàng</p>
@@ -423,39 +475,6 @@ export default function TimesheetsPage() {
           </div>
         )}
 
-
-        {/* Filters + Table */}
-        <TimesheetProvider
-          management={timesheetManagement}
-          onEdit={timesheetManagement.handleEdit}
-          onDelete={handleDelete}
-          userRole="quanly"
-          onExportExcel={() => timesheetManagement.handleExportExcel()}
-        >
-          <div className="space-y-3">
-            <div className="motion-safe:animate-fade-in-up [animation-delay:150ms] [animation-fill-mode:both]">
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-input bg-card px-3 py-2 shadow-xs">
-                <div className="hidden items-center gap-2 border-r border-border pr-3 lg:flex">
-                  <FilterLines className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <span className="text-xs font-semibold text-muted-foreground">Lọc dữ liệu</span>
-                </div>
-                <TimesheetFilters />
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-input bg-card shadow-xs motion-safe:animate-fade-in-up [animation-delay:200ms] [animation-fill-mode:both]">
-              <div className="flex items-center justify-between gap-3 border-b border-border/55 bg-muted/25 px-3 py-2 sm:px-4">
-                <div>
-                  <p className="text-[12px] font-bold text-foreground">Chi tiết bảng công</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">Nhấn vào một dòng để xem hoặc xử lý</p>
-                </div>
-                <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold tabular-nums text-muted-foreground">{timesheetManagement.timesheets.length} bản ghi</span>
-              </div>
-              {isMobile ? <TimesheetMobileList /> : <TimesheetListTable />}
-            </div>
-          </div>
-        </TimesheetProvider>
-
       </div>
 
       <BCCUploadModal
@@ -478,6 +497,41 @@ export default function TimesheetsPage() {
             : undefined
         }
         projects={timesheetManagement.projects}
+      />
+
+      <ConfirmDialog
+        open={bulkApproveOpen}
+        onOpenChange={setBulkApproveOpen}
+        title="Duyệt bảng công hàng loạt"
+        description={`Duyệt tất cả ${pendingTimesheets.length} bảng công đang chờ trong phạm vi bộ lọc hiện tại?`}
+        confirmText="Duyệt"
+        onConfirm={handleBulkApprove}
+        loading={timesheetManagement.isLoading}
+      />
+
+      <ConfirmDialog
+        open={bulkRejectOpen}
+        onOpenChange={setBulkRejectOpen}
+        title="Loại bảng công hàng loạt"
+        description={
+          <div className="space-y-3">
+            <p>
+              Loại tất cả {pendingTimesheets.length} bảng công đang chờ trong phạm vi bộ lọc hiện tại?
+            </p>
+            <Textarea
+              value={bulkRejectReason}
+              onChange={(e) => setBulkRejectReason(e.target.value)}
+              placeholder="Lý do loại (bắt buộc)"
+              rows={3}
+              className="text-sm"
+            />
+          </div>
+        }
+        confirmText="Loại"
+        confirmVariant="destructive"
+        disabled={!bulkRejectReason.trim()}
+        onConfirm={handleBulkReject}
+        loading={timesheetManagement.isLoading}
       />
     </div>
   );

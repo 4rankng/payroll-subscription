@@ -44,10 +44,9 @@ describe.each(['admin', 'quanly'] as const)('%s grouped timesheet table', (userR
     expect(screen.getAllByRole('row')).toHaveLength(collapsedRowCount);
   });
 
-  // Regression guard: the table card must not be painted on the tinted page
-  // canvas (read as a bare wireframe) nor on a glaring white surface. It sits
-  // on the muted gray surface with a deeper header band.
-  it('paints the rows on a muted surface with a deeper header band', () => {
+  // Regression guard: the grid is its own opaque scroll container (sticky
+  // header + frozen name column need it) with a slate header band.
+  it('paints the grid on an opaque scroll container with a slate header band', () => {
     render(
       <MemoryRouter>
         <TimesheetGroupedTable
@@ -61,10 +60,61 @@ describe.each(['admin', 'quanly'] as const)('%s grouped timesheet table', (userR
     );
 
     const table = screen.getByRole('table');
-    const card = table.parentElement?.parentElement as HTMLElement;
-    expect(card.className).toContain('bg-utility-gray-100');
-    expect(card.className).not.toContain('bg-card');
-    expect((table.querySelector('thead tr') as HTMLElement).className).toContain('bg-utility-gray-200');
+    const scrollRoot = table.closest('div') as HTMLElement;
+    expect(scrollRoot.className).toContain('bg-white');
+    expect(scrollRoot.className).toContain('overflow-auto');
+    expect(scrollRoot.className).toContain('border-gray-200');
+    expect(scrollRoot.className).not.toContain('bg-card');
+    expect((table.querySelector('thead tr') as HTMLElement).className).toContain('bg-slate-50');
+  });
+
+  // Regression guard: headers must pin while scrolling long expanded groups,
+  // and the Nhân viên column must stay frozen at the left edge.
+  it('pins the header row and freezes the employee column', () => {
+    render(
+      <MemoryRouter>
+        <TimesheetGroupedTable
+          timesheets={[timesheet]}
+          userRole={userRole}
+          expandedGroups={new Set()}
+          onRowClick={() => {}}
+          onToggleGroup={() => {}}
+        />
+      </MemoryRouter>,
+    );
+
+    const headCells = screen.getAllByRole('columnheader');
+    for (const cell of headCells) {
+      expect(cell.className).toContain('sticky');
+      expect(cell.className).toContain('top-0');
+    }
+    const employeeHeader = headCells.find((cell) => cell.textContent?.includes('Nhân viên'))!;
+    expect(employeeHeader.className).toContain('left-0');
+
+    const employeeBodyCell = screen.getByRole('button', { name: /bảng công của Lê Thị Hằng/ }).closest('td')!;
+    expect(employeeBodyCell.className).toContain('sticky');
+    expect(employeeBodyCell.className).toContain('left-0');
+    expect(employeeBodyCell.className).toContain('bg-white');
+  });
+
+  it.runIf(userRole === 'quanly')('summarises the rate on the parent row instead of a dash column', () => {
+    render(
+      <MemoryRouter>
+        <TimesheetGroupedTable
+          timesheets={[timesheet]}
+          userRole={userRole}
+          expandedGroups={new Set()}
+          onRowClick={() => {}}
+          onToggleGroup={() => {}}
+        />
+      </MemoryRouter>,
+    );
+
+    // Single rate → canonical `43.750 ₫/giờ` (single space before ₫, comma-free).
+    expect(screen.getByText('43.750 ₫/giờ')).toBeInTheDocument();
+    // Canonical money + hours forms on the aggregate row.
+    expect(screen.getByText('350.000 ₫')).toBeInTheDocument();
+    expect(screen.getByText('8,00 giờ')).toBeInTheDocument();
   });
 
   // Regression guard: the expanded entry rows used to be white like the

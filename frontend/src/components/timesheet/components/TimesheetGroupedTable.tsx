@@ -36,6 +36,8 @@ import {
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatFullCurrency } from "@/utils/formatters";
+import { getPayrateUnit } from "./timesheet-pay-unit";
 
 export interface TimesheetGroupedTableProps {
   timesheets: Timesheet[];
@@ -76,61 +78,60 @@ export const TimesheetGroupedTable = memo(function TimesheetGroupedTable({
   }
 
   return (
-    <div className="rounded-xl border border-border/50 bg-utility-gray-100 overflow-hidden">
-      {/* Scroll only when the desktop workspace is genuinely too narrow. */}
-      <div className="overflow-x-auto">
-        <Table variant="console" className="table-fixed">
-          <colgroup>
-            <col style={{ width: "4px" }} />
-            <col style={{ width: "170px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "150px" }} />
-            <col style={{ width: "80px" }} />
-            <col style={{ width: "125px" }} />
-            <col style={{ width: "145px" }} className="hidden lg:table-column" />
-            <col style={{ width: "36px" }} />
-          </colgroup>
-          {/* Low-value preview column collapses below lg — tablets get the
-              remaining columns without a horizontal rail. */}
-          <TableHeader>
-            <TableRow className="bg-utility-gray-200 hover:bg-utility-gray-200 border-b border-utility-gray-300">
-              <TableHead className="p-0"><span className="sr-only">Trạng thái</span></TableHead>
-              <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                {userRole === "quanly" ? "Nhân viên · Ngày" : "Nhân viên"}
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                {userRole === "quanly" ? "Dự án · Loại ngày" : "Loại ngày"}
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                Ca làm · Trạng thái
-              </TableHead>
-              <TableHead className="border-l border-border/30 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap">
-                Giờ
-              </TableHead>
-              <TableHead className="hidden px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap lg:table-cell">
-                {userRole === "admin" ? "Dự án · Đơn giá" : "Đơn giá"}
-              </TableHead>
-              <TableHead className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap">
-                Thành tiền
-              </TableHead>
-              <TableHead className="px-2 py-2"><span className="sr-only">Chi tiết</span></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {grouped.map((group, idx) => (
-              <GroupRow
-                key={group.groupKey}
-                group={group}
-                idx={idx}
-                userRole={userRole}
-                isExpanded={expandedGroups.has(group.groupKey)}
-                onToggle={() => onToggleGroup(group.groupKey)}
-                onRowClick={onRowClick}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+    // Single scroll container: vertical scroll drives the sticky header and
+    // the frozen Nhân viên column; horizontal scroll drives the frozen column.
+    <div className="max-h-[calc(100vh-190px)] overflow-auto rounded-xl border border-gray-200 bg-white">
+      <Table variant="console" className="table-fixed">
+        <colgroup>
+          <col style={{ width: "8px" }} />
+          <col style={{ width: "170px" }} />
+          <col style={{ width: "130px" }} />
+          <col style={{ width: "150px" }} />
+          <col style={{ width: "90px" }} />
+          <col style={{ width: "125px" }} />
+          <col style={{ width: "145px" }} className="hidden lg:table-column" />
+          <col style={{ width: "36px" }} />
+        </colgroup>
+        {/* Low-value preview column collapses below lg — tablets get the
+            remaining columns without a horizontal rail. */}
+        <TableHeader>
+          <TableRow className="bg-slate-50 hover:bg-slate-50 border-b border-gray-200">
+            <TableHead className="sticky top-0 z-20 bg-slate-50 p-0"><span className="sr-only">Trạng thái</span></TableHead>
+            <TableHead className="sticky left-0 top-0 z-30 border-b border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground whitespace-nowrap" style={{ letterSpacing: "0.03em" }}>
+              {userRole === "quanly" ? "Nhân viên · Ngày" : "Nhân viên"}
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 border-b border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground whitespace-nowrap" style={{ letterSpacing: "0.03em" }}>
+              {userRole === "quanly" ? "Dự án · Loại ngày" : "Loại ngày"}
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 border-b border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground whitespace-nowrap" style={{ letterSpacing: "0.03em" }}>
+              Ca làm · Trạng thái
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 border-b border-l border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground text-right whitespace-nowrap" style={{ letterSpacing: "0.03em" }}>
+              Giờ
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 hidden border-b border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground text-right whitespace-nowrap lg:table-cell" style={{ letterSpacing: "0.03em" }}>
+              {userRole === "admin" ? "Dự án · Đơn giá" : "Đơn giá"}
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 border-b border-gray-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.03em] leading-[1.35] text-muted-foreground text-right whitespace-nowrap" style={{ letterSpacing: "0.03em" }}>
+              Thành tiền
+            </TableHead>
+            <TableHead className="sticky top-0 z-20 bg-slate-50 border-b border-gray-200 px-2 py-2"><span className="sr-only">Chi tiết</span></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {grouped.map((group, idx) => (
+            <GroupRow
+              key={group.groupKey}
+              group={group}
+              idx={idx}
+              userRole={userRole}
+              isExpanded={expandedGroups.has(group.groupKey)}
+              onToggle={() => onToggleGroup(group.groupKey)}
+              onRowClick={onRowClick}
+            />
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 });
@@ -169,12 +170,13 @@ const GroupRow = memo(function GroupRow({
               idx !== 0 && "border-t border-utility-gray-200",
             )}
           >
-            {/* [0] status strip */}
+            {/* [0] status strip — inset from the card edge so the rounded
+                border never clips it */}
             <TableCell className="p-0">
-              <div className={cn("h-full min-h-[44px] w-1 rounded-r-full transition-colors", groupStripBg)} />
+              <div className={cn("ml-[3px] h-full min-h-[44px] w-1 rounded-r-full transition-colors", groupStripBg)} />
             </TableCell>
-            {/* [1] employee */}
-            <TableCell className="px-3 py-2.5">
+            {/* [1] employee — frozen pane */}
+            <TableCell className="sticky left-0 z-[15] bg-white px-3 py-2.5">
               <button
                 type="button"
                 className="flex min-h-11 w-full min-w-0 items-center gap-2.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -210,22 +212,21 @@ const GroupRow = memo(function GroupRow({
             {/* [4] total hours */}
             <TableCell className="num border-l border-border/30 px-3 py-2.5 text-right">
               <span className="typography-body-medium font-bold text-foreground tabular-nums whitespace-nowrap">
-                {formatTimesheetHours(group.totalHours)}h
+                {formatTimesheetHours(group.totalHours)} giờ
               </span>
             </TableCell>
-            {/* [5] Project preview for Admin summaries; rate lives in expanded rows. */}
+            {/* [5] Rate summary for Partner; project preview for Admin. Rate lives in expanded rows. */}
             <TableCell className="hidden px-3 py-2.5 text-right lg:table-cell">
               {userRole === "admin" ? (
                 <AdminGroupProjectColumn group={group} />
               ) : (
-                <span className="text-xs text-muted-foreground">—</span>
+                <GroupRateColumn group={group} />
               )}
             </TableCell>
             {/* [6] total amount */}
             <TableCell className="num px-3 py-2.5 text-right">
               <span className="typography-body-medium font-bold text-foreground tabular-nums whitespace-nowrap">
-                {group.totalAmount.toLocaleString("vi-VN")}
-                <span className="ml-[0.2em] align-[0.1em] text-[0.58em] font-bold tracking-normal text-muted-foreground">₫</span>
+                {formatFullCurrency(group.totalAmount)}
               </span>
             </TableCell>
             {/* [7] chevron */}
@@ -251,6 +252,28 @@ const GroupRow = memo(function GroupRow({
 });
 
 // ── Partner-specific group column ──────────────────────────────────────────
+
+/** Parent-row rate summary: single rate → `48.750 ₫/giờ`, several rates →
+ *  shift count, none → honest dash (the ⚠ badge flags missing rates). */
+const GroupRateColumn = memo(function GroupRateColumn({ group }: { group: EmployeeGroupedTimesheet }) {
+  const rates = [...new Set(group.entries.map((e) => e.payrate).filter((r): r is number => !!r && r > 0))];
+  if (rates.length === 1) {
+    const isFlexible = group.entries.some((e) => e.projectIsFlexible);
+    return (
+      <span className="whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
+        {formatFullCurrency(rates[0], { showSymbol: false })} {getPayrateUnit(isFlexible)}
+      </span>
+    );
+  }
+  if (rates.length > 1) {
+    return (
+      <span className="whitespace-nowrap text-xs font-semibold tabular-nums text-muted-foreground">
+        {group.entries.length} ca
+      </span>
+    );
+  }
+  return <span className="text-xs text-muted-foreground">—</span>;
+});
 
 const PartnerGroupColumn = memo(function PartnerGroupColumn({ group }: { group: EmployeeGroupedTimesheet }) {
   return (
@@ -361,11 +384,10 @@ const ProjectSection = memo(function ProjectSection({
               </div>
             </div>
           </TableCell>
-          <TableCell className="num px-4 py-2.5 text-right text-xs font-bold tabular-nums text-foreground">{formatTimesheetHours(project.totalHours)}h</TableCell>
+          <TableCell className="num px-4 py-2.5 text-right text-xs font-bold tabular-nums text-foreground">{formatTimesheetHours(project.totalHours)} giờ</TableCell>
           <TableCell className="hidden px-4 py-2.5 text-right text-xs text-muted-foreground lg:table-cell">—</TableCell>
           <TableCell className="num px-4 py-2.5 text-right text-xs font-bold tabular-nums text-foreground">
-            {project.totalAmount.toLocaleString("vi-VN")}
-            <span className="ml-[0.2em] align-[0.1em] text-[0.58em] font-bold tracking-normal text-muted-foreground">₫</span>
+            {formatFullCurrency(project.totalAmount)}
           </TableCell>
           <TableCell className="p-0" />
         </TableRow>
@@ -420,7 +442,7 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
       <TableCell className="p-0 relative">
         {(!entry.payrate || entry.payrate === 0) && <span className="absolute left-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />}
       </TableCell>
-      <TableCell className="py-2 px-3 pl-6">
+      <TableCell className="sticky left-0 z-[15] bg-white py-2 px-3 pl-6">
         <div className="flex min-h-9 items-center gap-2">
           {showDate ? (
             <div className="flex items-center gap-2">
@@ -476,11 +498,11 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
       <TableCell className="num border-l border-border/30 py-2 px-3 text-right">
         <span
           className={cn(
-            "text-xs font-bold tabular-nums",
+            "text-xs font-bold tabular-nums whitespace-nowrap",
             isShortShift ? "text-amber-700" : "text-foreground",
           )}
         >
-          {formatTimesheetHours(hoursWorked)}h
+          {formatTimesheetHours(hoursWorked)} giờ
         </span>
       </TableCell>
       <TableCell className="num hidden py-2 px-3 text-right lg:table-cell">
@@ -498,14 +520,13 @@ const EntryRow = memo(function EntryRow({ entry, entryIdx, showDate, startsAfter
             >
               ⚠ chưa có
             </span>
-          ) : `${entry.payrate?.toLocaleString("vi-VN")}${entry.projectIsFlexible ? "₫/ca" : "₫/giờ"}`}
+          ) : `${formatFullCurrency(entry.payrate ?? 0, { showSymbol: false })} ${getPayrateUnit(!!entry.projectIsFlexible)}`}
         </p>
       </TableCell>
       <TableCell className="num py-2 px-3 text-right">
         <div className="flex items-center justify-end gap-1">
-          <span className="text-xs font-bold text-foreground tabular-nums">
-            {(entry.amount || 0).toLocaleString("vi-VN")}
-            <span className="ml-[0.2em] align-[0.1em] text-[0.58em] font-bold tracking-normal text-muted-foreground">₫</span>
+          <span className="text-xs font-bold text-foreground tabular-nums whitespace-nowrap">
+            {formatFullCurrency(entry.amount || 0)}
           </span>
         </div>
       </TableCell>

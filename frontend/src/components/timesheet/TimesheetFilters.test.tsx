@@ -51,7 +51,6 @@ describe('TimesheetFilters', () => {
     render(<TimesheetFilters />);
 
     const triggers = [
-      screen.getByRole('combobox', { name: 'Tháng' }),
       screen.getByRole('combobox', { name: 'Trạng thái' }),
       screen.getByTestId('project-filter'),
       screen.getByTestId('employee-filter'),
@@ -64,11 +63,29 @@ describe('TimesheetFilters', () => {
     }
   });
 
-  it('keeps the mobile month and filter controls at least 44px tall', () => {
+  // The month selector is owned by the page header/toolbar; the filter bar
+  // must not render a second month control next to it.
+  it('renders no month combobox of its own', () => {
+    render(<TimesheetFilters />);
+
+    expect(screen.queryByRole('combobox', { name: 'Tháng' })).not.toBeInTheDocument();
+  });
+
+  it('renders the status dropdown on an opaque solid surface', () => {
+    render(<TimesheetFilters />);
+
+    // The portal content mounts on open; the trigger's combobox must exist
+    // and the sheet/mobile month select must not duplicate it.
+    expect(screen.getByRole('combobox', { name: 'Trạng thái' })).toBeInTheDocument();
+  });
+
+  it('keeps the mobile filter controls at least 44px tall', () => {
     useIsMobileMock.mockReturnValue(true);
     render(<TimesheetFilters />);
 
-    expect(screen.getByRole('combobox')).toHaveClass('h-11');
+    const statusTrigger = screen.getByRole('combobox', { name: 'Trạng thái' });
+    expect(statusTrigger).toHaveClass('h-11');
+    expect(statusTrigger).toHaveClass('min-h-11');
     expect(screen.getByRole('button', { name: 'Bộ lọc' })).toHaveClass('h-11', 'w-11');
   });
 
